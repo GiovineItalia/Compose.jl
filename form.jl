@@ -52,8 +52,18 @@ end
 # Each form translates into a series of lower-level drawing operations.
 abstract DrawOp
 
+
+# By default, Assume no coordinate conversion is needed.
+draw(backend::Backend, box::BoundingBox, op::DrawOp) = draw(backend, op)
+
+
 type MoveTo <: DrawOp
     point::Point
+end
+
+
+function draw(backend::Backend, box::BoundingBox, op::MoveTo)
+    draw(MoveTo(backend_measure(op.point, box)), backend)
 end
 
 
@@ -62,8 +72,15 @@ type LineTo <: DrawOp
 end
 
 
+function draw(backend::Backend, box::BoundingBox, op::LineTo)
+    draw(LineTo(backend_measure(op.point, box)), backend)
+end
+
+
 type FillStroke <: DrawOp end
 type ClasePath  <: DrawOp end
+
+
 
 
 # Specific forms

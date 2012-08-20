@@ -82,10 +82,12 @@ type Image{B <: ImageBackend}
     function Image(filename::String,
                    width::MeasureOrNumber,
                    height::MeasureOrNumber)
-        filename = bytestring(abs_path(filename))
+        img = new()
+        
+        img.filename = bytestring(abs_path(filename))
 
-        width  = convert(SimpleMeasure{ImageUnit{B}}, width)
-        height = convert(SimpleMeasure{ImageUnit{B}}, height)
+        img.width  = native_measure(width,  img)
+        img.height = native_measure(height, img)
 
         # Try opening the file for writing immediately so we can fail early if
         # it doesn't exist.
@@ -97,43 +99,41 @@ type Image{B <: ImageBackend}
         end
 
         if B == SVGBackend
-            surf = ccall(dlsym(libcairo, :cairo_svg_surface_create),
-                         Ptr{Void}, (Ptr{Uint8}, Float64, Float64),
-                         filename, width.value, height.value)
+            img.surf = ccall(dlsym(libcairo, :cairo_svg_surface_create),
+                             Ptr{Void}, (Ptr{Uint8}, Float64, Float64),
+                             img.filename, img.width.value, img.height.value)
         elseif B == PNGBackend
-            surf = ccall(dlsym(libcairo, :cairo_image_surface_create),
-                         Ptr{Void}, (Int32, Int32, Int32),
-                         CAIRO_FORMAT_ARGB32,
-                         convert(Int32, round(width.value)),
-                         convert(Int32, round(height.value)))
+            img.surf = ccall(dlsym(libcairo, :cairo_image_surface_create),
+                             Ptr{Void}, (Int32, Int32, Int32),
+                             CAIRO_FORMAT_ARGB32,
+                             convert(Int32, round(img.width.value)),
+                             convert(Int32, round(img.height.value)))
         elseif B == PDFBackend
-            surf = ccall(dlsym(libcairo, :cairo_pdf_surface_create),
-                         Ptr{Void}, (Ptr{Uint8}, Float64, Float64),
-                         filename, width.value, height.value)
+            img.surf = ccall(dlsym(libcairo, :cairo_pdf_surface_create),
+                             Ptr{Void}, (Ptr{Uint8}, Float64, Float64),
+                             img.filename, img.width.value, img.height.value)
         elseif B == PSBackend
-            surf = ccall(dlsym(libcairo, :cairo_ps_surface_create),
-                         Ptr{Void}, (Ptr{Uint8}, Float64, Float64),
-                         filename, width.value, height.value)
+            img.surf = ccall(dlsym(libcairo, :cairo_ps_surface_create),
+                             Ptr{Void}, (Ptr{Uint8}, Float64, Float64),
+                             img.filename, img.width.value, img.height.value)
         else
             error("Unkown Cairo backend.")
         end
 
         status = ccall(dlsym(libcairo, :cairo_surface_status),
-                       Int32, (Ptr{Void},), surf)
+                       Int32, (Ptr{Void},), img.surf)
 
         if status != CAIRO_STATUS_SUCCESS
             error("Unable to create cairo surface.")
         end
 
-        ctx = ccall(dlsym(libcairo, :cairo_create),
-                         Ptr{Void}, (Ptr{Void},), surf)
+        img.ctx = ccall(dlsym(libcairo, :cairo_create),
+                        Ptr{Void}, (Ptr{Void},), img.surf)
 
-        img = new(filename,
-                  width,
-                  height,
-                  surf, ctx,
-                  RGB(0.,0.,0.),
-                  RGB(0.,0.,0.))
+
+        img.stroke = RGB(0., 0., 0.)
+        img.fill   = RGB(0., 0., 0.)
+
         finalizer(img, destroy)
         img
     end
@@ -161,9 +161,48 @@ typealias PDF Image{PDFBackend}
 typealias PS  Image{PSBackend}
 
 
-function convert{T <: ImageBackend}(::Type{SimpleMeasure{ImageUnit{T}}},
-                                    u::Number)
-    SimpleMeasure{ImageUnit{T}}(convert(Float64, u))
+# PNG conversion to native units (i.e., pixels)
+
+function native_measure(u::Number,
+                        backend::Image{PNGBackend})
+    SimpleMeasure{ImageUnit{PNGBackend}}(convert(Float64, u))
+
+end
+
+
+function native_measure(u::SimpleMeasure{PixelUnit},
+                        backend::Image{PNGBackend})
+    SimpleMeasure{ImageUnit{PNGBackend}}(u.value)
+end
+
+
+function native_measure(u::SimpleMeasure{MillimeterUnit},
+                        backend::Image{PNGBackend})
+
+    native_measure(convert(SimpleMeasure{PixelUnit}, u), backend)
+end
+
+
+# SVG/PDF/PS conversion to native units (i.e., pts)
+
+function native_measure{K <: VectorImageBackend}(
+        u::Number,
+        backend::Image{K})
+    SimpleMeasure{ImageUnit{K}}(convert(Float64, u))
+end
+
+
+function native_measure{K <: VectorImageBackend}(
+        u::SimpleMeasure{PixelUnit},
+        backend::Image{K})
+    native_measure(convert(SimpleMeasure{MillimeterUnit}, u), backend)
+end
+
+
+function native_measure{K <: VectorImageBackend}(
+        u::SimpleMeasure{MillimeterUnit},
+        backend::Image{K})
+    SimpleMeasure{ImageUnit{K}}(u / pt)
 end
 
 

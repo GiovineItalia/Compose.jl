@@ -159,6 +159,25 @@ const h       = SimpleMeasure{HeightUnit}(1.0)
 const px      = SimpleMeasure{PixelUnit}(1.0)
 
 
+# Conversion between pixels and millimeters. This is tricky business, since we
+# have no way of knowing the pixel density yet want to do something other than
+# display an error message. Thus we are going to choose a reasonable default of
+# 4.5 pixels per mm, which is in typical laptop screen territory.
+const assumed_ppmm = 4.5
+
+function convert(::Type{SimpleMeasure{PixelUnit}},
+                 u::SimpleMeasure{MillimeterUnit})
+    SimpleMeasure{PixelUnit}(u.value * assumed_ppmm)
+end
+
+
+function convert(::Type{SimpleMeasure{MillimeterUnit}},
+                 u::SimpleMeasure{PixelUnit})
+    SimpleMeasure{PixelUnit}(u.value / assumed_ppmm)
+end
+
+
+
 # Points
 type Point
     x::Measure
@@ -167,7 +186,6 @@ type Point
     function Point(x::Measure, y::Measure)
         new(x, y)
     end
-
 end
 
 
@@ -198,5 +216,25 @@ type BoundingBox
     width::Measure
     height::Measure
 end
+
+
+type NativeBoundingBox{T <: NativeUnit}
+    x0::SimpleMeasure{T}
+    y0::SimpleMeasure{T}
+    width::SimpleMeasure{T}
+    height::SimpleMeasure{T}
+end
+
+
+# Context-dependent interpretation of bare numbers.
+
+x_measure(u::Measure) = u
+x_measure(u::Number) = Measure{WidthUnit}(convert(Float64, u))
+
+y_measure(u::Measure) = u
+y_measure(u::Number) = Measure{HeightUnit}(convert(Float64, u))
+
+size_measure(u::Measure) = u
+size_measure(u::Number) = Measure{NativeUnit}(convert(Float64, u))
 
 
