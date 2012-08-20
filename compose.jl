@@ -9,16 +9,16 @@ require("cairo.jl")
 
 # Apples to apples
 
-compose!(a::Property, b::Property) = append!(a.specifics, b.specifics)
-compose!(a::Form,     b::Form)     = push(a.specifics, b)
-compose!(a::Canvas,   b::Canvas)   = push(a.children, b)
+compose!(a::Property, b::Property) = (append!(a.specifics, b.specifics) ; a)
+compose!(a::Form,     b::Form)     = (push(a.specifics, b) ; a)
+compose!(a::Canvas,   b::Canvas)   = (push(a.children, b) ; a)
 
 
 # Apples to oranges
 
-compose!(a::Form,   b::Property) = compose!(a.property, b)
-compose!(a::Canvas, b::Property) = compose!(a.property, b)
-compose!(a::Canvas, b::Form)     = compose!(a.form, b)
+compose!(a::Form,   b::Property) = (compose!(a.property, b) ; a)
+compose!(a::Canvas, b::Property) = (compose!(a.property, b) ; a)
+compose!(a::Canvas, b::Form)     = (compose!(a.form, b) ; a)
 
 
 # Apples to bushels

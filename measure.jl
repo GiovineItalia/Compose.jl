@@ -195,12 +195,12 @@ typealias XYTuple NTuple{2, MeasureOrNumber}
 
 
 function Point(xy::XYTuple)
-    Point(measure_x(xy[1]),
-          measure_y(xy[2]))
+    Point(x_measure(xy[1]),
+          y_measure(xy[2]))
 end
 
 
-function convert(::Type{Measure}, xy::XYTuple)
+function convert(::Type{Point}, xy::XYTuple)
     Point(xy)
 end
 
@@ -215,7 +215,22 @@ type BoundingBox
     y0::Measure
     width::Measure
     height::Measure
+
+    function BoundingBox(x0::MeasureOrNumber,
+                         y0::MeasureOrNumber,
+                         width::MeasureOrNumber,
+                         height::MeasureOrNumber)
+        new(x_measure(x0),
+            y_measure(y0),
+            x_measure(width),
+            y_measure(height))
+    end
 end
+
+function BoundingBox()
+    BoundingBox(0, 0, 1, 1)
+end
+
 
 
 type NativeBoundingBox{T <: NativeUnit}
@@ -229,12 +244,12 @@ end
 # Context-dependent interpretation of bare numbers.
 
 x_measure(u::Measure) = u
-x_measure(u::Number) = Measure{WidthUnit}(convert(Float64, u))
+x_measure(u::Number) = SimpleMeasure{WidthUnit}(convert(Float64, u))
 
 y_measure(u::Measure) = u
-y_measure(u::Number) = Measure{HeightUnit}(convert(Float64, u))
+y_measure(u::Number) = SimpleMeasure{HeightUnit}(convert(Float64, u))
 
 size_measure(u::Measure) = u
-size_measure(u::Number) = Measure{NativeUnit}(convert(Float64, u))
+size_measure(u::Number) = SimpleMeasure{NativeUnit}(convert(Float64, u))
 
 

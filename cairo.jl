@@ -4,6 +4,7 @@
 require("backend.jl")
 require("measure.jl")
 require("color.jl")
+require("form.jl")
 
 const libcairo = dlopen("libcairo")
 
@@ -70,7 +71,7 @@ abstract PSBackend  <: VectorImageBackend
 abstract ImageUnit{B <: ImageBackend} <: NativeUnit
 
 
-type Image{B <: ImageBackend}
+type Image{B <: ImageBackend} <: Backend
     filename::String
     width::SimpleMeasure{ImageUnit{B}}
     height::SimpleMeasure{ImageUnit{B}}
@@ -161,6 +162,22 @@ typealias PDF Image{PDFBackend}
 typealias PS  Image{PSBackend}
 
 
+# sizes
+
+function root_box{B}(img::Image{B})
+    NativeBoundingBox(
+        SimpleMeasure{ImageUnit{B}}(0.),
+        SimpleMeasure{ImageUnit{B}}(0.),
+        img.width,
+        img.height)
+end
+
+
+function default_property(img::Image)
+    Property()
+end
+
+
 # PNG conversion to native units (i.e., pixels)
 
 function native_measure(u::Number,
@@ -206,5 +223,49 @@ function native_measure{K <: VectorImageBackend}(
 end
 
 
+# Drawing
+
+function draw(img::Image, op::MoveTo)
+    ccall(dlsym(libcairo, :cairo_move_to), Void, (Ptr{Void}, Float64, Float64),
+          img.ctx, op.point.x.value, op.point.y.value)
+end
+
+
+function draw(img::Image, op::LineTo)
+    ccall(dlsym(libcairo, :cairo_line_to), Void, (Ptr{Void}, Float64, Float64),
+          img.ctx, op.point.x.value, op.point.y.value)
+end
+
+
+function draw(img::Image, op::ClosePath)
+    ccall(dlsym(libcairo, :cairo_close_path), Void, (Ptr{Void},), img.ctx)
+end
+
+
+function draw(img::Image, op::FillStroke)
+    if img.fill != nothing
+        rgb = convert(RGB, img.fill)
+        ccall(dlsym(libcairo, :cairo_set_source_rgb), Void,
+              (Ptr{Void}, Float64, Float64, Float64),
+              img.ctx, rgb.r, rgb.g, rgb.b)
+
+        if img.stroke != nothing
+            ccall(dlsym(libcairo, :cairo_fill_preserve),
+                  Void, (Ptr{Void},), img.ctx)
+        else
+            ccall(dlsym(libcairo, :cairo_fill),
+                  Void, (Ptr{Void},), img.ctx)
+        end
+    end
+
+    if img.stroke != nothing
+        rgb = convert(RGB, img.stroke)
+        ccall(dlsym(libcairo, :cairo_set_source_rgb), Void,
+              (Ptr{Void}, Float64, Float64, Float64),
+              img.ctx, rgb.r, rgb.g, rgb.b)
+
+        ccall(dlsym(libcairo, :cairo_stroke), Void, (Ptr{Void},), img.ctx)
+    end
+end
 
 

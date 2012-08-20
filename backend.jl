@@ -46,7 +46,8 @@ end
 function native_measure(box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
-    Point(parent_box.x0 + native_measure(box.x0, parent_box, backend),
+    NativeBoundingBox(
+          parent_box.x0 + native_measure(box.x0, parent_box, backend),
           parent_box.y0 + native_measure(box.y0, parent_box, backend),
           native_measure(box.width,  parent_box, backend),
           native_measure(box.height, parent_box, backend))

@@ -9,6 +9,10 @@ abstract PropertyType
 # A container for one or more properties.
 type Property
     specifics::Vector{PropertyType}
+
+    function Property()
+        new(PropertyType[])
+    end
 end
 
 
@@ -23,9 +27,14 @@ end
 
 
 # Catchall nop method for applying a property that isn't imlpmented on a backend
-function draw(backend::Backend, property::PropertyType)
+function draw(backend::Backend, property::Property)
+    for p in property.specifics
+        draw(backend, p)
+    end
 end
 
+function draw(backend::Backend, property::PropertyType)
+end
 
 # TODO: Fill, Stroke, LineWidth, etc
 
