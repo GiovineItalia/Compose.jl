@@ -20,6 +20,9 @@ show(io, ::Type{WidthUnit}) = print(io, "width")
 abstract HeightUnit <: Unit
 show(io, ::Type{HeightUnit}) = print(io, "height")
 
+# Native units used by the backend
+abstract NativeUnit <: Unit
+
 
 # A measure is a number annotated with a type.
 abstract Measure

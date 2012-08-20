@@ -4,6 +4,7 @@
 require("canvas.jl")
 require("form.jl")
 require("property.jl")
+require("cairo.jl")
 
 
 # Apples to apples
