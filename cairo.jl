@@ -135,13 +135,12 @@ type Image{B <: ImageBackend} <: Backend
         img.stroke = RGB(0., 0., 0.)
         img.fill   = RGB(0., 0., 0.)
 
-        finalizer(img, destroy)
         img
     end
 end
 
 
-function destroy{B}(img::Image{B})
+function finish{B}(img::Image{B})
     ccall(dlsym(libcairo, :cairo_destroy),
           Void, (Ptr{Void},), img.ctx)
 

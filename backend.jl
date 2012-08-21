@@ -54,3 +54,29 @@ function native_measure(box::BoundingBox,
 end
 
 
+# The 'upon' macro: slightly more conscise calls to draw.
+
+macro upon(backend_expr::Expr, expr::Expr)
+
+    backend = eval(backend_expr)
+
+    function splice_args(ex::Expr)
+        if ex.head == :call && !isempty(ex.args) && ex.args[1] == :draw
+            insert(ex.args, 2, backend)
+        end
+
+        for arg in ex.args
+            if typeof(arg) == Expr
+                splice_args(arg)
+            end
+        end
+    end
+
+    splice_args(expr)
+
+    quote
+        $(expr)
+        finish($(backend))
+    end
+end
+
