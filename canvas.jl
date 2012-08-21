@@ -17,6 +17,16 @@ type Canvas
             Canvas[],
             Form())
     end
+
+    function Canvas(x0::MeasureOrNumber,
+                    y0::MeasureOrNumber,
+                    width::MeasureOrNumber,
+                    height::MeasureOrNumber)
+        new(BoundingBox(x0, y0, width, height),
+            Property(),
+            Canvas[],
+            Form())
+    end
 end
 
 

@@ -174,7 +174,10 @@ end
 
 
 function default_property(img::Image)
-    Property()
+    Property(PropertyType[
+        StrokeBare(RGB(0.,0.,0.)),
+        FillBare(RGB(0.,0.,0.)),
+        LineWidthBare(0.5mm)])
 end
 
 
@@ -183,7 +186,6 @@ end
 function native_measure(u::Number,
                         backend::Image{PNGBackend})
     SimpleMeasure{ImageUnit{PNGBackend}}(convert(Float64, u))
-
 end
 
 
@@ -244,6 +246,7 @@ end
 
 function draw(img::Image, op::FillStroke)
     if img.fill != nothing
+        println("here")
         rgb = convert(RGB, img.fill)
         ccall(dlsym(libcairo, :cairo_set_source_rgb), Void,
               (Ptr{Void}, Float64, Float64, Float64),
@@ -268,4 +271,22 @@ function draw(img::Image, op::FillStroke)
     end
 end
 
+
+# Applying properties
+
+function draw(img::Image, property::Fill)
+    img.fill = property.value
+end
+
+
+function draw(img::Image, property::Stroke)
+    img.stroke = property.value
+end
+
+
+function draw(img::Image, property::LineWidth)
+    ccall(dlsym(libcairo, :cairo_set_line_width),
+          Void, (Ptr{Void}, Float64),
+          img.ctx, property.value.value)
+end
 

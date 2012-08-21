@@ -46,7 +46,7 @@ function draw(backend::Backend, box::NativeBoundingBox,
         # if form is not a Form, it is not a container so we can draw in
         # directly
         if typeof(ctx.form) != Form
-            draw(backend, ctx.parent_property)
+            draw(backend, box, ctx.parent_property)
             draw(backend, box, ctx.form)
         else
             if isempty(ctx.form.property)
@@ -96,8 +96,6 @@ type FillStroke <: DrawOp end
 type ClosePath  <: DrawOp end
 
 
-
-
 # Specific forms
 
 # Note that the constructors for these types are somewhat peculiar: they return
@@ -121,7 +119,6 @@ function draw(backend::Backend, box::NativeBoundingBox, form::Lines)
     for point in form.points[2:]
         draw(backend, box, LineTo(point))
     end
-    draw(backend, box, ClosePath())
     draw(backend, box, FillStroke())
 end
 
@@ -143,8 +140,8 @@ function draw(backend::Backend, box::NativeBoundingBox, form::Polygon)
     for point in form.points[2:]
         draw(backend, box, LineTo(point))
     end
+    draw(backend, box, ClosePath())
     draw(backend, box, FillStroke())
 end
-
 
 
