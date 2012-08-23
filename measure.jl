@@ -20,12 +20,13 @@ show(io, ::Type{WidthUnit}) = print(io, "width")
 abstract HeightUnit <: Unit
 show(io, ::Type{HeightUnit}) = print(io, "height")
 
-# Native units used by the backend
-abstract NativeUnit <: Unit
-
 
 # A measure is a number annotated with a type.
 abstract Measure
+
+
+# A measure used by a backend
+abstract NativeMeasure <: Measure
 
 
 # A single number with a single associated unit.
@@ -233,11 +234,11 @@ end
 
 
 
-type NativeBoundingBox{T <: NativeUnit}
-    x0::SimpleMeasure{T}
-    y0::SimpleMeasure{T}
-    width::SimpleMeasure{T}
-    height::SimpleMeasure{T}
+type NativeBoundingBox{M <: NativeMeasure}
+    x0::M
+    y0::M
+    width::M
+    height::M
 end
 
 
@@ -250,6 +251,6 @@ y_measure(u::Measure) = u
 y_measure(u::Number) = SimpleMeasure{HeightUnit}(convert(Float64, u))
 
 size_measure(u::Measure) = u
-size_measure(u::Number) = SimpleMeasure{NativeUnit}(convert(Float64, u))
+size_measure(u::Number) = SimpleMeasure{PixelUnit}(convert(Float64, u))
 
 

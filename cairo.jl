@@ -67,14 +67,24 @@ abstract SVGBackend <: VectorImageBackend
 abstract PDFBackend <: VectorImageBackend
 abstract PSBackend  <: VectorImageBackend
 
-# Native 
-abstract ImageUnit{B <: ImageBackend} <: NativeUnit
+# Native unit
+type ImageMeasure{T <: ImageBackend} <: NativeMeasure
+    value::Float
+end
+
+function *{T}(u::Float64, v::ImageMeasure{T})
+    ImageMeasure{T}(u * v.value)
+end
+
+function +{T}(u::ImageMeasure{T}, v::ImageMeasure{T})
+    ImageMeasure{T}(u.value + v.value)
+end
 
 
 type Image{B <: ImageBackend} <: Backend
     filename::String
-    width::SimpleMeasure{ImageUnit{B}}
-    height::SimpleMeasure{ImageUnit{B}}
+    width::ImageMeasure{B}
+    height::ImageMeasure{B}
     surf::Ptr{Void}
     ctx::Ptr{Void}
     stroke::ColorOrNothing
@@ -165,8 +175,8 @@ typealias PS  Image{PSBackend}
 
 function root_box{B}(img::Image{B})
     NativeBoundingBox(
-        SimpleMeasure{ImageUnit{B}}(0.),
-        SimpleMeasure{ImageUnit{B}}(0.),
+        ImageMeasure{B}(0.),
+        ImageMeasure{B}(0.),
         img.width,
         img.height)
 end
@@ -184,13 +194,13 @@ end
 
 function native_measure(u::Number,
                         backend::Image{PNGBackend})
-    SimpleMeasure{ImageUnit{PNGBackend}}(convert(Float64, u))
+    ImageMeasure{PNGBackend}(convert(Float64, u))
 end
 
 
 function native_measure(u::SimpleMeasure{PixelUnit},
                         backend::Image{PNGBackend})
-    SimpleMeasure{ImageUnit{PNGBackend}}(u.value)
+    ImageMeasure{PNGBackend}(u.value)
 end
 
 
@@ -206,7 +216,7 @@ end
 function native_measure{K <: VectorImageBackend}(
         u::Number,
         backend::Image{K})
-    SimpleMeasure{ImageUnit{K}}(convert(Float64, u))
+    ImageMeasure{K}(convert(Float64, u))
 end
 
 
@@ -220,7 +230,7 @@ end
 function native_measure{K <: VectorImageBackend}(
         u::SimpleMeasure{MillimeterUnit},
         backend::Image{K})
-    SimpleMeasure{ImageUnit{K}}(u / pt)
+    ImageMeasure{K}(u / pt)
 end
 
 
@@ -245,7 +255,6 @@ end
 
 function draw(img::Image, op::FillStroke)
     if img.fill != nothing
-        println("here")
         rgb = convert(RGB, img.fill)
         ccall(dlsym(libcairo, :cairo_set_source_rgb), Void,
               (Ptr{Void}, Float64, Float64, Float64),
