@@ -1,6 +1,4 @@
 
-
-
 # A unit gives some semantic meaning to a bare number.
 abstract Unit
 show(io, ::Type{Unit}) = print(io, "??")
@@ -20,6 +18,9 @@ show(io, ::Type{WidthUnit}) = print(io, "width")
 abstract HeightUnit <: Unit
 show(io, ::Type{HeightUnit}) = print(io, "height")
 
+# Canvas specific units defined in terms of width/height.
+abstract CanvasXUnit <: Unit
+abstract CanvasYUnit <: Unit
 
 # A measure is a number annotated with a type.
 abstract Measure
@@ -66,8 +67,6 @@ end
 function /{U}(a::SimpleMeasure{U}, b::Number)
     SimpleMeasure{U}(a.value / convert(Float64, b))
 end
-
-
 
 
 # A sum of one or more measures of different units.
@@ -233,7 +232,6 @@ function BoundingBox()
 end
 
 
-
 type NativeBoundingBox{M <: NativeMeasure}
     x0::M
     y0::M
@@ -245,11 +243,12 @@ end
 # Context-dependent interpretation of bare numbers.
 
 x_measure(u::Measure) = u
-x_measure(u::Number) = SimpleMeasure{WidthUnit}(convert(Float64, u))
+x_measure(u::Number) = SimpleMeasure{CanvasXUnit}(convert(Float64, u))
 
 y_measure(u::Measure) = u
-y_measure(u::Number) = SimpleMeasure{HeightUnit}(convert(Float64, u))
+y_measure(u::Number) = SimpleMeasure{CanvasYUnit}(convert(Float64, u))
 
+# TODO: defaulting to pixels is not reasonable. Maybe pt?
 size_measure(u::Measure) = u
 size_measure(u::Number) = SimpleMeasure{PixelUnit}(convert(Float64, u))
 

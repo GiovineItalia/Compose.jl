@@ -12,7 +12,24 @@ abstract Backend
 # function to convert any SimpleMeasure in absolute units to a Measure of its
 # particular subtype of NativeUnit. Everything else is handled here.
 
+function native_measure(u::SimpleMeasure{CanvasXUnit},
+                        unit_box::BoundingBox,
+                        parent_box::NativeBoundingBox,
+                        backend::Backend)
+    ((u.value - unit_box.x0.value) / unit_box.width.value) * parent_box.width
+end
+
+
+function native_measure(u::SimpleMeasure{CanvasYUnit},
+                        unit_box::BoundingBox,
+                        parent_box::NativeBoundingBox,
+                        backend::Backend)
+    ((u.value - unit_box.y0.value) / unit_box.height.value) * parent_box.height
+end
+
+
 function native_measure(u::SimpleMeasure{WidthUnit},
+                        unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
     u.value * parent_box.width
@@ -20,13 +37,23 @@ end
 
 
 function native_measure(u::SimpleMeasure{HeightUnit},
+                        unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
     u.value * parent_box.height
 end
 
 
+function native_measure(u::SimpleMeasure,
+                        unit_box::BoundingBox,
+                        parent_box::NativeBoundingBox,
+                        backend::Backend)
+    native_measure(u, backend)
+end
+
+
 function native_measure(u::CompoundMeasure,
+                        unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
 
@@ -36,21 +63,25 @@ end
 
 
 function native_measure(point::Point,
+                        unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
-    Point(parent_box.x0 + native_measure(point.x, parent_box, backend),
-          parent_box.y0 + native_measure(point.y, parent_box, backend))
+    Point(parent_box.x0 + native_measure(point.x, unit_box,
+                                         parent_box, backend),
+          parent_box.y0 + native_measure(point.y, unit_box,
+                                         parent_box, backend))
 end
 
 
 function native_measure(box::BoundingBox,
+                        unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
     NativeBoundingBox(
-          parent_box.x0 + native_measure(box.x0, parent_box, backend),
-          parent_box.y0 + native_measure(box.y0, parent_box, backend),
-          native_measure(box.width,  parent_box, backend),
-          native_measure(box.height, parent_box, backend))
+          parent_box.x0 + native_measure(box.x0, unit_box, parent_box, backend),
+          parent_box.y0 + native_measure(box.y0, unit_box, parent_box, backend),
+          native_measure(box.width,  unit_box, parent_box, backend),
+          native_measure(box.height, unit_box, parent_box, backend))
 end
 
 

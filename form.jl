@@ -33,7 +33,7 @@ end
 
 
 # Draw a form and all it contains on a backend within a bounding box.
-function draw(backend::Backend, box::NativeBoundingBox,
+function draw(backend::Backend, unit_box::BoundingBox, box::NativeBoundingBox,
               root_property::Property, root_form::Form)
     Q = Queue()
     enqueue(Q,
@@ -46,8 +46,8 @@ function draw(backend::Backend, box::NativeBoundingBox,
         # if form is not a Form, it is not a container so we can draw in
         # directly
         if typeof(ctx.form) != Form
-            draw(backend, box, ctx.parent_property)
-            draw(backend, box, ctx.form)
+            draw(backend, unit_box, box, ctx.parent_property)
+            draw(backend, unit_box, box, ctx.form)
         else
             if isempty(ctx.form.property)
                 property = ctx.parent_property
@@ -69,7 +69,10 @@ abstract DrawOp
 
 
 # By default, Assume no coordinate conversion is needed.
-draw(backend::Backend, box::NativeBoundingBox, op::DrawOp) = draw(backend, op)
+function draw(backend::Backend, unit_box::BoundingBox,
+              box::NativeBoundingBox, op::DrawOp)
+    draw(backend, op)
+end
 
 
 type MoveTo <: DrawOp
@@ -77,8 +80,9 @@ type MoveTo <: DrawOp
 end
 
 
-function draw(backend::Backend, box::NativeBoundingBox, op::MoveTo)
-    draw(backend, MoveTo(native_measure(op.point, box, backend)))
+function draw(backend::Backend, unit_box::BoundingBox,
+              box::NativeBoundingBox, op::MoveTo)
+    draw(backend, MoveTo(native_measure(op.point, unit_box, box, backend)))
 end
 
 
@@ -87,8 +91,9 @@ type LineTo <: DrawOp
 end
 
 
-function draw(backend::Backend, box::NativeBoundingBox, op::LineTo)
-    draw(backend, LineTo(native_measure(op.point, box, backend)))
+function draw(backend::Backend, unit_box::BoundingBox,
+              box::NativeBoundingBox, op::LineTo)
+    draw(backend, LineTo(native_measure(op.point, unit_box, box, backend)))
 end
 
 
@@ -112,14 +117,15 @@ type Lines <: FormType
 end
 
 
-function draw(backend::Backend, box::NativeBoundingBox, form::Lines)
+function draw(backend::Backend, unit_box::BoundingBox,
+              box::NativeBoundingBox, form::Lines)
     if isempty(form.points); return; end
 
-    draw(backend, box, MoveTo(form.points[1]))
+    draw(backend, canvas, box, MoveTo(form.points[1]))
     for point in form.points[2:]
-        draw(backend, box, LineTo(point))
+        draw(backend, canvas, box, LineTo(point))
     end
-    draw(backend, box, FillStroke())
+    draw(backend, canvas, box, FillStroke())
 end
 
 
@@ -133,15 +139,16 @@ type Polygon <: FormType
 end
 
 
-function draw(backend::Backend, box::NativeBoundingBox, form::Polygon)
+function draw(backend::Backend, unit_box::BoundingBox,
+              box::NativeBoundingBox, form::Polygon)
     if isempty(form.points); return; end
 
-    draw(backend, box, MoveTo(form.points[1]))
+    draw(backend, unit_box, box, MoveTo(form.points[1]))
     for point in form.points[2:]
-        draw(backend, box, LineTo(point))
+        draw(backend, unit_box, box, LineTo(point))
     end
-    draw(backend, box, ClosePath())
-    draw(backend, box, FillStroke())
+    draw(backend, unit_box, box, ClosePath())
+    draw(backend, unit_box, box, FillStroke())
 end
 
 

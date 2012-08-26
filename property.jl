@@ -32,19 +32,22 @@ function isempty(a::Property)
 end
 
 
-# Catchall nop method for applying a property that isn't imlpmented on a backend
-function draw(backend::Backend, box::NativeBoundingBox, property::Property)
+function draw(backend::Backend, unit_box::BoundingBox,
+              box::NativeBoundingBox, property::Property)
     for p in property.specifics
-        draw(backend, box, p)
+        draw(backend, unit_box, box, p)
     end
 end
 
 
-function draw(backend::Backend, box::NativeBoundingBox, property::PropertyType)
+function draw(backend::Backend, unit_box::BoundingBox,
+              box::NativeBoundingBox, property::PropertyType)
     draw(backend, property)
 end
 
 
+# Catchall nop method for applying a property that isn't implemented on a
+# backend.
 function draw(backend::Backend, property::PropertyType)
 end
 
@@ -103,6 +106,8 @@ function LineWidthBare(value::MeasureOrNumber)
 end
 
 
-function draw(backend::Backend, box::NativeBoundingBox, property::LineWidth)
-    draw(backend, LineWidthBare(native_measure(property.value, backend)))
+function draw(backend::Backend, unit_box::BoundingBox,
+              box::NativeBoundingBox, property::LineWidth)
+    draw(backend, LineWidthBare(native_measure(property.value, unit_box,
+                                               box, backend)))
 end

@@ -94,7 +94,7 @@ type Image{B <: ImageBackend} <: Backend
                    width::MeasureOrNumber,
                    height::MeasureOrNumber)
         img = new()
-        
+
         img.filename = bytestring(abs_path(filename))
 
         img.width  = native_measure(width,  img)
