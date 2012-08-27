@@ -6,6 +6,23 @@ require("form.jl")
 require("property.jl")
 
 
+type Units
+    box::BoundingBox
+
+    function Units(width::MeasureOrNumber,
+                   height::MeasureOrNumber)
+        new(BoundingBox(0.0, 0.0, width, height))
+    end
+
+    function Units(x0::MeasureOrNumber,
+                   y0::MeasureOrNumber,
+                   width::MeasureOrNumber,
+                   height::MeasureOrNumber)
+        new(BoundingBox(x0, y0, width, height))
+    end
+end
+
+
 type Canvas
     box::BoundingBox
     property::Property
@@ -14,61 +31,33 @@ type Canvas
     unit_box::BoundingBox
     rot::Rotation
 
-    function Canvas()
-        new(BoundingBox(),
-            Property(),
-            Canvas[],
-            Form(),
-            BoundingBox(),
-            Rotation())
-
-    end
-
-    function Canvas(x0::MeasureOrNumber,
-                    y0::MeasureOrNumber,
-                    width::MeasureOrNumber,
-                    height::MeasureOrNumber)
-        new(BoundingBox(x0, y0, width, height),
-            Property(),
-            Canvas[],
-            Form(),
-            BoundingBox(),
-            Rotation())
+    function Canvas(opts::Union(Units, Rotation)...)
+        Canvas(0.0, 0.0, 1.0, 1.0, opts...)
     end
 
     function Canvas(x0::MeasureOrNumber,
                     y0::MeasureOrNumber,
                     width::MeasureOrNumber,
                     height::MeasureOrNumber,
-                    x_units::Number,
-                    y_units::Number)
-        new(BoundingBox(x0, y0, width, height),
-            Property(),
-            Canvas[],
-            Form(),
-            BoundingBox(0.0, 0.0,
-                        convert(Float64, x_units),
-                        convert(Float64, y_units)),
-            Rotation())
-    end
+                    opts::Union(Units, Rotation)...)
+        c = new(BoundingBox(x0, y0, width, height),
+                Property(),
+                Canvas[],
+                Form(),
+                BoundingBox(),
+                Rotation())
 
-    function Canvas(x0::MeasureOrNumber,
-                    y0::MeasureOrNumber,
-                    width::MeasureOrNumber,
-                    height::MeasureOrNumber,
-                    x_base::Number,
-                    y_base::Number,
-                    x_units::Number,
-                    y_units::Number)
-        new(BoundingBox(x0, y0, width, height),
-            Property(),
-            Canvas[],
-            Form(),
-            BoundingBox(x_base, y_base, x_units, y_units),
-            Rotation())
+        for opt in opts
+            if typeof(opt) == Rotation
+                c.rot = opt
+            elseif typeof(opt) == Units
+                c.unit_box = opt.box
+            end
+        end
+
+        c
     end
 end
-
 
 
 # A type packaging a canvas with the information needed to draw it.
