@@ -19,6 +19,10 @@ type RGB <: Color
     r::Float64 # Red in [0,1]
     g::Float64 # Green in [0,1]
     b::Float64 # Blue in [0,1]
+
+    function RGB(r::Number, g::Number, b::Number)
+        new(convert(Float64, r), convert(Float64, g), convert(Float64, b))
+    end
 end
 
 # HSV (Hue-Saturation-Value)
@@ -26,6 +30,10 @@ type HSV <: Color
     h::Float64 # Hue in [0,360]
     s::Float64 # Saturation in [0,1]
     v::Float64 # Value in [0,1]
+
+    function HSV(h::Number, s::Number, v::Number)
+        new(convert(Float64, h), convert(Float64, s), convert(Float64, n))
+    end
 end
 
 # HLS (Hue-Lightness-Saturation)
@@ -33,6 +41,10 @@ type HLS <: Color
     h::Float64 # Hue in [0,360]
     l::Float64 # Lightness in [0,1]
     s::Float64 # Saturation in [0,1]
+
+    function HLS(h::Number, l::Number, s::Number)
+        new(convert(Float64, h), convert(Float64, l), convert(Float64, s))
+    end
 end
 
 # XYZ (CIE 1931)
@@ -40,6 +52,10 @@ type XYZ <: Color
     x::Float64
     y::Float64
     z::Float64
+
+    function XYZ(x::Number, y::Number, z::Number)
+        new(convert(Float64, x), convert(Float64, y), convert(Float64, z))
+    end
 end
 
 # LAB (CIELAB)
@@ -47,6 +63,10 @@ type LAB <: Color
     l::Float64 # Luminance in [0,1]
     a::Float64 # Red/Green in [-1,1]
     b::Float64 # Blue/Yellow in [-1,1]
+
+    function LAB(l::Number, a::Number, b::Number)
+        new(convert(Float64, l), convert(Float64, a), convert(Float64, b))
+    end
 end
 
 # LCHab (Luminance-Chroma-Hue, Polar-LAB)
@@ -54,6 +74,10 @@ type LCHab <: Color
     l::Float64 # Luminance
     c::Float64 # Chroma
     h::Float64 # Hue
+
+    function LCHab(l::Number, c::Number, h::Number)
+        new(convert(Float64, l), convert(Float64, c), convert(Float64, h))
+    end
 end
 
 # LUV (CIELUV)
@@ -61,6 +85,10 @@ type LUV <: Color
     l::Float64 # Luminance in [0,1]
     u::Float64 # Red/Green in [-1,1]
     v::Float64 # Blue/Yellow in [-1,1]
+
+    function LUV(l::Number, u::Number, v::Number)
+        new(convert(Float64, l), convert(Float64, u), convert(Float64, v))
+    end
 end
 
 # LCHuv (Luminance-Chroma-Hue, Polar-LUV)
@@ -68,6 +96,10 @@ type LCHuv <: Color
     l::Float64 # Luminance
     c::Float64 # Chroma
     h::Float64 # Hue
+
+    function LCHuv(l::Number, c::Number, h::Number)
+        new(convert(Float64, l), convert(Float64, c), convert(Float64, h))
+    end
 end
 
 
