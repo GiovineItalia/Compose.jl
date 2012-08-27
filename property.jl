@@ -32,15 +32,15 @@ function isempty(a::Property)
 end
 
 
-function draw(backend::Backend, unit_box::BoundingBox,
+function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, property::Property)
     for p in property.specifics
-        draw(backend, unit_box, box, p)
+        draw(backend, t, unit_box, box, p)
     end
 end
 
 
-function draw(backend::Backend, unit_box::BoundingBox,
+function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, property::PropertyType)
     draw(backend, property)
 end
@@ -59,6 +59,10 @@ type Fill <: PropertyType
         Property(PropertyType[new(value)])
     end
 
+    function Fill(value::String)
+        Property(PropertyType[new(parse_color(value))])
+    end
+
     Fill() = new()
 end
 
@@ -75,6 +79,10 @@ type Stroke <: PropertyType
 
     function Stroke(value::ColorOrNothing)
         Property(PropertyType[new(value)])
+    end
+
+    function Stroke(value::String)
+        Property(PropertyType[new(parse_color(value))])
     end
 
     Stroke() = new()
@@ -106,8 +114,8 @@ function LineWidthBare(value::MeasureOrNumber)
 end
 
 
-function draw(backend::Backend, unit_box::BoundingBox,
+function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, property::LineWidth)
-    draw(backend, LineWidthBare(native_measure(property.value, unit_box,
+    draw(backend, LineWidthBare(native_measure(property.value, t, unit_box,
                                                box, backend)))
 end

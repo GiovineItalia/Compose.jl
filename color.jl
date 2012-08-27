@@ -4,8 +4,14 @@
 #
 
 abstract Color
+typealias ColorOrNothing Union(Color, String, Nothing)
+typealias ColorOrStringOrNothing Union(Color, String, Nothing)
 
-typealias ColorOrNothing Union(Color,Nothing)
+
+# For our non-american pals.
+typealias Colour Color
+typealias ColourOrNothing ColorOrNothing
+typealias ColourOrStringOrNothing ColorOrNothing
 
 
 # sRGB (standard Red-Green-Blue)
@@ -1133,4 +1139,6 @@ function parse_color(desc::String)
 
     return RGB(c[1] / 255., c[2] / 255., c[3] / 255.)
 end
+
+parse_colour = parse_color
 

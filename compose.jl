@@ -47,16 +47,23 @@ function compose!(xs::Tuple)
 end
 
 
+function compose!(xs::Tuple, ys::ComposeExpr...)
+    compose!(compose!(xs), ys)
+end
+
+
 function compose!(xs::Vector)
     compose!(xs...)
+end
+
+
+function compose!(xs::Vector, ys::ComposeExpr...)
+    compose!(compose!(xs), ys)
 end
 
 
 # Non-destructive compose
 
 # TODO
-
-
-
 
 

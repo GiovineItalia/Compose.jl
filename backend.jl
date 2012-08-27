@@ -12,6 +12,10 @@ abstract Backend
 # function to convert any SimpleMeasure in absolute units to a Measure of its
 # particular subtype of NativeUnit. Everything else is handled here.
 
+
+#function natie_measureu
+
+
 function native_measure(u::SimpleMeasure{CanvasXUnit},
                         unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
@@ -45,10 +49,28 @@ end
 
 
 function native_measure(u::SimpleMeasure,
+                        rot::Rotation,
+                        unit_box::BoundingBox,
+                        parent_box::NativeBoundingBox,
+                        backend::Backend)
+    native_measure(u, unit_box, parent_box, backenD)
+end
+
+
+function native_measure(u::SimpleMeasure,
                         unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
     native_measure(u, backend)
+end
+
+
+function native_measure(u::SimpleMeasure,
+                        t::NativeTransform,
+                        unit_box::BoundingBox,
+                        parent_box::NativeBoundingBox,
+                        backend::Backend)
+    native_measure(u, unit_box, parent_box, backend)
 end
 
 
@@ -63,17 +85,42 @@ end
 
 
 function native_measure(point::Point,
+                        t::NativeTransform,
                         unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
-    Point(parent_box.x0 + native_measure(point.x, unit_box,
-                                         parent_box, backend),
-          parent_box.y0 + native_measure(point.y, unit_box,
-                                         parent_box, backend))
+
+    # Fuck, we need to convert from f
+
+    x = native_measure(point.x, t, unit_box, parent_box, backend)
+    y = native_measure(point.y, t, unit_box, parent_box, backend)
+
+    xy = [convert(Float64, x), convert(Float64, y), 1.0]
+    xyt = t.M * xy
+
+    Point(parent_box.x0 + convert(typeof(x), xyt[1]),
+          parent_box.y0 + convert(typeof(y), xyt[2]))
+end
+
+
+function native_measure(rot::Rotation,
+                        t::NativeTransform,
+                        unit_box::BoundingBox,
+                        parent_box::NativeBoundingBox,
+                        backend::Backend)
+    off = native_measure(rot.offset, t, unit_box, parent_box, backend)
+    ct = cos(rot.theta)
+    st = sin(rot.theta)
+    x0 = off.x - (ct * off.x - st * off.y)
+    y0 = off.y - (st * off.x + ct * off.y)
+    NativeTransform([ct -st convert(Float64, x0)
+                     st  ct convert(Float64, y0)
+                     0.0 0.0 1.0])
 end
 
 
 function native_measure(box::BoundingBox,
+                        t::NativeTransform,
                         unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)

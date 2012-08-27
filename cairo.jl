@@ -72,12 +72,25 @@ type ImageMeasure{T <: ImageBackend} <: NativeMeasure
     value::Float
 end
 
-function *{T}(u::Float64, v::ImageMeasure{T})
-    ImageMeasure{T}(u * v.value)
+convert(::Type{Float64}, u::ImageMeasure) = u.value
+function convert{T}(::Type{ImageMeasure{T}}, u::Number)
+    ImageMeasure{T}(convert(Float64, u))
+end
+
+function *{T}(u::Number, v::ImageMeasure{T})
+    ImageMeasure{T}(convert(Float64, u) * v.value)
+end
+
+function /{T}(u::ImageMeasure{T}, v::Number)
+    ImageMeasure{T}(u.value / convert(Float64, v))
 end
 
 function +{T}(u::ImageMeasure{T}, v::ImageMeasure{T})
     ImageMeasure{T}(u.value + v.value)
+end
+
+function -{T}(u::ImageMeasure{T}, v::ImageMeasure{T})
+    ImageMeasure{T}(u.value - v.value)
 end
 
 

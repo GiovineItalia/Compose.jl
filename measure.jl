@@ -177,20 +177,21 @@ function convert(::Type{SimpleMeasure{MillimeterUnit}},
 end
 
 
+typealias MeasureOrNumber Union(Measure, Number)
+
 
 # Points
 type Point
     x::Measure
     y::Measure
 
-    function Point(x::Measure, y::Measure)
-        new(x, y)
+    function Point(x::MeasureOrNumber, y::MeasureOrNumber)
+        new(x_measure(x), y_measure(y))
     end
 end
 
 
 # Support specifying points as tuples.
-typealias MeasureOrNumber Union(Measure, Number)
 typealias XYTuple NTuple{2, MeasureOrNumber}
 
 
@@ -207,6 +208,41 @@ end
 
 # A point in broadest terms.
 typealias XYTupleOrPoint Union(XYTuple, Point)
+
+
+# Rotation about a point.
+type Rotation
+    theta::Float64
+    offset::Point
+
+    function Rotation()
+        new(0.0, Point(0., 0.))
+    end
+
+    function Rotation(theta::Number, offset::XYTupleOrPoint)
+        new(convert(Float64, theta), convert(Point, offset))
+    end
+end
+
+
+type NativeTransform
+    M::Matrix{Float64}
+
+    function NativeTransform()
+        new([1.0 0.0 0.0
+             0.0 1.0 0.0
+             0.0 0.0 1.0])
+    end
+
+    function NativeTransform(M::Matrix{Float64})
+        new(M)
+    end
+end
+
+
+function combine(a::NativeTransform, b::NativeTransform)
+    NativeTransform(a.M * b.M)
+end
 
 
 # A rectangle defining a coordinate system
