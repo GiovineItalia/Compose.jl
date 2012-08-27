@@ -153,3 +153,29 @@ function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
 end
 
 
+type Rectangle <: FormType
+    xy0::Point
+    xy1::Point
+
+    function Rectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
+                       width::MeasureOrNumber, height::MeasureOrNumber)
+        Form(Property(),
+             FormType[new(Point(x0, y0), Point(x0 + width, y0 + height))])
+    end
+
+    function Rectangle()
+        Rectangle(0.0, 0.0, 1.0, 1.0)
+    end
+end
+
+
+function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
+              box::NativeBoundingBox, form::Rectangle)
+    draw(backend, t, unit_box, box, MoveTo(form.xy0))
+    draw(backend, t, unit_box, box, LineTo(Point(form.xy1.x, form.xy0.y)))
+    draw(backend, t, unit_box, box, LineTo(Point(form.xy1.x, form.xy1.y)))
+    draw(backend, t, unit_box, box, LineTo(Point(form.xy0.x, form.xy1.y)))
+    draw(backend, t, unit_box, box, ClosePath())
+    draw(backend, t, unit_box, box, FillStroke())
+end
+

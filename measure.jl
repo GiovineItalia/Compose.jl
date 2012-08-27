@@ -58,6 +58,8 @@ end
 
 *{U}(a::SimpleMeasure{U}, b::Number) = b * a
 
+-{U}(a::SimpleMeasure{U}) = SimpleMeasure{U}(-a.value)
+
 
 function /{U}(a::SimpleMeasure{U}, b::SimpleMeasure{U})
     a.value / b.value
@@ -92,6 +94,14 @@ function +{U, V}(a::SimpleMeasure{U}, b::SimpleMeasure{V})
     c = CompoundMeasure()
     c.values[U] = a.value
     c.values[V] = b.value
+    c
+end
+
+
+function -{U, V}(a::SimpleMeasure{U}, b::SimpleMeasure{V})
+    c = CompoundMeasure()
+    c.values[U] =  a.value
+    c.values[V] = -b.value
     c
 end
 
@@ -219,8 +229,18 @@ type Rotation
         new(0.0, Point(0., 0.))
     end
 
+    function Rotation(theta::Number)
+        Rotation(theta, 0.0, 0.0)
+    end
+
     function Rotation(theta::Number, offset::XYTupleOrPoint)
         new(convert(Float64, theta), convert(Point, offset))
+    end
+
+    function Rotation(theta::Number,
+                      offset_x::MeasureOrNumber,
+                      offset_y::MeasureOrNumber)
+        new(convert(Float64, theta), Point(offset_x, offset_y))
     end
 end
 

@@ -203,6 +203,9 @@ function default_property(img::Image)
 end
 
 
+native_zero{T}(backend::Image{T}) = ImageMeasure{T}(0.0)
+
+
 # PNG conversion to native units (i.e., pixels)
 
 function native_measure(u::Number,

@@ -75,12 +75,16 @@ end
 
 
 function native_measure(u::CompoundMeasure,
+                        t::NativeTransform,
                         unit_box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
-
-    conv{U}(v) = native_measure(SimpleMeasure{U}(v), parent_box, backend)
-    sum([conv{U}(value) for (U, value) in u.values])
+    v = native_zero(backend)
+    for (U, value) in u.values
+        v += native_measure(SimpleMeasure{U}(value), t, unit_box,
+                            parent_box, backend)
+    end
+    v
 end
 
 
@@ -90,16 +94,16 @@ function native_measure(point::Point,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
 
-    # Fuck, we need to convert from f
-
-    x = native_measure(point.x, t, unit_box, parent_box, backend)
-    y = native_measure(point.y, t, unit_box, parent_box, backend)
+    x = parent_box.x0 + native_measure(point.x, t, unit_box,
+                                       parent_box, backend)
+    y = parent_box.y0 + native_measure(point.y, t, unit_box,
+                                       parent_box, backend)
 
     xy = [convert(Float64, x), convert(Float64, y), 1.0]
     xyt = t.M * xy
 
-    Point(parent_box.x0 + convert(typeof(x), xyt[1]),
-          parent_box.y0 + convert(typeof(y), xyt[2]))
+    Point(convert(typeof(x), xyt[1]),
+          convert(typeof(y), xyt[2]))
 end
 
 
@@ -125,10 +129,12 @@ function native_measure(box::BoundingBox,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
     NativeBoundingBox(
-          parent_box.x0 + native_measure(box.x0, unit_box, parent_box, backend),
-          parent_box.y0 + native_measure(box.y0, unit_box, parent_box, backend),
-          native_measure(box.width,  unit_box, parent_box, backend),
-          native_measure(box.height, unit_box, parent_box, backend))
+          parent_box.x0 + native_measure(box.x0, t, unit_box,
+                                         parent_box, backend),
+          parent_box.y0 + native_measure(box.y0, t, unit_box,
+                                         parent_box, backend),
+          native_measure(box.width,  t, unit_box, parent_box, backend),
+          native_measure(box.height, t, unit_box, parent_box, backend))
 end
 
 

@@ -24,7 +24,7 @@ compose!(a::Canvas, b::Form)     = (compose!(a.form, b) ; a)
 # Apples to bushels
 
 typealias ComposeType Union(Property, Form, Canvas)
-typealias ComposeExpr Union(ComposeType, Vector, Tuple)
+typealias ComposeExpr Union(ComposeType, Vector, Tuple, Nothing)
 
 
 function compose!(a::ComposeType, x::ComposeType, ys::ComposeExpr...)
@@ -62,8 +62,21 @@ function compose!(xs::Vector, ys::ComposeExpr...)
 end
 
 
+function compose!(a::ComposeType, b::Nothing)
+    a
+end
+
+
 # Non-destructive compose
 
 # TODO
+
+
+# Helpful functions outside the Canvas/Form/Property/compose! formalism.
+
+function pad!(canvas::Canvas, u::MeasureOrNumber)
+    u = size_measure(u)
+    compose!(Canvas(u, u, 1w - 2u, 1h - 2u), canvas)
+end
 
 

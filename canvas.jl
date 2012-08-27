@@ -7,6 +7,8 @@ require("property.jl")
 
 
 type Units
+    # TODO: using a bounding box implies we can use any sort of units, when in
+    # fact the box used here should not have units associated with it.
     box::BoundingBox
 
     function Units(width::MeasureOrNumber,
@@ -86,8 +88,8 @@ function draw(backend::Backend, root_canvas::Canvas)
         box = native_measure(ctx.canvas.box, ctx.t, ctx.unit_box,
                              ctx.parent_box, backend)
         rot = native_measure(ctx.canvas.rot, ctx.t, ctx.unit_box,
-                             ctx.parent_box, backend)
-        t = combine(ctx.t, rot)
+                             box, backend)
+        t = combine(rot, ctx.t)
 
         property = isempty(ctx.canvas.property) ?
                 ctx.parent_property : copy(ctx.parent_property)
