@@ -1,26 +1,31 @@
 
 # Compose!
 
-Compose is a vector graphics library for Julia, with just three types and one
-function (called `compose!`, oddly enough).
+Compose is a (experimental, work-in-progress) vector graphics library for Julia,
+with just three types and one function called, oddly enough, `compose!`.  Don't
+worry though, you rarely have to call the one function because graphics in
+Compose are specified using a vaguely Lisp-like syntax.
 
 But enough chatter, here's how to draw a badass Sierpinski triangle you can use
 to impress girls.
 
+    ```julia
+    load("compose.jl")
+
     function sierpinski(n)
-        if n == 0; return Polygon((2, 1), (0, 1), (1, 0)); end
+        if n == 0; return Polygon((1, 1), (0, 1), (1/2, 0)); end
 
         t = sierpinski(n - 1)
-        compose!(Canvas(),
-                (Canvas(1, 0, 2, 1), t),
-                (Canvas(0, 1, 2, 1), t),
-                (Canvas(2, 1, 2, 1), t))
+        {Canvas(),
+          {Canvas(1/4,   0, 1/2, 1/2), t},
+          {Canvas(  0, 1/2, 1/2, 1/2), t},
+          {Canvas(1/2, 1/2, 1/2, 1/2), t}}
     end
-
 
     @upon SVG("sierpinski.svg", 7inch, 7(sqrt(3)/2)inch) begin
-        draw(compose!(sierpinski(10), Fill(nothing), LineWidth(0.1mm)))  
+        draw({sierpinski(7), Fill(nothing), LineWidth(0.05mm)})
     end
+    ```
 
 
 TODO: sierpinski svg
@@ -29,6 +34,9 @@ Sweet, huh?
 
 
 ## Principles
+
+That example was probably incoherent, but hopefully intruiging or bewildering
+enough to propel you through a bit of exposition.
 
 Unlike most vector graphics libraries, Compose is thoroughly declarative.
 Graphics are specified, or composed, without the need to give a specific
