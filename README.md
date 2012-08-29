@@ -9,7 +9,7 @@ Compose are specified using a vaguely Lisp-like syntax.
 But enough chatter, here's how to draw a badass Sierpinski triangle you can use
 to impress girls.
 
-![Sierpinski](https://github.com/dcjones/compose.jl/raw/example-images/sierpinski.svg)
+![Sierpinski](http://dcjones.github.com/compose.jl/sierpinski.svg)
 
 
 ```julia
@@ -40,12 +40,11 @@ enough to propel you through a bit of exposition.
 
 Unlike most vector graphics libraries, Compose is thoroughly declarative.
 Graphics are specified, or composed, without the need to give a specific
-sequence of drawing operations. This 
-
-The graphic consists of combinations of objects of three types: `Canvas`,
-`Form`, and `Property`. A canvas defines a particular region of the graphic, a
+sequence of drawing operations.  The graphic consists of combinations of objects
+of three types: `Canvas`, `Form`, and `Property`. A canvas defines a particular
+rectangular region of a graphic and a coordinate system within that rectangle, a
 form is something drawn on the image (e.g., lines, rectangles, circles), and a
-property modifies how forms are drawn (e.g. color, line thickness).
+property modifies how forms are drawn (e.g.  color, line thickness).
 
 These types can be composed with the `compose!` function (the `!`, in addition
 to being an expression of the overwhelming euphoria one feels when using this
@@ -55,53 +54,117 @@ and sticks the second argument onto the first, then returns the (modified) first
 argument. What exactly "sticks onto" means depends on the types involved. In
 typical Julian fashion, multiple dispatch plays a big role.
 
-A property may be composed with another property, producing a property that
-consists of both. So `p = compose(Fill("red"), Stroke("green"))` makes a
-property that changes both the fill and stroke color.
+The laws of composition are as follows:
 
-Here is a handy chart to help you remember the composition rules.
+1. A property may be composed with another property, forming the union of the
+two. E.g. `compose(Fill("red"), Stroke("green"))` sets the fill and stroke
+color.
 
-TODO
+2. A form may be composed with a form, forming the union of the two. E.g.
+`compose(Lines((0,0), (1,1)), Lines((0,1), (1,0)))` is a form with two lines.
 
-## Fancy Compositions
+3. A form may be composed with a property, modifying how that form is drawn.
 
-Compose provides some other forms of `compose!` as syntactic short cuts that
-expand into a series of calls to the simple form.
+4. A canvas may be composed with a form, placing the form in the canvas.
+E.g. `compose(Canvas(), Rectangle())` places a rectangle in the canvas.
 
-### Chained Compositions
+5. A canvas may be composed with another canvas, placing the latter in the
+former.
 
-Suppose you have a canvas `c` onto which you want to compose a number of forms
-`f`, `g`, `h`. No problem, dude! Just use the variadic version:
+6. A canvas may be composed with a property, applying that property to every
+form contained in the canvas.
 
-    compose!(c, f, g, h)
-
-This is equivalent to
-
-    compose!(compose!(compose!(c, f), g), h)
+That is the complete semantics of the system. The rest is just syntactic
+conveniences.
 
 
-### Compositions as S-Expressions
+## Compose as an S-Expression Evaluator
 
-Generating a graphic in Compose consists of a series of compositions, just as
-evaluating a Lisp program consists of a series of function applications. The
-semantic simplicity in both systems allows for a simple syntax: S-expressions.
+Calling `compose!(a,b)` over and over gets tiring, but since all drawing
+consists of calls to `compose!`, we can just make them all implicit. To do this,
+we used a Lisp-style syntax.
 
-The third form of `compose!` is a simple S-expression parser. It takes a tuple
-or vector of graphics elements, and repeatedly calls `compose!` to 
+We allow `compose!` to be called on a sequence, with the following (recursive)
+rule:
 
-In our first example, this allowed us to replace
+```julia
+compose!(a, b, c, ...) <=> compose!(compose!(a, b), c, ...)
+```
 
-        compose!(Canvas(),
-                compose!(Canvas(1, 0, 2, 1), t),
-                compose!(Canvas(0, 1, 2, 1), t),
-                compose!(Canvas(2, 1, 2, 1), t))
+If we want to place two form `a` and `b` in a canvas `c`, we can now just write:
 
-With just
+```julia
+compose!(c, a, b)
+```
 
-        compose!(Canvas(),
-                (Canvas(1, 0, 2, 1), t),
-                (Canvas(0, 1, 2, 1), t),
-                (Canvas(2, 1, 2, 1), t))
+We can take this one step further and embed sub-expressions. So, if we want to
+place `a` and `b` in `c`, then place `c` in another canvas `d`, we can do this:
 
-Grouped elements are implicitly composed.
+```julia
+compose!(d, {c, a, b})
+```
+
+Recall, `{}` gives a untyped array in Julia. With this, the `compose!` function
+becomes so versatile that it puts itself out of job: you basically never have to
+call it explicitly. Just build up a graphic as nested vectors then call draw on
+it.
+
+
+## Backend
+
+Compose can use multiple backends. Currently only Cairo is supported, producing
+SVG, Postscript, PDF, and PNG images.
+
+TODO: Write this section. (i.e., explain `draw` and `@upon`).
+
+## Units
+
+Compose has a sophisticated notion of units.
+
+TODO: Write this section.
+
+
+## More Examples
+
+### Golden Rectangle
+
+![Sierpinski](http://dcjones.github.com/compose.jl/golden_rect.svg)
+
+```julia
+load("compose.jl")
+
+const phi = (1 + sqrt(5)) / 2
+
+function golden_rect(n::Int)
+    if n == 0; return nothing; end
+    {Canvas(),
+      {Rectangle(), Fill(LCHab(90, 80, 70 - 15n))},
+      {Canvas(0, -1/phi, 1h, 1/phi, Rotation(pi/2, 0, 1)),
+         golden_rect(n - 1)}}
+end
+
+@upon SVG("golden_rect.svg", phi * 3inch, 3inch) begin
+    draw(pad!({golden_rect(10), Fill(nothing),
+               Stroke("white"), LineWidth(0.2mm)}, 1mm))
+end
+```
+
+## Influences
+
+Compose is indended as a futuristic version of the R library grid, and so takes
+a few ideas from grid. The Compose canvas is roughly equivalent to a viewport in
+grid, for example. The Haskell library Diagrams was another starting point with
+many admirable notions I hope to steal.
+
+
+## Future Work
+
+Currently this library is minimally useful. Some things I will get to sooner or
+later:
+
+* Drawing text.
+* A custom SVG backend to make scripting and animation possible.
+* I'd like to perform some sort of unit and/or image size inference. With such a
+  general notion of units, this is pretty tricky.
+
 
