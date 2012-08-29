@@ -9,7 +9,7 @@ Compose are specified using a vaguely Lisp-like syntax.
 But enough chatter, here's how to draw a badass Sierpinski triangle you can use
 to impress girls.
 
-:![Sierpinski](https://github.com/dcjones/compose.jl/raw/example-images/sierpinski.svg):
+![Sierpinski](https://github.com/dcjones/compose.jl/raw/example-images/sierpinski.svg)
 
 
 ```julia
