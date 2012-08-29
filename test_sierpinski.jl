@@ -12,7 +12,7 @@ function sierpinski(n)
       {Canvas(1/2, 1/2, 1/2, 1/2), t}}
 end
 
-@upon SVG("sierpinski.svg", 7inch, 7(sqrt(3)/2)inch) begin
-    draw({sierpinski(7), Fill(nothing), LineWidth(0.05mm)})
+@upon SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch) begin
+    draw({sierpinski(6), LineWidth(0.1mm)})
 end
 
