@@ -252,24 +252,24 @@ end
 
 # Drawing
 
-function draw(img::Image, op::MoveTo)
+function move_to(img::Image, point::Point)
     ccall(dlsym(libcairo, :cairo_move_to), Void, (Ptr{Void}, Float64, Float64),
-          img.ctx, op.point.x.value, op.point.y.value)
+          img.ctx, point.x.value, point.y.value)
 end
 
 
-function draw(img::Image, op::LineTo)
+function line_to(img::Image, point::Point)
     ccall(dlsym(libcairo, :cairo_line_to), Void, (Ptr{Void}, Float64, Float64),
-          img.ctx, op.point.x.value, op.point.y.value)
+          img.ctx, point.x.value, point.y.value)
 end
 
 
-function draw(img::Image, op::ClosePath)
+function close_path(img::Image)
     ccall(dlsym(libcairo, :cairo_close_path), Void, (Ptr{Void},), img.ctx)
 end
 
 
-function draw(img::Image, op::FillStroke)
+function fillstroke(img::Image)
     if img.fill != nothing
         rgb = convert(RGB, img.fill)
         ccall(dlsym(libcairo, :cairo_set_source_rgb), Void,
@@ -293,6 +293,39 @@ function draw(img::Image, op::FillStroke)
 
         ccall(dlsym(libcairo, :cairo_stroke), Void, (Ptr{Void},), img.ctx)
     end
+end
+
+
+function draw(img::Image, form::LinesForm)
+    if isempty(form.points); return; end
+
+    move_to(img, form.points[1])
+    for point in form.points[2:]
+        line_to(img, point)
+    end
+    fillstroke(img)
+end
+
+
+function draw(img::Image, form::PolygonForm)
+    if isempty(form.points); return; end
+
+    move_to(img, form.points[1])
+    for point in form.points[2:]
+        line_to(img, point)
+    end
+    close_path(img)
+    fillstroke(img)
+end
+
+
+function draw(img::Image, form::RectangleForm)
+    move_to(img, form.xy0)
+    line_to(img, Point(form.xy1.x, form.xy0.y))
+    line_to(img, form.xy1)
+    line_to(img, Point(form.xy0.x, form.xy1.y))
+    close_path(img)
+    fillstroke(img)
 end
 
 
