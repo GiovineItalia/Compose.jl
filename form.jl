@@ -89,9 +89,8 @@ end
 
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, form::LinesForm)
-    native_form = LinesForm()
-    native_form.points = [native_measure(point, t, unit_box, box, backend)
-                          for point in form.points]
+    native_form = LinesForm([native_measure(point, t, unit_box, box, backend)
+                             for point in form.points])
     draw(backend, native_form)
 end
 
@@ -109,9 +108,8 @@ end
 
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, form::PolygonForm)
-    native_form = PolygonForm()
-    native_form.points = [native_measure(point, t, unit_box, box, backend)
-                          for point in form.points]
+    native_form = PolygonForm([native_measure(point, t, unit_box, box, backend)
+                               for point in form.points])
     draw(backend, native_form)
 end
 
