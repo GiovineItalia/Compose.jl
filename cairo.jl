@@ -296,6 +296,38 @@ function fillstroke(img::Image)
 end
 
 
+function save_state(img::Image)
+    ccall(dlsym(libcairo, :cairo_save), Void, (Ptr{Void},), img.ctx)
+end
+
+
+function restore_state(img::Image)
+    ccall(dlsym(libcairo, :cairo_restore), Void, (Ptr{Void},), img.ctx)
+end
+
+
+function arc(img::Image, x::Float64, y::Float64,
+             radius::Float64, angle1::Float64, angle2::Float64)
+    ccall(dlsym(libcairo, :cairo_arc), Void,
+          (Ptr{Void}, Float64, Float64, Float64, Float64, Float64),
+          img.ctx, x, y, radius, angle1, angle2)
+end
+
+
+function translate(img::Image, tx::Float64, ty::Float64)
+    ccall(dlsym(libcairo, :cairo_translate), Void,
+          (Ptr{Void}, Float64, Float64),
+          img.ctx, tx, ty)
+end
+
+
+function scale(img::Image, sx::Float64, sy::Float64)
+    ccall(dlsym(libcairo, :cairo_scale), Void,
+          (Ptr{Void}, Float64, Float64),
+          img.ctx, sx, sy)
+end
+
+
 function draw(img::Image, form::LinesForm)
     if isempty(form.points); return; end
 
@@ -325,6 +357,17 @@ function draw(img::Image, form::RectangleForm)
     line_to(img, form.xy1)
     line_to(img, Point(form.xy0.x, form.xy1.y))
     close_path(img)
+    fillstroke(img)
+end
+
+
+function draw(img::Image, form::EllipseForm)
+    save_state(img)
+    translate(img, form.center.x.value - form.x_radius.value,
+                   form.center.y.value - form.y_radius.value)
+    scale(img, 2form.x_radius.value, 2form.y_radius.value)
+    arc(img, 0.5, 0.5, 0.5, 0.0, 2pi)
+    restore_state(img)
     fillstroke(img)
 end
 

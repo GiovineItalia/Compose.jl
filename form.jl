@@ -134,12 +134,36 @@ function Rectangle()
 end
 
 
-
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, form::RectangleForm)
     native_form = RectangleForm(
         native_measure(form.xy0, t, unit_box, box, backend),
         native_measure(form.xy1, t, unit_box, box, backend))
+    draw(backend, native_form)
+end
+
+
+type EllipseForm <: FormType
+    center::Point
+    x_radius::Measure
+    y_radius::Measure
+end
+
+
+function Ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
+                 x_radius::MeasureOrNumber, y_radius::MeasureOrNumber)
+    Form(Property(),
+         FormType[EllipseForm(Point(x, y),
+                  x_measure(x_radius), y_measure(y_radius))])
+end
+
+
+function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
+              box::NativeBoundingBox, form::EllipseForm)
+    native_form = EllipseForm(
+        native_measure(form.center, t, unit_box, box, backend),
+        native_measure(form.x_radius, t, unit_box, box, backend),
+        native_measure(form.y_radius, t, unit_box, box, backend))
     draw(backend, native_form)
 end
 
