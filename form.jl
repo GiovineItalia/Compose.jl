@@ -34,7 +34,7 @@ function draw(backend::Backend, t::NativeTransform,
               form::Form)
 
     if !isempty(form.property)
-        push_property(backend, cxt.form.property)
+        push_property(backend, form.property)
     end
 
     for specific in form.specifics
