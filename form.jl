@@ -24,56 +24,27 @@ type Form <: FormType
 end
 
 
-# Package a Form with the information needed to draw it.
-type DrawFormContext
-    form::FormType
-    parent_property::Property
-end
+# Ack! We have to do depth first traversal if we want to be able to push and pop properties
+# as intended.
 
 
 # Draw a form and all it contains on a backend within a bounding box.
 function draw(backend::Backend, t::NativeTransform,
               unit_box::BoundingBox, box::NativeBoundingBox,
-              root_property::Property, root_form::Form)
-    Q = Queue()
-    enqueue(Q,
-        DrawFormContext(root_form,
-                        root_property))
+              form::Form)
 
-    while !isempty(Q)
-        ctx = pop(Q)
+    if !isempty(form.property)
+        push_property(backend, cxt.form.property)
+    end
 
-        # if form is not a Form, it is not a container so we can draw in
-        # directly
-        if typeof(ctx.form) != Form
-            draw(backend, t, unit_box, box, ctx.parent_property)
-            draw(backend, t, unit_box, box, ctx.form)
-        else
-            if isempty(ctx.form.property)
-                property = ctx.parent_property
-            else
-                property = copy(ctx.parent_property)
-                append!(property.specifics, ctx.form.property.specifics)
-            end
+    for specific in form.specifics
+        draw(backend, t, unit_box, box, specific)
+    end
 
-            for f in ctx.form.specifics
-                enqueue(Q, DrawFormContext(f, property))
-            end
-        end
+    if !isempty(form.property)
+        pop_property(backend)
     end
 end
-
-
-
-# Specific forms
-
-# Hmmm, it is a bit uglier without DrawOps bceause now we have to convert
-# everything to native coordinates. Back to DrawOps then?
-
-
-
-# Note that the constructors for these types are somewhat peculiar: they return
-# an instance of the type they construct wrapped in a Form.
 
 
 type LinesForm <: FormType
@@ -153,6 +124,11 @@ function Ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
     Form(Property(),
          FormType[EllipseForm(Point(x, y),
                   x_measure(x_radius), y_measure(y_radius))])
+end
+
+
+function Circle(x::MeasureOrNumber, y::MeasureOrNumber, radius::MeasureOrNumber)
+    Ellipse(x, y, radius, radius)
 end
 
 

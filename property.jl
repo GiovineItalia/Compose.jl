@@ -32,23 +32,19 @@ function isempty(a::Property)
 end
 
 
-function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, property::Property)
-    for p in property.specifics
-        draw(backend, t, unit_box, box, p)
-    end
+function native_measure(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
+                        box::NativeBoundingBox, property::Property)
+    native_property = Property()
+    native_property.specifics = [native_measure(backend, t, unit_box, box, p)
+                                 for p in propert.specifics]
+    native_property
 end
 
 
-function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, property::PropertyType)
-    draw(backend, property)
-end
-
-
-# Catchall nop method for applying a property that isn't implemented on a
-# backend.
-function draw(backend::Backend, property::PropertyType)
+# Catchall for properties that don't require unit conversion.
+function native_measure(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
+                        box::NativeBoundingBox, property::PropertyType)
+    property
 end
 
 
@@ -114,8 +110,8 @@ function LineWidthBare(value::MeasureOrNumber)
 end
 
 
-function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, property::LineWidth)
-    draw(backend, LineWidthBare(native_measure(property.value, t, unit_box,
-                                               box, backend)))
+function native_measure(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
+                        box::NativeBoundingBox, property::LineWidth)
+    LineWidthBare(native_measure(property.value, t, unit_box, box, backend))
 end
+

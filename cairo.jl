@@ -93,6 +93,10 @@ function -{T}(u::ImageMeasure{T}, v::ImageMeasure{T})
     ImageMeasure{T}(u.value - v.value)
 end
 
+type ImagePropertyState
+    stroke::ColorOrNothing
+    fill::ColorOrNothing
+end
 
 type Image{B <: ImageBackend} <: Backend
     filename::String
@@ -102,6 +106,7 @@ type Image{B <: ImageBackend} <: Backend
     ctx::Ptr{Void}
     stroke::ColorOrNothing
     fill::ColorOrNothing
+    state_stack::Vector{ImagePropertyState}
 
     function Image(filename::String,
                    width::MeasureOrNumber,
@@ -157,6 +162,7 @@ type Image{B <: ImageBackend} <: Backend
 
         img.stroke = RGB(0., 0., 0.)
         img.fill   = RGB(0., 0., 0.)
+        img.state_stack = Array(ImagePropertyState, 0)
 
         img
     end
@@ -297,11 +303,15 @@ end
 
 
 function save_state(img::Image)
+    push(img.state_stack, ImagePropertyState(img.stroke, img.fill))
     ccall(dlsym(libcairo, :cairo_save), Void, (Ptr{Void},), img.ctx)
 end
 
 
 function restore_state(img::Image)
+    state = pop(img.state_stack)
+    img.stroke = state.stroke
+    img.fill = state.fill
     ccall(dlsym(libcairo, :cairo_restore), Void, (Ptr{Void},), img.ctx)
 end
 
@@ -374,17 +384,31 @@ end
 
 # Applying properties
 
-function draw(img::Image, property::Fill)
-    img.fill = property.value
+
+function push_property(img::Image, p::Property)
+    save_state(img)
+    for specific in p.specifics
+        apply_property(img, specific)
+    end
 end
 
 
-function draw(img::Image, property::Stroke)
-    img.stroke = property.value
+function pop_property(img::Image)
+    restore_state(img)
 end
 
 
-function draw(img::Image, property::LineWidth)
+function apply_property(img::Image, p::Stroke)
+    img.stroke = p.value
+end
+
+
+function apply_property(img::Image, p::Fill)
+    img.fill = p.value
+end
+
+
+function apply_property(img::Image, property::LineWidth)
     ccall(dlsym(libcairo, :cairo_set_line_width),
           Void, (Ptr{Void}, Float64),
           img.ctx, property.value.value)

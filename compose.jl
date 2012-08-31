@@ -73,6 +73,19 @@ function pad!(expr::ComposeExpr, u::MeasureOrNumber)
 end
 
 
+# Evenly partition out a space into an n-by-m grid of canvases, which are
+# returned as a matrix. (Ok, but how can I compose these all onto one matrix?)
+function grid(n::Int, m::Int)
+    cs = Array(Canvas, n, m)
+    for i in 1:n
+        for j in 1:m
+            cs[i,j] = Canvas((i-1)/n, (j-1)/m, 1/n, 1/m)
+        end
+    end
+    cs
+end
+
+
 # Actually drawing things
 
 
@@ -82,41 +95,34 @@ type DrawCanvasContext
     t::NativeTransform
     unit_box::BoundingBox
     parent_box::NativeBoundingBox
-    parent_property::Property
 end
 
 
-# Draw a canvas on a backend
-function draw(backend::Backend, root_canvas::Canvas)
-    Q = Queue()
-    box = root_box(backend)
-    enqueue(Q,
-        DrawCanvasContext(root_canvas,
-                          NativeTransform(),
-                          BoundingBox(),
-                          box,
-                          default_property(backend)))
+function draw(backend::Backend, canvas::Canvas)
+    draw(backend, canvas, NativeTransform(), BoundingBox(), root_box(backend))
+end
 
-    while !isempty(Q)
-        ctx = pop(Q)
-        box = native_measure(ctx.canvas.box, ctx.t, ctx.unit_box,
-                             ctx.parent_box, backend)
-        rot = native_measure(ctx.canvas.rot, ctx.t, ctx.unit_box,
-                             box, backend)
-        t = combine(rot, ctx.t)
 
-        property = isempty(ctx.canvas.property) ?
-                ctx.parent_property : copy(ctx.parent_property)
-        compose!(property, ctx.canvas.property)
+function draw(backend::Backend, canvas::Canvas, parent_t::NativeTransform,
+              unit_box::BoundingBox, parent_box::NativeBoundingBox)
+    box = native_measure(canvas.box, parent_t, unit_box, parent_box, backend)
+    rot = native_measure(canvas.rot, parent_t, unit_box, box, backend)
+    t = combine(rot, parent_t)
 
-        for f in ctx.canvas.form.specifics
-            draw(backend, t, ctx.canvas.unit_box, box, property, f)
-        end
+    if !isempty(canvas.property);
+        push_property(backend, canvas.property)
+    end
 
-        for child in ctx.canvas.children
-            enqueue(Q, DrawCanvasContext(child, t, ctx.canvas.unit_box,
-                                         box, property))
-        end
+    for f in canvas.form.specifics
+        draw(backend, t, canvas.unit_box, box, f)
+    end
+
+    for child in canvas.children
+        draw(backend, child, t, canvas.unit_box, box)
+    end
+
+    if !isempty(canvas.property);
+        pop_property(backend)
     end
 end
 
