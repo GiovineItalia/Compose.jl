@@ -238,8 +238,8 @@ type Rotation
     end
 
     function Rotation(theta::Number,
-                      offset_x::MeasureOrNumber,
-                      offset_y::MeasureOrNumber)
+        offset_x::MeasureOrNumber,
+        offset_y::MeasureOrNumber)
         new(convert(Float64, theta), Point(offset_x, offset_y))
     end
 end
@@ -250,8 +250,8 @@ type NativeTransform
 
     function NativeTransform()
         new([1.0 0.0 0.0
-             0.0 1.0 0.0
-             0.0 0.0 1.0])
+        0.0 1.0 0.0
+        0.0 0.0 1.0])
     end
 
     function NativeTransform(M::Matrix{Float64})
@@ -273,13 +273,13 @@ type BoundingBox
     height::Measure
 
     function BoundingBox(x0::MeasureOrNumber,
-                         y0::MeasureOrNumber,
-                         width::MeasureOrNumber,
-                         height::MeasureOrNumber)
+        y0::MeasureOrNumber,
+        width::MeasureOrNumber,
+        height::MeasureOrNumber)
         new(x_measure(x0),
-            y_measure(y0),
-            x_measure(width),
-            y_measure(height))
+        y_measure(y0),
+        x_measure(width),
+        y_measure(height))
     end
 end
 

@@ -329,6 +329,12 @@ function scale(img::Image, sx::Float64, sy::Float64)
 end
 
 
+function rotate(img::Image, theta::Float64)
+    ccall(dlsym(libcairo, :cairo_rotate), Void,
+          (Ptr{Void}, Float64), img.ctx, theta)
+end
+
+
 function draw(img::Image, form::LinesForm)
     if isempty(form.points); return; end
 
@@ -352,21 +358,21 @@ function draw(img::Image, form::PolygonForm)
 end
 
 
-function draw(img::Image, form::RectangleForm)
-    move_to(img, form.xy0)
-    line_to(img, Point(form.xy1.x, form.xy0.y))
-    line_to(img, form.xy1)
-    line_to(img, Point(form.xy0.x, form.xy1.y))
-    close_path(img)
-    fillstroke(img)
-end
-
-
 function draw(img::Image, form::EllipseForm)
+    cx = form.center.x.value
+    cy = form.center.y.value
+    rx = sqrt((form.x_point.x.value - cx)^2 +
+              (form.x_point.y.value - cy)^2)
+    ry = sqrt((form.y_point.x.value - cx)^2 +
+              (form.y_point.y.value - cy)^2)
+    theta = atan2(form.x_point.y.value - cy,
+                  form.x_point.x.value - cx)
+
     save_state(img)
-    translate(img, form.center.x.value - form.x_radius.value,
-                   form.center.y.value - form.y_radius.value)
-    scale(img, 2form.x_radius.value, 2form.y_radius.value)
+    translate(img, cx, cy)
+    rotate(img, theta)
+    translate(img, -rx, -ry)
+    scale(img, 2rx, 2ry)
     arc(img, 0.5, 0.5, 0.5, 0.0, 2pi)
     restore_state(img)
     fillstroke(img)

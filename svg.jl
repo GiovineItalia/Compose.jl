@@ -161,23 +161,51 @@ end
 minmax(a, b) = a < b ? (a,b) : (b,a)
 
 
-function draw(img::SVG, form::RectangleForm)
-    indent(img)
-    @printf(img.f,
-            "<path d=\"M %s %s L %s %s %s %s %s %s z\" />\n",
-            fmt_float(form.xy0.x.value),
-            fmt_float(form.xy0.y.value),
-            fmt_float(form.xy1.x.value),
-            fmt_float(form.xy0.y.value),
-            fmt_float(form.xy1.x.value),
-            fmt_float(form.xy1.y.value),
-            fmt_float(form.xy0.x.value),
-            fmt_float(form.xy1.y.value))
-end
+#function draw(img::SVG, form::RectangleForm)
+    #indent(img)
+    #@printf(img.f,
+            #"<path d=\"M %s %s L %s %s %s %s %s %s z\" />\n",
+            #fmt_float(form.xy0.x.value),
+            #fmt_float(form.xy0.y.value),
+            #fmt_float(form.xy1.x.value),
+            #fmt_float(form.xy0.y.value),
+            #fmt_float(form.xy1.x.value),
+            #fmt_float(form.xy1.y.value),
+            #fmt_float(form.xy0.x.value),
+            #fmt_float(form.xy1.y.value))
+#end
 
 
 function draw(img::SVG, form::EllipseForm)
-    # Fuck. What do we do about transformations?
+    cx = form.center.x.value
+    cy = form.center.y.value
+    rx = sqrt((form.x_point.x.value - cx)^2 +
+              (form.x_point.y.value - cy)^2)
+    ry = sqrt((form.y_point.x.value - cx)^2 +
+              (form.y_point.y.value - cy)^2)
+    theta = radians2degrees(atan2(form.x_point.y.value - cy,
+                                  form.x_point.x.value - cx))
+
+    indent(img)
+    eps = 1e-6
+
+    if abs(rx - ry) < eps
+        @printf(img.f, "<circle cx=\"%s\" cy=\"%s\" r=\"%s\" />\n",
+                fmt_float(cx), fmt_float(cy), fmt_float(rx))
+    else
+        @printf(img.f, "<ellipse cx=\"%s\" cy=\"%s\" rx=\"%s\" ry=\"%s\"",
+                fmt_float(cx), fmt_float(cy),
+                fmt_float(rx), fmt_float(ry))
+        
+        if abs(theta) >= eps
+            @printf(img.f, " transform=\"rotate(%s %s %s)\"",
+                    fmt_float(theta),
+                    fmt_float(cx),
+                    fmt_float(cy))
+        end
+
+        write(img.f, " />\n")
+    end
 end
 
 

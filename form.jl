@@ -85,16 +85,12 @@ function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
 end
 
 
-type RectangleForm <: FormType
-    xy0::Point
-    xy1::Point
-end
-
-
 function Rectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
                    width::MeasureOrNumber, height::MeasureOrNumber)
-    Form(Property(),
-         FormType[RectangleForm(Point(x0, y0), Point(x0 + width, y0 + height))])
+
+    xy0 = Point(x0, y0)
+    xy1 = Point(x0 + width, y0 + height)
+    Polygon(xy0, Point(xy1.x, xy0.y), xy1, Point(xy0.x, xy1.y))
 end
 
 
@@ -103,27 +99,21 @@ function Rectangle()
 end
 
 
-function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::RectangleForm)
-    native_form = RectangleForm(
-        native_measure(form.xy0, t, unit_box, box, backend),
-        native_measure(form.xy1, t, unit_box, box, backend))
-    draw(backend, native_form)
-end
-
-
 type EllipseForm <: FormType
     center::Point
-    x_radius::Measure
-    y_radius::Measure
+    x_point::Point
+    y_point::Point
 end
 
 
 function Ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
                  x_radius::MeasureOrNumber, y_radius::MeasureOrNumber)
+    x = x_measure(x)
+    y = y_measure(y)
     Form(Property(),
          FormType[EllipseForm(Point(x, y),
-                  x_measure(x_radius), y_measure(y_radius))])
+                              Point(x + x_measure(x_radius), y),
+                              Point(x, y + y_measure(y_radius)))])
 end
 
 
@@ -136,8 +126,8 @@ function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, form::EllipseForm)
     native_form = EllipseForm(
         native_measure(form.center, t, unit_box, box, backend),
-        native_measure(form.x_radius, t, unit_box, box, backend),
-        native_measure(form.y_radius, t, unit_box, box, backend))
+        native_measure(form.x_point, t, unit_box, box, backend),
+        native_measure(form.y_point, t, unit_box, box, backend))
     draw(backend, native_form)
 end
 
