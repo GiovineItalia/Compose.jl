@@ -1174,3 +1174,17 @@ end
 
 parse_colour = parse_color
 
+function cssfmt(c::Color)
+    rgb = convert(RGB, c)
+    @sprintf("rgb(%d,%d,%d)",
+             int(round(255 * rgb.r)),
+             int(round(255 * rgb.g)),
+             int(round(255 * rgb.b)))
+end
+
+
+function cssfmt(c::Nothing)
+    "none"
+end
+
+

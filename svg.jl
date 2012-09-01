@@ -24,6 +24,7 @@ type SVG <: Backend
     height::SVGMeasure
     f::IOStream
     close_stream::Bool
+    indentation::Int
 
     function SVG(f::IOStream,
                  width::MeasureOrNumber,
@@ -33,6 +34,7 @@ type SVG <: Backend
         img.height = native_measure(height, img)
         img.f = f
         img.close_stream = false
+        img.indentation = 0
 
 
         write(img.f, @sprintf(
@@ -98,6 +100,13 @@ function fmt_float(x::Float64)
 end
 
 
+function indent(img::SVG)
+    for i in 1:img.indentation
+        write(img.f, "  ")
+    end
+end
+
+
 function native_measure(u::SimpleMeasure{PixelUnit},
                         img::SVG)
     native_measure(convert(SimpleMeasure{MillimeterUnit}, u), img)
@@ -117,6 +126,7 @@ function draw(img::SVG, form::LinesForm)
     n = length(form.points)
     if n <= 1; return; end
 
+    indent(img)
     write(img.f, "<path d=\"")
     @printf(img.f, "M%s,%s L",
         fmt_float(form.points[1].x.value),
@@ -134,6 +144,7 @@ function draw(img::SVG, form::PolygonForm)
     n = length(form.points)
     if n <= 1; return; end
 
+    indent(img)
     write(img.f, "<path d=\"")
     @printf(img.f, "M %s %s L",
         fmt_float(form.points[1].x.value),
@@ -151,6 +162,7 @@ minmax(a, b) = a < b ? (a,b) : (b,a)
 
 
 function draw(img::SVG, form::RectangleForm)
+    indent(img)
     @printf(img.f,
             "<path d=\"M %s %s L %s %s %s %s %s %s z\" />\n",
             fmt_float(form.xy0.x.value),
@@ -173,13 +185,39 @@ end
 
 
 function push_property(img::SVG, p::Property)
-    # TODO
+    indent(img)
+    write(img.f, "<g")
+    for specific in p.specifics
+        apply_property(img, specific)
+    end
+    write(img.f, ">\n")
+    img.indentation += 1
 end
 
 
 function pop_property(img::SVG)
-    # TODO
+    img.indentation -= 1
+    indent(img)
+    write(img.f, "</g>\n")
 end
 
 
+# Nop catchall
+function apply_property(img::SVG, p::PropertyType)
+end
+
+
+function apply_property(img::SVG, p::Stroke)
+    @printf(img.f, " stroke=\"%s\"", cssfmt(p.value))
+end
+
+
+function apply_property(img::SVG, p::Fill)
+    @printf(img.f, " fill=\"%s\"", cssfmt(p.value))
+end
+
+
+function apply_property(img::SVG, p::LineWidth)
+    @printf(img.f, " stroke-width=\"%s\"", fmt_float(p.value.value))
+end
 

@@ -13,6 +13,6 @@ function sierpinski(n)
 end
 
 @upon SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch) begin
-    draw({sierpinski(6), LineWidth(0.1mm)})
+    draw({sierpinski(10), LineWidth(0.1mm)})
 end
 
