@@ -185,7 +185,6 @@ end
 
 
 typealias PNG Image{PNGBackend}
-typealias SVG Image{SVGBackend}
 typealias PDF Image{PDFBackend}
 typealias PS  Image{PSBackend}
 
@@ -198,14 +197,6 @@ function root_box{B}(img::Image{B})
         ImageMeasure{B}(0.),
         img.width,
         img.height)
-end
-
-
-function default_property(img::Image)
-    Property(PropertyType[
-        StrokeBare(RGB(0.,0.,0.)),
-        FillBare(RGB(0.,0.,0.)),
-        LineWidthBare(0.5mm)])
 end
 
 

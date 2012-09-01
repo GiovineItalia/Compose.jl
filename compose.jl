@@ -5,6 +5,7 @@ require("canvas.jl")
 require("form.jl")
 require("property.jl")
 require("cairo.jl")
+require("svg.jl")
 
 
 # Apples to apples
