@@ -125,24 +125,22 @@ type ID <: PropertyType
 end
 
 
-type OnClick <: PropertyType
-    value::String
+# Events
 
-    function OnClick(value::String)
-        Property(PropertyType[new(value)])
+const events = (:OnActivate, :OnClick, :OnFocusIn, :OnFocusOut,
+                :OnLoad, :OnMouseDown, :OnMouseMove, :OnMouseOut,
+                :OnMouseOver, :OnMouseUp)
+
+for event in events
+    @eval begin
+        type ($event) <: PropertyType
+            value::String
+
+            function ($event)(value::String)
+                Property(PropertyType[new(value)])
+            end
+        end
     end
 end
-
-
-type OnMouseOver <: PropertyType
-    value::String
-
-    function OnMouseOver(value::String)
-        Property(PropertyType[new(value)])
-    end
-end
-
-
-
 
 

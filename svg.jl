@@ -249,17 +249,27 @@ function apply_property(img::SVG, p::ID)
     @printf(img.f, " id=\"%s\"", escape_string(p.value))
 end
 
-
-function apply_property(img::SVG, p::OnClick)
-    fn_name = add_script(img, p.value, object_id(p.value))
-    @printf(img.f, " onclick=\"%s(evt)\"", fn_name)
+for event in events
+    prop_name = lowercase(string(event))
+    @eval begin
+        function apply_property(img::SVG, p::($event))
+            fn_name = add_script(img, p.value, object_id(p.value))
+            @printf(img.f, " %s=\"%s(evt)\"", ($prop_name), fn_name)
+        end
+    end
 end
 
 
-function apply_property(img::SVG, p::OnMouseOver)
-    fn_name = add_script(img, p.value, object_id(p.value))
-    @printf(img.f, " onmouseover=\"%s(evt)\"", fn_name)
-end
+#function apply_property(img::SVG, p::OnClick)
+    #fn_name = add_script(img, p.value, object_id(p.value))
+    #@printf(img.f, " onclick=\"%s(evt)\"", fn_name)
+#end
+
+
+#function apply_property(img::SVG, p::OnMouseOver)
+    #fn_name = add_script(img, p.value, object_id(p.value))
+    #@printf(img.f, " onmouseover=\"%s(evt)\"", fn_name)
+#end
 
 
 # Add some javascript. Return the unique name generated for the wrapper function
@@ -271,4 +281,6 @@ function add_script(img::SVG, js::String, obj_id::Uint64)
     end
     fn_name
 end
+
+
 
