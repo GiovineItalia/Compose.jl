@@ -151,6 +151,8 @@ end
 
 ### Pointless Interactivity
 
+(This example doesn't work within the README on github. Click it!)
+
 ![Pointless Interactivity](http://dcjones.github.com/compose/interact.svg)
 
 ```julia
