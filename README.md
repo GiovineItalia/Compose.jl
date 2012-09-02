@@ -149,6 +149,37 @@ end
 end
 ```
 
+### Pointless Interactivity
+
+![Pointless Interactivity](http://dcjones.github.com/compose/interact.svg)
+
+```julia
+
+load("compose.jl")
+
+choose_color_js =
+"
+colors = $(json([LCHab(80, 70, h) for h in 0:15:360]));
+evt.target.setAttribute(\"fill\", colors[Math.floor(colors.length * Math.random())]);
+"
+
+n = 30
+m = 30
+cs = grid(n, m)
+for i in 1:n
+    for j in 1:m
+        compose!(cs[i,j], {Polygon((1,0), (1,1), (0,1)), 
+                 OnMouseOver(choose_color_js),
+                 Fill("grey70")})
+    end
+end
+
+@upon SVG("interact.svg", 4inch, 4inch) begin
+    draw(pad!({Canvas(), cs..., Stroke(nothing)}, 1mm))
+end
+
+```
+
 ## Influences
 
 Compose is indended as a futuristic version of the R library grid, and so takes

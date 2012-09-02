@@ -153,7 +153,7 @@ end
 
 # RGB Functions
 # -------------
-function hex(c::RGB)
+function hex(c::Color)
     @sprintf("#%02X%02X%02X",
              int(lerp(c.r, 0.0, 255.0)),
              int(lerp(c.g, 0.0, 255.0)),
@@ -1174,12 +1174,9 @@ end
 
 parse_colour = parse_color
 
+
 function cssfmt(c::Color)
-    rgb = convert(RGB, c)
-    @sprintf("rgb(%d,%d,%d)",
-             int(round(255 * rgb.r)),
-             int(round(255 * rgb.g)),
-             int(round(255 * rgb.b)))
+    hex(convert(RGB, c))
 end
 
 
@@ -1187,8 +1184,9 @@ function cssfmt(c::Nothing)
     "none"
 end
 
+
 function json(c::Color)
-    quote_string(hex(convert(RGB, c)))
+    quote_string(cssfmt(c))
 end
 
 
