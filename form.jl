@@ -1,7 +1,6 @@
 # Form: a thing that is visible once drawn.
 
 require("backend.jl")
-require("queue.jl")
 require("property.jl")
 require("measure.jl")
 
@@ -21,11 +20,16 @@ type Form <: FormType
     function Form(property::Property, specifics::Vector{FormType})
         new(property, specifics)
     end
+
+    # copy constructor
+    function Form(form::Form)
+        new(copy(form.property),
+            copy(form.specifics))
+    end
 end
 
 
-# Ack! We have to do depth first traversal if we want to be able to push and pop properties
-# as intended.
+copy(form::Form) = Form(form)
 
 
 # Draw a form and all it contains on a backend within a bounding box.
@@ -49,8 +53,9 @@ end
 
 type LinesForm <: FormType
     points::Vector{Point}
-
 end
+
+copy(form::LinesForm) = LinesForm(copy(form.points))
 
 function Lines(points::XYTupleOrPoint...)
     Form(Property(),
@@ -70,6 +75,8 @@ type PolygonForm <: FormType
     points::Vector{Point}
 
 end
+
+copy(form::PolygonForm) = PolygonForm(copy(form.points))
 
 function Polygon(points::XYTupleOrPoint...)
     Form(Property(),
@@ -93,7 +100,6 @@ function Rectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
     Polygon(xy0, Point(xy1.x, xy0.y), xy1, Point(xy0.x, xy1.y))
 end
 
-
 function Rectangle()
     Rectangle(0.0, 0.0, 1.0, 1.0)
 end
@@ -103,6 +109,13 @@ type EllipseForm <: FormType
     center::Point
     x_point::Point
     y_point::Point
+end
+
+
+function copy(form::EllipseForm)
+    EllipseForm(copy(form.center),
+                copy(form.x_point),
+                copy(form.y_point))
 end
 
 

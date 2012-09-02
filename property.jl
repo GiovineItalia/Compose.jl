@@ -59,8 +59,14 @@ type Fill <: PropertyType
         Property(PropertyType[new(parse_color(value))])
     end
 
+    function Fill(p::Fill)
+        new(copy(p.value))
+    end
+
     Fill() = new()
 end
+
+copy(p::Fill) = Fill(p)
 
 
 function FillBare(value::ColorOrNothing)
@@ -81,8 +87,14 @@ type Stroke <: PropertyType
         Property(PropertyType[new(parse_color(value))])
     end
 
+    function Stroke(p::Stroke)
+        new(copy(p.value))
+    end
+
     Stroke() = new()
 end
+
+copy(p::Stroke) = Stroke(p)
 
 
 function StrokeBare(value::ColorOrNothing)
@@ -99,8 +111,14 @@ type LineWidth <: PropertyType
         Property(PropertyType[new(size_measure(value))])
     end
 
+    function LineWidth(p::LineWidth)
+        new(copy(p.value))
+    end
+
     LineWidth() = new()
 end
+
+copy(p::LineWidth) = LineWidth(p)
 
 
 function LineWidthBare(value::MeasureOrNumber)
@@ -122,7 +140,13 @@ type ID <: PropertyType
     function ID(value::String)
         Property(PropertyType[new(value)])
     end
+
+    function ID(p::ID)
+        new(p.value)
+    end
 end
+
+copy(p::ID) = ID(p)
 
 
 # Events
@@ -139,7 +163,13 @@ for event in events
             function ($event)(value::String)
                 Property(PropertyType[new(value)])
             end
+
+            function ($event)(p::($event))
+                new(p.value)
+            end
         end
+
+        copy(p::($event)) = ($event)(p)
     end
 end
 

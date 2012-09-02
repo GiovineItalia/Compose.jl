@@ -59,5 +59,19 @@ type Canvas
 
         c
     end
+
+    # copy constructor
+    function Canvas(canvas::Canvas)
+        new(copy(canvas.box),
+            copy(canvas.property),
+            copy(canvas.children),
+            copy(canvas.form),
+            copy(canvas.unit_box),
+            copy(canvas.rot))
+    end
 end
+
+
+copy(canvas::Canvas) = Canvas(canvas)
+
 

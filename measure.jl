@@ -36,6 +36,11 @@ type SimpleMeasure{U <: Unit} <: Measure
 end
 
 
+function copy{U}(a::SimpleMeasure{U})
+    SimpleMeasure{U}(a.value)
+end
+
+
 function show{U}(io, a::SimpleMeasure{U})
     print(io, a.value, U)
 end
@@ -198,7 +203,14 @@ type Point
     function Point(x::MeasureOrNumber, y::MeasureOrNumber)
         new(x_measure(x), y_measure(y))
     end
+
+    function Point(point::Point)
+        new(copy(point.x), copy(point.y))
+    end
 end
+
+
+copy(point::Point) = Point(point)
 
 
 # Support specifying points as tuples.
@@ -242,7 +254,16 @@ type Rotation
         offset_y::MeasureOrNumber)
         new(convert(Float64, theta), Point(offset_x, offset_y))
     end
+
+    # copy constructor
+    function Rotation(rot::Rotation)
+        new(copy(rot.theta),
+            copy(rot.offset))
+    end
 end
+
+
+copy(rot::Rotation) = Rotation(rot)
 
 
 type NativeTransform
@@ -281,11 +302,19 @@ type BoundingBox
         x_measure(width),
         y_measure(height))
     end
+
+    # copy-constructor
+    function BoundingBox(box::BoundingBox)
+        new(copy(box.x0), copy(box.y0),
+            copy(box.width), copy(box.height))
+    end
 end
 
-function BoundingBox()
-    BoundingBox(0, 0, 1, 1)
-end
+
+BoundingBox() = BoundingBox(0, 0, 1, 1)
+
+
+copy(box::BoundingBox) = BoundingBox(box)
 
 
 type NativeBoundingBox{M <: NativeMeasure}

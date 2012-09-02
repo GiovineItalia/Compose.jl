@@ -58,8 +58,20 @@ end
 
 # Non-destructive compose
 
-# TODO
+function compose(a::ComposeType, xs::ComposeExpr...)
+    a_copy = copy(a)
+    for x in xs
+        compose!(a_copy, compose(x))
+    end
+    a_copy
+end
 
+
+compose(a::ComposeType) = a
+compose(a::Nothing) = a
+compose(a::Vector) = compose(a...)
+
++(xs::ComposeExpr...) = compose(xs...)
 
 # Helpful functions outside the Canvas/Form/Property/compose! formalism.
 
