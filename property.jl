@@ -134,3 +134,15 @@ type OnClick <: PropertyType
 end
 
 
+type OnMouseOver <: PropertyType
+    value::String
+
+    function OnMouseOver(value::String)
+        Property(PropertyType[new(value)])
+    end
+end
+
+
+
+
+

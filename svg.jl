@@ -5,6 +5,7 @@ require("backend.jl")
 require("measure.jl")
 require("color.jl")
 require("form.jl")
+require("json.jl")
 
 
 # The SVG image we generate are going to use millimeters everywhere.
@@ -250,17 +251,24 @@ end
 
 
 function apply_property(img::SVG, p::OnClick)
-    fn_name = add_script(img, p.value)
+    fn_name = add_script(img, p.value, object_id(p.value))
     @printf(img.f, " onclick=\"%s(evt)\"", fn_name)
+end
+
+
+function apply_property(img::SVG, p::OnMouseOver)
+    fn_name = add_script(img, p.value, object_id(p.value))
+    @printf(img.f, " onmouseover=\"%s(evt)\"", fn_name)
 end
 
 
 # Add some javascript. Return the unique name generated for the wrapper function
 # containing the given code.
-function add_script(img::SVG, js::String)
-    n = length(img.scripts)
-    fn_name = @sprintf("js_chunk_%04d", n + 1)
-    img.scripts[fn_name] = js
+function add_script(img::SVG, js::String, obj_id::Uint64)
+    fn_name = @sprintf("js_chunk_%x", obj_id)
+    if !has(img.scripts, fn_name)
+        img.scripts[fn_name] = replace(js, r"^"m, "  ")
+    end
     fn_name
 end
 

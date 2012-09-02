@@ -1187,4 +1187,8 @@ function cssfmt(c::Nothing)
     "none"
 end
 
+function json(c::Color)
+    quote_string(hex(convert(RGB, c)))
+end
+
 

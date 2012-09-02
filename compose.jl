@@ -77,7 +77,7 @@ end
 # Evenly partition out a space into an n-by-m grid of canvases, which are
 # returned as a matrix. (Ok, but how can I compose these all onto one matrix?)
 function grid(n::Int, m::Int)
-    cs = Array(Canvas, n, m)
+    cs = Array(Any, n, m)
     for i in 1:n
         for j in 1:m
             cs[i,j] = Canvas((i-1)/n, (j-1)/m, 1/n, 1/m)
