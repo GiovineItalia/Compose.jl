@@ -117,9 +117,15 @@ function Ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
 end
 
 
+function Ellipse()
+    Ellipse(1/2, 1/2, 1/2, 1/2)
+end
+
+
 function Circle(x::MeasureOrNumber, y::MeasureOrNumber, radius::MeasureOrNumber)
     Ellipse(x, y, radius, radius)
 end
+
 
 
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,

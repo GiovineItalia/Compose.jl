@@ -115,3 +115,22 @@ function native_measure(backend::Backend, t::NativeTransform, unit_box::Bounding
     LineWidthBare(native_measure(property.value, t, unit_box, box, backend))
 end
 
+
+type ID <: PropertyType
+    value::String
+
+    function ID(value::String)
+        Property(PropertyType[new(value)])
+    end
+end
+
+
+type OnClick <: PropertyType
+    value::String
+
+    function OnClick(value::String)
+        Property(PropertyType[new(value)])
+    end
+end
+
+

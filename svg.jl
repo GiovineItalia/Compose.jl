@@ -25,6 +25,7 @@ type SVG <: Backend
     f::IOStream
     close_stream::Bool
     indentation::Int
+    scripts::Dict{String, String}
 
     function SVG(f::IOStream,
                  width::MeasureOrNumber,
@@ -35,7 +36,7 @@ type SVG <: Backend
         img.f = f
         img.close_stream = false
         img.indentation = 0
-
+        img.scripts = Dict{String, String}()
 
         write(img.f, @sprintf(
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
@@ -57,6 +58,14 @@ end
 
 
 function finish(img::SVG)
+    if length(img.scripts) > 0
+        write(img.f, "<script type=\"application/ecmascript\"><![CDATA[\n")
+        for (fn_name, js) in img.scripts
+            @printf(img.f, "function %s(evt) {\n%s\n}\n\n", fn_name, js)
+        end
+        write(img.f, "]]></script>")
+    end
+
     write(img.f, "</svg>\n")
     if img.close_stream
         close(img.f)
@@ -161,21 +170,6 @@ end
 minmax(a, b) = a < b ? (a,b) : (b,a)
 
 
-#function draw(img::SVG, form::RectangleForm)
-    #indent(img)
-    #@printf(img.f,
-            #"<path d=\"M %s %s L %s %s %s %s %s %s z\" />\n",
-            #fmt_float(form.xy0.x.value),
-            #fmt_float(form.xy0.y.value),
-            #fmt_float(form.xy1.x.value),
-            #fmt_float(form.xy0.y.value),
-            #fmt_float(form.xy1.x.value),
-            #fmt_float(form.xy1.y.value),
-            #fmt_float(form.xy0.x.value),
-            #fmt_float(form.xy1.y.value))
-#end
-
-
 function draw(img::SVG, form::EllipseForm)
     cx = form.center.x.value
     cy = form.center.y.value
@@ -247,5 +241,26 @@ end
 
 function apply_property(img::SVG, p::LineWidth)
     @printf(img.f, " stroke-width=\"%s\"", fmt_float(p.value.value))
+end
+
+
+function apply_property(img::SVG, p::ID)
+    @printf(img.f, " id=\"%s\"", escape_string(p.value))
+end
+
+
+function apply_property(img::SVG, p::OnClick)
+    fn_name = add_script(img, p.value)
+    @printf(img.f, " onclick=\"%s(evt)\"", fn_name)
+end
+
+
+# Add some javascript. Return the unique name generated for the wrapper function
+# containing the given code.
+function add_script(img::SVG, js::String)
+    n = length(img.scripts)
+    fn_name = @sprintf("js_chunk_%04d", n + 1)
+    img.scripts[fn_name] = js
+    fn_name
 end
 
