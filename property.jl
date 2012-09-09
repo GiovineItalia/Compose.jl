@@ -149,6 +149,16 @@ end
 copy(p::ID) = ID(p)
 
 
+type Font <: PropertyType
+    family::String
+
+    Font(family::String) = Property(PropertyType[new(family)])
+    Font(p::Font) = new(p.family)
+end
+
+copy(p::Font) = Font(p)
+
+
 # Events
 
 const events = (:OnActivate, :OnClick, :OnFocusIn, :OnFocusOut,
@@ -172,5 +182,8 @@ for event in events
         copy(p::($event)) = ($event)(p)
     end
 end
+
+
+
 
 

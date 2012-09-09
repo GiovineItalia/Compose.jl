@@ -191,7 +191,7 @@ function draw(img::SVG, form::EllipseForm)
         @printf(img.f, "<ellipse cx=\"%s\" cy=\"%s\" rx=\"%s\" ry=\"%s\"",
                 fmt_float(cx), fmt_float(cy),
                 fmt_float(rx), fmt_float(ry))
-        
+
         if abs(theta) >= eps
             @printf(img.f, " transform=\"rotate(%s %s %s)\"",
                     fmt_float(theta),
@@ -201,6 +201,30 @@ function draw(img::SVG, form::EllipseForm)
 
         write(img.f, " />\n")
     end
+end
+
+
+function draw(img::SVG, form::TextForm)
+    indent(img)
+    @printf(img.f, "<text x=\"%s\" y=\"%s\"",
+            fmt_float(form.pos.x.value),
+            fmt_float(form.pos.y.value))
+
+    if is(form.halign, hcenter)
+        print(img.f, " text-anchor=\"middle\"")
+    elseif is(form.halign, hright)
+        print(img.f, " text-anchor=\"end\"")
+    end
+
+    if is(form.valign, vcenter)
+        print(img.f, " style=\"dominant-baseline:central\"")
+    elseif is(form.valign, vtop)
+        print(img.f, " style=\"dominant-baseline:text-before-edge\"")
+    end
+
+    # TODO: escape special characters
+    @printf(img.f, ">%s</text>\n",
+            form.value)
 end
 
 
@@ -249,6 +273,10 @@ function apply_property(img::SVG, p::ID)
     @printf(img.f, " id=\"%s\"", escape_string(p.value))
 end
 
+function apply_property(img::SVG, p::Font)
+    @printf(img.f, " font-family=\"%s\"", escape_string(p.family))
+end
+
 
 for event in events
     prop_name = lowercase(string(event))
@@ -270,4 +298,5 @@ function add_script(img::SVG, js::String, obj_id::Uint64)
     end
     fn_name
 end
+
 

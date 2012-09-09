@@ -143,7 +143,6 @@ function Circle(x::MeasureOrNumber, y::MeasureOrNumber, radius::MeasureOrNumber)
 end
 
 
-
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, form::EllipseForm)
     native_form = EllipseForm(
@@ -152,5 +151,52 @@ function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
         native_measure(form.y_point, t, unit_box, box, backend))
     draw(backend, native_form)
 end
+
+
+abstract HAlignment
+type HLeft   <: HAlignment end
+type HCenter <: HAlignment end
+type HRight  <: HAlignment end
+
+const hleft   = HLeft()
+const hcenter = HCenter()
+const hright  = HRight()
+
+abstract VAlignment
+type VTop    <: VAlignment end
+type VCenter <: VAlignment end
+type VBottom <: VAlignment end
+
+const vtop    = VTop()
+const vcenter = VCenter()
+const vbottom = VBottom()
+
+type TextForm <: FormType
+    pos::Point
+    value::String
+    halign::HAlignment
+    valign::VAlignment
+end
+
+function Text(x::MeasureOrNumber, y::MeasureOrNumber, value::String,
+              halign::HAlignment, valign::VAlignment)
+    Form(Property(),
+         FormType[TextForm(Point(x_measure(x), y_measure(y)),
+                           value, halign, valign)])
+end
+
+
+function Text(x::MeasureOrNumber, y::MeasureOrNumber, value::String)
+    Text(x, y, value, hleft, hbottom)
+end
+
+
+function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
+              box::NativeBoundingBox, form::TextForm)
+    form = TextForm(native_measure(form.pos, t, unit_box, box, backend),
+                    form.value, form.halign, form.valign)
+    draw(backend, form)
+end
+
 
 
