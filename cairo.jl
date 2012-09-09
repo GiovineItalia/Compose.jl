@@ -69,7 +69,7 @@ abstract PSBackend  <: VectorImageBackend
 
 # Native unit
 type ImageMeasure{T <: ImageBackend} <: NativeMeasure
-    value::Float
+    value::Float64
 end
 
 convert(::Type{Float64}, u::ImageMeasure) = u.value

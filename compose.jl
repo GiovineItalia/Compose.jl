@@ -7,6 +7,12 @@ require("property.jl")
 require("cairo.jl")
 require("svg.jl")
 
+typealias ComposeType Union(Property, Form, Canvas)
+
+# Apples
+
+compose!(a::ComposeType) = a
+
 
 # Apples to apples
 
@@ -24,7 +30,6 @@ compose!(a::Canvas, b::Form)     = (compose!(a.form, b) ; a)
 
 # Apples to bushels
 
-typealias ComposeType Union(Property, Form, Canvas)
 typealias ComposeExpr Union(ComposeType, Vector, Nothing)
 
 function compose!(a::ComposeType, x::ComposeType, ys::ComposeExpr...)

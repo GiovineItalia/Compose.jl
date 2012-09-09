@@ -1138,7 +1138,9 @@ const col_pat_hex1 = r"(#|0x)([[:xdigit:]])([[:xdigit:]])([[:xdigit:]])"
 const col_pat_hex2 = r"(#|0x)([[:xdigit:]]{2})([[:xdigit:]]{2})([[:xdigit:]]{2})"
 const col_pat_rgb  = r"rgb\((\d+),(\d+),(\d+)\)"
 
-function parse_color(desc::String)
+color(c::Color) = c
+
+function color(desc::String)
     local desc_ = replace(desc, " ", "")
 
     local mat = match(col_pat_hex1, desc_)
@@ -1172,7 +1174,7 @@ function parse_color(desc::String)
     return RGB(c[1] / 255., c[2] / 255., c[3] / 255.)
 end
 
-parse_colour = parse_color
+colour = color
 
 
 function cssfmt(c::Color)

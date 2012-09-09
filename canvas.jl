@@ -34,7 +34,7 @@ type Canvas
     rot::Rotation
 
     function Canvas(opts::Union(Units, Rotation)...)
-        Canvas(0.0, 0.0, 1.0, 1.0, opts...)
+        Canvas(0.0w, 0.0h, 1.0w, 1.0h, opts...)
     end
 
     function Canvas(x0::MeasureOrNumber,

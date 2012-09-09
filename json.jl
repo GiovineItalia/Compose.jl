@@ -12,7 +12,7 @@ end
 
 json(x::String)  = quote_string(x)
 json(x::Int)     = string(x)
-json(x::Float)   = string(x)
+json(x::Real)    = string(x)
 json(i::Nothing) = "null"
 json(x::Any)     = quote_string(string(x))
 

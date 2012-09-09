@@ -7,6 +7,9 @@ require("measure.jl")
 # A bare form.
 abstract FormType
 
+
+
+
 # A container for one or more forms with applied properties.
 type Form <: FormType
     property::Property
@@ -101,7 +104,7 @@ function Rectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
 end
 
 function Rectangle()
-    Rectangle(0.0, 0.0, 1.0, 1.0)
+    Rectangle(0.0w, 0.0h, 1.0w, 1.0h)
 end
 
 
@@ -131,7 +134,7 @@ end
 
 
 function Ellipse()
-    Ellipse(1/2, 1/2, 1/2, 1/2)
+    Ellipse(1/2w, 1/2h, 1/2w, 1/2h)
 end
 
 

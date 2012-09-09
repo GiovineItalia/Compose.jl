@@ -56,7 +56,7 @@ type Fill <: PropertyType
     end
 
     function Fill(value::String)
-        Property(PropertyType[new(parse_color(value))])
+        Property(PropertyType[new(color(value))])
     end
 
     function Fill(p::Fill)
@@ -84,7 +84,7 @@ type Stroke <: PropertyType
     end
 
     function Stroke(value::String)
-        Property(PropertyType[new(parse_color(value))])
+        Property(PropertyType[new(color(value))])
     end
 
     function Stroke(p::Stroke)
