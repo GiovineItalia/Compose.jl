@@ -128,7 +128,9 @@ function draw(backend::Backend, canvas::Canvas, parent_t::NativeTransform,
     t = combine(rot, parent_t)
 
     if !isempty(canvas.property);
-        push_property(backend, canvas.property)
+        push_property(backend,
+                      native_measure(canvas.property,
+                                     t, unit_box, box, backend))
     end
 
     for f in canvas.form.specifics

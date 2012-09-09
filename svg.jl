@@ -277,6 +277,10 @@ function apply_property(img::SVG, p::Font)
     @printf(img.f, " font-family=\"%s\"", escape_string(p.family))
 end
 
+function apply_property(img::SVG, p::FontSize)
+    @printf(img.f, " font-size=\"%s\"", fmt_float(p.value.value))
+end
+
 
 for event in events
     prop_name = lowercase(string(event))

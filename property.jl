@@ -32,18 +32,18 @@ function isempty(a::Property)
 end
 
 
-function native_measure(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-                        box::NativeBoundingBox, property::Property)
+function native_measure(property::Property, t::NativeTransform, unit_box::BoundingBox,
+                        box::NativeBoundingBox, backend::Backend)
     native_property = Property()
-    native_property.specifics = [native_measure(backend, t, unit_box, box, p)
-                                 for p in propert.specifics]
+    native_property.specifics = [native_measure(p, t, unit_box, box, backend)
+                                 for p in property.specifics]
     native_property
 end
 
 
 # Catchall for properties that don't require unit conversion.
-function native_measure(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-                        box::NativeBoundingBox, property::PropertyType)
+function native_measure(property::PropertyType, t::NativeTransform, unit_box::BoundingBox,
+                        box::NativeBoundingBox, backend::Backend)
     property
 end
 
@@ -128,8 +128,9 @@ function LineWidthBare(value::MeasureOrNumber)
 end
 
 
-function native_measure(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-                        box::NativeBoundingBox, property::LineWidth)
+function native_measure(property::LineWidth, t::NativeTransform,
+                        unit_box::BoundingBox, box::NativeBoundingBox,
+                        backend::Backend)
     LineWidthBare(native_measure(property.value, t, unit_box, box, backend))
 end
 
@@ -157,6 +158,35 @@ type Font <: PropertyType
 end
 
 copy(p::Font) = Font(p)
+
+
+type FontSize <: PropertyType
+    value::Measure
+
+    function FontSize(value::MeasureOrNumber)
+        Property(PropertyType[new(size_measure(value))])
+    end
+
+    function FontSize(p::FontSize)
+        new(p.value)
+    end
+
+    FontSize() = new()
+end
+
+function FontSizeBare(value::MeasureOrNumber)
+    p = FontSize()
+    p.value = size_measure(value)
+    p
+end
+
+copy(p::FontSize) = FontSize(p)
+
+function native_measure(property::FontSize, t::NativeTransform,
+                        unit_box::BoundingBox, box::NativeBoundingBox,
+                        backend::Backend)
+    FontSizeBare(native_measure(property.value, t, unit_box, box, backend))
+end
 
 
 # Events

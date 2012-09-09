@@ -58,6 +58,15 @@ const CAIRO_STATUS_INVALID_MESH_CONSTRUCTION = int32(35)
 const CAIRO_STATUS_DEVICE_FINISHED           = int32(36)
 const CAIRO_STATUS_LAST_STATUS               = int32(37)
 
+typealias cairo_font_slant_t Int32
+const CAIRO_FONT_SLANT_NORMAL  = int32(0)
+const CAIRO_FONT_SLANT_ITALIC  = int32(1)
+const CAIRO_FONT_SLANT_OBLIQUE = int32(2)
+
+typealias cairo_font_weight_t Int32
+const CAIRO_FONT_WEIGHT_NORMAL = int32(0)
+const CAIRO_FONT_WEIGHT_BOLD   = int32(1)
+
 
 abstract ImageBackend
 abstract PNGBackend <: ImageBackend
@@ -71,6 +80,8 @@ abstract PSBackend  <: VectorImageBackend
 type ImageMeasure{T <: ImageBackend} <: NativeMeasure
     value::Float64
 end
+
+copy{T}(u::ImageMeasure{T}) = ImageMeasure{T}(u.value)
 
 convert(::Type{Float64}, u::ImageMeasure) = u.value
 function convert{T}(::Type{ImageMeasure{T}}, u::Number)
@@ -379,6 +390,37 @@ function draw(img::Image, form::EllipseForm)
 end
 
 
+function draw(img::Image, form::TextForm)
+    pos = copy(form.pos)
+
+    if form.halign != hleft || form.valign != vtop
+        extents = Array(Float64, 6)
+        ccall(dlsym(libcairo, :cairo_text_extents),
+              Void, (Ptr{Void}, Ptr{Uint8}, Ptr{Float64}),
+              img.ctx, bytestring(form.value), extents)
+
+        width, height = extents[3], extents[4]
+
+        if form.halign == hcenter
+            pos.x.value -= width / 2
+        elseif form.halign == hright
+            pos.x.value -= width
+        end
+
+        if form.valign == vcenter
+            pos.y.value -= height / 2
+        elseif form.valign == vtop
+            pos.y.value -= height
+        end
+    end
+
+    move_to(img, pos)
+    ccall(dlsym(libcairo, :cairo_show_text),
+          Void, (Ptr{Void}, Ptr{Uint8}),
+          img.ctx, bytestring(form.value))
+end
+
+
 # Applying properties
 
 
@@ -409,5 +451,20 @@ function apply_property(img::Image, property::LineWidth)
     ccall(dlsym(libcairo, :cairo_set_line_width),
           Void, (Ptr{Void}, Float64),
           img.ctx, property.value.value)
+end
+
+
+function apply_property(img::Image, property::Font)
+    ccall(dlsym(libcairo, :cairo_select_font_face),
+          Void, (Ptr{Void}, Ptr{Uint8},
+                 cairo_font_slant_t, cairo_font_weight_t),
+          img.ctx, bytestring(property.family),
+          CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
+end
+
+
+function apply_property(img::Image, property::FontSize)
+    ccall(dlsym(libcairo, :cairo_set_font_size),
+          Void, (Ptr{Void}, Float64,), img.ctx, property.value.value)
 end
 

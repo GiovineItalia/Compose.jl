@@ -41,7 +41,8 @@ function draw(backend::Backend, t::NativeTransform,
               form::Form)
 
     if !isempty(form.property)
-        push_property(backend, form.property)
+        push_property(backend,
+                      native_measure(form.property, t, unit_box, box, backend))
     end
 
     for specific in form.specifics
