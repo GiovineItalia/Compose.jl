@@ -22,6 +22,10 @@ type Units
                    height::MeasureOrNumber)
         new(BoundingBox(x0, y0, width, height))
     end
+
+    function Units(box::BoundingBox)
+        new(box)
+    end
 end
 
 

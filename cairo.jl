@@ -408,9 +408,9 @@ function draw(img::Image, form::TextForm)
         end
 
         if form.valign == vcenter
-            pos.y.value -= height / 2
+            pos.y.value += height / 2
         elseif form.valign == vtop
-            pos.y.value -= height
+            pos.y.value += height
         end
     end
 

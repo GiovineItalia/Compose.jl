@@ -76,6 +76,12 @@ function /{U}(a::SimpleMeasure{U}, b::Number)
 end
 
 
+=={U}(a::SimpleMeasure{U}, b::SimpleMeasure{U}) = a.value == b.value
+<{U}(a::SimpleMeasure{U}, b::SimpleMeasure{U}) = a.value < b.value
+<={U}(a::SimpleMeasure{U}, b::SimpleMeasure{U}) = a.value <= b.value
+>={U}(a::SimpleMeasure{U}, b::SimpleMeasure{U}) = a.value >= b.value
+
+
 # A sum of one or more measures of different units.
 type CompoundMeasure <: Measure
     values::Dict{Type, Float64}
@@ -89,6 +95,10 @@ type CompoundMeasure <: Measure
     end
 end
 
+
+function copy(a::CompoundMeasure)
+    CompoundMeasure(copy(a.values))
+end
 
 function show(io, a::CompoundMeasure)
     print(io, join([sprint(print, v, k) for (k, v) in a.values], " + "))
@@ -172,6 +182,8 @@ const pt      = inch/72
 const w       = SimpleMeasure{WidthUnit}(1.0)
 const h       = SimpleMeasure{HeightUnit}(1.0)
 const px      = SimpleMeasure{PixelUnit}(1.0)
+const cx      = SimpleMeasure{CanvasXUnit}(1.0)
+const cy      = SimpleMeasure{CanvasYUnit}(1.0)
 
 
 # Conversion between pixels and millimeters. This is tricky business, since we
@@ -338,7 +350,7 @@ size_measure(u::Measure) = u
 size_measure(u::Number) = SimpleMeasure{PixelUnit}(convert(Float64, u))
 
 
-# Text-based units, using pango to compute text-extents on the fly.
+# Estimation of text extents using pango.
 
 const libpango = dlopen("libpangoft2-1.0")
 
@@ -394,6 +406,7 @@ function pango_text_extents(pangolayout::PangoLayout, text::String)
     width, height = (extents[3] / PANGO_SCALE)pt, (extents[4] / PANGO_SCALE)pt
 end
 
+
 function text_extents(font_family::String, pts::Float64, texts::String...)
     layout = PangoLayout()
     pango_set_font(layout, font_family, pts)
@@ -406,6 +419,7 @@ function text_extents(font_family::String, pts::Float64, texts::String...)
     end
     (max_width, max_height)
 end
+
 
 function text_extents(font_family::String, size::SimpleMeasure{MillimeterUnit},
                       texts::String...)
