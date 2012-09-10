@@ -338,3 +338,78 @@ size_measure(u::Measure) = u
 size_measure(u::Number) = SimpleMeasure{PixelUnit}(convert(Float64, u))
 
 
+# Text-based units, using pango to compute text-extents on the fly.
+
+const libpango = dlopen("libpangoft2-1.0")
+
+const PANGO_SCALE = 1024.0
+
+type PangoLayout
+    fm::Ptr{Void}
+    ctx::Ptr{Void}
+    layout::Ptr{Void}
+
+    function PangoLayout()
+        fm = ccall(dlsym(libpango, :pango_ft2_font_map_new),
+                   Ptr{Void}, ())
+
+        ctx = ccall(dlsym(libpango, :pango_font_map_create_context),
+                    Ptr{Void}, (Ptr{Void},), fm)
+
+        layout = ccall(dlsym(libpango, :pango_layout_new),
+                       Ptr{Void}, (Ptr{Void},), ctx)
+
+        new(fm, ctx, layout)
+
+        # TODO: finalizer?
+    end
+end
+
+
+function pango_set_font(pangolayout::PangoLayout, family::String, pts::Number)
+    desc_str = @sprintf("%s %f", family, pts)
+    desc = ccall(dlsym(libpango, :pango_font_description_from_string),
+                 Ptr{Void}, (Ptr{Uint8},), bytestring(desc_str))
+
+    ccall(dlsym(libpango, :pango_layout_set_font_description),
+          Void, (Ptr{Void}, Ptr{Void}), pangolayout.layout, desc)
+
+    ccall(dlsym(libpango, :pango_font_description_free),
+          Void, (Ptr{Void},), desc)
+end
+
+
+function pango_text_extents(pangolayout::PangoLayout, text::String)
+    ccall(dlsym(libpango, :pango_layout_set_text),
+          Void, (Ptr{Void}, Ptr{Uint8}, Int32),
+          pangolayout.layout, bytestring(text), length(text))
+    
+    extents = Array(Int32, 4)
+    ccall(dlsym(libpango, :pango_layout_get_extents),
+          Void, (Ptr{Void}, Ptr{Int32}, Ptr{Int32}),
+          pangolayout.layout, extents, C_NULL)
+
+    extents 
+
+    width, height = (extents[3] / PANGO_SCALE)pt, (extents[4] / PANGO_SCALE)pt
+end
+
+function text_extents(font_family::String, pts::Float64, texts::String...)
+    layout = PangoLayout()
+    pango_set_font(layout, font_family, pts)
+    max_width  = 0mm
+    max_height = 0mm
+    for text in texts
+        (width, height) = pango_text_extents(layout, text)
+        max_width  = max_width.value  < width.value  ? width  : max_width
+        max_height = max_height.value < height.value ? height : max_height
+    end
+    (max_width, max_height)
+end
+
+function text_extents(font_family::String, size::SimpleMeasure{MillimeterUnit},
+                      texts::String...)
+    text_extents(font_family, size/pt, texts...)
+end
+
+
