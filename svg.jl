@@ -184,30 +184,6 @@ function draw(img::SVG, form::EllipseForm)
 end
 
 
-# Convert pango markup to valid SVG tspans.
-#
-# Args:
-#   text: A string that may contain pango markup.
-#
-# Returns:
-#   A string with formatting handled by tspan tags.
-#
-function pango_to_svg(text::String)
-
-
-
-    ccall(dlsym(libpango, :pango_parse_markup),
-          Int32, (Ptr{Uint8}, Int32, Uint32, Ptr{Void},
-                  Ptr{Ptr{Uint8}}, Ptr{Uint32}, Ptr{Void}),
-          bytestring(text), -1, 0, C_NULL, 
-
-
-                  
-
-
-end
-
-
 function draw(img::SVG, form::TextForm)
     indent(img)
     @printf(img.f, "<text x=\"%s\" y=\"%s\"",

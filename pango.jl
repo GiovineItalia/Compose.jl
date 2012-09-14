@@ -67,6 +67,7 @@ function update_pango_attr(attr::PangoAttr, attr_name::Symbol, value)
     elseif attr_name == :PANGO_ATTR_SCALE
         attr.scale = value
     end
+    attr
 end
 
 
@@ -93,7 +94,6 @@ function unpack_pango_attr(ptr::Ptr{Void}, t::Symbol)
     else
         value = nothing
     end
-
 
     (idx[1], idx[2], value)
 end
@@ -175,8 +175,7 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
             (start_idx, end_idx) = attr_it_range()
 
             if c_attr != C_NULL
-                (_, _, value) = unpack_pango_attr(c_attr,
-                                                                attr_type)
+                (_, _, value) = unpack_pango_attr(c_attr, attr_type)
                 update_pango_attr(attr, attr_name, value)
             end
         end
@@ -234,6 +233,11 @@ function pango_to_svg(text::String)
             if !(attr.rise === nothing)
                 @printf(io, " baseline-shift=\"%s\"",
                        fmt_float(((attr.rise / PANGO_SCALE)pt).value))
+            end
+
+            if !(attr.scale === nothing)
+                @printf(io, " font-size=\"%s%%\"",
+                        fmt_float(100.0 * attr.scale))
             end
             write(io, ">")
         end
