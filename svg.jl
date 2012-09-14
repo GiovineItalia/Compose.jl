@@ -6,6 +6,8 @@ require("measure.jl")
 require("color.jl")
 require("form.jl")
 require("json.jl")
+require("pango.jl")
+require("util.jl")
 
 
 # The SVG image we generate are going to use millimeters everywhere.
@@ -86,28 +88,6 @@ end
 
 
 native_zero(::SVG) = SVGMeasure(0.0)
-
-
-# Float64 -> String, trimming trailing zeros when appropriate.
-# This is largely taken from cairo's function _cairo_dtostr.
-function fmt_float(x::Float64)
-    if x < 0.1
-        a = @sprintf("%0.18f", x)
-    else
-        a = @sprintf("%f", x)
-    end
-
-    n = length(a)
-    while a[n] == '0'
-        n -= 1
-    end
-
-    if a[n] == '.'
-        n -= 1
-    end
-
-    a[1:n]
-end
 
 
 function indent(img::SVG)
@@ -204,6 +184,30 @@ function draw(img::SVG, form::EllipseForm)
 end
 
 
+# Convert pango markup to valid SVG tspans.
+#
+# Args:
+#   text: A string that may contain pango markup.
+#
+# Returns:
+#   A string with formatting handled by tspan tags.
+#
+function pango_to_svg(text::String)
+
+
+
+    ccall(dlsym(libpango, :pango_parse_markup),
+          Int32, (Ptr{Uint8}, Int32, Uint32, Ptr{Void},
+                  Ptr{Ptr{Uint8}}, Ptr{Uint32}, Ptr{Void}),
+          bytestring(text), -1, 0, C_NULL, 
+
+
+                  
+
+
+end
+
+
 function draw(img::SVG, form::TextForm)
     indent(img)
     @printf(img.f, "<text x=\"%s\" y=\"%s\"",
@@ -224,7 +228,7 @@ function draw(img::SVG, form::TextForm)
 
     # TODO: escape special characters
     @printf(img.f, ">%s</text>\n",
-            form.value)
+            pango_to_svg(form.value))
 end
 
 

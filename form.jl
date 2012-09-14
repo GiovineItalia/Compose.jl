@@ -8,8 +8,6 @@ require("measure.jl")
 abstract FormType
 
 
-
-
 # A container for one or more forms with applied properties.
 type Form <: FormType
     property::Property
@@ -198,6 +196,5 @@ function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
                     form.value, form.halign, form.valign)
     draw(backend, form)
 end
-
 
 
