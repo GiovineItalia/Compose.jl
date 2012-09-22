@@ -36,19 +36,28 @@ copy(form::Form) = Form(form)
 # Draw a form and all it contains on a backend within a bounding box.
 function draw(backend::Backend, t::NativeTransform,
               unit_box::BoundingBox, box::NativeBoundingBox,
-              form::Form)
+              root_form::Form)
+    S = {root_form}
 
-    if !isempty(form.property)
-        push_property(backend,
-                      native_measure(form.property, t, unit_box, box, backend))
-    end
+    while !isempty(S)
+        form = pop(S)
 
-    for specific in form.specifics
-        draw(backend, t, unit_box, box, specific)
-    end
+        if form === :POP_PROPERTY
+            pop_property(backend)
+        elseif isa(form, Form)
+            if !isempty(form.property)
+                push_property(backend,
+                              native_measure(form.property, t, unit_box,
+                                             box, backend))
+                push(S, :POP_PROPERTY)
+            end
 
-    if !isempty(form.property)
-        pop_property(backend)
+            for specific in form.specifics
+                push(S, specific)
+            end
+        else
+            draw(backend, t, unit_box, box, form)
+        end
     end
 end
 
