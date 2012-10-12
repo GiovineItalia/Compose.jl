@@ -1,219 +1,216 @@
 
-# Property: a thing that changes how things are drawn.
+# Property: a thing that changes how other things are drawn.
 
 require("backend.jl")
 require("color.jl")
 require("measure.jl")
 
-# A bare property.
-abstract PropertyType
+# A property primitive is something can be directly applied.
+abstract PropertyPrimitive
 
-# A container for one or more properties.
-type Property
-    specifics::Vector{PropertyType}
 
-    function Property()
-        new(PropertyType[])
+# The identity element of the Property monoid.
+type EmptyProperty end
+const empty_property = EmptyProperty()
+
+
+# A non-empty sequence of property primitives.
+type PropertySeq
+    primitive::PropertyPrimitive
+    next::Union(EmptyProperty, PropertySeq)
+
+    function PropertySeq(primitive::PropertyPrimitive,
+                         next::Union(EmptyProperty, PropertySeq))
+        new(primitive, next)
     end
 
-    function Property(specifics::Vector{PropertyType})
-        new(specifics)
+    function PropertySeq(primitive::PropertyPrimitive)
+        new(primitive, empty_property)
     end
 end
 
 
-function copy(a::Property)
-    Property(copy(a.specifics))
+function copy(a::PropertySeq)
+    PropertySeq(a.primitive, a.next)
 end
 
 
-function isempty(a::Property)
-    isempty(a.specifics)
+# A property is a (possibly empty) sequence of property primitives. The set of
+# Properties with the compose operator forms a monoid (specifically, it can be
+# thought of as a free monoid). The empty_property constant is the identity
+# element.
+const Property = Union(EmptyProperty, PropertySeq)
+
+
+# The compose function for properties.
+#
+# This operation prepends b to a. Append might be used, but since we are using a
+# list and operators or left associative, prepend is used for efficiency.
+function compose(a::PropertySeq, b::Property)
+    d = copy(b)
+    while !is(d.next, empty_property)
+        d.next = copy(d.next)
+    end
+    d.next = a
 end
 
 
-function native_measure(property::Property, t::NativeTransform, unit_box::BoundingBox,
-                        box::NativeBoundingBox, backend::Backend)
-    native_property = Property()
-    native_property.specifics = [native_measure(p, t, unit_box, box, backend)
-                                 for p in property.specifics]
-    native_property
-end
+# Composition with the identity element.
+compose(a::EmptyProperty, b::EmptyProperty) = a
+compose(a::EmptyProperty, b::PropertySeq) = a
+compose(a::PropertySeq, b::EmptyProperty) = b
 
 
-# Catchall for properties that don't require unit conversion.
-function native_measure(property::PropertyType, t::NativeTransform, unit_box::BoundingBox,
-                        box::NativeBoundingBox, backend::Backend)
+# Unit conversion functions.
+
+function native_measure(property::EmptyProperty,
+                        t::NativeTransform,
+                        unit_box::BoundingBox,
+                        box::NativeBoundingBox,
+                        backend::Backend)
     property
 end
 
 
-type Fill <: PropertyType
+# Convert a sequence of properties to a sequence of properties in native
+# coordinates.
+function native_measure(property::PropertySeq,
+                        t::NativeTransform,
+                        unit_box::BoundingBox,
+                        box::NativeBoundingBox,
+                        backend::Backend)
+    ps = [empty_property]
+    while !is(property, empty_property)
+        append!(ps, native_measure(property.primitive, t,
+                                   unit_box, box, backend))
+        property = property.next
+    end
+    reverse!(ps)
+
+    reduce(compose, ps)
+end
+
+
+# Catchall for properties that don't require unit conversion.
+function native_measure(property::PropertyPrimitive,
+                        t::NativeTransform,
+                        unit_box::BoundingBox,
+                        box::NativeBoundingBox,
+                        backend::Backend)
+    property
+end
+
+
+# A property primitive controlling the fill color (or lack of color) of a form.
+type FillPrimitive <: PropertyPrimitive
     value::ColorOrNothing
 
-    function Fill(value::ColorOrNothing)
-        Property(PropertyType[new(value)])
-    end
-
-    function Fill(value::String)
-        Property(PropertyType[new(color(value))])
-    end
-
-    function Fill(p::Fill)
-        new(copy(p.value))
-    end
-
-    Fill() = new()
-end
-
-copy(p::Fill) = Fill(p)
-
-
-function FillBare(value::ColorOrNothing)
-    p = Fill()
-    p.value = value
-    p
+    FillPrimitive(value::ColorOrNothing) = new(value)
+    FillPrimitive(value::String) = new(color(value))
 end
 
 
-type Stroke <: PropertyType
+# Singleton sequence contructor.
+Fill(value) = PropertySeq(FillPrimitive(value))
+
+
+# A property primitive controlling the strok color (or lack of color) of a form.
+type StrokePrimitive <: PropertyPrimitive
     value::ColorOrNothing
 
-    function Stroke(value::ColorOrNothing)
-        Property(PropertyType[new(value)])
-    end
-
-    function Stroke(value::String)
-        Property(PropertyType[new(color(value))])
-    end
-
-    function Stroke(p::Stroke)
-        new(copy(p.value))
-    end
-
-    Stroke() = new()
-end
-
-copy(p::Stroke) = Stroke(p)
-
-
-function StrokeBare(value::ColorOrNothing)
-    p = Stroke()
-    p.value = value
-    p
+    StrokePrimitive(value::ColorOrNothing) = new(value)
+    StrokePrimitive(value::String) = new(color(value))
 end
 
 
-type LineWidth <: PropertyType
+# Singleton sequence contructor.
+Stroke(value) = PropertySeq(StrokePrimitive(value))
+
+
+# A property primitive controlling the widths of lines drawn in stroke
+# operations.
+type LineWidthPrimitive <: PropertyPrimitive
     value::Measure
 
-    function LineWidth(value::MeasureOrNumber)
-        Property(PropertyType[new(size_measure(value))])
-    end
-
-    function LineWidth(p::LineWidth)
-        new(copy(p.value))
-    end
-
-    LineWidth() = new()
-end
-
-copy(p::LineWidth) = LineWidth(p)
-
-
-function LineWidthBare(value::MeasureOrNumber)
-    p = LineWidth()
-    p.value = size_measure(value)
-    p
+    LineWidthPrimitive(value::MeasureOrNumber) = new(size_measure(value))
 end
 
 
-function native_measure(property::LineWidth, t::NativeTransform,
-                        unit_box::BoundingBox, box::NativeBoundingBox,
+# Singleton sequence contructor.
+LineWidth(value::MeasureOrNumber) = PropertySeq(LineWidthPrimitive(value))
+
+
+# Unit conversion
+function native_measure(property::LineWidthPrimitive,
+                        t::NativeTransform,
+                        unit_box::BoundingBox,
+                        box::NativeBoundingBox,
                         backend::Backend)
-    LineWidthBare(native_measure(property.value, t, unit_box, box, backend))
+    LineWidthPrimitive(native_measure(property.value, t, unit_box, box, backend))
 end
 
 
-type ID <: PropertyType
+# A property primitive assigning an ID, in particular in SVG, to enable
+# manipulation of portions of the graphic.
+type IDPrimitive <: PropertyPrimitive
     value::String
-
-    function ID(value::String)
-        Property(PropertyType[new(value)])
-    end
-
-    function ID(p::ID)
-        new(p.value)
-    end
 end
 
-copy(p::ID) = ID(p)
+
+# Singleton sequence contructor.
+ID(value::String) = PropertySeq(IDPrimitive(value))
 
 
-type Font <: PropertyType
+# The font property primitive.
+type FontPrimitive <: PropertyPrimitive
     family::String
-
-    Font(family::String) = Property(PropertyType[new(family)])
-    Font(p::Font) = new(p.family)
 end
 
-copy(p::Font) = Font(p)
+
+# Singletone sequence constructor.
+Font(family::String) = PropertySeq(FontPrimitive(family))
 
 
-type FontSize <: PropertyType
+# The font size property.
+type FontSizePrimitive <: PropertyPrimitive
     value::Measure
 
-    function FontSize(value::MeasureOrNumber)
-        Property(PropertyType[new(size_measure(value))])
-    end
-
-    function FontSize(p::FontSize)
-        new(p.value)
-    end
-
-    FontSize() = new()
+    FontSize(value::MeasureOrNumber) = new(size_measure(value))
 end
 
-function FontSizeBare(value::MeasureOrNumber)
-    p = FontSize()
-    p.value = size_measure(value)
-    p
-end
 
-copy(p::FontSize) = FontSize(p)
+# Singletone sequence constructor.
+FontSize(value::MeasureOrNumber) = PropertySeq(FontSizePrimitive(value))
 
-function native_measure(property::FontSize, t::NativeTransform,
-                        unit_box::BoundingBox, box::NativeBoundingBox,
+
+# Native unit conversion.
+function native_measure(property::FontSizePrimitive,
+                        t::NativeTransform,
+                        unit_box::BoundingBox,
+                        box::NativeBoundingBox,
                         backend::Backend)
-    FontSizeBare(native_measure(property.value, t, unit_box, box, backend))
+    FontSizePrimitive(native_measure(property.value, t, unit_box, box, backend))
 end
 
 
-# Events
+# Events:
+# These correspond to DOM events, and associate some javascript blurb that gets
+# executed when the event is triggered.
 
 const events = (:OnActivate, :OnClick, :OnFocusIn, :OnFocusOut,
                 :OnLoad, :OnMouseDown, :OnMouseMove, :OnMouseOut,
                 :OnMouseOver, :OnMouseUp)
 
 for event in events
+    event_prim  = symbol(join([string(event), "Primitive"]))
     @eval begin
-        type ($event) <: PropertyType
+        type ($event_prim) <: PropertyPrimitive
             value::String
-
-            function ($event)(value::String)
-                Property(PropertyType[new(value)])
-            end
-
-            function ($event)(p::($event))
-                new(p.value)
-            end
         end
 
-        copy(p::($event)) = ($event)(p)
+        function ($event)(value::String)
+            PropertySeq(($event_prim)(value))
+        end
     end
 end
-
-
-
-
 
