@@ -4,38 +4,82 @@ require("backend.jl")
 require("property.jl")
 require("measure.jl")
 
-# A bare form.
-abstract FormType
+# A primitive form: typcially a shape or sequence of drawing operations.
+abstract FormPrimitive
 
 
-# A container for one or more forms with applied properties.
-type Form <: FormType
+# Form is a (possibly empty) binary tree. Each node is a form primitive
+# with an associated property. When the form is rendered, the graph is
+# traversed from the root. The property at a node is applied to all downstream
+# nodes (children, grandchildren, etc).
+abstract Form
+
+
+# The empty form, which forms the identity element of the Form monoid.
+type EmptyForm <: Form end
+const empty_form = EmptyForm()
+
+
+# A non-empty sequence of form primitives each with an associated (possibly
+# empty) property.
+type FormTree <: Form
+    primitive::Union(Nothing, FormPrimitive)
     property::Property
-    specifics::Vector{FormType}
+    child::Form
+    sibling::Form
 
-    function Form()
-        new(Property(),
-            FormType[])
+    function FormTree(primitive::Union(Nothing, FormPrimitive),
+                      property::Property,
+                      child::Property,
+                      sibling::Property)
+        new(primitive, property, child, sibling)
     end
 
-    function Form(property::Property, specifics::Vector{FormType})
-        new(property, specifics)
-    end
-
-    # copy constructor
-    function Form(form::Form)
-        new(copy(form.property),
-            copy(form.specifics))
+    function FormTree(primitive::FormPrimitive)
+        new(primitive, empty_property, empty_form, empty_form)
     end
 end
 
 
-copy(form::Form) = Form(form)
+compose(a::EmptyForm, b::EmptyForm) = a
+compose(a::FormTree, b::EmptyForm) = a
+compose(a::EmptyForm, b::FormTree) = b
 
 
-# Draw a form and all it contains on a backend within a bounding box.
-function draw(backend::Backend, t::NativeTransform,
-              unit_box::BoundingBox, box::NativeBoundingBox,
+function compose(a::FormTree, b::FormTree)
+    if a.primitive === nothing && a.property === empty_property
+        if b.primitive === nothing && b.property === empty_property
+            tmp = a.child
+            b = copy(b)
+            while !is(b.next, nothing)
+                b.next = copy(b.next)
+                b = b.next
+            end
+            b.next = tmp
+            a = copy(a)
+            a.child = b
+        else
+            b = copy(b)
+            b.sibling = a.child
+            a = copy(a)
+            a.child = b
+        end
+        a
+    else
+        a = copy(a)
+        b = copy(b)
+        a.sibling = b
+        b.sibling = empty_form
+        FormTree(nothing, empty_property, a, empty_form)
+    end
+end
+
+
+# Does a property in a node apply to it's siblings? No!
+function draw(backend::Backend,
+              t::NativeTransform,
+              unit_box::BoundingBox,
+              box::NativeBoundingBox,
               root_form::Form)
     S = {root_form}
 
@@ -44,89 +88,85 @@ function draw(backend::Backend, t::NativeTransform,
 
         if form === :POP_PROPERTY
             pop_property(backend)
-        elseif isa(form, Form)
-            if !isempty(form.property)
+        else
+            u = form.sibling
+            while !is(u, empty_form)
+                push(S, u)
+                u = u.sibling
+            end
+
+            if !is(form.property, empty_property)
+                push(S, :POP_PROPERTY)
                 push_property(backend,
                               native_measure(form.property, t, unit_box,
                                              box, backend))
-                push(S, :POP_PROPERTY)
             end
 
-            for specific in form.specifics
-                push(S, specific)
+            if !is(form.child, empty_form)
+                push(S, form.child)
             end
-        else
-            draw(backend, t, unit_box, box, form)
+
+            draw(backend, t, unit_box, box, form.primitive)
         end
     end
 end
 
 
-type LinesForm <: FormType
+type Lines <: FormPrimitive
     points::Vector{Point}
 end
 
-copy(form::LinesForm) = LinesForm(copy(form.points))
 
-function Lines(points::XYTupleOrPoint...)
-    Form(Property(),
-         FormType[LinesForm([convert(Point, point) for point in points])])
+function lines(points::XYTupleOrPoint...)
+    FormTree(LinesForm([convert(Point, point) for point in points]))
 end
 
 
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::LinesForm)
-    native_form = LinesForm([native_measure(point, t, unit_box, box, backend)
-                             for point in form.points])
+              box::NativeBoundingBox, form::Lines)
+    native_form = Lines([native_measure(point, t, unit_box, box, backend)
+                         for point in form.points])
     draw(backend, native_form)
 end
 
 
-type PolygonForm <: FormType
+type Polygon <: FormPrimitive
     points::Vector{Point}
 
 end
 
-copy(form::PolygonForm) = PolygonForm(copy(form.points))
 
-function Polygon(points::XYTupleOrPoint...)
-    Form(Property(),
-         FormType[PolygonForm([convert(Point, point) for point in points])])
+function polygon(points::XYTupleOrPoint...)
+    FormTree(PolygonForm([convert(Point, point) for point in points]))
 end
 
 
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::PolygonForm)
-    native_form = PolygonForm([native_measure(point, t, unit_box, box, backend)
-                               for point in form.points])
+              box::NativeBoundingBox, form::Polygon)
+    native_form = Polygon([native_measure(point, t, unit_box, box, backend)
+                           for point in form.points])
     draw(backend, native_form)
 end
 
 
-function Rectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
+function cectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
                    width::MeasureOrNumber, height::MeasureOrNumber)
 
     xy0 = Point(x0, y0)
     xy1 = Point(x0 + width, y0 + height)
-    Polygon(xy0, Point(xy1.x, xy0.y), xy1, Point(xy0.x, xy1.y))
-end
-
-function Rectangle()
-    Rectangle(0.0w, 0.0h, 1.0w, 1.0h)
+    polygon(xy0, Point(xy1.x, xy0.y), xy1, Point(xy0.x, xy1.y))
 end
 
 
-type EllipseForm <: FormType
+function rectangle()
+    rectangle(0.0w, 0.0h, 1.0w, 1.0h)
+end
+
+
+type Ellipse <: FormPrimitive
     center::Point
     x_point::Point
     y_point::Point
-end
-
-
-function copy(form::EllipseForm)
-    EllipseForm(copy(form.center),
-                copy(form.x_point),
-                copy(form.y_point))
 end
 
 
@@ -134,26 +174,25 @@ function Ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
                  x_radius::MeasureOrNumber, y_radius::MeasureOrNumber)
     x = x_measure(x)
     y = y_measure(y)
-    Form(Property(),
-         FormType[EllipseForm(Point(x, y),
-                              Point(x + x_measure(x_radius), y),
-                              Point(x, y + y_measure(y_radius)))])
+    FormTree(EllipseForm(Point(x, y),
+                         Point(x + x_measure(x_radius), y),
+                         Point(x, y + y_measure(y_radius))))
 end
 
 
-function Ellipse()
-    Ellipse(1/2w, 1/2h, 1/2w, 1/2h)
+function ellipse()
+    ellipse(1/2w, 1/2h, 1/2w, 1/2h)
 end
 
 
-function Circle(x::MeasureOrNumber, y::MeasureOrNumber, radius::MeasureOrNumber)
-    Ellipse(x, y, radius, radius)
+function circle(x::MeasureOrNumber, y::MeasureOrNumber, radius::MeasureOrNumber)
+    ellipse(x, y, radius, radius)
 end
 
 
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::EllipseForm)
-    native_form = EllipseForm(
+              box::NativeBoundingBox, form::Ellipse)
+    native_form = ellipse(
         native_measure(form.center, t, unit_box, box, backend),
         native_measure(form.x_point, t, unit_box, box, backend),
         native_measure(form.y_point, t, unit_box, box, backend))
@@ -179,30 +218,29 @@ const vtop    = VTop()
 const vcenter = VCenter()
 const vbottom = VBottom()
 
-type TextForm <: FormType
+type Text <: FormPrimitive
     pos::Point
     value::String
     halign::HAlignment
     valign::VAlignment
 end
 
-function Text(x::MeasureOrNumber, y::MeasureOrNumber, value::String,
+function text(x::MeasureOrNumber, y::MeasureOrNumber, value::String,
               halign::HAlignment, valign::VAlignment)
-    Form(Property(),
-         FormType[TextForm(Point(x_measure(x), y_measure(y)),
-                           value, halign, valign)])
+    FormTree(Text(Point(x_measure(x), y_measure(y)),
+                  value, halign, valign))
 end
 
 
-function Text(x::MeasureOrNumber, y::MeasureOrNumber, value::String)
+function text(x::MeasureOrNumber, y::MeasureOrNumber, value::String)
     Text(x, y, value, hleft, hbottom)
 end
 
 
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::TextForm)
-    form = TextForm(native_measure(form.pos, t, unit_box, box, backend),
-                    form.value, form.halign, form.valign)
+              box::NativeBoundingBox, form::Text)
+    form = Text(native_measure(form.pos, t, unit_box, box, backend),
+                form.value, form.halign, form.valign)
     draw(backend, form)
 end
 

@@ -9,18 +9,26 @@ require("measure.jl")
 abstract PropertyPrimitive
 
 
-# The identity element of the Property monoid.
-type EmptyProperty end
+# A property is a (possibly empty) sequence of property primitives. The set of
+# Properties with the compose operator forms a monoid (specifically, it can be
+# thought of as a free monoid). The empty_property constant is the identity
+# element.
+abstract Property
+
+
+# An empty (i.e., nop) property which form the identity element of the Property
+# monoid.
+type EmptyProperty <: Property end
 const empty_property = EmptyProperty()
 
 
 # A non-empty sequence of property primitives.
-type PropertySeq
+type PropertySeq <: Property
     primitive::PropertyPrimitive
-    next::Union(EmptyProperty, PropertySeq)
+    next::Property
 
     function PropertySeq(primitive::PropertyPrimitive,
-                         next::Union(EmptyProperty, PropertySeq))
+                         next::Property)
         new(primitive, next)
     end
 
@@ -28,18 +36,6 @@ type PropertySeq
         new(primitive, empty_property)
     end
 end
-
-
-function copy(a::PropertySeq)
-    PropertySeq(a.primitive, a.next)
-end
-
-
-# A property is a (possibly empty) sequence of property primitives. The set of
-# Properties with the compose operator forms a monoid (specifically, it can be
-# thought of as a free monoid). The empty_property constant is the identity
-# element.
-const Property = Union(EmptyProperty, PropertySeq)
 
 
 # The compose function for properties.
@@ -102,77 +98,77 @@ end
 
 
 # A property primitive controlling the fill color (or lack of color) of a form.
-type FillPrimitive <: PropertyPrimitive
+type Fill <: PropertyPrimitive
     value::ColorOrNothing
 
-    FillPrimitive(value::ColorOrNothing) = new(value)
-    FillPrimitive(value::String) = new(color(value))
+    Fill(value::ColorOrNothing) = new(value)
+    Fill(value::String) = new(color(value))
 end
 
 
 # Singleton sequence contructor.
-Fill(value) = PropertySeq(FillPrimitive(value))
+fill(value) = PropertySeq(Fill(value))
 
 
 # A property primitive controlling the strok color (or lack of color) of a form.
-type StrokePrimitive <: PropertyPrimitive
+type Stroke <: PropertyPrimitive
     value::ColorOrNothing
 
-    StrokePrimitive(value::ColorOrNothing) = new(value)
-    StrokePrimitive(value::String) = new(color(value))
+    Stroke(value::ColorOrNothing) = new(value)
+    Stroke(value::String) = new(color(value))
 end
 
 
 # Singleton sequence contructor.
-Stroke(value) = PropertySeq(StrokePrimitive(value))
+stroke(value) = PropertySeq(Stroke(value))
 
 
 # A property primitive controlling the widths of lines drawn in stroke
 # operations.
-type LineWidthPrimitive <: PropertyPrimitive
+type LineWidth <: PropertyPrimitive
     value::Measure
 
-    LineWidthPrimitive(value::MeasureOrNumber) = new(size_measure(value))
+    LineWidth(value::MeasureOrNumber) = new(size_measure(value))
 end
 
 
 # Singleton sequence contructor.
-LineWidth(value::MeasureOrNumber) = PropertySeq(LineWidthPrimitive(value))
+linewidth(value::MeasureOrNumber) = PropertySeq(LineWidth(value))
 
 
 # Unit conversion
-function native_measure(property::LineWidthPrimitive,
+function native_measure(property::LineWidth,
                         t::NativeTransform,
                         unit_box::BoundingBox,
                         box::NativeBoundingBox,
                         backend::Backend)
-    LineWidthPrimitive(native_measure(property.value, t, unit_box, box, backend))
+    LineWidth(native_measure(property.value, t, unit_box, box, backend))
 end
 
 
 # A property primitive assigning an ID, in particular in SVG, to enable
 # manipulation of portions of the graphic.
-type IDPrimitive <: PropertyPrimitive
+type ID <: PropertyPrimitive
     value::String
 end
 
 
 # Singleton sequence contructor.
-ID(value::String) = PropertySeq(IDPrimitive(value))
+id(value::String) = PropertySeq(ID(value))
 
 
 # The font property primitive.
-type FontPrimitive <: PropertyPrimitive
+type Font <: PropertyPrimitive
     family::String
 end
 
 
 # Singletone sequence constructor.
-Font(family::String) = PropertySeq(FontPrimitive(family))
+font(family::String) = PropertySeq(Font(family))
 
 
 # The font size property.
-type FontSizePrimitive <: PropertyPrimitive
+type FontSize <: PropertyPrimitive
     value::Measure
 
     FontSize(value::MeasureOrNumber) = new(size_measure(value))
@@ -180,16 +176,16 @@ end
 
 
 # Singletone sequence constructor.
-FontSize(value::MeasureOrNumber) = PropertySeq(FontSizePrimitive(value))
+fontsize(value::MeasureOrNumber) = PropertySeq(FontSize(value))
 
 
 # Native unit conversion.
-function native_measure(property::FontSizePrimitive,
+function native_measure(property::FontSize,
                         t::NativeTransform,
                         unit_box::BoundingBox,
                         box::NativeBoundingBox,
                         backend::Backend)
-    FontSizePrimitive(native_measure(property.value, t, unit_box, box, backend))
+    FontSize(native_measure(property.value, t, unit_box, box, backend))
 end
 
 
@@ -202,14 +198,14 @@ const events = (:OnActivate, :OnClick, :OnFocusIn, :OnFocusOut,
                 :OnMouseOver, :OnMouseUp)
 
 for event in events
-    event_prim  = symbol(join([string(event), "Primitive"]))
+    event_lc  = symbol(lowercase(string(event)))
     @eval begin
-        type ($event_prim) <: PropertyPrimitive
+        type ($event) <: PropertyPrimitive
             value::String
         end
 
-        function ($event)(value::String)
-            PropertySeq(($event_prim)(value))
+        function ($event_lc)(value::String)
+            PropertySeq(($event)(value))
         end
     end
 end
