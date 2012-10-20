@@ -48,11 +48,6 @@ end
 copy(a::FormTree) = FormTree(a)
 
 
-compose(a::EmptyForm, b::EmptyForm) = a
-compose(a::FormTree, b::EmptyForm) = a
-compose(a::EmptyForm, b::FormTree) = b
-
-
 function removable(a::FormTree)
     a.primitive === nothing && a.property === empty_property
 end
@@ -68,15 +63,22 @@ end
 #
 # There is a trick here to avoid an exceess of nop or "removable" nodes.
 #
-function compose(a::FormTree, b::FormTree)
-    if removable(a) || removable(b)
-        u, v = removable(b) ? (a, b) : (b, a)
-        u = copy(u)
-        u.children = cat(u.children, v.children)
-        u
-    else
-        FormTree(nothing, empty_property, a, b)
+function compose(forms::Form...)
+    children = List{FormTree}
+    for form in forms
+        if form === empty_form
+            continue
+        end
+        if removable(form)
+            for child in form.children
+                children = cons(form, children)
+            end
+        else
+            children = cons(form, children)
+        end
     end
+
+    FormTree(nothing, empty_property, children)
 end
 
 

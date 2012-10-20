@@ -35,26 +35,41 @@ type PropertySeq <: Property
     function PropertySeq(primitive::PropertyPrimitive)
         new(primitive, empty_property)
     end
-end
 
-
-# The compose function for properties.
-#
-# This operation prepends b to a. Append might be used, but since we are using a
-# list and operators or left associative, prepend is used for efficiency.
-function compose(a::PropertySeq, b::Property)
-    d = copy(b)
-    while !is(d.next, empty_property)
-        d.next = copy(d.next)
+    # shallow copy constructor
+    function PropertySeq(ps::PropertySeq)
+        new(ps.primitive, ps.next)
     end
-    d.next = a
 end
 
 
-# Composition with the identity element.
-compose(a::EmptyProperty, b::EmptyProperty) = a
-compose(a::EmptyProperty, b::PropertySeq) = a
-compose(a::PropertySeq, b::EmptyProperty) = b
+copy(ps::PropertySeq) = PropertySeq(ps)
+
+
+# TODO: Put this somewhere better
+function compose()
+    error("Empty compose operation.")
+end
+
+
+# Composition of properties, which is simply list concatenation.
+function compose(head::Property, rest::Property...)
+    a = b = head === empty_property ? head : copy(head)
+    for p in rest
+        if p === empty_property
+            continue
+        elseif a === empty_property
+            a = b = copy(p)
+        else
+            while !is(b.next, empty_property)
+                b.next = copy(b.next)
+                b = b.next
+            end
+            b.next = p
+        end
+    end
+    a
+end
 
 
 # Unit conversion functions.

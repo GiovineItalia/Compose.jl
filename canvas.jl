@@ -85,23 +85,24 @@ const canvas = CanvasTree
 copy(c::CanvasTree) = CanvasTree(c)
 
 
-# Composition of canvases.
-compose(a::EmptyCanvas, b::EmptyCanvas) = a
-compose(a::CanvasTree, b::EmptyCanvas) = a
-compose(a::EmptyCanvas, b::CanvasTree) = b
-
-
 # Copositions of canvases is tree joining by making b a subtree of a.
 #     a      b             a___
 #    / \    / \    --->   / \  \
 #   X   Y  U   V         X   Y  b
 #                              / \
 #                             U   V
-#
-function compose(a::CanvasTree, b::CanvasTree)
-    a = copy(a)
-    a.children = cons(b, a.children)
-    a
+function compose(canvases::Canvas...)
+    root = empty_canvas
+    for canvas in canvases
+        if canvas == empty_canvas
+            continue
+        elseif root == empty_canvas
+            root = copy(canvas)
+        else
+            root.children = cons(canvas, root.children)
+        end
+    end
+    root
 end
 
 
