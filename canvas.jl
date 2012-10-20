@@ -6,52 +6,59 @@ require("form.jl")
 require("property.jl")
 
 
+# A box giving the coordinate system used by a canvas.
 type Units
-    # TODO: using a bounding box implies we can use any sort of units, when in
-    # fact the box used here should not have units associated with it.
-    box::BoundingBox
+    x0::Float64
+    y0::Float64
+    width::Float64
+    height::Float64
 
-    function Units(width::MeasureOrNumber,
-                   height::MeasureOrNumber)
-        new(BoundingBox(0.0, 0.0, width, height))
+    function Units(width::Number,
+                   height::Number)
+        new(0.0, 0.0, width, height)
     end
 
-    function Units(x0::MeasureOrNumber,
-                   y0::MeasureOrNumber,
-                   width::MeasureOrNumber,
-                   height::MeasureOrNumber)
-        new(BoundingBox(x0, y0, width, height))
-    end
-
-    function Units(box::BoundingBox)
-        new(box)
+    function Units(x0::Number,
+                   y0::Number,
+                   width::Number,
+                   height::Number)
+        new(x0, y0, width, height)
     end
 end
 
 
-type Canvas
+# Canvases are containers for forms and other canvases with an associated
+# coordinate transform.
+abstract Canvas
+
+
+# An identity element for the canvas monoid.
+type EmptyCanvas <: Canvas end
+const empty_canvas = EmptyCanvas()
+
+
+# non-empty tree of canvases.
+type CanvasTree <: Canvas
     box::BoundingBox
-    property::Property
-    children::Vector{Canvas}
     form::Form
     unit_box::BoundingBox
     rot::Rotation
+    children::List{Canvas}
 
-    function Canvas(opts::Union(Units, Rotation)...)
-        Canvas(0.0w, 0.0h, 1.0w, 1.0h, opts...)
+    function CanvasTree(opts::Union(Units, Rotation)...)
+        CanvasTree(0.0w, 0.0h, 1.0w, 1.0h, opts...)
     end
 
-    function Canvas(x0::MeasureOrNumber,
-                    y0::MeasureOrNumber,
-                    width::MeasureOrNumber,
-                    height::MeasureOrNumber,
-                    opts::Union(Units, Rotation)...)
+    function CanvasTree(x0::MeasureOrNumber,
+                        y0::MeasureOrNumber,
+                        width::MeasureOrNumber,
+                        height::MeasureOrNumber,
+                        opts::Union(Units, Rotation)...)
         c = new(BoundingBox(x0, y0, width, height),
-                Property(),
-                Canvas[],
-                Form(),
+                empty_form,
                 BoundingBox(),
-                Rotation())
+                Rotation(),
+                ListNil{Canvas}())
 
         for opt in opts
             if typeof(opt) == Rotation
@@ -64,18 +71,61 @@ type Canvas
         c
     end
 
-    # copy constructor
-    function Canvas(canvas::Canvas)
-        new(copy(canvas.box),
-            copy(canvas.property),
-            copy(canvas.children),
-            copy(canvas.form),
-            copy(canvas.unit_box),
-            copy(canvas.rot))
+    # shallow copy constructor
+    function CanvasTree(c::CanvasTree)
+        new(c.box, c.form, c.unit_box, c.rot, c.children)
     end
 end
 
 
-copy(canvas::Canvas) = Canvas(canvas)
+# Alias constructor functions
+const canvas = CanvasTree
+
+
+copy(c::CanvasTree) = CanvasTree(c)
+
+
+# Composition of canvases.
+compose(a::EmptyCanvas, b::EmptyCanvas) = a
+compose(a::CanvasTree, b::EmptyCanvas) = a
+compose(a::EmptyCanvas, b::CanvasTree) = b
+
+
+# Copositions of canvases is tree joining by making b a subtree of a.
+#     a      b             a___
+#    / \    / \    --->   / \  \
+#   X   Y  U   V         X   Y  b
+#                              / \
+#                             U   V
+#
+function compose(a::CanvasTree, b::CanvasTree)
+    a = copy(a)
+    a.children = cons(b, a.children)
+    a
+end
+
+
+#
+function draw(backend::Backend, root_canvas::Canvas)
+    S = {(root_canvas, NativeTransform(), BoundingBox(), root_box(backend))}
+    while !isempty(S)
+        (canvas, parent_t, unit_box, parent_box) = pop(S)
+        if canvas === empty_canvas
+            continue
+        end
+
+        box = native_measure(canvas.box, parent_t, unit_box, parent_box, backend)
+        rot = native_measure(canvas.rot, parent_t, unit_box, box, backend)
+        t = combine(rot, parent_t)
+
+        draw(backend, t, unit_box, box, root_box)
+
+        for child in canvas.children
+            push(S, (child, t, canvas.unit_box, canvas.unit_box, box))
+        end
+    end
+
+end
+
 
 

@@ -3,6 +3,7 @@
 require("backend.jl")
 require("property.jl")
 require("measure.jl")
+require("list.jl")
 
 # A primitive form: typcially a shape or sequence of drawing operations.
 abstract FormPrimitive
@@ -25,20 +26,26 @@ const empty_form = EmptyForm()
 type FormTree <: Form
     primitive::Union(Nothing, FormPrimitive)
     property::Property
-    child::Form
-    sibling::Form
+    children::List{FormTree}
 
     function FormTree(primitive::Union(Nothing, FormPrimitive),
                       property::Property,
-                      child::Property,
-                      sibling::Property)
-        new(primitive, property, child, sibling)
+                      children::FormTree...)
+        new(primitive, property, convert(List{FormTree}, children))
     end
 
     function FormTree(primitive::FormPrimitive)
-        new(primitive, empty_property, empty_form, empty_form)
+        new(primitive, empty_property, ListNil{FormTree}())
+    end
+
+    # shallow copy constructor
+    function FormTree(a::FormTree)
+        new(a.primitive, a.property, a.children)
     end
 end
+
+
+copy(a::FormTree) = FormTree(a)
 
 
 compose(a::EmptyForm, b::EmptyForm) = a
@@ -46,31 +53,29 @@ compose(a::FormTree, b::EmptyForm) = a
 compose(a::EmptyForm, b::FormTree) = b
 
 
+function removable(a::FormTree)
+    a.primitive === nothing && a.property === empty_property
+end
+
+
+# Conceptually, joining forms is tree joining be introducing a new root.
+#
+#   a      b               c
+#  / \    / \    --->     / \
+# X   Y  U   V           a   b
+#                       / \ / \
+#                      X  Y U  V
+#
+# There is a trick here to avoid an exceess of nop or "removable" nodes.
+#
 function compose(a::FormTree, b::FormTree)
-    if a.primitive === nothing && a.property === empty_property
-        if b.primitive === nothing && b.property === empty_property
-            tmp = a.child
-            b = copy(b)
-            while !is(b.next, nothing)
-                b.next = copy(b.next)
-                b = b.next
-            end
-            b.next = tmp
-            a = copy(a)
-            a.child = b
-        else
-            b = copy(b)
-            b.sibling = a.child
-            a = copy(a)
-            a.child = b
-        end
-        a
+    if removable(a) || removable(b)
+        u, v = removable(b) ? (a, b) : (b, a)
+        u = copy(u)
+        u.children = cat(u.children, v.children)
+        u
     else
-        a = copy(a)
-        b = copy(b)
-        a.sibling = b
-        b.sibling = empty_form
-        FormTree(nothing, empty_property, a, empty_form)
+        FormTree(nothing, empty_property, a, b)
     end
 end
 
@@ -88,6 +93,8 @@ function draw(backend::Backend,
 
         if form === :POP_PROPERTY
             pop_property(backend)
+        elseif form === empty_form
+            continue
         else
             u = form.sibling
             while !is(u, empty_form)
@@ -137,7 +144,7 @@ end
 
 
 function polygon(points::XYTupleOrPoint...)
-    FormTree(PolygonForm([convert(Point, point) for point in points]))
+    FormTree(Polygon([convert(Point, point) for point in points]))
 end
 
 
@@ -149,7 +156,7 @@ function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
 end
 
 
-function cectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
+function rectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
                    width::MeasureOrNumber, height::MeasureOrNumber)
 
     xy0 = Point(x0, y0)
