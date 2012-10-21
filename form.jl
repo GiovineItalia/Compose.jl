@@ -239,24 +239,29 @@ type Text <: FormPrimitive
     value::String
     halign::HAlignment
     valign::VAlignment
+
+    # Text forms need their own rotation field unfortunately, since their is no
+    # way to give orientation with just a position point.
+    t::NativeTransform
 end
 
 function text(x::MeasureOrNumber, y::MeasureOrNumber, value::String,
               halign::HAlignment, valign::VAlignment)
     FormTree(Text(Point(x_measure(x), y_measure(y)),
-                  value, halign, valign))
+                  value, halign, valign, NativeTransform()))
 end
 
 
 function text(x::MeasureOrNumber, y::MeasureOrNumber, value::String)
-    Text(x, y, value, hleft, hbottom)
+    text(x, y, value, hleft, hbottom)
 end
 
 
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, form::Text)
     form = Text(native_measure(form.pos, t, unit_box, box, backend),
-                form.value, form.halign, form.valign)
+                form.value, form.halign, form.valign, t)
+
     draw(backend, form)
 end
 

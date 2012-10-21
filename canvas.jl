@@ -104,6 +104,22 @@ const canvas = CanvasTree
 copy(c::CanvasTree) = CanvasTree(c)
 
 
+# Return a new Canvas with unit_box substituted.
+function set_unit_box(c::CanvasTree, unit_box::Units)
+    c = copy(c)
+    c.unit_box = unit_box
+    c
+end
+
+# Return a new Canvas with the box substituted
+function set_box(c::CanvasTree, box::BoundingBox)
+    c = copy(c)
+    c.box = box
+    c
+end
+
+
+
 function show(io, c::CanvasTree)
     print(io, "Canvas(")
     show(io, c.children)

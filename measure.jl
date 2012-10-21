@@ -135,6 +135,31 @@ end
 +{U}(a::SimpleMeasure{U}, b::CompoundMeasure) = b + a
 
 
+function -{U}(a::CompoundMeasure, b::SimpleMeasure{U})
+    c = CompoundMeasure(copy(a.values))
+    if has(c.values, U)
+        c.values[U] -= b.value
+    else
+        c.values[U] = -b.value
+    end
+    c
+end
+
+
+function -{U}(a::SimpleMeasure{U}, b::CompoundMeasure)
+    c = CompoundMeasure()
+    c.values[U] = a.value
+    for (V, value) in b.values
+        if has(c.values, V)
+            c.values[V] -= value
+        else
+            c.values[V] = -value
+        end
+    end
+    c
+end
+
+
 function +(a::CompoundMeasure, b::CompoundMeasure)
     c = CompoundMeasure(copy(a.values))
     for (k, v) in b.values
@@ -290,6 +315,14 @@ type NativeTransform
     function NativeTransform(M::Matrix{Float64})
         new(M)
     end
+end
+
+
+const identity_native_transform = NativeTransform()
+
+
+function isidentity(a::NativeTransform)
+    a.M == identity_native_transform.M
 end
 
 
