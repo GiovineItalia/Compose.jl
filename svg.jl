@@ -204,7 +204,7 @@ function draw(img::SVG, form::Text)
 
     if !isidentity(form.t)
         @printf(img.f, " transform=\"rotate(%s, %s, %s)\"",
-                fmt_float(radians2degrees(acos(form.t.M[1,1]))),
+                fmt_float(radians2degrees(atan2(form.t.M[2,1], form.t.M[1,1]))),
                 fmt_float(form.pos.x.value),
                 fmt_float(form.pos.y.value))
     end

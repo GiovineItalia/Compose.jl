@@ -32,9 +32,6 @@ end
 # Create a new canvas containing the given canvases stacked horizontally.
 function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber, height::MeasureOrNumber,
                 aligned_canvases::(Canvas, VAlignment)...)
-
-    println("hstack")
-    println(aligned_canvases)
     width = sum([canvas.box.width for (canvas, _) in aligned_canvases])
     height = y_measure(height)
 
