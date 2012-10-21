@@ -30,7 +30,7 @@ type FormTree <: Form
 
     function FormTree(primitive::Union(Nothing, FormPrimitive),
                       property::Property,
-                      children::FormTree...)
+                      children::List{FormTree})
         new(primitive, property, convert(List{FormTree}, children))
     end
 
@@ -64,7 +64,7 @@ end
 # There is a trick here to avoid an exceess of nop or "removable" nodes.
 #
 function compose(forms::Form...)
-    children = List{FormTree}
+    children = ListNil{FormTree}()
     for form in forms
         if form === empty_form
             continue
@@ -79,6 +79,17 @@ function compose(forms::Form...)
     end
 
     FormTree(nothing, empty_property, children)
+end
+
+
+# Insertion of properties into forms
+function insert(a::FormTree, b::Property)
+    FormTree(a.primitive, compose(a.property, b), a.children)
+end
+
+
+function insert(a::EmptyForm, b::Property)
+    a
 end
 
 
@@ -98,12 +109,6 @@ function draw(backend::Backend,
         elseif form === empty_form
             continue
         else
-            u = form.sibling
-            while !is(u, empty_form)
-                push(S, u)
-                u = u.sibling
-            end
-
             if !is(form.property, empty_property)
                 push(S, :POP_PROPERTY)
                 push_property(backend,
@@ -111,11 +116,13 @@ function draw(backend::Backend,
                                              box, backend))
             end
 
-            if !is(form.child, empty_form)
-                push(S, form.child)
+            for child in form.children
+                push(S, child)
             end
 
-            draw(backend, t, unit_box, box, form.primitive)
+            if !is(form.primitive, nothing)
+                draw(backend, t, unit_box, box, form.primitive)
+            end
         end
     end
 end
@@ -127,7 +134,7 @@ end
 
 
 function lines(points::XYTupleOrPoint...)
-    FormTree(LinesForm([convert(Point, point) for point in points]))
+    FormTree(Lines([convert(Point, point) for point in points]))
 end
 
 
@@ -179,18 +186,18 @@ type Ellipse <: FormPrimitive
 end
 
 
-function Ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
+function ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
                  x_radius::MeasureOrNumber, y_radius::MeasureOrNumber)
     x = x_measure(x)
     y = y_measure(y)
-    FormTree(EllipseForm(Point(x, y),
-                         Point(x + x_measure(x_radius), y),
-                         Point(x, y + y_measure(y_radius))))
+    FormTree(Ellipse(Point(x, y),
+                     Point(x + x_measure(x_radius), y),
+                     Point(x, y + y_measure(y_radius))))
 end
 
 
 function ellipse()
-    ellipse(1/2w, 1/2h, 1/2w, 1/2h)
+    ellipse(0.5w, 0.5h, 0.5w, 0.5h)
 end
 
 

@@ -22,6 +22,9 @@ type EmptyProperty <: Property end
 const empty_property = EmptyProperty()
 
 
+copy(p::EmptyProperty) = p
+
+
 # A non-empty sequence of property primitives.
 type PropertySeq <: Property
     primitive::PropertyPrimitive
@@ -90,15 +93,13 @@ function native_measure(property::PropertySeq,
                         unit_box::BoundingBox,
                         box::NativeBoundingBox,
                         backend::Backend)
-    ps = [empty_property]
-    while !is(property, empty_property)
-        append!(ps, native_measure(property.primitive, t,
-                                   unit_box, box, backend))
-        property = property.next
+    p = property = copy(property)
+    while !is(p, empty_property)
+        p.primitive = native_measure(p.primitive, t, unit_box, box, backend)
+        p.next = copy(p.next)
+        p = p.next
     end
-    reverse!(ps)
-
-    reduce(compose, ps)
+    property
 end
 
 

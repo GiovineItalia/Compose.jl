@@ -112,7 +112,7 @@ end
 # Draw
 
 
-function draw(img::SVG, form::LinesForm)
+function draw(img::SVG, form::Lines)
     n = length(form.points)
     if n <= 1; return; end
 
@@ -130,7 +130,7 @@ function draw(img::SVG, form::LinesForm)
 end
 
 
-function draw(img::SVG, form::PolygonForm)
+function draw(img::SVG, form::Polygon)
     n = length(form.points)
     if n <= 1; return; end
 
@@ -151,7 +151,7 @@ end
 minmax(a, b) = a < b ? (a,b) : (b,a)
 
 
-function draw(img::SVG, form::EllipseForm)
+function draw(img::SVG, form::Ellipse)
     cx = form.center.x.value
     cy = form.center.y.value
     rx = sqrt((form.x_point.x.value - cx)^2 +
@@ -184,7 +184,7 @@ function draw(img::SVG, form::EllipseForm)
 end
 
 
-function draw(img::SVG, form::TextForm)
+function draw(img::SVG, form::Text)
     indent(img)
     @printf(img.f, "<text x=\"%s\" y=\"%s\"",
             fmt_float(form.pos.x.value),
@@ -214,8 +214,9 @@ end
 function push_property(img::SVG, p::Property)
     indent(img)
     write(img.f, "<g")
-    for specific in p.specifics
-        apply_property(img, specific)
+    while !is(p, empty_property)
+        apply_property(img, p.primitive)
+        p = p.next
     end
     write(img.f, ">\n")
     img.indentation += 1
@@ -230,7 +231,7 @@ end
 
 
 # Nop catchall
-function apply_property(img::SVG, p::PropertyType)
+function apply_property(img::SVG, p::PropertyPrimitive)
 end
 
 

@@ -346,7 +346,7 @@ function rotate(img::Image, theta::Float64)
 end
 
 
-function draw(img::Image, form::LinesForm)
+function draw(img::Image, form::Lines)
     if isempty(form.points); return; end
 
     move_to(img, form.points[1])
@@ -357,7 +357,7 @@ function draw(img::Image, form::LinesForm)
 end
 
 
-function draw(img::Image, form::PolygonForm)
+function draw(img::Image, form::Polygon)
     if isempty(form.points); return; end
 
     move_to(img, form.points[1])
@@ -369,7 +369,7 @@ function draw(img::Image, form::PolygonForm)
 end
 
 
-function draw(img::Image, form::EllipseForm)
+function draw(img::Image, form::Ellipse)
     cx = form.center.x.value
     cy = form.center.y.value
     rx = sqrt((form.x_point.x.value - cx)^2 +
@@ -390,7 +390,7 @@ function draw(img::Image, form::EllipseForm)
 end
 
 
-function draw(img::Image, form::TextForm)
+function draw(img::Image, form::Text)
     pos = copy(form.pos)
 
     if form.halign != hleft || form.valign != vtop
@@ -426,8 +426,9 @@ end
 
 function push_property(img::Image, p::Property)
     save_state(img)
-    for specific in p.specifics
-        apply_property(img, specific)
+    while !is(p, empty_property)
+        apply_property(img, p.primitive)
+        p = p.next
     end
 end
 

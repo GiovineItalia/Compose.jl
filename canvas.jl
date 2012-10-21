@@ -13,6 +13,10 @@ type Units
     width::Float64
     height::Float64
 
+    function Units()
+        new(0.0, 0.0, 1.0, 1.0)
+    end
+
     function Units(width::Number,
                    height::Number)
         new(0.0, 0.0, width, height)
@@ -24,6 +28,13 @@ type Units
                    height::Number)
         new(x0, y0, width, height)
     end
+end
+
+
+# Note: Units has almost the same representation as BoundingBox, except no unit
+# is associated with the numbers.
+function convert(::Type{BoundingBox}, u::Units)
+    BoundingBox(u.x0, u.y0, u.width, u.height)
 end
 
 
@@ -41,9 +52,17 @@ const empty_canvas = EmptyCanvas()
 type CanvasTree <: Canvas
     box::BoundingBox
     form::Form
-    unit_box::BoundingBox
+    unit_box::Units
     rot::Rotation
     children::List{Canvas}
+
+    function CanvasTree(box::BoundingBox,
+                        form::Form,
+                        unit_box::Units,
+                        rot::Rotation,
+                        children::List{Canvas})
+        new(box, form, unit_box, rot, children)
+    end
 
     function CanvasTree(opts::Union(Units, Rotation)...)
         CanvasTree(0.0w, 0.0h, 1.0w, 1.0h, opts...)
@@ -56,7 +75,7 @@ type CanvasTree <: Canvas
                         opts::Union(Units, Rotation)...)
         c = new(BoundingBox(x0, y0, width, height),
                 empty_form,
-                BoundingBox(),
+                Units(),
                 Rotation(),
                 ListNil{Canvas}())
 
@@ -64,7 +83,7 @@ type CanvasTree <: Canvas
             if typeof(opt) == Rotation
                 c.rot = opt
             elseif typeof(opt) == Units
-                c.unit_box = opt.box
+                c.unit_box = opt
             end
         end
 
@@ -83,6 +102,13 @@ const canvas = CanvasTree
 
 
 copy(c::CanvasTree) = CanvasTree(c)
+
+
+function show(io, c::CanvasTree)
+    print(io, "Canvas(")
+    show(io, c.children)
+    print(io, ")")
+end
 
 
 # Copositions of canvases is tree joining by making b a subtree of a.
@@ -106,6 +132,38 @@ function compose(canvases::Canvas...)
 end
 
 
+# Insertion of forms into canvases
+function insert(a::CanvasTree, b::Form)
+    CanvasTree(a.box, compose(a.form, b), a.unit_box, a.rot, a.children)
+end
+
+
+function insert(a::EmptyCanvas, b::Form)
+    a
+end
+
+
+function insert(a::CanvasTree, b::Property)
+    if a.form === empty_form
+        a = copy(a)
+        c = a.children = copy(a.children)
+        while typeof(c) != ListNil{Canvas}
+            c.head = insert(c.head, b)
+            c.tail = copy(c.tail)
+            c = c.tail
+        end
+        a
+    else
+        CanvasTree(a.box, insert(a.form, b), a.unit_box, a.rot, a.children)
+    end
+end
+
+
+function insert(a::EmptyCanvas, b::Property)
+    a
+end
+
+
 #
 function draw(backend::Backend, root_canvas::Canvas)
     S = {(root_canvas, NativeTransform(), BoundingBox(), root_box(backend))}
@@ -119,10 +177,10 @@ function draw(backend::Backend, root_canvas::Canvas)
         rot = native_measure(canvas.rot, parent_t, unit_box, box, backend)
         t = combine(rot, parent_t)
 
-        draw(backend, t, unit_box, box, root_box)
+        draw(backend, t, unit_box, box, canvas.form)
 
         for child in canvas.children
-            push(S, (child, t, canvas.unit_box, canvas.unit_box, box))
+            push(S, (child, t, convert(BoundingBox, canvas.unit_box), box))
         end
     end
 
