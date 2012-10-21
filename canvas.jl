@@ -177,10 +177,12 @@ function draw(backend::Backend, root_canvas::Canvas)
         rot = native_measure(canvas.rot, parent_t, unit_box, box, backend)
         t = combine(rot, parent_t)
 
+        unit_box = convert(BoundingBox, canvas.unit_box)
+
         draw(backend, t, unit_box, box, canvas.form)
 
         for child in canvas.children
-            push(S, (child, t, convert(BoundingBox, canvas.unit_box), box))
+            push(S, (child, t, convert(BoundingBox, unit_box), box))
         end
     end
 
