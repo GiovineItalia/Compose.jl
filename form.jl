@@ -71,7 +71,7 @@ function compose(forms::Form...)
         end
         if removable(form)
             for child in form.children
-                children = cons(form, children)
+                children = cons(child, children)
             end
         else
             children = cons(form, children)
@@ -99,6 +99,7 @@ function draw(backend::Backend,
               unit_box::BoundingBox,
               box::NativeBoundingBox,
               root_form::Form)
+
     S = {root_form}
 
     while !isempty(S)

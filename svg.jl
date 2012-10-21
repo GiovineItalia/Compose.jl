@@ -202,9 +202,7 @@ function draw(img::SVG, form::Text)
         print(img.f, " style=\"dominant-baseline:text-before-edge\"")
     end
 
-    println(form.value)
     if !isidentity(form.t)
-        println(form.t.M)
         @printf(img.f, " transform=\"rotate(%s, %s, %s)\"",
                 fmt_float(radians2degrees(acos(form.t.M[1,1]))),
                 fmt_float(form.pos.x.value),
