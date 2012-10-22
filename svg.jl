@@ -9,6 +9,25 @@ require("json.jl")
 require("pango.jl")
 require("util.jl")
 
+# Format a floating point number into a decimal string of reasonable precision.
+function svg_fmt_float(x::Float64)
+    # All svg (in our use) coordinates are in millimeters. This number gives the
+    # largest deviation from the true position allowed in millimeters.
+    const eps = 0.01
+    a = @sprintf("%0.8f", round(x / eps) * eps)
+    n = length(a)
+
+    while a[n] == '0'
+        n -= 1
+    end
+
+    if a[n] == '.'
+        n -= 1
+    end
+
+    a[1:n]
+end
+
 
 # The SVG image we generate are going to use millimeters everywhere.
 type SVGMeasure <: NativeMeasure
@@ -43,8 +62,8 @@ type SVG <: Backend
 
         write(img.f, @sprintf(
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
-              fmt_float(img.width.value), fmt_float(img.height.value),
-              fmt_float(img.width.value), fmt_float(img.height.value)))
+              svg_fmt_float(img.width.value), svg_fmt_float(img.height.value),
+              svg_fmt_float(img.width.value), svg_fmt_float(img.height.value)))
 
         img
     end
@@ -119,12 +138,12 @@ function draw(img::SVG, form::Lines)
     indent(img)
     write(img.f, "<path d=\"")
     @printf(img.f, "M%s,%s L",
-        fmt_float(form.points[1].x.value),
-        fmt_float(form.points[1].y.value))
+        svg_fmt_float(form.points[1].x.value),
+        svg_fmt_float(form.points[1].y.value))
     for point in form.points[2:]
         @printf(img.f, " %s %s",
-            fmt_float(point.x.value),
-            fmt_float(point.y.value))
+            svg_fmt_float(point.x.value),
+            svg_fmt_float(point.y.value))
     end
     write(img.f, "\" />\n")
 end
@@ -137,12 +156,12 @@ function draw(img::SVG, form::Polygon)
     indent(img)
     write(img.f, "<path d=\"")
     @printf(img.f, "M %s %s L",
-        fmt_float(form.points[1].x.value),
-        fmt_float(form.points[1].y.value))
+        svg_fmt_float(form.points[1].x.value),
+        svg_fmt_float(form.points[1].y.value))
     for point in form.points[2:]
         @printf(img.f, " %s %s",
-            fmt_float(point.x.value),
-            fmt_float(point.y.value))
+            svg_fmt_float(point.x.value),
+            svg_fmt_float(point.y.value))
     end
     write(img.f, " z\" />\n")
 end
@@ -166,17 +185,17 @@ function draw(img::SVG, form::Ellipse)
 
     if abs(rx - ry) < eps
         @printf(img.f, "<circle cx=\"%s\" cy=\"%s\" r=\"%s\" />\n",
-                fmt_float(cx), fmt_float(cy), fmt_float(rx))
+                svg_fmt_float(cx), svg_fmt_float(cy), svg_fmt_float(rx))
     else
         @printf(img.f, "<ellipse cx=\"%s\" cy=\"%s\" rx=\"%s\" ry=\"%s\"",
-                fmt_float(cx), fmt_float(cy),
-                fmt_float(rx), fmt_float(ry))
+                svg_fmt_float(cx), svg_fmt_float(cy),
+                svg_fmt_float(rx), svg_fmt_float(ry))
 
         if abs(theta) >= eps
             @printf(img.f, " transform=\"rotate(%s %s %s)\"",
-                    fmt_float(theta),
-                    fmt_float(cx),
-                    fmt_float(cy))
+                    svg_fmt_float(theta),
+                    svg_fmt_float(cx),
+                    svg_fmt_float(cy))
         end
 
         write(img.f, " />\n")
@@ -187,8 +206,8 @@ end
 function draw(img::SVG, form::Text)
     indent(img)
     @printf(img.f, "<text x=\"%s\" y=\"%s\"",
-            fmt_float(form.pos.x.value),
-            fmt_float(form.pos.y.value))
+            svg_fmt_float(form.pos.x.value),
+            svg_fmt_float(form.pos.y.value))
 
     if is(form.halign, hcenter)
         print(img.f, " text-anchor=\"middle\"")
@@ -204,9 +223,9 @@ function draw(img::SVG, form::Text)
 
     if !isidentity(form.t)
         @printf(img.f, " transform=\"rotate(%s, %s, %s)\"",
-                fmt_float(radians2degrees(atan2(form.t.M[2,1], form.t.M[1,1]))),
-                fmt_float(form.pos.x.value),
-                fmt_float(form.pos.y.value))
+                svg_fmt_float(radians2degrees(atan2(form.t.M[2,1], form.t.M[1,1]))),
+                svg_fmt_float(form.pos.x.value),
+                svg_fmt_float(form.pos.y.value))
     end
 
     # TODO: escape special characters
@@ -253,7 +272,7 @@ end
 
 
 function apply_property(img::SVG, p::LineWidth)
-    @printf(img.f, " stroke-width=\"%s\"", fmt_float(p.value.value))
+    @printf(img.f, " stroke-width=\"%s\"", svg_fmt_float(p.value.value))
 end
 
 
@@ -266,7 +285,7 @@ function apply_property(img::SVG, p::Font)
 end
 
 function apply_property(img::SVG, p::FontSize)
-    @printf(img.f, " font-size=\"%s\"", fmt_float(p.value.value))
+    @printf(img.f, " font-size=\"%s\"", svg_fmt_float(p.value.value))
 end
 
 
