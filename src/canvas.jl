@@ -52,16 +52,18 @@ const empty_canvas = EmptyCanvas()
 type CanvasTree <: Canvas
     box::BoundingBox
     form::Form
+    property::Property
     unit_box::Units
     rot::Rotation
     children::List{Canvas}
 
     function CanvasTree(box::BoundingBox,
                         form::Form,
+                        property::Property,
                         unit_box::Units,
                         rot::Rotation,
                         children::List{Canvas})
-        new(box, form, unit_box, rot, children)
+        new(box, form, property, unit_box, rot, children)
     end
 
     function CanvasTree(opts::Union(Units, Rotation)...)
@@ -75,6 +77,7 @@ type CanvasTree <: Canvas
                         opts::Union(Units, Rotation)...)
         c = new(BoundingBox(x0, y0, width, height),
                 empty_form,
+                empty_property,
                 Units(),
                 Rotation(),
                 ListNil{Canvas}())
@@ -92,7 +95,7 @@ type CanvasTree <: Canvas
 
     # shallow copy constructor
     function CanvasTree(c::CanvasTree)
-        new(c.box, c.form, c.unit_box, c.rot, c.children)
+        new(c.box, c.form, c.property, c.unit_box, c.rot, c.children)
     end
 end
 
@@ -150,7 +153,7 @@ end
 
 # Insertion of forms into canvases
 function insert(a::CanvasTree, b::Form)
-    CanvasTree(a.box, compose(a.form, b), a.unit_box, a.rot, a.children)
+    CanvasTree(a.box, compose(a.form, b), a.property, a.unit_box, a.rot, a.children)
 end
 
 
@@ -160,18 +163,7 @@ end
 
 
 function insert(a::CanvasTree, b::Property)
-    if a.form === empty_form
-        a = copy(a)
-        c = a.children = copy(a.children)
-        while typeof(c) != ListNil{Canvas}
-            c.head = insert(c.head, b)
-            c.tail = copy(c.tail)
-            c = c.tail
-        end
-        a
-    else
-        CanvasTree(a.box, insert(a.form, b), a.unit_box, a.rot, a.children)
-    end
+    CanvasTree(a.box, a.form, compose(a.property, b), a.unit_box, a.rot, a.children)
 end
 
 
@@ -184,7 +176,15 @@ end
 function draw(backend::Backend, root_canvas::Canvas)
     S = {(root_canvas, NativeTransform(), BoundingBox(), root_box(backend))}
     while !isempty(S)
-        (canvas, parent_t, unit_box, parent_box) = pop(S)
+        s = pop(S)
+
+        if s == :POP_PROPERTY
+            pop_property(backend)
+            continue
+        end
+
+        (canvas, parent_t, unit_box, parent_box) = s
+
         if canvas === empty_canvas
             continue
         end
@@ -195,6 +195,13 @@ function draw(backend::Backend, root_canvas::Canvas)
 
         unit_box = convert(BoundingBox, canvas.unit_box)
 
+        if !is(canvas.property, empty_canvas)
+            push(S, :POP_PROPERTY)
+            push_property(backend,
+                          native_measure(canvas.property, t, unit_box,
+                                         box, backend))
+        end
+
         draw(backend, t, unit_box, box, canvas.form)
 
         for child in canvas.children
@@ -203,6 +210,5 @@ function draw(backend::Backend, root_canvas::Canvas)
     end
 
 end
-
 
 
