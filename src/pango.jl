@@ -1,6 +1,6 @@
 
-require("util.jl")
-require("measure.jl")
+load("Compose/src/util.jl")
+load("Compose/src/measure.jl")
 
 #const libpango = dlopen("libpangoft2-1.0")
 
@@ -28,7 +28,7 @@ const pango_attrs = [
     (:PANGO_ATTR_GRAVITY_HINT,    :PangoAttrInt)]
 
 
-for ((attr, t), i) in enumerate(pango_attrs)
+for (i, (attr, t)) in enumerate(pango_attrs)
     @eval begin
         const $attr = $i
     end

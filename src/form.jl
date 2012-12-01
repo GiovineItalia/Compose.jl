@@ -1,9 +1,11 @@
 # Form: a thing that is visible once drawn.
 
-require("backend.jl")
-require("property.jl")
-require("measure.jl")
-require("list.jl")
+export polygon
+
+load("Compose/src/backend.jl")
+load("Compose/src/property.jl")
+load("Compose/src/measure.jl")
+load("Compose/src/list.jl")
 
 # A primitive form: typcially a shape or sequence of drawing operations.
 abstract FormPrimitive

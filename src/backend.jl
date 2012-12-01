@@ -1,7 +1,9 @@
 
 # Backend: a thing upon with other things are drawn.
 
-require("measure.jl")
+export @upon, finish
+
+load("Compose/src/measure.jl")
 
 abstract Backend
 

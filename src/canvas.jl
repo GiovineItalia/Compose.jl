@@ -1,9 +1,11 @@
 
 # Canvas: a thing upon which other things are placed.
 
-require("measure.jl")
-require("form.jl")
-require("property.jl")
+export canvas, draw
+
+load("Compose/src/form.jl")
+load("Compose/src/measure.jl")
+load("Compose/src/property.jl")
 
 
 # A box giving the coordinate system used by a canvas.

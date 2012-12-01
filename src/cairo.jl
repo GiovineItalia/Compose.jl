@@ -1,10 +1,10 @@
 
 # Cairo backend for compose
 
-require("backend.jl")
-require("measure.jl")
-require("color.jl")
-require("form.jl")
+load("Compose/src/backend.jl")
+load("Compose/src/measure.jl")
+load("Compose/src/color.jl")
+load("Compose/src/form.jl")
 
 const libcairo = dlopen("libcairo")
 

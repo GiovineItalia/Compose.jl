@@ -1,9 +1,11 @@
 
 # Property: a thing that changes how other things are drawn.
 
-require("backend.jl")
-require("color.jl")
-require("measure.jl")
+export stroke, fill, linewidth
+
+load("Compose/src/backend.jl")
+load("Compose/src/color.jl")
+load("Compose/src/measure.jl")
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive

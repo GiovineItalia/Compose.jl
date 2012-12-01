@@ -1,9 +1,18 @@
 
-require("canvas.jl")
-require("form.jl")
-require("property.jl")
-require("cairo.jl")
-require("svg.jl")
+module Compose
+
+using Base
+import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
+       Base.length, Base.==, Base.<=, Base.isempty, Base.insert,
+       Base.start, Base.next, Base.done
+
+export |, <<, pad, hstack, vstack
+
+load("Compose/src/canvas.jl")
+load("Compose/src/form.jl")
+load("Compose/src/property.jl")
+load("Compose/src/cairo.jl")
+load("Compose/src/svg.jl")
 
 
 # Compose operator
@@ -88,4 +97,4 @@ function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber
 end
 
 
-
+end # module Compose

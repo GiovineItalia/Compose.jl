@@ -1,13 +1,15 @@
 
 # An SVG backend for compose.
 
-require("backend.jl")
-require("measure.jl")
-require("color.jl")
-require("form.jl")
-require("json.jl")
-require("pango.jl")
-require("util.jl")
+export SVG
+
+load("Compose/src/backend.jl")
+load("Compose/src/measure.jl")
+load("Compose/src/color.jl")
+load("Compose/src/form.jl")
+load("Compose/src/json.jl")
+load("Compose/src/pango.jl")
+load("Compose/src/util.jl")
 
 # Format a floating point number into a decimal string of reasonable precision.
 function svg_fmt_float(x::Float64)

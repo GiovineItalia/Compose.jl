@@ -2,8 +2,8 @@
 
 # Draw a sierpinski tiangle.
 
-insert(LOAD_PATH, 1, "../src")
-load("compose.jl")
+load("Compose.jl")
+using Compose
 
 function sierpinski(n)
     if n == 0
@@ -17,7 +17,7 @@ function sierpinski(n)
     end
 end
 
-@upon SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch) begin
-    draw(sierpinski(8) << (linewidth(0.1mm) | fill(nothing)))
-end
 
+img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
+draw(img, sierpinski(8) << (linewidth(0.1mm) | fill(nothing)))
+finish(img)
