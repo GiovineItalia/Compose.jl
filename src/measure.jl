@@ -1,5 +1,5 @@
 
-export mm, cm, inch, furlong, pt, w, h, px, cx, cy
+export Measure, mm, cm, inch, furlong, pt, w, h, px, cx, cy
 
 # A unit gives some semantic meaning to a bare number.
 abstract Unit

@@ -3,6 +3,8 @@
 # A collection of utilities for handling color.
 #
 
+export Color, Colour, RGB, HLS, XYZ, LAB, LUV, LCHab, LCHuv, color, colour
+
 abstract Color
 typealias ColorOrNothing Union(Color, String, Nothing)
 typealias ColorOrStringOrNothing Union(Color, String, Nothing)

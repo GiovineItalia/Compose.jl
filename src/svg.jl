@@ -44,12 +44,26 @@ convert(::Type{SVGMeasure}, u::Float64) = SVGMeasure(u)
 
 
 type SVG <: Backend
+    # Image size in millimeters.
     width::SVGMeasure
     height::SVGMeasure
+
+    # Output stream.
     f::IOStream
+
+    # Should f be closed when the backend is finished?
     close_stream::Bool
+
+    # Current level of indentation.
     indentation::Int
+
+    # Javascript fragments are placed in a function with a unique name. This is
+    # a map of unique function names to javascript code.
     scripts::Dict{String, String}
+
+    # Keep track of which properties that are push are empty to we can avoid
+    # printiing them.
+    empty_properties::Vector{Bool}
 
     function SVG(f::IOStream,
                  width::MeasureOrNumber,
@@ -61,6 +75,7 @@ type SVG <: Backend
         img.close_stream = false
         img.indentation = 0
         img.scripts = Dict{String, String}()
+        img.empty_properties = Array(Bool, 0)
 
         write(img.f, @sprintf(
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
@@ -238,23 +253,29 @@ end
 
 # Applying properties
 
-
 function push_property(img::SVG, p::Property)
-    indent(img)
-    write(img.f, "<g")
-    while !is(p, empty_property)
-        apply_property(img, p.primitive)
-        p = p.next
+    if is(p, empty_property)
+        push(img.empty_properties, true)
+    else
+        push(img.empty_properties, false)
+        indent(img)
+        write(img.f, "<g")
+        while !is(p, empty_property)
+            apply_property(img, p.primitive)
+            p = p.next
+        end
+        write(img.f, ">\n")
+        img.indentation += 1
     end
-    write(img.f, ">\n")
-    img.indentation += 1
 end
 
 
 function pop_property(img::SVG)
-    img.indentation -= 1
-    indent(img)
-    write(img.f, "</g>\n")
+    if !pop(img.empty_properties)
+        img.indentation -= 1
+        indent(img)
+        write(img.f, "</g>\n")
+    end
 end
 
 

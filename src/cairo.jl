@@ -1,6 +1,8 @@
 
 # Cairo backend for compose
 
+export PNG, PDF, PS
+
 load("Compose/src/backend.jl")
 load("Compose/src/measure.jl")
 load("Compose/src/color.jl")
