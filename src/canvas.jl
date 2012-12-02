@@ -1,7 +1,7 @@
 
 # Canvas: a thing upon which other things are placed.
 
-export canvas, draw
+export Canvas, canvas, draw
 
 load("Compose/src/form.jl")
 load("Compose/src/measure.jl")
