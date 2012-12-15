@@ -71,7 +71,7 @@ function cat{T}(a::List{T}, b::List{T})
 end
 
 
-function convert{T}(::Type{List{T}}, xs::AbstractArray{T})
+function list{T}(xs::AbstractArray{T})
     if length(xs) == 0
         return nothing
     else

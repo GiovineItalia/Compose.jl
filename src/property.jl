@@ -1,7 +1,7 @@
 
 # Property: a thing that changes how other things are drawn.
 
-export stroke, fill, linewidth
+export stroke, fill, linewidth, font, fontsize
 
 load("Compose/src/backend.jl")
 load("Compose/src/color.jl")
@@ -51,12 +51,6 @@ end
 copy(ps::PropertySeq) = PropertySeq(ps)
 
 
-# TODO: Put this somewhere better
-function compose()
-    error("Empty compose operation.")
-end
-
-
 # Composition of properties, which is simply list concatenation.
 function compose(head::Property, rest::Property...)
     a = b = head === empty_property ? head : copy(head)
@@ -75,6 +69,9 @@ function compose(head::Property, rest::Property...)
     end
     a
 end
+
+
+compose(head::Property, ::Nothing) = head
 
 
 # Unit conversion functions.

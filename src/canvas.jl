@@ -1,7 +1,7 @@
 
 # Canvas: a thing upon which other things are placed.
 
-export Canvas, canvas, draw
+export Canvas, Units, Rotation, canvas, draw, set_unit_box, set_box
 
 load("Compose/src/form.jl")
 load("Compose/src/measure.jl")

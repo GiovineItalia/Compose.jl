@@ -1,6 +1,7 @@
 # Form: a thing that is visible once drawn.
 
-export polygon
+export polygon, rectangle, lines, circle, ellipse, text,
+       hcenter, hleft, hright, vcenter, vtop, vbottom
 
 load("Compose/src/backend.jl")
 load("Compose/src/property.jl")
@@ -211,7 +212,7 @@ end
 
 function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
               box::NativeBoundingBox, form::Ellipse)
-    native_form = ellipse(
+    native_form = Ellipse(
         native_measure(form.center, t, unit_box, box, backend),
         native_measure(form.x_point, t, unit_box, box, backend),
         native_measure(form.y_point, t, unit_box, box, backend))

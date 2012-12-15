@@ -3,16 +3,24 @@ module Compose
 
 using Base
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
-       Base.length, Base.==, Base.<=, Base.isempty, Base.insert,
-       Base.start, Base.next, Base.done
+       Base.length, Base.==, Base.<, Base.<=, Base.isempty, Base.insert,
+       Base.start, Base.next, Base.done, Base.copy
 
-export |, <<, pad, hstack, vstack
+export |, <<, pad, hstack, vstack, compose, insert
+
+# Empty compose. This violates the rules a bit, since nothing is not the
+# identity element in any of the monoids, but it's sometimes convenient if it
+# behaves as such.
+compose() = nothing
 
 load("Compose/src/canvas.jl")
 load("Compose/src/form.jl")
 load("Compose/src/property.jl")
 load("Compose/src/cairo.jl")
 load("Compose/src/svg.jl")
+
+
+#|(x::Any, ::Nothing) = x
 
 
 # Compose operator
@@ -64,6 +72,24 @@ function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber, height::MeasureOrNumbe
         x += canvas.box.width
     end
 
+    root
+end
+
+# TODO: this is brittle: it will break when absolute units are used in canvases
+function hstack(canvases::Canvas...)
+    width = sum([canvas.box.width for canvas in canvases])
+    height = max([canvas.box.height for canvas in canvases])
+    root = canvas(Units(1.0, height.value))
+    x = 0cx
+    for canvas in canvases
+        canvas = copy(canvas)
+        canvas.box = copy(canvas.box)
+        canvas.box.y0 = (height / 2) - (canvas.box.height / 2)
+        canvas.box.x0 = x
+        canvas.box.width = (canvas.box.width.value / width.value) * cx
+        root |= canvas
+        x += canvas.box.width
+    end
     root
 end
 
