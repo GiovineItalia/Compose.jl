@@ -10,10 +10,10 @@ function sierpinski(n)
         canvas() << polygon((1,1), (0,1), (1/2, 0))
     else
         t = sierpinski(n - 1)
-        canvas() |
-            (canvas(1/4,   0, 1/2, 1/2) | t) |
-            (canvas(  0, 1/2, 1/2, 1/2) | t) |
-            (canvas(1/2, 1/2, 1/2, 1/2) | t)
+        compose(canvas(),
+                (canvas(1/4,   0, 1/2, 1/2), t),
+                (canvas(  0, 1/2, 1/2, 1/2), t),
+                (canvas(1/2, 1/2, 1/2, 1/2), t))
     end
 end
 

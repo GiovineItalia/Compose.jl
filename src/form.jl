@@ -56,7 +56,7 @@ function removable(a::FormTree)
 end
 
 
-# Conceptually, joining forms is tree joining be introducing a new root.
+# Conceptually, combining forms is tree joining be introducing a new root.
 #
 #   a      b               c
 #  / \    / \    --->     / \
@@ -66,7 +66,7 @@ end
 #
 # There is a trick here to avoid an exceess of nop or "removable" nodes.
 #
-function compose(forms::Form...)
+function combine(forms::Form...)
     children = ListNil{FormTree}()
     for form in forms
         if form === empty_form
@@ -85,13 +85,13 @@ function compose(forms::Form...)
 end
 
 
-# Insertion of properties into forms
-function insert(a::FormTree, b::Property)
-    FormTree(a.primitive, compose(a.property, b), a.children)
+# Composition of properties into forms
+function compose(a::FormTree, b::Property)
+    FormTree(a.primitive, combine(a.property, b), a.children)
 end
 
 
-function insert(a::EmptyForm, b::Property)
+function compose(a::EmptyForm, b::Property)
     a
 end
 

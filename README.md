@@ -76,7 +76,7 @@ good as any other with the same points.
 ## Laws of Composition
 
 Each of the three types (Canvas, Form, Property) is a monoid under the compose
-operation.
+operation. Which is to say, composing two Canvases always produces a canvas (clo
 
 
 ## Laws of Insertion

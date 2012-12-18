@@ -7,12 +7,12 @@ import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
        Base.<<, Base.>>
 
-export |, <<, >>, pad, hstack, vstack, compose, insert
+export |, <<, >>, pad, hstack, vstack, compose, combine
 
-# Empty compose. This violates the rules a bit, since nothing is not the
+# Empty combine. This violates the rules a bit, since nothing is not the
 # identity element in any of the monoids, but it's sometimes convenient if it
 # behaves as such.
-compose() = nothing
+combine() = nothing
 
 load("Compose/src/canvas.jl")
 load("Compose/src/form.jl")
@@ -20,19 +20,28 @@ load("Compose/src/property.jl")
 load("Compose/src/cairo.jl")
 load("Compose/src/svg.jl")
 
+typealias ComposeType Union(Canvas, Form, Property)
+
 # Compose operator
-|(xs::Property...) = compose(xs...)
-|(xs::Form...)     = compose(xs...)
-|(xs::Canvas...)   = compose(xs...)
+<<(a::Form,   b::Property) = compose(a, b)
+<<(a::Canvas, b::Form)     = compose(a, b)
+<<(a::Canvas, b::Property) = compose(a, b)
+<<(a::Canvas, b::Canvas)   = compose(a, b)
 
-# Insert operator
-<<(a::Form,   b::Property) = insert(a, b)
-<<(a::Canvas, b::Form)     = insert(a, b)
-<<(a::Canvas, b::Property) = insert(a, b)
+>>(b::Property, a::Form)   = compose(a, b)
+>>(b::Form,     a::Canvas) = compose(a, b)
+>>(b::Property, a::Canvas) = compose(a, b)
+>>(b::Canvas,   a::Canvas) = compose(a, b)
 
->>(b::Property, a::Form)   = insert(a, b)
->>(b::Form,     a::Canvas) = insert(a, b)
->>(b::Property, a::Canvas) = insert(a, b)
+# Combine operator
+|(xs::Property...) = combine(xs...)
+|(xs::Form...)     = combine(xs...)
+
+# Compose over hetergenous lists of things.
+compose(x::ComposeType) = x
+compose(xs::Tuple) = compose(xs...)
+compose(xs::Array) = compose(xs...)
+compose(x, y, zs...) = compose(compose(compose(x), compose(y)), zs...)
 
 
 # Helpful functions# Create a new canvas containing the given canvas with margins on all sides of
@@ -75,7 +84,7 @@ function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber,height::MeasureOrNumber
             canvas.box.y0 = height - canvas.box.height
         end
 
-        root |= canvas
+        root <<= canvas
         x += canvas.box.width
     end
 
@@ -124,7 +133,7 @@ function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber
             canvas.box.x0 = width - canvas.box.width
         end
 
-        root |= canvas
+        root <<= canvas
         y += canvas.box.height
     end
 

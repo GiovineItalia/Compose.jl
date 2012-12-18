@@ -153,23 +153,23 @@ function compose(canvases::Canvas...)
 end
 
 
-# Insertion of forms into canvases
-function insert(a::CanvasTree, b::Form)
-    CanvasTree(a.box, compose(a.form, b), a.property, a.unit_box, a.rot, a.children)
+# Composition of forms into canvases
+function compose(a::CanvasTree, b::Form)
+    CanvasTree(a.box, combine(a.form, b), a.property, a.unit_box, a.rot, a.children)
 end
 
 
-function insert(a::EmptyCanvas, b::Form)
+function compose(a::EmptyCanvas, b::Form)
     a
 end
 
 
-function insert(a::CanvasTree, b::Property)
-    CanvasTree(a.box, a.form, compose(a.property, b), a.unit_box, a.rot, a.children)
+function compose(a::CanvasTree, b::Property)
+    CanvasTree(a.box, a.form, combine(a.property, b), a.unit_box, a.rot, a.children)
 end
 
 
-function insert(a::EmptyCanvas, b::Property)
+function compose(a::EmptyCanvas, b::Property)
     a
 end
 

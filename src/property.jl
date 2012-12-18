@@ -12,7 +12,7 @@ abstract PropertyPrimitive
 
 
 # A property is a (possibly empty) sequence of property primitives. The set of
-# Properties with the compose operator forms a monoid (specifically, it can be
+# Properties with the combine operator forms a monoid (specifically, it can be
 # thought of as a free monoid). The empty_property constant is the identity
 # element.
 abstract Property
@@ -51,8 +51,8 @@ end
 copy(ps::PropertySeq) = PropertySeq(ps)
 
 
-# Composition of properties, which is simply list concatenation.
-function compose(head::Property, rest::Property...)
+# Combination of properties, which is simply list concatenation.
+function combine(head::Property, rest::Property...)
     a = b = head === empty_property ? head : copy(head)
     for p in rest
         if p === empty_property
@@ -71,7 +71,7 @@ function compose(head::Property, rest::Property...)
 end
 
 
-compose(head::Property, ::Nothing) = head
+combine(head::Property, ::Nothing) = head
 
 
 # Unit conversion functions.
