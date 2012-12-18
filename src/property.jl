@@ -1,7 +1,9 @@
 
 # Property: a thing that changes how other things are drawn.
 
-export stroke, fill, linewidth, font, fontsize
+export stroke, fill, linewidth, font, fontsize, svgid, svgclass, svglink,
+       onactive, onclick, onfocusin, onfocusout, onload, onmousedown,
+       onmousemove, onmouseout, onmouseover, onmouseup
 
 load("Compose/src/backend.jl")
 load("Compose/src/color.jl")
@@ -163,13 +165,33 @@ end
 
 # A property primitive assigning an ID, in particular in SVG, to enable
 # manipulation of portions of the graphic.
-type ID <: PropertyPrimitive
+type SVGID <: PropertyPrimitive
     value::String
 end
 
 
 # Singleton sequence contructor.
-id(value::String) = PropertySeq(ID(value))
+svgid(value::String) = PropertySeq(SVGID(value))
+
+
+# A property setting the class field in a form's group element.
+type SVGClass <: PropertyPrimitive
+    value::String
+end
+
+
+# Singleton sequence contructor.
+svgclass(value::String) = PropertySeq(SVGClass(value))
+
+
+# A SVG <a> tag.
+type SVGLink <: PropertyPrimitive
+    target::String
+end
+
+
+# Singleton sequence contructor.
+svglink(target::String) = PropertySeq(SVGLink(target))
 
 
 # The font property primitive.

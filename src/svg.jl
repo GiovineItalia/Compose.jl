@@ -65,6 +65,10 @@ type SVG <: Backend
     # printiing them.
     empty_properties::Vector{Bool}
 
+    # Keep track of which properties have links, so we know when to insert
+    # closing </a> tags.
+    linked_properties::Vector{Bool}
+
     function SVG(f::IOStream,
                  width::MeasureOrNumber,
                  height::MeasureOrNumber)
@@ -76,6 +80,7 @@ type SVG <: Backend
         img.indentation = 0
         img.scripts = Dict{String, String}()
         img.empty_properties = Array(Bool, 0)
+        img.linked_properties = Array(Bool, 0)
 
         write(img.f, @sprintf(
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
@@ -256,25 +261,51 @@ end
 function push_property(img::SVG, p::Property)
     if is(p, empty_property)
         push(img.empty_properties, true)
+        push(img.linked_properties, false)
     else
         push(img.empty_properties, false)
         indent(img)
+
+        # The link property demands special handling
+        link_target = nothing
+        q = p
+        while !is(q, empty_property)
+            if typeof(q.primitive) == SVGLink
+                link_target = q.primitive.target
+            end
+            q = q.next
+        end
+
+        if !(link_target === nothing)
+            write(img.f, @sprintf("<a xlink:href=\"%s\">", link_target))
+            push(img.linked_properties, true)
+        else
+            push(img.linked_properties, false)
+        end
+
         write(img.f, "<g")
-        while !is(p, empty_property)
-            apply_property(img, p.primitive)
-            p = p.next
+        q = p
+        while !is(q, empty_property)
+            apply_property(img, q.primitive)
+            q = q.next
         end
         write(img.f, ">\n")
+
         img.indentation += 1
     end
 end
 
 
 function pop_property(img::SVG)
+    is_linked = pop(img.linked_properties)
     if !pop(img.empty_properties)
         img.indentation -= 1
         indent(img)
-        write(img.f, "</g>\n")
+        write(img.f, "</g>")
+        if is_linked
+            write(img.f, "</a>")
+        end
+        write(img.f, "\n")
     end
 end
 
@@ -299,8 +330,12 @@ function apply_property(img::SVG, p::LineWidth)
 end
 
 
-function apply_property(img::SVG, p::ID)
+function apply_property(img::SVG, p::SVGID)
     @printf(img.f, " id=\"%s\"", escape_string(p.value))
+end
+
+function apply_property(img::SVG, p::SVGClass)
+    @printf(img.f, " class=\"%s\"", escape_string(p.value))
 end
 
 function apply_property(img::SVG, p::Font)

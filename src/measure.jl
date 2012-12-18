@@ -508,7 +508,7 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function pango_text_extents(pangolayout::PangoLayout, text::String)
-    ccall(dlsym(libpango, :pango_layout_set_text),
+    ccall(dlsym(libpango, :pango_layout_set_markup),
           Void, (Ptr{Void}, Ptr{Uint8}, Int32),
           pangolayout.layout, bytestring(text), length(text))
 
