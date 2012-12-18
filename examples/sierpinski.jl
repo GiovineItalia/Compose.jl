@@ -19,5 +19,5 @@ end
 
 
 img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
-draw(img, sierpinski(8) << (linewidth(0.1mm) | fill(nothing)))
+draw(img, sierpinski(8) << linewidth(0.1mm) << fill(nothing))
 finish(img)

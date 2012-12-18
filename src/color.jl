@@ -107,6 +107,13 @@ type LCHuv <: Color
 end
 
 
+# Arbitrary ordering
+# ------------------
+
+isless(a::RGB, b::RGB) = (a.r, a.g, a.b) < (b.r, b.g, b.b)
+isless(a::Color, b::Color) = convert(RGB, a) < convert(RGB, b)
+
+
 # White-points
 # ------------
 
@@ -1147,18 +1154,18 @@ color(c::Color) = c
 function color(desc::String)
     local desc_ = replace(desc, " ", "")
 
-    local mat = match(col_pat_hex1, desc_)
-    if mat != nothing
-        return RGB((16 * parse_int(mat.captures[2], 16)) / 255.,
-                   (16 * parse_int(mat.captures[3], 16)) / 255.,
-                   (16 * parse_int(mat.captures[4], 16)) / 255.)
-    end
-
     mat = match(col_pat_hex2, desc_)
     if mat != nothing
         return RGB(parse_int(mat.captures[2], 16) / 255.,
                    parse_int(mat.captures[3], 16) / 255.,
                    parse_int(mat.captures[4], 16) / 255.)
+    end
+
+    local mat = match(col_pat_hex1, desc_)
+    if mat != nothing
+        return RGB((16 * parse_int(mat.captures[2], 16)) / 255.,
+                   (16 * parse_int(mat.captures[3], 16)) / 255.,
+                   (16 * parse_int(mat.captures[4], 16)) / 255.)
     end
 
     mat = match(col_pat_rgb, desc_)

@@ -16,7 +16,7 @@ The "things" in this case fall one of three types: Property, Form, and Canves.
 together) or insertion (inter-type sticking together).
 
 The semantics of composition and insertion are fairly simple, and once grasped
-provide a consistent and powerful means of building vector. graphics.
+provide a consistent and powerful means of building vector graphics.
 
 ## Example
 
@@ -26,7 +26,8 @@ here's how to draw a sierpinski triangle.
 ![Sierpinski](http://dcjones.github.com/compose/sierpinski.svg)
 
 ```julia
-load("compose.jl")
+load("Compose)
+using Compose
 
 function sierpinski(n)
     if n == 0
@@ -41,20 +42,44 @@ function sierpinski(n)
 end
 
 @upon SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch) begin
-    draw(sierpinski(8) << (linewidth(0.1mm) | fill(nothing)))
+    draw(sierpinski(8) << linewidth(0.1mm) << fill(nothing))
 end
 ```
 
-Composition is accomplished with the `|` operator and insertion with `<<`. If
-not otherwise specified, coordinates are given in "canvas units" in which
+Composition is accomplished with the `|` operator and insertion with `&lt;&lt;`.
+If not otherwise specified, coordinates are given in "canvas units" in which
 `(0,0)` is the top-left of the canvas and `(1,1)` the bottom right. The
 Sierpinski triangle is drawn recursively simply by dividing a canvas into three
 sub-canvases and drawing a sierpinski triangle in each. The recursion terminates
 with a simple triangle form.
 
 One thing to note is that there only every exists one Polygon instance, but it
-is reused in many contexts. Because referential transparency throghout the
-library, one instance of Polygon is as good as any other with the same points.
+is reused in many contexts. Compose is functional: because referential
+transparency is maintained throghout the library, one instance of Polygon is as
+good as any other with the same points.
+
+
+## Overview
+
+### Canvases
+
+### Forms
+
+### Properties
+
+
+### Drawing on Backends
+
+
+
+
+## Laws of Composition
+
+Each of the three types (Canvas, Form, Property) is a monoid under the compose
+operation.
+
+
+## Laws of Insertion
 
 
 ## Influences

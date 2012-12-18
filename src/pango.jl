@@ -204,7 +204,6 @@ function pango_to_svg(text::String)
         error("Could not parse pango markup.")
     end
 
-
     # TODO: do c_stripped_text and c_attr_list need to be freed?
 
     bytearray =  str -> convert(Array{Uint8, 1}, str)

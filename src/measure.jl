@@ -1,4 +1,10 @@
 
+# This file contains code pertaining to "measures", which are some unit of
+# length. Compose supports specifying measures in absolute terms (e.g., 15mm),
+# but also in terms of the width/height of the parent canvas (e.g, 0.5w, 0.25h),
+# or in "canvas coordinates" which is an arbitrary coordinate system given to
+# the canvas (e.g, 10cx, -5cy).
+
 export Measure, BoundingBox, text_extents,
        mm, cm, inch, furlong, pt, w, h, px, cx, cy
 
@@ -85,6 +91,10 @@ end
 >={U}(a::SimpleMeasure{U}, b::SimpleMeasure{U}) = a.value >= b.value
 
 
+# Unit of a simple measure.
+measure_unit{U}(a::SimpleMeasure{U}) = U
+
+
 # A sum of one or more measures of different units.
 type CompoundMeasure <: Measure
     values::Dict{Type, Float64}
@@ -166,10 +176,23 @@ end
 function +(a::CompoundMeasure, b::CompoundMeasure)
     c = CompoundMeasure(copy(a.values))
     for (k, v) in b.values
-        if has(c, k)
+        if has(c.values, k)
             c.values[k] += v
         else
             c.values[k] = v
+        end
+    end
+    c
+end
+
+
+function -(a::CompoundMeasure, b::CompoundMeasure)
+    c = CompoundMeasure(copy(a.values))
+    for (k, v) in b.values
+        if has(c.values, k)
+            c.values[k] -= v
+        else
+            c.values[k] = -v
         end
     end
     c
@@ -232,6 +255,52 @@ function convert(::Type{SimpleMeasure{MillimeterUnit}},
 end
 
 
+# Compute a measure at least as large as any of the given measures.
+#
+# Arbitrary comparisons between measures are not necessarily well defined since
+# the scale of relative units are not known until the graphic is drawn. Yet we
+# sometimes need to to produce a measure that is at least as long as several
+# others. This max function finds such an upper bound, but it differs from the
+# normal max function in that the upper bound may not be tight.
+#
+# TODO: Possibly a new type should be implemented to handle these sorts of
+# situations. Essentially a lazy maximum measure that gets evaluated once
+# relative units are resolved.
+#
+function max(measures::Measure...)
+    maximums = Dict{Type, Float64}()
+    for measure in measures
+        if isa(measure, CompoundMeasure)
+            for (t, value) in measure.values
+                if has(maximums, t)
+                    maximums[t] = max(maximums[t], value)
+                else
+                    maximums[t] = value
+                end
+            end
+        else
+            t = measure_unit(measure)
+            if has(maximums, t)
+                maximums[t] = max(maximums[t], measure.value)
+            else
+                maximums[t] = measure.value
+            end
+        end
+    end
+
+    if length(maximums) == 1
+        for (t, value) in maximums
+            return SimpleMeasure{t}(value)
+        end
+    else
+        CompoundMeasure(maximums)
+    end
+end
+
+max(measures::Vector{Measure}) = max(measures...)
+
+
+# For user-facing functions, there is often an obvious default unit.
 typealias MeasureOrNumber Union(Measure, Number)
 
 
@@ -390,8 +459,10 @@ size_measure(u::Number) = SimpleMeasure{PixelUnit}(convert(Float64, u))
 
 const libpango = dlopen("libpangoft2-1.0")
 
+# Mirroring a #define in the pango header.
 const PANGO_SCALE = 1024.0
 
+# Wrapper for a pango_layout object.
 type PangoLayout
     fm::Ptr{Void}
     ctx::Ptr{Void}
@@ -413,7 +484,7 @@ type PangoLayout
     end
 end
 
-
+# Set the layout's font.
 function pango_set_font(pangolayout::PangoLayout, family::String, pts::Number)
     desc_str = @sprintf("%s %f", family, pts)
     desc = ccall(dlsym(libpango, :pango_font_description_from_string),
@@ -427,6 +498,15 @@ function pango_set_font(pangolayout::PangoLayout, family::String, pts::Number)
 end
 
 
+# Find the width and height of a strin.g
+#
+# Args:
+#   pangolayout: a pango layout object, with font, etc, set.
+#   text: a string we might like to draw.
+#
+# Returns:
+#   A (width, height) tuple in absolute units.
+#
 function pango_text_extents(pangolayout::PangoLayout, text::String)
     ccall(dlsym(libpango, :pango_layout_set_text),
           Void, (Ptr{Void}, Ptr{Uint8}, Int32),
@@ -442,7 +522,18 @@ function pango_text_extents(pangolayout::PangoLayout, text::String)
     width, height = (extents[3] / PANGO_SCALE)pt, (extents[4] / PANGO_SCALE)pt
 end
 
-
+# Find the minimum width and height needed to fit any of the given strings.
+#
+# (A "user-friendly" wrapper for pango_text_extents.)
+#
+# Args:
+#   font_family: Something like a font name.
+#   pts: Font size in points.
+#   texts: One or more strings.
+#
+# Returns:
+#   A (width, height) tuple in absolute units.
+#
 function text_extents(font_family::String, pts::Float64, texts::String...)
     layout = PangoLayout()
     pango_set_font(layout, font_family, pts)
@@ -456,7 +547,7 @@ function text_extents(font_family::String, pts::Float64, texts::String...)
     (max_width, max_height)
 end
 
-
+# Same as text_extents but with font_size in arbitrary absolute units.
 function text_extents(font_family::String, size::SimpleMeasure{MillimeterUnit},
                       texts::String...)
     text_extents(font_family, size/pt, texts...)

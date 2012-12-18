@@ -171,7 +171,10 @@ end
 
 function rectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
                    width::MeasureOrNumber, height::MeasureOrNumber)
-
+    x0 = x_measure(x0)
+    y0 = y_measure(y0)
+    width = x_measure(width)
+    height = y_measure(height)
     xy0 = Point(x0, y0)
     xy1 = Point(x0 + width, y0 + height)
     polygon(xy0, Point(xy1.x, xy0.y), xy1, Point(xy0.x, xy1.y))
@@ -257,7 +260,7 @@ end
 
 
 function text(x::MeasureOrNumber, y::MeasureOrNumber, value::String)
-    text(x, y, value, hleft, hbottom)
+    text(x, y, value, hleft, vbottom)
 end
 
 

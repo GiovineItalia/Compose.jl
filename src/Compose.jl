@@ -3,10 +3,11 @@ module Compose
 
 using Base
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
-       Base.length, Base.==, Base.<, Base.<=, Base.isempty, Base.insert,
-       Base.start, Base.next, Base.done, Base.copy
+       Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty, Base.insert,
+       Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
+       Base.<<, Base.>>
 
-export |, <<, pad, hstack, vstack, compose, insert
+export |, <<, >>, pad, hstack, vstack, compose, insert
 
 # Empty compose. This violates the rules a bit, since nothing is not the
 # identity element in any of the monoids, but it's sometimes convenient if it
@@ -19,25 +20,23 @@ load("Compose/src/property.jl")
 load("Compose/src/cairo.jl")
 load("Compose/src/svg.jl")
 
-
-#|(x::Any, ::Nothing) = x
-
-
 # Compose operator
 |(xs::Property...) = compose(xs...)
 |(xs::Form...)     = compose(xs...)
 |(xs::Canvas...)   = compose(xs...)
-
 
 # Insert operator
 <<(a::Form,   b::Property) = insert(a, b)
 <<(a::Canvas, b::Form)     = insert(a, b)
 <<(a::Canvas, b::Property) = insert(a, b)
 
+>>(b::Property, a::Form)   = insert(a, b)
+>>(b::Form,     a::Canvas) = insert(a, b)
+>>(b::Property, a::Canvas) = insert(a, b)
 
-# Helpful functions.
 
-# Pad a canvas by composing it into a parent convas with margins.
+# Helpful functions# Create a new canvas containing the given canvas with margins on all sides of
+# size u.
 function pad(c::Canvas, u::MeasureOrNumber)
     u = size_measure(u)
     compose(canvas(u, u, 1w - 2u, 1h - 2u), c)
@@ -47,7 +46,15 @@ end
 
 
 # Create a new canvas containing the given canvases stacked horizontally.
-function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber, height::MeasureOrNumber,
+#
+# Args:
+#  x0: X-position of the new root canvas
+#  y0: Y-position of the new root canvas
+#  height: Height of the root canvas.
+#  aligned_canvases: One or more canveses accompanied with a vertical alignment
+#                    specifier, giving the vertical positioning of the canvas.
+#
+function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber,height::MeasureOrNumber,
                 aligned_canvases::(Canvas, VAlignment)...)
     width = sum([canvas.box.width for (canvas, _) in aligned_canvases])
     height = y_measure(height)
@@ -75,26 +82,28 @@ function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber, height::MeasureOrNumbe
     root
 end
 
-# TODO: this is brittle: it will break when absolute units are used in canvases
+
+# Create a new canvas containing the given canvases stacked horizontally.
+#
+# This is the simple version of hstack. The root canvas will be placed on 0cx,
+# 0cy, and its height will be the maximum of the canvases it contains. All
+# canvases will be centered vertically.
+#
 function hstack(canvases::Canvas...)
-    width = sum([canvas.box.width for canvas in canvases])
     height = max([canvas.box.height for canvas in canvases])
-    root = canvas(Units(1.0, height.value))
-    x = 0cx
-    for canvas in canvases
-        canvas = copy(canvas)
-        canvas.box = copy(canvas.box)
-        canvas.box.y0 = (height / 2) - (canvas.box.height / 2)
-        canvas.box.x0 = x
-        canvas.box.width = (canvas.box.width.value / width.value) * cx
-        root |= canvas
-        x += canvas.box.width
-    end
-    root
+    hstack(0, 0, height, [(canvas, vcenter) for canvas in canvases]...)
 end
 
 
 # Create a new canvas containing the given canvases stacked vertically.
+#
+# Args:
+#  x0: X-position of the new root canvas
+#  y0: Y-position of the new root canvas
+#  width: Height of the root canvas.
+#  aligned_canvases: One or more canveses accompanied with a horizontal alignment
+#                    specifier, giving the horizontal positioning of the canvas.
+#
 function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber,
                 aligned_canvases::(Canvas, HAlignment)...)
     width = x_measure(width)
@@ -122,5 +131,16 @@ function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber
     root
 end
 
+
+# Create a new canvas containing the given canvases stacked horizontally.
+#
+# The simple version of vstack. The root canvas will be placed on 0cx, 0cy, and
+# its width will be the maximum of the canvases it contains. All canvases will
+# be centered horizontally..
+#
+function vstack(canvases::Canvas...)
+    width = max([canvas.box.width for canvas in canvases])
+    vstack(0, 0, width, [(canvas, hcenter) for canvas in canvases]...)
+end
 
 end # module Compose
