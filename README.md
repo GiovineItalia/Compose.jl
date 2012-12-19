@@ -12,11 +12,10 @@ Unilke most vector graphics libraries, compose is thoroughly declaritive. Rather
 that issues a sequence of drawing commands, graphics are formed by sticking
 various things together and then letting the library figure out how to draw it.
 The "things" in this case fall one of three types: Property, Form, and Canves.
-"Sticking together" is accomplished either with composition (intra-type sticking
-together) or insertion (inter-type sticking together).
+"Sticking together" is primary achieved with the `compose` function.
 
-The semantics of composition and insertion are fairly simple, and once grasped
-provide a consistent and powerful means of building vector graphics.
+The semantics of composition are fairly simple, and once grasped provide a
+consistent and powerful means of building vector graphics.
 
 ## Example
 
@@ -26,61 +25,71 @@ here's how to draw a sierpinski triangle.
 ![Sierpinski](http://dcjones.github.com/compose/sierpinski.svg)
 
 ```julia
-load("Compose)
+load("Compose")
 using Compose
 
 function sierpinski(n)
     if n == 0
-        canvas() << polygon((1,1), (0,1), (1/2, 0))
+        compose(canvas(), polygon((1,1), (0,1), (1/2, 0)))
     else
         t = sierpinski(n - 1)
-        canvas() |
-            (canvas(1/4,   0, 1/2, 1/2) | t) |
-            (canvas(  0, 1/2, 1/2, 1/2) | t) |
-            (canvas(1/2, 1/2, 1/2, 1/2) | t)
+        compose(canvas(),
+                (canvas(1/4,   0, 1/2, 1/2), t),
+                (canvas(  0, 1/2, 1/2, 1/2), t),
+                (canvas(1/2, 1/2, 1/2, 1/2), t))
     end
 end
 
-@upon SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch) begin
-    draw(sierpinski(8) << linewidth(0.1mm) << fill(nothing))
-end
+img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
+draw(img, compose(sierpinski(8), linewidth(0.1mm), fill(nothing)))
+finish(img)
+
 ```
 
-Composition is accomplished with the `|` operator and insertion with `&lt;&lt;`.
-If not otherwise specified, coordinates are given in "canvas units" in which
-`(0,0)` is the top-left of the canvas and `(1,1)` the bottom right. The
-Sierpinski triangle is drawn recursively simply by dividing a canvas into three
-sub-canvases and drawing a sierpinski triangle in each. The recursion terminates
-with a simple triangle form.
+A graphic in Compose is a tree of `Canvas` object, each specifying a coordinate
+system relative to its parent canvas. One canvas is made a child of another with
+a call to `compose(a::Canvas, b::Canvas)`.
 
-One thing to note is that there only every exists one Polygon instance, but it
-is reused in many contexts. Compose is functional: because referential
-transparency is maintained throghout the library, one instance of Polygon is as
-good as any other with the same points.
+Canvases may also have children of type `Form` which are rectangles, ellipses,
+text, and other things that end up being drawn. Properties, which effect how
+forms are drawn, may be children of `Canvas` or `Form` objects.
 
+## Fancier compositions
 
-## Overview
+There are fancier forms of the compose function. In particular, variadic
+compose, which is roughly defined as:
 
-### Canvases
+```julia
+compose(a, b, cs...) = compose(compose(a, b), cs...)
+```
 
-### Forms
+Compose over tuples or arrays:
+```julia
+compose((as...)) = compose(as...)
+```
 
-### Properties
+In effect, this let's one write a complex series of compose operations as an
+S-expression. For example:
 
+```julia
+compose(a, b, ((c, d), (e, f), g))
+```
 
-### Drawing on Backends
+Since all we are doing is building trees, this syntax tends to be pretty
+convenient.
 
+## Combinations
 
+There is a lesser operation in Compose called `combine`, defined over Properties
+and Forms. It acts essentially as a union operation. The combinations of two
+forms is a new form that draws both. The combination of two properties is a new
+property that has the effect of both.
 
+## Coordinates
 
-## Laws of Composition
-
-Each of the three types (Canvas, Form, Property) is a monoid under the compose
-operation. Which is to say, composing two Canvases always produces a canvas (clo
-
-
-## Laws of Insertion
-
+Besides coordinate transformations, Compose also handles mixtures of relative
+and abosule coordinates. For example, `1w - 10mm` is a well formed expression,
+giving the width of the parent canvas minus ten millimeters.
 
 ## Influences
 
