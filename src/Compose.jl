@@ -48,7 +48,7 @@ compose(x, y, zs...) = compose(compose(compose(x), compose(y)), zs...)
 # size u.
 function pad(c::Canvas, u::MeasureOrNumber)
     u = size_measure(u)
-    compose(canvas(u, u, 1w - 2u, 1h - 2u), c)
+    compose(canvas(), (canvas(u, u, 1w - 2u, 1h - 2u), c))
 end
 
 # TODO: pad_top, pad_bottom, pad_left, pad_right
@@ -65,7 +65,29 @@ end
 #
 function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber,height::MeasureOrNumber,
                 aligned_canvases::(Canvas, VAlignment)...)
-    width = sum([canvas.box.width for (canvas, _) in aligned_canvases])
+
+    # To get the expected results, we scale width units, so that everything
+    # fits.
+    total_width_units = 0
+    for (canvas, _)  in aligned_canvases
+        if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
+            total_width_units += canvas.box.width.value
+        elseif typeof(canvas.box.width) == CompoundMeasure &&
+               has(canvas.box.width.values, WidthUnit)
+            total_width_units += canvas.box.width.values[WidthUnit]
+       end
+    end
+
+    width = CompoundMeasure() + 0w
+
+    if length(aligned_canvases) > 0
+        width += sum([canvas.box.width for (canvas, _) in aligned_canvases])
+    end
+
+    if width.values[WidthUnit] > 0
+        width.values[WidthUnit] /= total_width_units
+    end
+
     height = y_measure(height)
 
     root = canvas(x0, y0, width, height)
@@ -73,6 +95,13 @@ function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber,height::MeasureOrNumber
     for (canvas, aln) in aligned_canvases
         canvas = copy(canvas)
         canvas.box = copy(canvas.box)
+
+        if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
+            canvas.box.width.value /= total_width_units
+        elseif typeof(canvas.box.width) == CompoundMeasure &&
+               has(canvas.box.width.values, WidthUnit)
+            canvas.box.width.values[WidthUnit] /= total_width_units
+        end
 
         # Should we interpret vbottom to mean 0?
         canvas.box.x0 = x
@@ -115,14 +144,42 @@ end
 #
 function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber,
                 aligned_canvases::(Canvas, HAlignment)...)
+
+    # Scale height units
+    total_height_units = 0
+    for (canvas, _)  in aligned_canvases
+        if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
+            total_height_units += canvas.box.height.value
+        elseif typeof(canvas.box.height) == CompoundMeasure &&
+               has(canvas.box.height.values, HeightUnit)
+            total_height_units += canvas.box.height.values[HeightUnit]
+       end
+    end
+
     width = x_measure(width)
-    height = sum([canvas.box.height for (canvas, _) in aligned_canvases])
+
+    height = CompoundMeasure() + 0h
+
+    if length(aligned_canvases) > 0
+        height += sum([canvas.box.height for (canvas, _) in aligned_canvases])
+    end
+
+    if height.values[HeightUnit] > 0
+        height.values[HeightUnit] /= total_height_units
+    end
 
     root = canvas(x0, y0, width, height)
     y = 0cy
     for (canvas, aln) in aligned_canvases
         canvas = copy(canvas)
         canvas.box = copy(canvas.box)
+
+        if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
+            canvas.box.height.value /= total_height_units
+        elseif typeof(canvas.box.height) == CompoundMeasure &&
+               has(canvas.box.height.values, HeightUnit)
+            canvas.box.height.values[HeightUnit] /= total_height_units
+        end
 
         canvas.box.y0 = y
         if aln == hleft
