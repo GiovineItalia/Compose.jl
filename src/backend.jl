@@ -3,7 +3,7 @@
 
 export @upon, finish
 
-load("Compose/src/measure.jl")
+require("Compose/src/measure.jl")
 
 abstract Backend
 

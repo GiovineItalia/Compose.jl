@@ -3,10 +3,10 @@
 
 export PNG, PDF, PS
 
-load("Compose/src/backend.jl")
-load("Compose/src/measure.jl")
-load("Compose/src/color.jl")
-load("Compose/src/form.jl")
+require("Compose/src/backend.jl")
+require("Compose/src/measure.jl")
+require("Compose/src/color.jl")
+require("Compose/src/form.jl")
 
 const libcairo = dlopen("libcairo")
 

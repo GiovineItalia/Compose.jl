@@ -1,7 +1,7 @@
 
 # Basic list
 
-load("Compose/src/util.jl")
+require("Compose/src/util.jl")
 
 abstract List{T}
 
