@@ -3,9 +3,9 @@
 
 export Canvas, Units, Rotation, canvas, draw, set_unit_box, set_box
 
-load("Compose/src/form.jl")
-load("Compose/src/measure.jl")
-load("Compose/src/property.jl")
+require("Compose/src/form.jl")
+require("Compose/src/measure.jl")
+require("Compose/src/property.jl")
 
 
 # A box giving the coordinate system used by a canvas.
