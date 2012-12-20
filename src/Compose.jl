@@ -14,11 +14,11 @@ export |, <<, >>, pad, hstack, vstack, compose, combine
 # behaves as such.
 combine() = nothing
 
-load("Compose/src/canvas.jl")
-load("Compose/src/form.jl")
-load("Compose/src/property.jl")
-load("Compose/src/cairo.jl")
-load("Compose/src/svg.jl")
+require("Compose/src/canvas.jl")
+require("Compose/src/form.jl")
+require("Compose/src/property.jl")
+require("Compose/src/cairo.jl")
+require("Compose/src/svg.jl")
 
 typealias ComposeType Union(Canvas, Form, Property)
 
