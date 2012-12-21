@@ -131,6 +131,31 @@ function show(io, c::CanvasTree)
     print(io, ")")
 end
 
+# Similar to dump(), but briefer
+function contents(io, c::CanvasTree, n::Int, indent)
+    lc = length(c.children)
+    lf = length(c.form)
+    println(indent, "Canvas with ", lc, lc == 1 ? " child" : " children", " and ", lf, lf == 1 ? " form" : " forms")
+    if n > 0
+        # Children
+        i = 1
+        for cc in c.children
+            contents(io, cc, n - 1, strcat(indent, "  "))
+            if i > 10
+                println(io, indent, "  ...")
+                break
+            end
+            i += 1
+        end
+        # Form
+        contents(io, c.form, n, indent)
+    end
+end
+contents(io, c::CanvasTree, n::Int) = contents(io, c, n, "")
+contents(io, c::CanvasTree) = contents(io, c, 10, "")
+contents(c::CanvasTree, args...) = contents(OUTPUT_STREAM, c, args...)
+
+
 
 # Copositions of canvases is tree joining by making b a subtree of a.
 #     a      b             a___

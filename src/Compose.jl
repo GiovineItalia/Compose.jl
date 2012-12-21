@@ -5,9 +5,9 @@ using Base
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty, Base.insert,
        Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
-       Base.<<, Base.>>
+       Base.<<, Base.>>, Base.show
 
-export |, <<, >>, pad, hstack, vstack, compose, combine
+export |, <<, >>, pad, hstack, vstack, compose, combine, contents
 
 # Empty combine. This violates the rules a bit, since nothing is not the
 # identity element in any of the monoids, but it's sometimes convenient if it
