@@ -23,6 +23,9 @@ abstract Form
 type EmptyForm <: Form end
 const empty_form = EmptyForm()
 
+contents(io, f::EmptyForm, n::Int, indent) = nothing
+length(f::EmptyForm) = 0
+
 
 # A non-empty sequence of form primitives each with an associated (possibly
 # empty) property.
@@ -46,7 +49,22 @@ type FormTree <: Form
         new(a.primitive, a.property, a.children)
     end
 end
+length(f::FormTree) = length(f.children)
 
+function contents(io, f::FormTree, n::Int, indent)
+    if !(f.primitive === nothing)
+        contents(io, f.primitive, 1, indent)
+    end
+    i = 1
+    for fc in f.children
+        contents(io, fc, n - 1, strcat(indent, "  "))
+        if i > 10
+            println(io, indent, "  ...")
+            break
+        end
+        i += 1
+    end
+end
 
 copy(a::FormTree) = FormTree(a)
 
@@ -136,6 +154,9 @@ type Lines <: FormPrimitive
     points::Vector{Point}
 end
 
+function contents(io, f::Lines, n::Int, indent)
+    println(io, indent, "Line with ", length(f.points), " points")
+end
 
 function lines(points::XYTupleOrPoint...)
     FormTree(Lines([convert(Point, point) for point in points]))
@@ -153,6 +174,9 @@ end
 type Polygon <: FormPrimitive
     points::Vector{Point}
 
+end
+function contents(io, f::Polygon, n::Int, indent)
+    println(io, indent, "Polygon with ", length(f.points), " points")
 end
 
 
@@ -190,6 +214,9 @@ type Ellipse <: FormPrimitive
     center::Point
     x_point::Point
     y_point::Point
+end
+function contents(io, f::Ellipse, n::Int, indent)
+    println(io, indent, "Ellipse centered at ", f.center)
 end
 
 
@@ -272,4 +299,7 @@ function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
     draw(backend, form)
 end
 
+function contents(io, f::Text, n::Int, indent)
+    println(io, indent, "Text: ", f.value)
+end
 
