@@ -258,22 +258,28 @@ end
 
 # Applying properties
 
-function push_property(img::SVG, p::Property)
-    if is(p, empty_property)
+function push_property(img::SVG, property::Property)
+    if property === empty_property
         push(img.empty_properties, true)
         push(img.linked_properties, false)
     else
         push(img.empty_properties, false)
         indent(img)
 
-        # The link property demands special handling
+        # There can only be one property of each type. E.g, defining 'fill'
+        # twice in the same element is not valid svg.
+        properties = Dict{Type, PropertyPrimitive}()
+        p = property
+        while !is(p, empty_property)
+            properties[typeof(p.primitive)] = p.primitive
+            p = p.next
+        end
+
+        # The link property demands special handling, since it's a seperate tag
+        # outside of <g>.
         link_target = nothing
-        q = p
-        while !is(q, empty_property)
-            if typeof(q.primitive) == SVGLink
-                link_target = q.primitive.target
-            end
-            q = q.next
+        if has(properties, SVGLink)
+            link_target = properties[SVGLink].target
         end
 
         if !(link_target === nothing)
@@ -284,10 +290,8 @@ function push_property(img::SVG, p::Property)
         end
 
         write(img.f, "<g")
-        q = p
-        while !is(q, empty_property)
-            apply_property(img, q.primitive)
-            q = q.next
+        for p in values(properties)
+            apply_property(img, p)
         end
         write(img.f, ">\n")
 
