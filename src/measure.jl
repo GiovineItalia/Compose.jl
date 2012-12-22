@@ -251,7 +251,7 @@ end
 
 function convert(::Type{SimpleMeasure{MillimeterUnit}},
                  u::SimpleMeasure{PixelUnit})
-    SimpleMeasure{PixelUnit}(u.value / assumed_ppmm)
+    SimpleMeasure{MillimeterUnit}(u.value / assumed_ppmm)
 end
 
 
