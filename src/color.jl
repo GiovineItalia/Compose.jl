@@ -25,7 +25,7 @@ type RGB <: Color
     b::Float64 # Blue in [0,1]
 
     function RGB(r::Number, g::Number, b::Number)
-        new(convert(Float64, r), convert(Float64, g), convert(Float64, b))
+        new(r, g, b)
     end
 end
 
@@ -36,7 +36,7 @@ type HSV <: Color
     v::Float64 # Value in [0,1]
 
     function HSV(h::Number, s::Number, v::Number)
-        new(convert(Float64, h), convert(Float64, s), convert(Float64, n))
+        new(h, s, n)
     end
 end
 
@@ -47,7 +47,7 @@ type HLS <: Color
     s::Float64 # Saturation in [0,1]
 
     function HLS(h::Number, l::Number, s::Number)
-        new(convert(Float64, h), convert(Float64, l), convert(Float64, s))
+        new(h, l, s)
     end
 end
 
@@ -58,7 +58,7 @@ type XYZ <: Color
     z::Float64
 
     function XYZ(x::Number, y::Number, z::Number)
-        new(convert(Float64, x), convert(Float64, y), convert(Float64, z))
+        new(x, y, z)
     end
 end
 
@@ -69,7 +69,7 @@ type LAB <: Color
     b::Float64 # Blue/Yellow in [-1,1]
 
     function LAB(l::Number, a::Number, b::Number)
-        new(convert(Float64, l), convert(Float64, a), convert(Float64, b))
+        new(l, a, b)
     end
 end
 
@@ -80,7 +80,7 @@ type LCHab <: Color
     h::Float64 # Hue
 
     function LCHab(l::Number, c::Number, h::Number)
-        new(convert(Float64, l), convert(Float64, c), convert(Float64, h))
+        new(l, c, h)
     end
 end
 
@@ -91,7 +91,7 @@ type LUV <: Color
     v::Float64 # Blue/Yellow in [-1,1]
 
     function LUV(l::Number, u::Number, v::Number)
-        new(convert(Float64, l), convert(Float64, u), convert(Float64, v))
+        new(l, u, v)
     end
 end
 
@@ -102,7 +102,7 @@ type LCHuv <: Color
     h::Float64 # Hue
 
     function LCHuv(l::Number, c::Number, h::Number)
-        new(convert(Float64, l), convert(Float64, c), convert(Float64, h))
+        new(l, c, h)
     end
 end
 
