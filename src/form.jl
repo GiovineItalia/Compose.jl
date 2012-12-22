@@ -74,7 +74,7 @@ function removable(a::FormTree)
 end
 
 
-# Conceptually, combining forms is tree joining be introducing a new root.
+# Conceptually, combining forms is tree joining by introducing a new root.
 #
 #   a      b               c
 #  / \    / \    --->     / \
@@ -274,7 +274,7 @@ type Text <: FormPrimitive
     halign::HAlignment
     valign::VAlignment
 
-    # Text forms need their own rotation field unfortunately, since their is no
+    # Text forms need their own rotation field unfortunately, since there is no
     # way to give orientation with just a position point.
     t::NativeTransform
 end

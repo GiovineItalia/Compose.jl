@@ -7,7 +7,7 @@ import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
        Base.<<, Base.>>, Base.show
 
-export |, <<, >>, pad, hstack, vstack, compose, combine, contents
+export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
 
 # Empty combine. This violates the rules a bit, since nothing is not the
 # identity element in any of the monoids, but it's sometimes convenient if it
@@ -208,5 +208,100 @@ function vstack(canvases::Canvas...)
     width = max([canvas.box.width for canvas in canvases])
     vstack(0, 0, width, [(canvas, hcenter) for canvas in canvases]...)
 end
+
+
+# Turn the tree represented by a ComposeType into a nested array (S-expression)
+# representation.
+#
+# This operation is fully invertable with `compose`. Thas is
+# decompose(compose(x)) = x should always be true if x is either a Form or a
+# Canvas.
+#
+function decompose(p::Property)
+    v = Array(Any, length(p))
+    i = 1
+    while !is(p, empty_property)
+        v[i] = PropertySeq(p.primitive)
+        i += 1
+        p = p.next
+    end
+    v
+end
+
+
+decompose(f::EmptyForm) = {}
+
+function decompose(f::FormTree)
+    pv = decompose(f.property)
+    cv = {decompose(child) for child in f.children}
+
+    f = copy(f)
+    f.property = empty_property
+    f.children = ListNil{FormTree}()
+
+    v = Array(Any, length(pv) + length(cv) + 1)
+    v[1] = f
+
+    i = 2
+    for c in cv
+        if length(c) == 1
+            v[i] = c[1]
+        else
+            v[i] = c
+        end
+        i += 1
+    end
+
+    for p in pv
+        v[i] = p
+        i += 1
+    end
+
+    v
+end
+
+
+decompose(c::EmptyCanvas) = {}
+
+function decompose(c::CanvasTree)
+    pv = decompose(c.property)
+    fv = decompose(c.form)
+    cv = {decompose(child) for child in c.children}
+
+    c = copy(c)
+    c.property = empty_property
+    c.form = empty_form
+    c.children = ListNil{Canvas}()
+
+    v = Array(Any, length(pv) + length(fv) + length(cv) + 1)
+    v[1] = c
+
+    i = 2
+    for c in cv
+        if length(c) == 1
+            v[i] = c[1]
+        else
+            v[i] = c
+        end
+        i += 1
+    end
+
+    for f in fv
+        if length(f) == 1
+            v[i] = f[1]
+        else
+            v[i] = f
+        end
+        i += 1
+    end
+
+    for p in pv
+        v[i] = p
+        i += 1
+    end
+
+    v
+end
+
 
 end # module Compose

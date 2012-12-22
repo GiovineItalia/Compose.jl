@@ -53,6 +53,16 @@ end
 copy(ps::PropertySeq) = PropertySeq(ps)
 
 
+function length(p::Property)
+    n = 0
+    while !is(p, empty_property)
+        n += 1
+        p = p.next
+    end
+    n
+end
+
+
 # Combination of properties, which is simply list concatenation.
 function combine(head::Property, rest::Property...)
     a = b = head === empty_property ? head : copy(head)

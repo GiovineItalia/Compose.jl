@@ -157,7 +157,7 @@ contents(c::CanvasTree, args...) = contents(OUTPUT_STREAM, c, args...)
 
 
 
-# Copositions of canvases is tree joining by making b a subtree of a.
+# Compositions of canvases is tree joining by making b a subtree of a.
 #     a      b             a___
 #    / \    / \    --->   / \  \
 #   X   Y  U   V         X   Y  b
