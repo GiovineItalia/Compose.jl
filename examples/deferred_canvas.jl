@@ -1,9 +1,10 @@
 #!/usr/bin/env julia
 
-# Draw a sierpinski tiangle.
+# A trivial example of deferred canvases.
 
 require("Compose")
 using Compose
+
 
 function sierpinski(n)
     if n == 0
@@ -19,5 +20,6 @@ end
 
 
 img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
-draw(img, sierpinski(8) << linewidth(0.1mm) << fill(nothing))
+draw(img, compose(canvas(), fill(nothing), linewidth(0.1mm),
+                  deferredcanvas((box, unit) -> sierpinski(8))))
 finish(img)

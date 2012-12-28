@@ -1,7 +1,7 @@
 
 # Canvas: a thing upon which other things are placed.
 
-export Canvas, Units, Rotation, canvas, draw, set_unit_box, set_box
+export Canvas, Units, Rotation, canvas, deferredcanvas, draw, set_unit_box, set_box
 
 require("Compose/src/form.jl")
 require("Compose/src/measure.jl")
@@ -48,6 +48,28 @@ abstract Canvas
 # An identity element for the canvas monoid.
 type EmptyCanvas <: Canvas end
 const empty_canvas = EmptyCanvas()
+
+
+# A deferred canvas is a function that produces a canvas and is evaluated when
+# the graphic is drawn. This is useful when the layout of the contents of a
+# canvas depends on its size in absolute coordinates, which is only known, in
+# general at draw time.
+#
+# The function `f` must have the signature:
+#   f(box::BoundingBox, unit_box::BoundingBox)
+#
+# Where box is the bounding box in absolute coordinates of the parent canvas,
+# and unit_box is its unit box.
+#
+# Another way to think of this: a canvas in to an expression what a
+# deferredcanvas is to a macro.
+#
+type DeferredCanvas <: Canvas
+    f::Function
+end
+
+
+const deferredcanvas = DeferredCanvas
 
 
 # non-empty tree of canvases.
@@ -116,6 +138,7 @@ function set_unit_box(c::CanvasTree, unit_box::Units)
     c
 end
 
+
 # Return a new Canvas with the box substituted
 function set_box(c::CanvasTree, box::BoundingBox)
     c = copy(c)
@@ -124,18 +147,19 @@ function set_box(c::CanvasTree, box::BoundingBox)
 end
 
 
-
 function show(io, c::CanvasTree)
     print(io, "Canvas(")
     show(io, c.children)
     print(io, ")")
 end
 
+
 # Similar to dump(), but briefer
 function contents(io, c::CanvasTree, n::Int, indent)
     lc = length(c.children)
     lf = length(c.form)
-    println(indent, "Canvas with ", lc, lc == 1 ? " child" : " children", " and ", lf, lf == 1 ? " form" : " forms")
+    println(indent, "Canvas with ", lc, lc == 1 ? " child" : " children",
+            " and ", lf, lf == 1 ? " form" : " forms")
     if n > 0
         # Children
         i = 1
@@ -156,7 +180,6 @@ contents(io, c::CanvasTree) = contents(io, c, 10, "")
 contents(c::CanvasTree, args...) = contents(OUTPUT_STREAM, c, args...)
 
 
-
 # Compositions of canvases is tree joining by making b a subtree of a.
 #     a      b             a___
 #    / \    / \    --->   / \  \
@@ -166,9 +189,9 @@ contents(c::CanvasTree, args...) = contents(OUTPUT_STREAM, c, args...)
 function compose(canvases::Canvas...)
     root = empty_canvas
     for canvas in canvases
-        if canvas == empty_canvas
+        if canvas === empty_canvas
             continue
-        elseif root == empty_canvas
+        elseif root === empty_canvas
             root = copy(canvas)
         else
             root.children = cons(canvas, root.children)
@@ -180,7 +203,8 @@ end
 
 # Composition of forms into canvases
 function compose(a::CanvasTree, b::Form)
-    CanvasTree(a.box, combine(a.form, b), a.property, a.unit_box, a.rot, a.children)
+    CanvasTree(a.box, combine(a.form, b), a.property,
+               a.unit_box, a.rot, a.children)
 end
 
 
@@ -190,12 +214,18 @@ end
 
 
 function compose(a::CanvasTree, b::Property)
-    CanvasTree(a.box, a.form, combine(a.property, b), a.unit_box, a.rot, a.children)
+    CanvasTree(a.box, a.form, combine(a.property, b),
+               a.unit_box, a.rot, a.children)
 end
 
 
 function compose(a::EmptyCanvas, b::Property)
     a
+end
+
+
+function compose(a::DeferredCanvas, b)
+    error("Error: Deferred canvases cannot be composed with.")
 end
 
 
@@ -214,6 +244,10 @@ function draw(backend::Backend, root_canvas::Canvas)
 
         if canvas === empty_canvas
             continue
+        end
+
+        if typeof(canvas) == DeferredCanvas
+            canvas = canvas.f(parent_box, unit_box)
         end
 
         box = native_measure(canvas.box, parent_t, unit_box, parent_box, backend)
@@ -237,5 +271,8 @@ function draw(backend::Backend, root_canvas::Canvas)
     end
 
 end
+
+
+
 
 

@@ -41,6 +41,9 @@ end
 -(u::SVGMeasure, v::SVGMeasure) = SVGMeasure(u.value - v.value)
 convert(::Type{Float64}, u::SVGMeasure) = u.value
 convert(::Type{SVGMeasure}, u::Float64) = SVGMeasure(u)
+function convert(::Type{SimpleMeasure{MillimeterUnit}}, u::SVGMeasure)
+    SimpleMeasure{MillimeterUnit}(u.value)
+end
 
 
 type SVG <: Backend

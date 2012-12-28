@@ -1,11 +1,53 @@
 
 # Backend: a thing upon with other things are drawn.
 
-export @upon, finish
+export @upon, finish, absolute_measure
 
 require("Compose/src/measure.jl")
 
 abstract Backend
+
+
+# Conversion to SimpleMeasure{MillimeterUnit} given the parent canvases
+# bounding box in absolute units and its unit box.
+function absolute_measure(u::SimpleMeasure{CanvasXUnit},
+                          unit_box::BoundingBox, parent_box::BoundingBox)
+    ((u.value - unit_box.x0.value) / unit_box.width.value) * parent_box.width
+end
+
+function absolute_measure(u::SimpleMeasure{CanvasYUnit},
+                          unit_box::BoundingBox, parent_box::BoundingBox)
+    ((u.value - unit_box.y0.value) / unit_box.height.value) * parent_box.height
+end
+
+function absolute_measure(u::SimpleMeasure{WidthUnit},
+                          unit_box::BoundingBox, parent_box::BoundingBox)
+    u.value * parent_box.width
+end
+
+function absolute_measure(u::SimpleMeasure{HeightUnit},
+                          unit_box::BoundingBox, parent_box::BoundingBox)
+    u.value * parent_box.height
+end
+
+function absolute_measure(u::CompoundMeasure,
+                          unit_box::BoundingBox,
+                          parent_box::BoundingBox)
+    v = 0mm
+    for (U, value) in u.values
+        v += adsolute_measure(SimpleMeasure{U}(value), unit_box, parent_box)
+    end
+    v
+end
+
+function absolute_measure(point::Point,
+                          unit_box::BoundingBox,
+                          parent_box::BoundingBox)
+
+    x = parent_box.x0 + absolute_measure(point.x, unit_box, parent_box)
+    y = parent_box.y0 + absolute_measure(point.y, unit_box, parent_box)
+    Point(x, y)
+end
 
 
 # Conversion to native units
