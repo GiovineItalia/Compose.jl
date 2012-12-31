@@ -39,6 +39,10 @@ function convert(::Type{BoundingBox}, u::Units)
     BoundingBox(u.x0, u.y0, u.width, u.height)
 end
 
+function convert(::Type{Units}, u::BoundingBox)
+    Units(u.x0.value, u.y0.value, u.width.value, u.height.value)
+end
+
 
 # Canvases are containers for forms and other canvases with an associated
 # coordinate transform.
@@ -180,6 +184,9 @@ contents(io, c::CanvasTree) = contents(io, c, 10, "")
 contents(c::CanvasTree, args...) = contents(OUTPUT_STREAM, c, args...)
 
 
+compose(canvas::Canvas) = canvas
+
+
 # Compositions of canvases is tree joining by making b a subtree of a.
 #     a      b             a___
 #    / \    / \    --->   / \  \
@@ -247,7 +254,16 @@ function draw(backend::Backend, root_canvas::Canvas)
         end
 
         if typeof(canvas) == DeferredCanvas
-            canvas = canvas.f(parent_box, unit_box)
+            abs_parent_box =
+                BoundingBox(convert(SimpleMeasure{MillimeterUnit}, parent_box.x0),
+                            convert(SimpleMeasure{MillimeterUnit}, parent_box.y0),
+                            convert(SimpleMeasure{MillimeterUnit}, parent_box.width),
+                            convert(SimpleMeasure{MillimeterUnit}, parent_box.height))
+
+            canvas = canvas.f(abs_parent_box, unit_box)
+            if !(typeof(canvas) <: Canvas)
+                error("Error: A deferred canvas function did not evaluate to a canvas.")
+            end
         end
 
         box = native_measure(canvas.box, parent_t, unit_box, parent_box, backend)
@@ -269,10 +285,6 @@ function draw(backend::Backend, root_canvas::Canvas)
             push(S, (child, t, convert(BoundingBox, unit_box), box))
         end
     end
-
 end
-
-
-
 
 

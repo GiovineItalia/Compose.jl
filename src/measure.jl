@@ -515,9 +515,7 @@ function pango_text_extents(pangolayout::PangoLayout, text::String)
     extents = Array(Int32, 4)
     ccall(dlsym(libpango, :pango_layout_get_extents),
           Void, (Ptr{Void}, Ptr{Int32}, Ptr{Int32}),
-          pangolayout.layout, extents, C_NULL)
-
-    extents
+          pangolayout.layout, C_NULL, extents)
 
     width, height = (extents[3] / PANGO_SCALE)pt, (extents[4] / PANGO_SCALE)pt
 end

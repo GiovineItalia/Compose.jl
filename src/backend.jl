@@ -49,6 +49,15 @@ function absolute_measure(point::Point,
     Point(x, y)
 end
 
+function absolute_measure(a::BoundingBox,
+                          unit_box::BoundingBox,
+                          parent_box::BoundingBox)
+    BoundingBox(absolute_measure(unit_box, parent_box, a.x0),
+                absolute_measure(unit_box, parent_box, a.y0),
+                absolute_measure(unit_box, parent_box, a.width),
+                absolute_measure(unit_box, parent_box, a.height))
+end
+
 
 # Conversion to native units
 # The backend is responsible for defining a
