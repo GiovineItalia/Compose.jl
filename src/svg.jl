@@ -174,6 +174,20 @@ function draw(img::SVG, form::Lines)
 end
 
 
+function draw(img::SVG, form::Curve)
+    indent(img)
+    @printf(img.f, "<path d=\"M%s,%s C%s,%s %s,%s %s,%s\" />\n",
+        svg_fmt_float(form.anchor0.x.value),
+        svg_fmt_float(form.anchor0.y.value),
+        svg_fmt_float(form.ctrl0.x.value),
+        svg_fmt_float(form.ctrl0.y.value),
+        svg_fmt_float(form.ctrl1.x.value),
+        svg_fmt_float(form.ctrl1.y.value),
+        svg_fmt_float(form.anchor1.x.value),
+        svg_fmt_float(form.anchor1.y.value))
+end
+
+
 function draw(img::SVG, form::Polygon)
     n = length(form.points)
     if n <= 1; return; end

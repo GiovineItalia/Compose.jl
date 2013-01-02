@@ -274,6 +274,14 @@ function line_to(img::Image, point::Point)
 end
 
 
+function curve_to(img::Image, ctrl0::Point, ctrl1::Point, anchor1::Point)
+    ccall(dlsym(libcairo, :cairo_curve_to), Void,
+          (Ptr{Void}, Float64, Float64, Float64, Float64, Float64, Float64),
+          img.ctx, ctrl0.x.value, ctrl0.y.value, ctrl1.x.value, ctrl1.y.value,
+          anchor1.x.value, anchor1.y.value)
+end
+
+
 function close_path(img::Image)
     ccall(dlsym(libcairo, :cairo_close_path), Void, (Ptr{Void},), img.ctx)
 end
@@ -356,6 +364,12 @@ function draw(img::Image, form::Lines)
         line_to(img, point)
     end
     fillstroke(img)
+end
+
+
+function draw(img::Image, form::Curve)
+    move_to(img, form.anchor0)
+    curve_to(img, form.ctrl0, form.ctrl1, form.anchor1)
 end
 
 

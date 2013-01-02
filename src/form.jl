@@ -1,6 +1,6 @@
 # Form: a thing that is visible once drawn.
 
-export polygon, rectangle, lines, circle, ellipse, text,
+export polygon, rectangle, lines, curve, arc, circle, ellipse, text,
        hcenter, hleft, hright, vcenter, vtop, vbottom
 
 require("Compose/src/backend.jl")
@@ -38,6 +38,11 @@ type FormTree <: Form
                       property::Property,
                       children::List{FormTree})
         new(primitive, property, convert(List{FormTree}, children))
+    end
+
+    function FormTree(primitive::Union(Nothing, FormPrimitive),
+                      property::Property)
+        new(primitive, property, ListNil{FormTree}())
     end
 
     function FormTree(primitive::FormPrimitive)
@@ -154,9 +159,11 @@ type Lines <: FormPrimitive
     points::Vector{Point}
 end
 
+
 function contents(io, f::Lines, n::Int, indent)
     println(io, indent, "Line with ", length(f.points), " points")
 end
+
 
 function lines(points::XYTupleOrPoint...)
     FormTree(Lines([convert(Point, point) for point in points]))
@@ -171,10 +178,43 @@ function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
 end
 
 
+type Curve <: FormPrimitive
+    anchor0::Point
+    ctrl0::Point
+    ctrl1::Point
+    anchor1::Point
+end
+
+
+function contents(io, f::Curve, n::Int, indent)
+    println(io, indent, "Curve between ", f.anchor0, " and ", f.anchor1)
+end
+
+
+function curve(anchor0::XYTupleOrPoint, ctrl0::XYTupleOrPoint,
+               ctrl1::XYTupleOrPoint, anchor1::XYTupleOrPoint)
+    FormTree(Curve(convert(Point, anchor0), convert(Point, ctrl0),
+                   convert(Point, ctrl1), convert(Point, anchor1)),
+             fill(nothing))
+end
+
+
+function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
+              box::NativeBoundingBox, form::Curve)
+    native_form = Curve(native_measure(form.anchor0, t, unit_box, box, backend),
+                        native_measure(form.ctrl0, t, unit_box, box, backend),
+                        native_measure(form.ctrl1, t, unit_box, box, backend),
+                        native_measure(form.anchor1, t, unit_box, box, backend))
+    draw(backend, native_form)
+end
+
+
 type Polygon <: FormPrimitive
     points::Vector{Point}
 
 end
+
+
 function contents(io, f::Polygon, n::Int, indent)
     println(io, indent, "Polygon with ", length(f.points), " points")
 end
