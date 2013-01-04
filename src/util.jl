@@ -25,3 +25,24 @@ function fmt_float(x::Float64)
 end
 
 
+# Characters to escape in XML/SVG/HTML string.
+const html_escaped_chars =
+    {'&' => "&amp;",
+     '\'' => "&#39;",
+     '<' => "&lt;",
+     '>' => "&gt;",
+     '"' => "&quot;"}
+
+# Escape a string for printing it html or svg documents.
+function html_escape_string(io, s::String)
+    for c in s
+        if has(html_escaped_chars, c)
+            print(io, html_escaped_chars[c])
+        else
+            print(io, c)
+        end
+    end
+end
+
+html_escape_string(s::String) = sprint(length(s), html_escape_string, s)
+

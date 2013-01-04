@@ -181,7 +181,7 @@ end
 
 
 # Singleton sequence contructor.
-svgid(value::String) = PropertySeq(SVGID(value))
+svgid(value::String) = PropertySeq(SVGID(html_escape_string(value)))
 
 
 # A property setting the class field in a form's group element.
@@ -191,7 +191,7 @@ end
 
 
 # Singleton sequence contructor.
-svgclass(value::String) = PropertySeq(SVGClass(value))
+svgclass(value::String) = PropertySeq(SVGClass(html_escape_string(value)))
 
 
 # A SVG <a> tag.
