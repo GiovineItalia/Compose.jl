@@ -1,7 +1,7 @@
 
 # Canvas: a thing upon which other things are placed.
 
-export Canvas, Units, Rotation, canvas, deferredcanvas, draw, set_unit_box, set_box
+export Canvas, Units, Rotation, canvas, deferredcanvas, draw, drawpart, set_unit_box, set_box
 
 require("Compose/src/form.jl")
 require("Compose/src/measure.jl")
@@ -236,8 +236,27 @@ function compose(a::DeferredCanvas, b)
 end
 
 
+# Draw a realization of the graphic on a given backend.
+#
+# Args:
+#   backend: Backend on which to draw the graphic.
+#   root_canvas: Root node of the graphic.
+#
+# Returns:
+#   nothing
+#
+# Effects:
+#   The root_canvas will be finished after the call to draw. If you wish to draw
+#   multiple canvases, use `drawpart`.
 #
 function draw(backend::Backend, root_canvas::Canvas)
+    drawpart(backend, root_canvas)
+    finish(backend)
+end
+
+
+# Draw without finishing the backend.
+function drawpart(backend::Backend, root_canvas::Canvas)
     S = {(root_canvas, NativeTransform(), BoundingBox(), root_box(backend))}
     while !isempty(S)
         s = pop(S)
