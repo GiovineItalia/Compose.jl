@@ -1,6 +1,8 @@
 
 # Property: a thing that changes how other things are drawn.
 
+import Base.fill
+
 export stroke, fill, linewidth, font, fontsize, svgid, svgclass, svglink,
        onactive, onclick, onfocusin, onfocusout, onload, onmousedown,
        onmousemove, onmouseout, onmouseover, onmouseup
