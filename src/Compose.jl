@@ -14,11 +14,17 @@ export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
 # behaves as such.
 combine() = nothing
 
-require("Compose/src/canvas.jl")
-require("Compose/src/form.jl")
-require("Compose/src/property.jl")
-require("Compose/src/cairo.jl")
-require("Compose/src/svg.jl")
+include("$(julia_pkgdir())/Compose/src/util.jl")
+include("$(julia_pkgdir())/Compose/src/list.jl")
+include("$(julia_pkgdir())/Compose/src/measure.jl")
+include("$(julia_pkgdir())/Compose/src/backend.jl")
+include("$(julia_pkgdir())/Compose/src/color.jl")
+include("$(julia_pkgdir())/Compose/src/property.jl")
+include("$(julia_pkgdir())/Compose/src/form.jl")
+include("$(julia_pkgdir())/Compose/src/canvas.jl")
+include("$(julia_pkgdir())/Compose/src/cairo.jl")
+include("$(julia_pkgdir())/Compose/src/pango.jl")
+include("$(julia_pkgdir())/Compose/src/svg.jl")
 
 typealias ComposeType Union(Canvas, Form, Property)
 

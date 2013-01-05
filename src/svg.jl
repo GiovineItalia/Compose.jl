@@ -3,13 +3,6 @@
 
 export SVG
 
-require("Compose/src/backend.jl")
-require("Compose/src/measure.jl")
-require("Compose/src/color.jl")
-require("Compose/src/form.jl")
-require("Compose/src/json.jl")
-require("Compose/src/pango.jl")
-require("Compose/src/util.jl")
 
 # Format a floating point number into a decimal string of reasonable precision.
 function svg_fmt_float(x::Float64)

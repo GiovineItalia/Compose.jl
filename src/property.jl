@@ -7,10 +7,6 @@ export stroke, fill, linewidth, font, fontsize, svgid, svgclass, svglink,
        onactive, onclick, onfocusin, onfocusout, onload, onmousedown,
        onmousemove, onmouseout, onmouseover, onmouseup
 
-require("Compose/src/backend.jl")
-require("Compose/src/color.jl")
-require("Compose/src/measure.jl")
-
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
 

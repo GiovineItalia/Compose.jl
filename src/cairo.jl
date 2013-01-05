@@ -3,11 +3,6 @@
 
 export PNG, PDF, PS
 
-require("Compose/src/backend.jl")
-require("Compose/src/measure.jl")
-require("Compose/src/color.jl")
-require("Compose/src/form.jl")
-
 const libcairo = dlopen("libcairo")
 
 typealias cairo_format_t Int32

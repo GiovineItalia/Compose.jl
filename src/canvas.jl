@@ -3,10 +3,6 @@
 
 export Canvas, Units, Rotation, canvas, deferredcanvas, draw, drawpart, set_unit_box, set_box
 
-require("Compose/src/form.jl")
-require("Compose/src/measure.jl")
-require("Compose/src/property.jl")
-
 
 # A box giving the coordinate system used by a canvas.
 type Units

@@ -1,6 +1,4 @@
 
-require("Compose/src/util.jl")
-require("Compose/src/measure.jl")
 
 #const libpango = dlopen("libpangoft2-1.0")
 

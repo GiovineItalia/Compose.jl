@@ -3,7 +3,6 @@
 
 export @upon, finish, absolute_measure
 
-require("Compose/src/measure.jl")
 
 abstract Backend
 

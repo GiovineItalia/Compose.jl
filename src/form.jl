@@ -3,11 +3,6 @@
 export polygon, rectangle, lines, curve, arc, circle, ellipse, text,
        hcenter, hleft, hright, vcenter, vtop, vbottom
 
-require("Compose/src/backend.jl")
-require("Compose/src/property.jl")
-require("Compose/src/measure.jl")
-require("Compose/src/list.jl")
-
 # A primitive form: typcially a shape or sequence of drawing operations.
 abstract FormPrimitive
 

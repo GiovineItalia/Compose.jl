@@ -1,8 +1,6 @@
 
 # Basic list
 
-require("Compose/src/util.jl")
-
 abstract List{T}
 
 type ListNil{T} <: List{T} end
