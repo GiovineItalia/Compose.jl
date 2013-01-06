@@ -457,7 +457,7 @@ size_measure(u::Number) = SimpleMeasure{PixelUnit}(convert(Float64, u))
 
 # Estimation of text extents using pango.
 
-const libpango = dlopen("libpangoft2-1.0")
+const libpango = dlopen("libpangocairo-1.0")
 
 # Mirroring a #define in the pango header.
 const PANGO_SCALE = 1024.0
@@ -469,7 +469,7 @@ type PangoLayout
     layout::Ptr{Void}
 
     function PangoLayout()
-        fm = ccall(dlsym(libpango, :pango_ft2_font_map_new),
+        fm = ccall(dlsym(libpango, :pango_cairo_font_map_new),
                    Ptr{Void}, ())
 
         ctx = ccall(dlsym(libpango, :pango_font_map_create_context),
