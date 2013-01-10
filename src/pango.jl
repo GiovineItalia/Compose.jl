@@ -178,7 +178,7 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
             end
         end
 
-        push(attrs, (start_idx, attr))
+        push!(attrs, (start_idx, attr))
     end
 
     ccall(dlsym(libpango, :pango_attr_iterator_destroy),
