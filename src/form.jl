@@ -132,14 +132,14 @@ function draw(backend::Backend,
             continue
         else
             if !is(form.property, empty_property)
-                push(S, :POP_PROPERTY)
+                push!(S, :POP_PROPERTY)
                 push_property(backend,
                               native_measure(form.property, t, unit_box,
                                              box, backend))
             end
 
             for child in form.children
-                push(S, child)
+                push!(S, child)
             end
 
             if !is(form.primitive, nothing)

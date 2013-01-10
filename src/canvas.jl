@@ -288,7 +288,7 @@ function drawpart(backend::Backend, root_canvas::Canvas)
         unit_box = convert(BoundingBox, canvas.unit_box)
 
         if !is(canvas.property, empty_canvas)
-            push(S, :POP_PROPERTY)
+            push!(S, :POP_PROPERTY)
             push_property(backend,
                           native_measure(canvas.property, t, unit_box,
                                          box, backend))
@@ -297,7 +297,7 @@ function drawpart(backend::Backend, root_canvas::Canvas)
         draw(backend, t, unit_box, box, canvas.form)
 
         for child in canvas.children
-            push(S, (child, t, convert(BoundingBox, unit_box), box))
+            push!(S, (child, t, convert(BoundingBox, unit_box), box))
         end
     end
 end
