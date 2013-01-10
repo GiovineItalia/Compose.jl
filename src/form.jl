@@ -124,7 +124,7 @@ function draw(backend::Backend,
     S = {root_form}
 
     while !isempty(S)
-        form = pop(S)
+        form = pop!(S)
 
         if form === :POP_PROPERTY
             pop_property(backend)

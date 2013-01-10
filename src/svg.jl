@@ -45,7 +45,7 @@ type SVG <: Backend
     height::SVGMeasure
 
     # Output stream.
-    f::IOStream
+    f::IO
 
     # Should f be closed when the backend is finished?
     close_stream::Bool
@@ -65,7 +65,7 @@ type SVG <: Backend
     # closing </a> tags.
     linked_properties::Vector{Bool}
 
-    function SVG(f::IOStream,
+    function SVG(f::IO,
                  width::MeasureOrNumber,
                  height::MeasureOrNumber)
         img = new()
@@ -310,8 +310,8 @@ end
 
 
 function pop_property(img::SVG)
-    is_linked = pop(img.linked_properties)
-    if !pop(img.empty_properties)
+    is_linked = pop!(img.linked_properties)
+    if !pop!(img.empty_properties)
         img.indentation -= 1
         indent(img)
         write(img.f, "</g>")

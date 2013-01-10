@@ -255,7 +255,7 @@ end
 function drawpart(backend::Backend, root_canvas::Canvas)
     S = {(root_canvas, NativeTransform(), BoundingBox(), root_box(backend))}
     while !isempty(S)
-        s = pop(S)
+        s = pop!(S)
 
         if s == :POP_PROPERTY
             pop_property(backend)

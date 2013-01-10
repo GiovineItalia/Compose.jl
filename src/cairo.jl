@@ -316,7 +316,7 @@ end
 
 
 function restore_state(img::Image)
-    state = pop(img.state_stack)
+    state = pop!(img.state_stack)
     img.stroke = state.stroke
     img.fill = state.fill
     ccall(dlsym(libcairo, :cairo_restore), Void, (Ptr{Void},), img.ctx)
