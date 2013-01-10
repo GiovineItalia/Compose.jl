@@ -269,10 +269,10 @@ end
 
 function push_property(img::SVG, property::Property)
     if property === empty_property
-        push(img.empty_properties, true)
-        push(img.linked_properties, false)
+        push!(img.empty_properties, true)
+        push!(img.linked_properties, false)
     else
-        push(img.empty_properties, false)
+        push!(img.empty_properties, false)
         indent(img)
 
         # There can only be one property of each type. E.g, defining 'fill'
@@ -293,9 +293,9 @@ function push_property(img::SVG, property::Property)
 
         if !(link_target === nothing)
             write(img.f, @sprintf("<a xlink:href=\"%s\">", link_target))
-            push(img.linked_properties, true)
+            push!(img.linked_properties, true)
         else
-            push(img.linked_properties, false)
+            push!(img.linked_properties, false)
         end
 
         write(img.f, "<g")
