@@ -310,7 +310,7 @@ end
 
 
 function save_state(img::Image)
-    push(img.state_stack, ImagePropertyState(img.stroke, img.fill))
+    push!(img.state_stack, ImagePropertyState(img.stroke, img.fill))
     ccall(dlsym(libcairo, :cairo_save), Void, (Ptr{Void},), img.ctx)
 end
 

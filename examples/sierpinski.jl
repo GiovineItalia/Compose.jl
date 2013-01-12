@@ -2,7 +2,6 @@
 
 # Draw a sierpinski tiangle.
 
-require("Compose")
 using Compose
 
 function sierpinski(n)

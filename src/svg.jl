@@ -93,6 +93,7 @@ type SVG <: Backend
         img.close_stream = true
         img
     end
+
 end
 
 
