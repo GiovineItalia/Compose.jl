@@ -5,6 +5,7 @@
 
 export Color, color, ColorOrNothing, ColorStringOrNothing,
        Colour, colour, ColourOrNothing, ColourStringOrNothing,
+       weighted_color_mean,
        RGB, HLS, XYZ, LAB, LUV, LCHab, LCHuv
 
 abstract Color
@@ -27,7 +28,10 @@ type RGB <: Color
     function RGB(r::Number, g::Number, b::Number)
         new(r, g, b)
     end
+
+    RGB() = RGB(0, 0, 0)
 end
+
 
 # HSV (Hue-Saturation-Value)
 type HSV <: Color
@@ -38,6 +42,8 @@ type HSV <: Color
     function HSV(h::Number, s::Number, v::Number)
         new(h, s, n)
     end
+
+    HSV() = HSV(0, 0, 0)
 end
 
 # HLS (Hue-Lightness-Saturation)
@@ -49,6 +55,8 @@ type HLS <: Color
     function HLS(h::Number, l::Number, s::Number)
         new(h, l, s)
     end
+
+    HLS() = HLS(0, 0, 0)
 end
 
 # XYZ (CIE 1931)
@@ -60,6 +68,8 @@ type XYZ <: Color
     function XYZ(x::Number, y::Number, z::Number)
         new(x, y, z)
     end
+
+    XYZ() = XYZ(0, 0, 0)
 end
 
 # LAB (CIELAB)
@@ -71,6 +81,8 @@ type LAB <: Color
     function LAB(l::Number, a::Number, b::Number)
         new(l, a, b)
     end
+
+    LAB() = LAB(0, 0, 0)
 end
 
 # LCHab (Luminance-Chroma-Hue, Polar-LAB)
@@ -82,6 +94,8 @@ type LCHab <: Color
     function LCHab(l::Number, c::Number, h::Number)
         new(l, c, h)
     end
+
+    LCHab() = LCHab(0, 0, 0)
 end
 
 # LUV (CIELUV)
@@ -93,6 +107,8 @@ type LUV <: Color
     function LUV(l::Number, u::Number, v::Number)
         new(l, u, v)
     end
+
+    LUV() = LUV(0, 0, 0)
 end
 
 # LCHuv (Luminance-Chroma-Hue, Polar-LUV)
@@ -104,6 +120,8 @@ type LCHuv <: Color
     function LCHuv(l::Number, c::Number, h::Number)
         new(l, c, h)
     end
+
+    LCHuv() = LCHuv(0, 0, 0)
 end
 
 
@@ -479,6 +497,30 @@ function convert(::Type{LCHab}, c::LAB)
     while h > 360; h -= 360; end
     while h < 0;   h += 360; end
     LCHab(c.l, sqrt(c.a^2 + c.b^2), h)
+end
+
+
+# Weighted mean of some number of colors within the same space.
+#
+# Args:
+#  cs: Colors.
+#  ws: Weights of the same length as cs.
+#
+# Returns:
+#   A weighted mean color of type T.
+#
+function weighted_color_mean{T <: Color, S <: Number}(
+        cs::AbstractArray{T,1}, ws::AbstractArray{S,1})
+    mu = T()
+    sumws = sum(ws)
+    for (c, w) in zip(cs, ws)
+        w /= sumws
+        for v in names(T)
+            setfield(mu, v, getfield(mu, v) + w * getfield(c, v))
+        end
+    end
+
+    mu
 end
 
 
