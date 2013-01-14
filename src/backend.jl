@@ -1,7 +1,7 @@
 
 # Backend: a thing upon with other things are drawn.
 
-export @upon, finish, absolute_measure
+export finish, absolute_measure
 
 
 abstract Backend
@@ -189,30 +189,4 @@ function native_measure(box::BoundingBox,
           native_measure(box.height, t, unit_box, parent_box, backend))
 end
 
-
-# The 'upon' macro: slightly more conscise calls to draw.
-
-macro upon(backend_expr::Expr, expr::Expr)
-
-    backend = eval(backend_expr)
-
-    function splice_args(ex::Expr)
-        if ex.head == :call && !isempty(ex.args) && ex.args[1] == :draw
-            insert(ex.args, 2, backend)
-        end
-
-        for arg in ex.args
-            if typeof(arg) == Expr
-                splice_args(arg)
-            end
-        end
-    end
-
-    splice_args(expr)
-
-    quote
-        $(expr)
-        finish($(backend))
-    end
-end
 
