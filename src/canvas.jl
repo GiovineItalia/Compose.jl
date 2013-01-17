@@ -147,7 +147,7 @@ function set_box(c::CanvasTree, box::BoundingBox)
 end
 
 
-function show(io, c::CanvasTree)
+function show(io::IO, c::CanvasTree)
     print(io, "Canvas(")
     show(io, c.children)
     print(io, ")")

@@ -127,6 +127,9 @@ function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber,height::MeasureOrNumber
 end
 
 
+hstack() = canvas()
+
+
 # Create a new canvas containing the given canvases stacked horizontally.
 #
 # This is the simple version of hstack. The root canvas will be placed on 0cx,
@@ -204,6 +207,9 @@ function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber
 end
 
 
+vstack() = canvas()
+
+
 # Create a new canvas containing the given canvases stacked horizontally.
 #
 # The simple version of vstack. The root canvas will be placed on 0cx, 0cy, and
@@ -214,6 +220,7 @@ function vstack(canvases::Canvas...)
     width = max([canvas.box.width for canvas in canvases])
     vstack(0, 0, width, [(canvas, hcenter) for canvas in canvases]...)
 end
+
 
 
 # Turn the tree represented by a ComposeType into a nested array (S-expression)

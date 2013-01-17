@@ -10,22 +10,22 @@ export Measure, BoundingBox, text_extents,
 
 # A unit gives some semantic meaning to a bare number.
 abstract Unit
-show(io, ::Type{Unit}) = print(io, "??")
+show(io::IO, ::Type{Unit}) = print(io, "??")
 
 # Units defined in terms of the screen.
 abstract PixelUnit <: Unit
-show(io, ::Type{PixelUnit}) = print(io, "px")
+show(io::IO, ::Type{PixelUnit}) = print(io, "px")
 
 # Units of absolute length.
 abstract MillimeterUnit <: Unit
-show(io, ::Type{MillimeterUnit}) = print(io, "mm")
+show(io::IO, ::Type{MillimeterUnit}) = print(io, "mm")
 
 # Units proportional to the width/height of the containing canvas.
 abstract WidthUnit <: Unit
-show(io, ::Type{WidthUnit}) = print(io, "width")
+show(io::IO, ::Type{WidthUnit}) = print(io, "width")
 
 abstract HeightUnit <: Unit
-show(io, ::Type{HeightUnit}) = print(io, "height")
+show(io::IO, ::Type{HeightUnit}) = print(io, "height")
 
 # Canvas specific units defined in terms of width/height.
 abstract CanvasXUnit <: Unit
@@ -50,7 +50,7 @@ function copy{U}(a::SimpleMeasure{U})
 end
 
 
-function show{U}(io, a::SimpleMeasure{U})
+function show{U}(io::IO, a::SimpleMeasure{U})
     print(io, a.value, U)
 end
 
@@ -113,7 +113,7 @@ function copy(a::CompoundMeasure)
     CompoundMeasure(copy(a.values))
 end
 
-function show(io, a::CompoundMeasure)
+function show(io::IO, a::CompoundMeasure)
     print(io, join([sprint(print, v, k) for (k, v) in a.values], " + "))
 end
 

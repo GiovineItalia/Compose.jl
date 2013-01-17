@@ -85,7 +85,7 @@ function list{T}(xs::AbstractArray{T})
 end
 
 
-function show{T}(io, a::List{T})
+function show{T}(io::IO, a::List{T})
     print(io, "List([")
     while typeof(a) != ListNil{T}
         print(io, a.head)
