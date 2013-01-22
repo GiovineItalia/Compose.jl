@@ -182,12 +182,14 @@ end
 
 # RGB Functions
 # -------------
-function hex(c::Color)
+function hex(c::RGB)
     @sprintf("#%02X%02X%02X",
              int(lerp(c.r, 0.0, 255.0)),
              int(lerp(c.g, 0.0, 255.0)),
              int(lerp(c.b, 0.0, 255.0)))
 end
+
+hex(c::Color) = hex(convert(RGB, c))
 
 
 # Everything to RGB

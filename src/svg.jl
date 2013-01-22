@@ -57,6 +57,10 @@ type SVG <: Backend
     # a map of unique function names to javascript code.
     scripts::Dict{String, String}
 
+    # Miscelaneous embedded objects included immediately before the </svg> tag,
+    # such as extra javascript or css.
+    embobj::Vector{String}
+
     # Keep track of which properties that are push are empty to we can avoid
     # printiing them.
     empty_properties::Vector{Bool}
@@ -75,6 +79,7 @@ type SVG <: Backend
         img.close_stream = false
         img.indentation = 0
         img.scripts = Dict{String, String}()
+        img.embobj = Array(String, 0)
         img.empty_properties = Array(Bool, 0)
         img.linked_properties = Array(Bool, 0)
 
@@ -98,12 +103,17 @@ end
 
 
 function finish(img::SVG)
+    for obj in img.embobj
+        write(img.f, obj)
+        write(img.f, "\n")
+    end
+
     if length(img.scripts) > 0
         write(img.f, "<script type=\"application/ecmascript\"><![CDATA[\n")
         for (fn_name, js) in img.scripts
             @printf(img.f, "function %s(evt) {\n%s\n}\n\n", fn_name, js)
         end
-        write(img.f, "]]></script>")
+        write(img.f, "]]></script>\n")
     end
 
     write(img.f, "</svg>\n")
@@ -344,6 +354,17 @@ function apply_property(img::SVG, p::LineWidth)
 end
 
 
+function apply_property(img::SVG, p::Visible)
+    @printf(img.f, " visibility=\"%s\"",
+            p.value ? "visible" : "hidden")
+end
+
+
+function apply_property(img::SVG, p::Opacity)
+    @printf(img.f, " opacity=\"%s\"", fmt_float(p.value))
+end
+
+
 function apply_property(img::SVG, p::SVGID)
     @printf(img.f, " id=\"%s\"", escape_string(p.value))
 end
@@ -358,6 +379,13 @@ end
 
 function apply_property(img::SVG, p::FontSize)
     @printf(img.f, " font-size=\"%s\"", svg_fmt_float(p.value.value))
+end
+
+
+function apply_property(img::SVG, p::EmbeddedJavascript)
+    push!(img.embobj,
+          @sprintf("<script type=\"application/ecmascript\"><![CDATA[\n%s\n]]></script>",
+                   p.value))
 end
 
 

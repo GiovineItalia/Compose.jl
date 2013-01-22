@@ -1,7 +1,7 @@
 # Form: a thing that is visible once drawn.
 
 export polygon, rectangle, lines, curve, arc, circle, ellipse, text,
-       hcenter, hleft, hright, vcenter, vtop, vbottom
+       hcenter, hleft, hright, vcenter, vtop, vbottom, empty_form
 
 # A primitive form: typcially a shape or sequence of drawing operations.
 abstract FormPrimitive

@@ -3,9 +3,9 @@
 
 import Base.fill
 
-export stroke, fill, linewidth, font, fontsize, svgid, svgclass, svglink,
-       onactive, onclick, onfocusin, onfocusout, onload, onmousedown,
-       onmousemove, onmouseout, onmouseover, onmouseup
+export stroke, fill, linewidth, font, fontsize, visible, opacity, svgid, svgclass,
+       svglink, onactive, onclick, onfocusin, onfocusout, onload, onmousedown,
+       onmousemove, onmouseout, onmouseover, onmouseup, embeddedjavascript
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
@@ -171,6 +171,25 @@ function native_measure(property::LineWidth,
 end
 
 
+# Set the visible attribute in SVG output, or just skip rendering in raster
+# graphics.
+type Visible <: PropertyPrimitive
+    value::Bool
+end
+
+
+visible(value::Bool) = PropertySeq(Visible(value))
+
+
+type Opacity <: PropertyPrimitive
+    value::Float64
+end
+
+
+opacity(value::Number) = PropertySeq(Opacity(convert(Float64, value)))
+
+
+
 # A property primitive assigning an ID, in particular in SVG, to enable
 # manipulation of portions of the graphic.
 type SVGID <: PropertyPrimitive
@@ -254,4 +273,15 @@ for event in events
         end
     end
 end
+
+
+# Embed objects in SVG
+
+type EmbeddedJavascript <: PropertyPrimitive
+    value::String
+end
+
+
+embeddedjavascript(value::String) = PropertySeq(EmbeddedJavascript(value))
+
 
