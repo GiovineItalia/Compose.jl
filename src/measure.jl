@@ -484,6 +484,12 @@ type PangoLayout
     end
 end
 
+
+# Using a global layout is not thread safe, but is much better than creating
+# them willy-nilly.
+const pangolayout = PangoLayout()
+
+
 # Set the layout's font.
 function pango_set_font(pangolayout::PangoLayout, family::String, pts::Number)
     desc_str = @sprintf("%s %f", family, pts)
@@ -498,7 +504,7 @@ function pango_set_font(pangolayout::PangoLayout, family::String, pts::Number)
 end
 
 
-# Find the width and height of a strin.g
+# Find the width and height of a string.
 #
 # Args:
 #   pangolayout: a pango layout object, with font, etc, set.
@@ -533,12 +539,11 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function text_extents(font_family::String, pts::Float64, texts::String...)
-    layout = PangoLayout()
-    pango_set_font(layout, font_family, pts)
+    pango_set_font(pangolayout, font_family, pts)
     max_width  = 0mm
     max_height = 0mm
     for text in texts
-        (width, height) = pango_text_extents(layout, text)
+        (width, height) = pango_text_extents(pangolayout, text)
         max_width  = max_width.value  < width.value  ? width  : max_width
         max_height = max_height.value < height.value ? height : max_height
     end
