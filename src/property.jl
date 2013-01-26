@@ -5,7 +5,8 @@ import Base.fill
 
 export stroke, fill, linewidth, font, fontsize, visible, opacity, svgid, svgclass,
        svglink, onactive, onclick, onfocusin, onfocusout, onload, onmousedown,
-       onmousemove, onmouseout, onmouseover, onmouseup, embeddedjavascript
+       onmousemove, onmouseout, onmouseover, onmouseup, svgmask, svgdefmask,
+       svgembed
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
@@ -275,13 +276,34 @@ for event in events
 end
 
 
-# Embed objects in SVG
+# SVG Mask objects
 
-type EmbeddedJavascript <: PropertyPrimitive
-    value::String
+type SVGMask <: PropertyPrimitive
+    id::String
 end
 
 
-embeddedjavascript(value::String) = PropertySeq(EmbeddedJavascript(value))
+svgmask(id::String) = PropertySeq(SVGMask(id))
 
+
+type SVGDefineMask <: PropertyPrimitive
+    id::String
+end
+
+
+svgdefmask(id::String) = PropertySeq(SVGDefineMask(id))
+
+
+# Embedding raw markup in SVG files.
+
+# This is a property that when processed will be saved and then appended to the
+# end of the SVG file, but ignored by default on other backends. This allows us
+# to use some of SVGs more obsure features without exposing all of SVG.
+
+type SVGEmbed <: PropertyPrimitive
+    markup::String
+end
+
+
+svgembed(markup::String) = PropertySeq(SVGEmbed(markup))
 

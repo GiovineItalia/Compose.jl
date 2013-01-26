@@ -5,7 +5,7 @@ using Base
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty, Base.insert,
        Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
-       Base.<<, Base.>>, Base.show
+       Base.<<, Base.>>, Base.show, Base.hex
 
 export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
 

@@ -5,7 +5,7 @@
 
 export Color, color, ColorOrNothing, ColorStringOrNothing,
        Colour, colour, ColourOrNothing, ColourStringOrNothing,
-       weighted_color_mean,
+       weighted_color_mean, hex,
        RGB, HLS, XYZ, LAB, LUV, LCHab, LCHuv
 
 abstract Color

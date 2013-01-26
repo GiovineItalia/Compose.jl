@@ -69,6 +69,9 @@ type SVG <: Backend
     # closing </a> tags.
     linked_properties::Vector{Bool}
 
+    # Keep track of mask objects.
+    mask_properties::Vector{Bool}
+
     function SVG(f::IO,
                  width::MeasureOrNumber,
                  height::MeasureOrNumber)
@@ -82,6 +85,7 @@ type SVG <: Backend
         img.embobj = Array(String, 0)
         img.empty_properties = Array(Bool, 0)
         img.linked_properties = Array(Bool, 0)
+        img.mask_properties = Array(Bool, 0)
 
         write(img.f, @sprintf(
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
@@ -282,6 +286,7 @@ function push_property(img::SVG, property::Property)
     if property === empty_property
         push!(img.empty_properties, true)
         push!(img.linked_properties, false)
+        push!(img.mask_properties, false)
     else
         push!(img.empty_properties, false)
         indent(img)
@@ -295,14 +300,17 @@ function push_property(img::SVG, property::Property)
             p = p.next
         end
 
-        # The link property demands special handling, since it's a seperate tag
-        # outside of <g>.
-        link_target = nothing
-        if has(properties, SVGLink)
-            link_target = properties[SVGLink].target
+        # Special-case for the mask property.
+        if has(properties, SVGDefineMask)
+            write(img.f, @sprintf("<mask id=\"%s\">", properties[SVGDefineMask].id))
+            push!(img.mask_properties, true)
+        else
+            push!(img.mask_properties, false)
         end
 
-        if !(link_target === nothing)
+        # Special-case for links.
+        link_target = nothing
+        if has(properties, SVGLink) && !is(properties[SVGLink].target, nothing)
             write(img.f, @sprintf("<a xlink:href=\"%s\">", link_target))
             push!(img.linked_properties, true)
         else
@@ -322,12 +330,16 @@ end
 
 function pop_property(img::SVG)
     is_linked = pop!(img.linked_properties)
+    is_mask = pop!(img.mask_properties)
     if !pop!(img.empty_properties)
         img.indentation -= 1
         indent(img)
         write(img.f, "</g>")
         if is_linked
             write(img.f, "</a>")
+        end
+        if is_mask
+            write(img.f, "</mask>")
         end
         write(img.f, "\n")
     end
@@ -382,10 +394,13 @@ function apply_property(img::SVG, p::FontSize)
 end
 
 
-function apply_property(img::SVG, p::EmbeddedJavascript)
-    push!(img.embobj,
-          @sprintf("<script type=\"application/ecmascript\"><![CDATA[\n%s\n]]></script>",
-                   p.value))
+function apply_property(img::SVG, p::SVGEmbed)
+    push!(img.embobj, p.markup)
+end
+
+
+function apply_property(img::SVG, p::SVGMask)
+    @printf(img.f, " mask=\"url(#%s)\"", p.id)
 end
 
 
