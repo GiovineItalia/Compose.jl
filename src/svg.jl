@@ -309,9 +309,9 @@ function push_property(img::SVG, property::Property)
         end
 
         # Special-case for links.
-        link_target = nothing
-        if has(properties, SVGLink) && !is(properties[SVGLink].target, nothing)
-            write(img.f, @sprintf("<a xlink:href=\"%s\">", link_target))
+        if has(properties, SVGLink)
+            write(img.f, @sprintf("<a xlink:href=\"%s\">",
+                  properties[SVGLink].target === nothing ? '#' : properties[SVGLink].target))
             push!(img.linked_properties, true)
         else
             push!(img.linked_properties, false)
