@@ -484,8 +484,8 @@ const PANGO_SCALE = 1024.0
 # backend.
 
 # Backend used to match font faces.
-const pango_freetype_fm = ccall(dlsym(libpango, :pango_cairo_font_map_new_for_font_type),
-                                Ptr{Void}, (Int32,), CAIRO_FONT_TYPE_FT)
+const pango_freetype_fm = ccall(dlsym(libpango, :pango_cairo_font_map_get_default),
+                                       Ptr{Void}, ())
 const pango_freetype_ctx = ccall(dlsym(libpango, :pango_font_map_create_context),
                                  Ptr{Void}, (Ptr{Void},), pango_freetype_fm)
 
