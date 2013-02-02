@@ -455,6 +455,53 @@ size_measure(u::Measure) = u
 size_measure(u::Number) = SimpleMeasure{PixelUnit}(convert(Float64, u))
 
 
+# Font matching with fontconfig
+
+libfontconfig = dlopen("libfontconfig")
+ccall(dlsym(libfontconfig, :FcInit), Uint8, ())
+
+# By default fontconfig on OSX does not include user fonts.
+if OS_NAME == :Darwin
+    ccall(dlsym(libfontconfig, :FcConfigAppFontAddDir),
+          Uint8, (Ptr{Void}, Ptr{Uint8}),
+          C_NULL, b"~/Library/Fonts")
+end
+
+const FcMatchPattern = uint32(0)
+const FcMatchFont    = uint32(1)
+const FcMatchScan    = uint32(2)
+
+function fontconfig_match(desc::String)
+    pat = ccall(dlsym(libfontconfig, :FcNameParse),
+                Ptr{Void}, (Ptr{Uint8},), bytestring(desc))
+
+    ccall(dlsym(libfontconfig, :FcConfigSubstitute),
+          Uint8, (Ptr{Void}, Ptr{Void}, Int32),
+          C_NULL, pat, FcMatchPattern)
+
+    ccall(dlsym(libfontconfig, :FcDefaultSubstitute),
+          Void, (Ptr{Void},), pat)
+
+    result = Int32[0]
+    mat = ccall(dlsym(libfontconfig, :FcFontMatch),
+                Ptr{Void}, (Ptr{Void}, Ptr{Void}, Ptr{Int32}),
+                C_NULL, pat, result)
+
+    matstr = ccall(dlsym(libfontconfig, :FcPatternFormat),
+                   Ptr{Uint8}, (Ptr{Void}, Ptr{Uint8}),
+                   mat, b"%{family} %{style}")
+    matstr = bytestring(matstr)
+
+    ccall(dlsym(libfontconfig, :FcPatternDestroy),
+          Void, (Ptr{Void},), pat)
+
+    ccall(dlsym(libfontconfig, :FcPatternDestroy),
+          Void, (Ptr{Void},), mat)
+
+    matstr
+end
+
+
 # Estimation of text extents using pango.
 
 const libpango = dlopen("libpangocairo-1.0")
@@ -470,26 +517,6 @@ const CAIRO_FONT_TYPE_USER = 4
 const PANGO_SCALE = 1024.0
 
 
-# Rationale for the clusterfuck that follows: We need pango for two things: font
-# selection and computing text extents. How well both of these tasks work
-# depends on the backend. In particular: freetype does the best job at font
-# selection. It uses fontconfig, which lets us give a list of alternatives and
-# finds the closest match, while using cairo's default font backend tends to
-# give the most accurate calculation of text-extents, since it is typically the
-# same backend that is going to be used to render the text. So, we peversely
-# rely on two different backends.
-#
-# Furthermore, since on osx in particular pango is not compiled with freetype
-# support, we have to use cairo as pango's backend and freetype as cairo's
-# backend.
-
-# Backend used to match font faces.
-const pango_freetype_fm = ccall(dlsym(libpango, :pango_cairo_font_map_new_for_font_type),
-                                Ptr{Void}, (Int32,), CAIRO_FONT_TYPE_FT)
-const pango_freetype_ctx = ccall(dlsym(libpango, :pango_font_map_create_context),
-                                 Ptr{Void}, (Ptr{Void},), pango_freetype_fm)
-
-
 # Use the freetype/fontconfig backend to find the best match to a font
 # description.
 #
@@ -501,34 +528,19 @@ const pango_freetype_ctx = ccall(dlsym(libpango, :pango_font_map_create_context)
 # Returns:
 #   A pointer to a PangoFontDescription with the closest match.
 #
-let cached_font_matches = Dict{String, Ptr{Void}}()
+let cached_font_matches = Dict{(String, Float64), Ptr{Void}}()
     global match_font
-    function match_font(desc::String)
-        if has(cached_font_matches, desc)
-            return cached_font_matches[desc]
+    function match_font(family::String, size::Float64)
+        if has(cached_font_matches, (family, size))
+            return cached_font_matches[(family, size)]
         end
 
+        family = fontconfig_match(family)
+        desc = @sprintf("%s %f", family, size)
         fd = ccall(dlsym(libpango, :pango_font_description_from_string),
-        Ptr{Void}, (Ptr{Uint8},), bytestring(desc))
-
-        # Now let freetype/fontconfig try to load that font.
-        font = ccall(dlsym(libpango, :pango_context_load_font),
-        Ptr{Void}, (Ptr{Void}, Ptr{Void}),
-        pango_freetype_ctx, fd)
-
-        if font == C_NULL
-            error("Could not match font: ${desc}")
-        end
-
-        # Get the true description of the font
-        truefd = ccall(dlsym(libpango, :pango_font_describe),
-        Ptr{Void}, (Ptr{Void},), font)
-
-        ccall(dlsym(libpango, :pango_font_description_free),
-        Void, (Ptr{Void},), fd)
-
-        cached_font_matches[desc] = truefd
-        truefd
+                   Ptr{Void}, (Ptr{Uint8},), bytestring(desc))
+        cached_font_matches[(family, size)] = fd
+        fd
     end
 end
 
@@ -560,9 +572,7 @@ const pangolayout = PangoLayout()
 
 # Set the layout's font.
 function pango_set_font(pangolayout::PangoLayout, family::String, pts::Number)
-    desc_str = @sprintf("%s %f", family, pts)
-    fd = match_font(desc_str)
-
+    fd = match_font(family, pts)
     ccall(dlsym(libpango, :pango_layout_set_font_description),
           Void, (Ptr{Void}, Ptr{Void}), pangolayout.layout, fd)
 end
