@@ -473,7 +473,7 @@ function fontconfig_match(desc::String)
     pat = ccall((:FcNameParse, :libfontconfig),
                 Ptr{Void}, (Ptr{Uint8},), bytestring(desc))
 
-    ccall((libfontconfig, :FcConfigSubstitute, :libfontconfig),
+    ccall((:FcConfigSubstitute, :libfontconfig),
           Uint8, (Ptr{Void}, Ptr{Void}, Int32),
           C_NULL, pat, FcMatchPattern)
 
