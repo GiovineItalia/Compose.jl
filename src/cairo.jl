@@ -51,6 +51,7 @@ type Image{B <: ImageBackend} <: Backend
     ctx::CairoContext
     stroke::ColorOrNothing
     fill::ColorOrNothing
+    owns_surface::Bool
     state_stack::Vector{ImagePropertyState}
 
 
@@ -62,6 +63,7 @@ type Image{B <: ImageBackend} <: Backend
         img.stroke = RGB(0., 0., 0.)
         img.fill   = RGB(0., 0., 0.)
         img.state_stack = Array(ImagePropertyState, 0)
+        img.owns_surface = false
         img
     end
     Image(surface::CairoSurface,context::CairoContext) = Image(surface,context,"")
@@ -100,7 +102,9 @@ type Image{B <: ImageBackend} <: Backend
             error("Unable to create cairo surface.")
         end
 
-        Image(surface,filename)
+        img = Image(surface,filename)
+        img.owns_surface = true
+        img
     end
 end
 
@@ -113,10 +117,13 @@ finish(::Type,img::Image) = nothing
 finish(::Type{PNGBackend},img::Image) = write_to_png(img.surf, img.filename)
 
 function finish{B<:ImageBackend}(img::Image{B})
-    destroy(img.ctx)
-    println(B)
+    if(img.owns_surface)
+      destroy(img.ctx)
+    end
     finish(B,img)
-    destroy(img.surface)
+    if(img.owns_surface)
+      destroy(img.surface)
+    end
 end
 
 
