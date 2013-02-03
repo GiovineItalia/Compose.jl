@@ -75,7 +75,6 @@ type Image{B <: ImageBackend} <: Backend
         # it doesn't exist.
         f = try
             open(filename, "w")
-            if(B==PNGBackend)
         catch
             error(@printf("Can't write to %s.", filename))
         end
@@ -83,6 +82,7 @@ type Image{B <: ImageBackend} <: Backend
         if B == SVGBackend
             img.surface = SVGSurface(f,w,h)
         elseif B == PNGBackend
+            close(f)
             img.surface = CairoARGBSurface(round(w), round(h))
         elseif B == PDFBackend
             img.surface = CairoPDFSurface(f,w,h)

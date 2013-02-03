@@ -456,13 +456,11 @@ size_measure(u::Number) = SimpleMeasure{PixelUnit}(convert(Float64, u))
 
 
 # Font matching with fontconfig
-
-libfontconfig = dlopen("libfontconfig")
-ccall(dlsym(libfontconfig, :FcInit), Uint8, ())
+ccall((:FcInit, :libfontconfig), Uint8, ())
 
 # By default fontconfig on OSX does not include user fonts.
 if OS_NAME == :Darwin
-    ccall(dlsym(libfontconfig, :FcConfigAppFontAddDir),
+    ccall((:FcConfigAppFontAddDir, :libfontconfig),
           Uint8, (Ptr{Void}, Ptr{Uint8}),
           C_NULL, b"~/Library/Fonts")
 end
@@ -472,30 +470,30 @@ const FcMatchFont    = uint32(1)
 const FcMatchScan    = uint32(2)
 
 function fontconfig_match(desc::String)
-    pat = ccall(dlsym(libfontconfig, :FcNameParse),
+    pat = ccall((:FcNameParse, :libfontconfig),
                 Ptr{Void}, (Ptr{Uint8},), bytestring(desc))
 
-    ccall(dlsym(libfontconfig, :FcConfigSubstitute),
+    ccall((libfontconfig, :FcConfigSubstitute, :libfontconfig),
           Uint8, (Ptr{Void}, Ptr{Void}, Int32),
           C_NULL, pat, FcMatchPattern)
 
-    ccall(dlsym(libfontconfig, :FcDefaultSubstitute),
+    ccall((:FcDefaultSubstitute, :libfontconfig),
           Void, (Ptr{Void},), pat)
 
     result = Int32[0]
-    mat = ccall(dlsym(libfontconfig, :FcFontMatch),
+    mat = ccall((:FcFontMatch, :libfontconfig),
                 Ptr{Void}, (Ptr{Void}, Ptr{Void}, Ptr{Int32}),
                 C_NULL, pat, result)
 
-    matstr = ccall(dlsym(libfontconfig, :FcPatternFormat),
+    matstr = ccall((:FcPatternFormat, :libfontconfig),
                    Ptr{Uint8}, (Ptr{Void}, Ptr{Uint8}),
                    mat, b"%{family} %{style}")
     matstr = bytestring(matstr)
 
-    ccall(dlsym(libfontconfig, :FcPatternDestroy),
+    ccall((:FcPatternDestroy, :libfontconfig),
           Void, (Ptr{Void},), pat)
 
-    ccall(dlsym(libfontconfig, :FcPatternDestroy),
+    ccall((:FcPatternDestroy, :libfontconfig),
           Void, (Ptr{Void},), mat)
 
     matstr
