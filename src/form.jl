@@ -57,7 +57,7 @@ function contents(io, f::FormTree, n::Int, indent)
     end
     i = 1
     for fc in f.children
-        contents(io, fc, n - 1, strcat(indent, "  "))
+        contents(io, fc, n - 1, string(indent, "  "))
         if i > 10
             println(io, indent, "  ...")
             break

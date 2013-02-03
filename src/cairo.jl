@@ -1,69 +1,8 @@
 
 # Cairo backend for compose
+importall Cairo
 
 export PNG, PDF, PS
-
-const libcairo = dlopen("libcairo")
-
-typealias cairo_format_t Int32
-const CAIRO_FORMAT_INVALID   = int32(-1)
-const CAIRO_FORMAT_ARGB32    = int32(0)
-const CAIRO_FORMAT_RGB24     = int32(1)
-const CAIRO_FORMAT_A8        = int32(2)
-const CAIRO_FORMAT_A1        = int32(3)
-const CAIRO_FORMAT_RGB16_565 = int32(4)
-const CAIRO_FORMAT_RGB30     = int32(5)
-
-typealias cairo_status_t Int32
-const CAIRO_STATUS_SUCCESS                   = int32(0)
-const CAIRO_STATUS_NO_MEMORY                 = int32(1)
-const CAIRO_STATUS_INVALID_RESTORE           = int32(2)
-const CAIRO_STATUS_INVALID_POP_GROUP         = int32(3)
-const CAIRO_STATUS_NO_CURRENT_POINT          = int32(4)
-const CAIRO_STATUS_INVALID_MATRIX            = int32(5)
-const CAIRO_STATUS_INVALID_STATUS            = int32(6)
-const CAIRO_STATUS_NULL_POINTER              = int32(7)
-const CAIRO_STATUS_INVALID_STRING            = int32(8)
-const CAIRO_STATUS_INVALID_PATH_DATA         = int32(9)
-const CAIRO_STATUS_READ_ERROR                = int32(10)
-const CAIRO_STATUS_WRITE_ERROR               = int32(11)
-const CAIRO_STATUS_SURFACE_FINISHED          = int32(12)
-const CAIRO_STATUS_SURFACE_TYPE_MISMATCH     = int32(13)
-const CAIRO_STATUS_PATTERN_TYPE_MISMATCH     = int32(14)
-const CAIRO_STATUS_INVALID_CONTENT           = int32(15)
-const CAIRO_STATUS_INVALID_FORMAT            = int32(16)
-const CAIRO_STATUS_INVALID_VISUAL            = int32(17)
-const CAIRO_STATUS_FILE_NOT_FOUND            = int32(17)
-const CAIRO_STATUS_INVALID_DASH              = int32(18)
-const CAIRO_STATUS_INVALID_DSC_COMMENT       = int32(19)
-const CAIRO_STATUS_INVALID_INDEX             = int32(20)
-const CAIRO_STATUS_CLIP_NOT_REPRESENTABLE    = int32(21)
-const CAIRO_STATUS_TEMP_FILE_ERROR           = int32(22)
-const CAIRO_STATUS_INVALID_STRIDE            = int32(23)
-const CAIRO_STATUS_FONT_TYPE_MISMATCH        = int32(24)
-const CAIRO_STATUS_USER_FONT_IMMUTABLE       = int32(25)
-const CAIRO_STATUS_USER_FONT_ERROR           = int32(26)
-const CAIRO_STATUS_NEGATIVE_COUNT            = int32(27)
-const CAIRO_STATUS_INVALID_CLUSTERS          = int32(28)
-const CAIRO_STATUS_INVALID_SLANT             = int32(29)
-const CAIRO_STATUS_INVALID_WEIGHT            = int32(30)
-const CAIRO_STATUS_INVALID_SIZE              = int32(31)
-const CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED = int32(32)
-const CAIRO_STATUS_DEVICE_TYPE_MISMATCH      = int32(33)
-const CAIRO_STATUS_DEVICE_ERROR              = int32(34)
-const CAIRO_STATUS_INVALID_MESH_CONSTRUCTION = int32(35)
-const CAIRO_STATUS_DEVICE_FINISHED           = int32(36)
-const CAIRO_STATUS_LAST_STATUS               = int32(37)
-
-typealias cairo_font_slant_t Int32
-const CAIRO_FONT_SLANT_NORMAL  = int32(0)
-const CAIRO_FONT_SLANT_ITALIC  = int32(1)
-const CAIRO_FONT_SLANT_OBLIQUE = int32(2)
-
-typealias cairo_font_weight_t Int32
-const CAIRO_FONT_WEIGHT_NORMAL = int32(0)
-const CAIRO_FONT_WEIGHT_BOLD   = int32(1)
-
 
 abstract ImageBackend
 abstract PNGBackend <: ImageBackend
@@ -108,87 +47,83 @@ end
 
 type Image{B <: ImageBackend} <: Backend
     filename::String
-    width::ImageMeasure{B}
-    height::ImageMeasure{B}
-    surf::Ptr{Void}
-    ctx::Ptr{Void}
+    surface::CairoSurface
+    ctx::CairoContext
     stroke::ColorOrNothing
     fill::ColorOrNothing
+    owns_surface::Bool
     state_stack::Vector{ImagePropertyState}
+
+
+    function Image(surface::CairoSurface,context::CairoContext,filename::String)
+        img = new()
+        img.filename = filename
+        img.surface = surface
+        img.ctx = CairoContext(surface)
+        img.stroke = RGB(0., 0., 0.)
+        img.fill   = RGB(0., 0., 0.)
+        img.state_stack = Array(ImagePropertyState, 0)
+        img.owns_surface = false
+        img
+    end
+    Image(surface::CairoSurface,context::CairoContext) = Image(surface,context,"")
+    Image(surface::CairoSurface) = Image(surface, CairoContext(surface))
 
     function Image(filename::String,
                    width::MeasureOrNumber,
                    height::MeasureOrNumber)
-        img = new()
 
-        img.filename = bytestring(abs_path(filename))
-
-        img.width  = native_measure(width,  img)
-        img.height = native_measure(height, img)
+        w  = native_measure(width,  img).value
+        h = native_measure(height, img).value
 
         # Try opening the file for writing immediately so we can fail early if
         # it doesn't exist.
-        try
-            f = open(filename, "w")
-            close(f)
+        f = try
+            open(filename, "w")
         catch
             error(@printf("Can't write to %s.", filename))
         end
 
+        local surface::CairoSurface
         if B == SVGBackend
-            img.surf = ccall(dlsym(libcairo, :cairo_svg_surface_create),
-                             Ptr{Void}, (Ptr{Uint8}, Float64, Float64),
-                             img.filename, img.width.value, img.height.value)
+            surface = SVGSurface(f,w,h)
         elseif B == PNGBackend
-            img.surf = ccall(dlsym(libcairo, :cairo_image_surface_create),
-                             Ptr{Void}, (Int32, Int32, Int32),
-                             CAIRO_FORMAT_ARGB32,
-                             convert(Int32, round(img.width.value)),
-                             convert(Int32, round(img.height.value)))
+            close(f)
+            surface = CairoARGBSurface(round(w), round(h))
         elseif B == PDFBackend
-            img.surf = ccall(dlsym(libcairo, :cairo_pdf_surface_create),
-                             Ptr{Void}, (Ptr{Uint8}, Float64, Float64),
-                             img.filename, img.width.value, img.height.value)
+            surface = CairoPDFSurface(f,w,h)
         elseif B == PSBackend
-            img.surf = ccall(dlsym(libcairo, :cairo_ps_surface_create),
-                             Ptr{Void}, (Ptr{Uint8}, Float64, Float64),
-                             img.filename, img.width.value, img.height.value)
+            surface = CairoEPSSurface(f,w,h)
         else
             error("Unkown Cairo backend.")
         end
 
-        status = ccall(dlsym(libcairo, :cairo_surface_status),
-                       Int32, (Ptr{Void},), img.surf)
-
-        if status != CAIRO_STATUS_SUCCESS
+        if status(img.surface) != CAIRO_STATUS_SUCCESS
             error("Unable to create cairo surface.")
         end
 
-        img.ctx = ccall(dlsym(libcairo, :cairo_create),
-                        Ptr{Void}, (Ptr{Void},), img.surf)
-
-
-        img.stroke = RGB(0., 0., 0.)
-        img.fill   = RGB(0., 0., 0.)
-        img.state_stack = Array(ImagePropertyState, 0)
-
+        img = Image(surface,filename)
+        img.owns_surface = true
         img
     end
 end
 
+Image(args...) = Image{ImageBackend}(args...)
 
-function finish{B}(img::Image{B})
-    ccall(dlsym(libcairo, :cairo_destroy),
-          Void, (Ptr{Void},), img.ctx)
+width{B}(img::Image{B}) = ImageMeasure{B}(Cairo.width(img.surface))
+height{B}(img::Image{B}) = ImageMeasure{B}(Cairo.height(img.surface))
 
-    if B == PNGBackend
-        ccall(dlsym(libcairo, :cairo_surface_write_to_png),
-              Int32, (Ptr{Void}, Ptr{Uint8}),
-              img.surf, img.filename)
+finish(::Type,img::Image) = nothing
+finish(::Type{PNGBackend},img::Image) = write_to_png(img.surf, img.filename)
+
+function finish{B<:ImageBackend}(img::Image{B})
+    if(img.owns_surface)
+      destroy(img.ctx)
     end
-
-    ccall(dlsym(libcairo, :cairo_surface_destroy),
-          Void, (Ptr{Void},), img.surf)
+    finish(B,img)
+    if(img.owns_surface)
+      destroy(img.surface)
+    end
 end
 
 
@@ -203,8 +138,8 @@ function root_box{B}(img::Image{B})
     NativeBoundingBox(
         ImageMeasure{B}(0.),
         ImageMeasure{B}(0.),
-        img.width,
-        img.height)
+        width(img),
+        height(img))
 end
 
 
@@ -213,20 +148,20 @@ native_zero{T}(backend::Image{T}) = ImageMeasure{T}(0.0)
 
 # PNG conversion to native units (i.e., pixels)
 
-function native_measure(u::Number,
-                        backend::Image{PNGBackend})
-    ImageMeasure{PNGBackend}(convert(Float64, u))
+function native_measure{K <: ImageBackend}(u::Number,
+                        backend::Image{K})
+    ImageMeasure{K}(convert(Float64, u))
 end
 
 
-function native_measure(u::SimpleMeasure{PixelUnit},
-                        backend::Image{PNGBackend})
-    ImageMeasure{PNGBackend}(u.value)
+function native_measure{K <: ImageBackend}(u::SimpleMeasure{PixelUnit},
+                        backend::Image{K})
+    ImageMeasure{K}(u.value)
 end
 
 
-function native_measure(u::SimpleMeasure{MillimeterUnit},
-                        backend::Image{PNGBackend})
+function native_measure{K <: ImageBackend}(u::SimpleMeasure{MillimeterUnit},
+                        backend::Image{K})
 
     native_measure(convert(SimpleMeasure{PixelUnit}, u), backend)
 end
@@ -257,61 +192,46 @@ end
 
 # Drawing
 
-function move_to(img::Image, point::Point)
-    ccall(dlsym(libcairo, :cairo_move_to), Void, (Ptr{Void}, Float64, Float64),
-          img.ctx, point.x.value, point.y.value)
-end
+move_to(img::Image, point::Point) = move_to(img.ctx, point.x.value, point.y.value)
+line_to(img::Image, point::Point) = line_to(img.ctx, point.x.value, point.y.value)
+curve_to(img::Image, ctrl0::Point, ctrl1::Point, anchor1::Point) =
+    curve_to(img.ctx, ctrl0.x.value, ctrl0.y.value, ctrl1.x.value, ctrl1.y.value,
+            anchor1.x.value, anchor1.y.value)
 
+close_path(img::Image) = close_path(img.ctx)
 
-function line_to(img::Image, point::Point)
-    ccall(dlsym(libcairo, :cairo_line_to), Void, (Ptr{Void}, Float64, Float64),
-          img.ctx, point.x.value, point.y.value)
-end
+arc(img::Image, x::Float64, y::Float64, radius::Float64, angle1::Float64, 
+    angle2::Float64) = arc(img.ctx,x,y,radius,angle1,angle2)
 
-
-function curve_to(img::Image, ctrl0::Point, ctrl1::Point, anchor1::Point)
-    ccall(dlsym(libcairo, :cairo_curve_to), Void,
-          (Ptr{Void}, Float64, Float64, Float64, Float64, Float64, Float64),
-          img.ctx, ctrl0.x.value, ctrl0.y.value, ctrl1.x.value, ctrl1.y.value,
-          anchor1.x.value, anchor1.y.value)
-end
-
-
-function close_path(img::Image)
-    ccall(dlsym(libcairo, :cairo_close_path), Void, (Ptr{Void},), img.ctx)
-end
+translate(img::Image, tx::Float64, ty::Float64) = translate(img.ctx,dx,dy)
+scale(img::Image, sx::Float64, sy::Float64) = scale(img.ctx,sx,sy)
+rotate(img::Image, theta::Float64) = rotate(img.ctx,theta)
 
 
 function fillstroke(img::Image)
     if img.fill != nothing
         rgb = convert(RGB, img.fill)
-        ccall(dlsym(libcairo, :cairo_set_source_rgb), Void,
-              (Ptr{Void}, Float64, Float64, Float64),
-              img.ctx, rgb.r, rgb.g, rgb.b)
+        set_source_rgb(img.ctx, rgb.r, rgb.g, rgb.b)
 
         if img.stroke != nothing
-            ccall(dlsym(libcairo, :cairo_fill_preserve),
-                  Void, (Ptr{Void},), img.ctx)
+            fill_preserve(img.ctx)
         else
-            ccall(dlsym(libcairo, :cairo_fill),
-                  Void, (Ptr{Void},), img.ctx)
+            fill(img.ctx)
         end
     end
 
     if img.stroke != nothing
         rgb = convert(RGB, img.stroke)
-        ccall(dlsym(libcairo, :cairo_set_source_rgb), Void,
-              (Ptr{Void}, Float64, Float64, Float64),
-              img.ctx, rgb.r, rgb.g, rgb.b)
+        set_source_rgb(img.ctx, rgb.r, rgb.g, rgb.b)
 
-        ccall(dlsym(libcairo, :cairo_stroke), Void, (Ptr{Void},), img.ctx)
+        Cairo.stroke(img.ctx)
     end
 end
 
 
 function save_state(img::Image)
     push!(img.state_stack, ImagePropertyState(img.stroke, img.fill))
-    ccall(dlsym(libcairo, :cairo_save), Void, (Ptr{Void},), img.ctx)
+    save(img.ctx)
 end
 
 
@@ -319,35 +239,7 @@ function restore_state(img::Image)
     state = pop!(img.state_stack)
     img.stroke = state.stroke
     img.fill = state.fill
-    ccall(dlsym(libcairo, :cairo_restore), Void, (Ptr{Void},), img.ctx)
-end
-
-
-function arc(img::Image, x::Float64, y::Float64,
-             radius::Float64, angle1::Float64, angle2::Float64)
-    ccall(dlsym(libcairo, :cairo_arc), Void,
-          (Ptr{Void}, Float64, Float64, Float64, Float64, Float64),
-          img.ctx, x, y, radius, angle1, angle2)
-end
-
-
-function translate(img::Image, tx::Float64, ty::Float64)
-    ccall(dlsym(libcairo, :cairo_translate), Void,
-          (Ptr{Void}, Float64, Float64),
-          img.ctx, tx, ty)
-end
-
-
-function scale(img::Image, sx::Float64, sy::Float64)
-    ccall(dlsym(libcairo, :cairo_scale), Void,
-          (Ptr{Void}, Float64, Float64),
-          img.ctx, sx, sy)
-end
-
-
-function rotate(img::Image, theta::Float64)
-    ccall(dlsym(libcairo, :cairo_rotate), Void,
-          (Ptr{Void}, Float64), img.ctx, theta)
+    restore(img.ctx)
 end
 
 
@@ -406,9 +298,7 @@ function draw(img::Image, form::Text)
 
     if form.halign != hleft || form.valign != vtop
         extents = Array(Float64, 6)
-        ccall(dlsym(libcairo, :cairo_text_extents),
-              Void, (Ptr{Void}, Ptr{Uint8}, Ptr{Float64}),
-              img.ctx, bytestring(form.value), extents)
+        text_extents(img.ctx, bytestring(form.value), extents)
 
         width, height = extents[3], extents[4]
 
@@ -426,9 +316,7 @@ function draw(img::Image, form::Text)
     end
 
     move_to(img, pos)
-    ccall(dlsym(libcairo, :cairo_show_text),
-          Void, (Ptr{Void}, Ptr{Uint8}),
-          img.ctx, bytestring(form.value))
+    show_text(img,form.value)
 end
 
 
@@ -459,24 +347,7 @@ function apply_property(img::Image, p::Fill)
 end
 
 
-function apply_property(img::Image, property::LineWidth)
-    ccall(dlsym(libcairo, :cairo_set_line_width),
-          Void, (Ptr{Void}, Float64),
-          img.ctx, property.value.value)
-end
-
-
-function apply_property(img::Image, property::Font)
-    ccall(dlsym(libcairo, :cairo_select_font_face),
-          Void, (Ptr{Void}, Ptr{Uint8},
-                 cairo_font_slant_t, cairo_font_weight_t),
-          img.ctx, bytestring(property.family),
-          CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
-end
-
-
-function apply_property(img::Image, property::FontSize)
-    ccall(dlsym(libcairo, :cairo_set_font_size),
-          Void, (Ptr{Void}, Float64,), img.ctx, property.value.value)
-end
+apply_property(img::Image, property::LineWidth) = set_line_width(img.ctx, property.value.value)
+apply_property(img::Image, property::Font) = select_font_face(img.ctx,property.family,CAIRO_FONT_SLANT_NORMAL,CAIRO_FONT_WEIGHT_NORMAL)
+apply_property(img::Image, property::FontSize) = set_font_size(img.ctx, property.value.value)
 

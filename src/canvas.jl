@@ -164,7 +164,7 @@ function contents(io, c::CanvasTree, n::Int, indent)
         # Children
         i = 1
         for cc in c.children
-            contents(io, cc, n - 1, strcat(indent, "  "))
+            contents(io, cc, n - 1, string(indent, "  "))
             if i > 10
                 println(io, indent, "  ...")
                 break
