@@ -54,19 +54,22 @@ type Image{B <: ImageBackend} <: Backend
     state_stack::Vector{ImagePropertyState}
 
 
-    function Image(surface::CairoSurface,filename::String)
+    function Image(surface::CairoSurface,context::CairoContext,filename::String)
         img = new()
         img.filename = filename
         img.surface = surface
         img.ctx = CairoContext(surface)
+        img.stroke = RGB(0., 0., 0.)
+        img.fill   = RGB(0., 0., 0.)
+        img.state_stack = Array(ImagePropertyState, 0)
+        img
     end
+    Image(surface::CairoSurface,context::CairoContext) = Image(surface,context,"")
+    Image(surface::CairoSurface) = Image(surface, CairoContext(surface))
 
     function Image(filename::String,
                    width::MeasureOrNumber,
                    height::MeasureOrNumber)
-        img = new()
-
-        img.filename = bytestring(abs_path(filename))
 
         w  = native_measure(width,  img).value
         h = native_measure(height, img).value
@@ -79,15 +82,16 @@ type Image{B <: ImageBackend} <: Backend
             error(@printf("Can't write to %s.", filename))
         end
 
+        local surface::CairoSurface
         if B == SVGBackend
-            img.surface = SVGSurface(f,w,h)
+            surface = SVGSurface(f,w,h)
         elseif B == PNGBackend
             close(f)
-            img.surface = CairoARGBSurface(round(w), round(h))
+            surface = CairoARGBSurface(round(w), round(h))
         elseif B == PDFBackend
-            img.surface = CairoPDFSurface(f,w,h)
+            surface = CairoPDFSurface(f,w,h)
         elseif B == PSBackend
-            img.surface = CairoEPSSurface(f,w,h)
+            surface = CairoEPSSurface(f,w,h)
         else
             error("Unkown Cairo backend.")
         end
@@ -96,24 +100,21 @@ type Image{B <: ImageBackend} <: Backend
             error("Unable to create cairo surface.")
         end
 
-        img.ctx = CairoContext(img.surface)
-
-
-        img.stroke = RGB(0., 0., 0.)
-        img.fill   = RGB(0., 0., 0.)
-        img.state_stack = Array(ImagePropertyState, 0)
-
-        img
+        Image(surface,filename)
     end
 end
 
 Image(args...) = Image{ImageBackend}(args...)
 
-finsh{B<:ImageBackend}(::Type{B},img::Image) = nothing
-finsh(::Type{PNGBackend},img::Image) = write_to_png(img.surf, img.filename)
+width{B}(img::Image{B}) = ImageMeasure{B}(Cairo.width(img.surface))
+height{B}(img::Image{B}) = ImageMeasure{B}(Cairo.height(img.surface))
 
-function finish{B}(img::Image{B})
+finish(::Type,img::Image) = nothing
+finish(::Type{PNGBackend},img::Image) = write_to_png(img.surf, img.filename)
+
+function finish{B<:ImageBackend}(img::Image{B})
     destroy(img.ctx)
+    println(B)
     finish(B,img)
     destroy(img.surface)
 end
@@ -130,8 +131,8 @@ function root_box{B}(img::Image{B})
     NativeBoundingBox(
         ImageMeasure{B}(0.),
         ImageMeasure{B}(0.),
-        img.width,
-        img.height)
+        width(img),
+        height(img))
 end
 
 
@@ -140,20 +141,20 @@ native_zero{T}(backend::Image{T}) = ImageMeasure{T}(0.0)
 
 # PNG conversion to native units (i.e., pixels)
 
-function native_measure(u::Number,
-                        backend::Image{PNGBackend})
-    ImageMeasure{PNGBackend}(convert(Float64, u))
+function native_measure{K <: ImageBackend}(u::Number,
+                        backend::Image{K})
+    ImageMeasure{K}(convert(Float64, u))
 end
 
 
-function native_measure(u::SimpleMeasure{PixelUnit},
-                        backend::Image{PNGBackend})
-    ImageMeasure{PNGBackend}(u.value)
+function native_measure{K <: ImageBackend}(u::SimpleMeasure{PixelUnit},
+                        backend::Image{K})
+    ImageMeasure{K}(u.value)
 end
 
 
-function native_measure(u::SimpleMeasure{MillimeterUnit},
-                        backend::Image{PNGBackend})
+function native_measure{K <: ImageBackend}(u::SimpleMeasure{MillimeterUnit},
+                        backend::Image{K})
 
     native_measure(convert(SimpleMeasure{PixelUnit}, u), backend)
 end
@@ -190,10 +191,10 @@ curve_to(img::Image, ctrl0::Point, ctrl1::Point, anchor1::Point) =
     curve_to(img.ctx, ctrl0.x.value, ctrl0.y.value, ctrl1.x.value, ctrl1.y.value,
             anchor1.x.value, anchor1.y.value)
 
-close_path(img::Image) = close_path(img.context)
+close_path(img::Image) = close_path(img.ctx)
 
 arc(img::Image, x::Float64, y::Float64, radius::Float64, angle1::Float64, 
-    angle2::Float64) = arc(img.context,x,y,radius,angle1,angle2)
+    angle2::Float64) = arc(img.ctx,x,y,radius,angle1,angle2)
 
 translate(img::Image, tx::Float64, ty::Float64) = translate(img.ctx,dx,dy)
 scale(img::Image, sx::Float64, sy::Float64) = scale(img.ctx,sx,sy)
@@ -216,7 +217,7 @@ function fillstroke(img::Image)
         rgb = convert(RGB, img.stroke)
         set_source_rgb(img.ctx, rgb.r, rgb.g, rgb.b)
 
-        stroke(img.ctx)
+        Cairo.stroke(img.ctx)
     end
 end
 
