@@ -59,7 +59,7 @@ type SVG <: Backend
 
     # Miscelaneous embedded objects included immediately before the </svg> tag,
     # such as extra javascript or css.
-    embobj::Vector{String}
+    embobj::Set{String}
 
     # Keep track of which properties that are push are empty to we can avoid
     # printiing them.
@@ -82,7 +82,7 @@ type SVG <: Backend
         img.close_stream = false
         img.indentation = 0
         img.scripts = Dict{String, String}()
-        img.embobj = Array(String, 0)
+        img.embobj = Set{String}()
         img.empty_properties = Array(Bool, 0)
         img.linked_properties = Array(Bool, 0)
         img.mask_properties = Array(Bool, 0)
@@ -395,7 +395,7 @@ end
 
 
 function apply_property(img::SVG, p::SVGEmbed)
-    push!(img.embobj, p.markup)
+    add!(img.embobj, p.markup)
 end
 
 
