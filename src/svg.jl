@@ -87,8 +87,7 @@ type SVG <: Backend
         img.linked_properties = Array(Bool, 0)
         img.mask_properties = Array(Bool, 0)
 
-        write(img.f, @sprintf(
-"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
+        write(img.f, @sprintf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
               svg_fmt_float(img.width.value), svg_fmt_float(img.height.value),
               svg_fmt_float(img.width.value), svg_fmt_float(img.height.value)))
         img
@@ -401,6 +400,11 @@ end
 
 function apply_property(img::SVG, p::SVGMask)
     @printf(img.f, " mask=\"url(#%s)\"", p.id)
+end
+
+
+function apply_property(img::SVG, p::SVGAttribute)
+    @printf(img.f, " %s=\"%s\"", p.attribute, p.value)
 end
 
 

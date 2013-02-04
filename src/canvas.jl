@@ -335,6 +335,7 @@ function drawpart(backend::Backend, root_canvas::Canvas)
             ordered_children[i] = (child.order, i, child)
         end
         sort!(ordered_children)
+        reverse!(ordered_children)
 
         for (_, _, child) in ordered_children
             push!(S, (child, t, unit_box, box))

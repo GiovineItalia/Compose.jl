@@ -6,7 +6,7 @@ import Base.fill
 export stroke, fill, linewidth, font, fontsize, visible, opacity, svgid, svgclass,
        svglink, onactive, onclick, onfocusin, onfocusout, onload, onmousedown,
        onmousemove, onmouseout, onmouseover, onmouseup, svgmask, svgdefmask,
-       svgembed
+       svgembed, svgattribute
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
@@ -292,6 +292,19 @@ end
 
 
 svgdefmask(id::String) = PropertySeq(SVGDefineMask(id))
+
+
+# A general purpose SVG attribute.
+
+type SVGAttribute <: PropertyPrimitive
+    attribute::String
+    value::String
+end
+
+
+function svgattribute(attribute::String, value::String)
+    PropertySeq(SVGAttribute(attribute, value))
+end
 
 
 # Embedding raw markup in SVG files.
