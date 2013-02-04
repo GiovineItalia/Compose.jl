@@ -1,7 +1,8 @@
 
 # Canvas: a thing upon which other things are placed.
 
-export Canvas, Units, Rotation, canvas, deferredcanvas, draw, drawpart, set_unit_box, set_box
+export Canvas, Units, Rotation, Order, InheritedUnits, canvas, deferredcanvas,
+       draw, drawpart, set_unit_box, set_box
 
 
 # A box giving the coordinate system used by a canvas.
@@ -26,6 +27,17 @@ type Units
                    height::Number)
         new(x0, y0, width, height)
     end
+end
+
+
+# Inherited units option for the Canvas constructor.
+type InheritedUnits
+end
+
+
+# Order option for the Canvas constructor.
+type Order
+    o::Integer
 end
 
 
@@ -66,11 +78,13 @@ const empty_canvas = EmptyCanvas()
 #
 type DeferredCanvas <: Canvas
     f::Function
+    order::Integer
 end
 
+deferredcanvas(f::Function) = DeferredCanvas(f, 0)
+deferredcanvas(f::Function, order::Integer) = DeferredCanvas(f, order)
 
-const deferredcanvas = DeferredCanvas
-
+typealias CanvasOptions Union(Units, Rotation, Order, InheritedUnits)
 
 # non-empty tree of canvases.
 type CanvasTree <: Canvas
@@ -81,16 +95,26 @@ type CanvasTree <: Canvas
     rot::Rotation
     children::List{Canvas}
 
+    # Z-order of this canvas relative to its siblings.
+    order::Integer
+
+    # True if this canvas should use its parent's coordinate system.
+    units_inherited::Bool
+
     function CanvasTree(box::BoundingBox,
                         form::Form,
                         property::Property,
                         unit_box::Units,
                         rot::Rotation,
-                        children::List{Canvas})
-        new(box, form, property, unit_box, rot, children)
+                        children::List{Canvas},
+                        order::Integer,
+                        units_inherited::Bool)
+
+        new(box, form, property, unit_box, rot,
+            children, order, units_inherited)
     end
 
-    function CanvasTree(opts::Union(Units, Rotation)...)
+    function CanvasTree(opts::CanvasOptions...)
         CanvasTree(0.0w, 0.0h, 1.0w, 1.0h, opts...)
     end
 
@@ -98,19 +122,25 @@ type CanvasTree <: Canvas
                         y0::MeasureOrNumber,
                         width::MeasureOrNumber,
                         height::MeasureOrNumber,
-                        opts::Union(Units, Rotation)...)
+                        opts::CanvasOptions...)
         c = new(BoundingBox(x0, y0, width, height),
                 empty_form,
                 empty_property,
                 Units(),
                 Rotation(),
-                ListNil{Canvas}())
+                ListNil{Canvas}(),
+                0,
+                false)
 
         for opt in opts
             if typeof(opt) == Rotation
                 c.rot = opt
             elseif typeof(opt) == Units
                 c.unit_box = opt
+            elseif typeof(opt) == Order
+                c.order = opt.o
+            elseif typeof(opt) == InheritedUnits
+                c.units_inherited = true
             end
         end
 
@@ -119,7 +149,8 @@ type CanvasTree <: Canvas
 
     # shallow copy constructor
     function CanvasTree(c::CanvasTree)
-        new(c.box, c.form, c.property, c.unit_box, c.rot, c.children)
+        new(c.box, c.form, c.property, c.unit_box,
+            c.rot, c.children, c.order, c.units_inherited)
     end
 end
 
@@ -207,7 +238,7 @@ end
 # Composition of forms into canvases
 function compose(a::CanvasTree, b::Form)
     CanvasTree(a.box, combine(a.form, b), a.property,
-               a.unit_box, a.rot, a.children)
+               a.unit_box, a.rot, a.children, a.order, a.units_inherited)
 end
 
 
@@ -218,7 +249,7 @@ end
 
 function compose(a::CanvasTree, b::Property)
     CanvasTree(a.box, a.form, combine(a.property, b),
-               a.unit_box, a.rot, a.children)
+               a.unit_box, a.rot, a.children, a.order, a.units_inherited)
 end
 
 
@@ -285,19 +316,28 @@ function drawpart(backend::Backend, root_canvas::Canvas)
         rot = native_measure(canvas.rot, parent_t, unit_box, box, backend)
         t = combine(rot, parent_t)
 
-        unit_box = convert(BoundingBox, canvas.unit_box)
+        if !canvas.units_inherited
+            unit_box = convert(BoundingBox, canvas.unit_box)
+        end
 
         if !is(canvas.property, empty_canvas)
             push!(S, :POP_PROPERTY)
-            push_property(backend,
-                          native_measure(canvas.property, t, unit_box,
-                                         box, backend))
+            push_property(backend, native_measure(canvas.property, t, unit_box,
+                                                  box, backend))
         end
 
         draw(backend, t, unit_box, box, canvas.form)
 
-        for child in canvas.children
-            push!(S, (child, t, convert(BoundingBox, unit_box), box))
+        ordered_children = Array((Integer, Integer, Canvas), length(canvas.children))
+        for (i, child) in enumerate(canvas.children)
+            # The tuple here includes i so canvases are never compared to break
+            # ties.
+            ordered_children[i] = (child.order, i, child)
+        end
+        sort!(ordered_children)
+
+        for (_, _, child) in ordered_children
+            push!(S, (child, t, unit_box, box))
         end
     end
 end
