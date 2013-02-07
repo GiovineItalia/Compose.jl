@@ -26,7 +26,7 @@ include("color.jl")
 include("property.jl")
 include("form.jl")
 include("canvas.jl")
-include("cairo.jl")
+#include("cairo.jl")
 include("pango.jl")
 include("svg.jl")
 
