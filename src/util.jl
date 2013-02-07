@@ -46,3 +46,17 @@ end
 
 html_escape_string(s::String) = sprint(length(s), html_escape_string, s)
 
+
+# Open a browser window in a somewhat cross-platform way.
+function open_browser(filename)
+    if OS_NAME == :Darwin
+        run(`open $(filename)`)
+    elseif OS_NAME == :Linux || OS_NAME == :FreeBSD
+        run(`xdg-open $(filename)`)
+    elseif OS_NAME == :Windows
+        run(`start $(filename)`)
+    else
+        warn("Unable to show graphic due to the strangeness of your OS.")
+    end
+end
+

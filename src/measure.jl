@@ -544,6 +544,7 @@ end
 
 
 # Backend used to compute text extents.
+ccall(dlsym(libpango, :g_type_init), Void, ())
 const pango_cairo_fm = ccall(dlsym(libpango, :pango_cairo_font_map_new),
                              Ptr{Void}, ())
 const pango_cairo_ctx = ccall(dlsym(libpango, :pango_font_map_create_context),

@@ -93,6 +93,7 @@ type SVG <: Backend
         img
     end
 
+    # Write to a file.
     function SVG(filename::String,
                  width::MeasureOrNumber,
                  height::MeasureOrNumber)
@@ -102,6 +103,13 @@ type SVG <: Backend
         img
     end
 
+    # Write to buffer.
+    function SVG(width::MeasureOrNumber,
+                 height::MeasureOrNumber)
+        img = SVG(IOString(), width, height)
+        img.close_stream = false
+        img
+    end
 end
 
 
@@ -123,10 +131,16 @@ function finish(img::SVG)
     if img.close_stream
         close(img.f)
     end
+
+    # If we are writing to a buffer. Collect the string and emit it.
+    if typeof(img.f) == IOString
+        seek(img.f, 0)
+        emit(Emitable("image/svg+xml", readall(img.f)))
+        close(img.f)
+    end
 end
 
 
-# We are going to make to do compound units, or at least, PX + MM
 
 function root_box(img::SVG)
     NativeBoundingBox(

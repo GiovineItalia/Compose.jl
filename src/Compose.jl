@@ -1,4 +1,6 @@
 
+require("Mustache")
+
 module Compose
 
 using Base
@@ -8,6 +10,8 @@ import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.<<, Base.>>, Base.show, Base.hex
 
 export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
+
+import Mustache
 
 # Empty combine. This violates the rules a bit, since nothing is not the
 # identity element in any of the monoids, but it's sometimes convenient if it
@@ -317,4 +321,50 @@ function decompose(c::CanvasTree)
 end
 
 
+# Emitting graphics.
+#
+# Calling draw on a backend without an explicit output files causes the graphic
+# to be "emitted". What the means depends on the context. By default, it writes
+# the file to a temporary file and opens it in the appropriate viewer.
+#
+# But this behavior may be changed. In particular when weaving documents, we can
+# change the function used to emit graphics to instead embed the graphic in the
+# document.
+#
+# More explicitly, this is just dynamic multiple dispatch. That is multiple
+# dispath with bindings that we can change on a whim.
+#
+
+type Emitable
+    mime::String
+    data
+end
+
+emitters = Dict{String, Function}()
+
+
+function emit(emitable::Emitable)
+    if has(emitters, emitable.mime)
+        emitter = emitters[emitable.mime]
+        emitter(emitable.data)
+    else
+        warn("Unable to emit data of type ", string(typeof(data)))
+    end
+end
+
+
+# Default emitters
+
+function emitsvg(data::String)
+    templ = readall(joinpath(Pkg.dir("Compose"), "src", "show.html"))
+    htmlout_path, htmlout = mktemp()
+    write(htmlout, Mustache.render(templ, {"svgdata" => data}))
+    flush(htmlout)
+    open_browser(htmlout_path)
+end
+
+emitters["image/svg+xml"] = emitsvg
+
+
 end # module Compose
+
