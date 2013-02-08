@@ -1,9 +1,8 @@
-
 # Compose!
 
 Compose is a (experimental, work-in-progress) vector graphics library for Julia.
 It is forming the basis for the statistical graphics system
-[Gadfly](https://github.com/dcjones/gadfly).
+[Gadfly](https://github.com/dcjones/Gadfly.jl).
 
 
 ## Synopsis
