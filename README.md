@@ -21,7 +21,7 @@ consistent and powerful means of building vector graphics.
 The easiest way to get a sense of how Compose works is with an example. So,
 here's how to draw a sierpinski triangle.
 
-![Sierpinski](http://dcjones.github.com/compose/sierpinski.svg)
+![Sierpinski](http://dcjones.github.com/Compose.jl/sierpinski.svg)
 
 ```julia
 load("Compose")
