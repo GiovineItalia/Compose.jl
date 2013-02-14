@@ -1,6 +1,134 @@
 
+# Estimation of text extents using pango.
 
-#const libpango = dlopen("libpangoft2-1.0")
+const libpango = symbol("libpangocairo-1.0")
+
+# Cairo text backend
+const CAIRO_FONT_TYPE_TOY = 0
+const CAIRO_FONT_TYPE_FT = 1
+const CAIRO_FONT_TYPE_WIN32 = 2
+const CAIRO_FONT_TYPE_QUARTZ = 3
+const CAIRO_FONT_TYPE_USER = 4
+
+# Mirroring a #define in the pango header.
+const PANGO_SCALE = 1024.0
+
+
+# Use the freetype/fontconfig backend to find the best match to a font
+# description.
+#
+# Args:
+#   desc: A string giving the font description. This can
+#         also provide a comma-seperated list of families. E.g.,
+#         "Helvetica, Arial 10"
+#
+# Returns:
+#   A pointer to a PangoFontDescription with the closest match.
+#
+let cached_font_matches = Dict{(String, Float64), Ptr{Void}}()
+    global match_font
+    function match_font(family::String, size::Float64)
+        if has(cached_font_matches, (family, size))
+            return cached_font_matches[(family, size)]
+        end
+
+        family = fontconfig_match(family)
+        desc = @sprintf("%s %f", family, size)
+        fd = ccall((:pango_font_description_from_string, libpango),
+                   Ptr{Void}, (Ptr{Uint8},), bytestring(desc))
+        cached_font_matches[(family, size)] = fd
+        fd
+    end
+end
+
+
+# Backend used to compute text extents.
+ccall((:g_type_init, libpango), Void, ())
+const pango_cairo_fm = ccall((:pango_cairo_font_map_new, libpango),
+                             Ptr{Void}, ())
+const pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
+                              Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
+
+
+# Thin wrapper for a pango_layout object.
+type PangoLayout
+    layout::Ptr{Void}
+
+    function PangoLayout()
+        layout = ccall((:pango_layout_new, libpango),
+                       Ptr{Void}, (Ptr{Void},), pango_cairo_ctx)
+        # TODO: finalizer?
+
+        new(layout)
+    end
+end
+
+
+# We can get away with just one layout.
+const pangolayout = PangoLayout()
+
+
+# Set the layout's font.
+function pango_set_font(pangolayout::PangoLayout, family::String, pts::Number)
+    fd = match_font(family, pts)
+    ccall((:pango_layout_set_font_description, libpango),
+          Void, (Ptr{Void}, Ptr{Void}), pangolayout.layout, fd)
+end
+
+
+# Find the width and height of a string.
+#
+# Args:
+#   pangolayout: a pango layout object, with font, etc, set.
+#   text: a string we might like to draw.
+#
+# Returns:
+#   A (width, height) tuple in absolute units.
+#
+function pango_text_extents(pangolayout::PangoLayout, text::String)
+    ccall((:pango_layout_set_markup, libpango),
+          Void, (Ptr{Void}, Ptr{Uint8}, Int32),
+          pangolayout.layout, bytestring(text), length(text))
+
+    extents = Array(Int32, 4)
+    ccall((:pango_layout_get_extents, libpango),
+          Void, (Ptr{Void}, Ptr{Int32}, Ptr{Int32}),
+          pangolayout.layout, C_NULL, extents)
+
+    width, height = (extents[3] / PANGO_SCALE)pt, (extents[4] / PANGO_SCALE)pt
+end
+
+
+# Find the minimum width and height needed to fit any of the given strings.
+#
+# (A "user-friendly" wrapper for pango_text_extents.)
+#
+# Args:
+#   font_family: Something like a font name.
+#   pts: Font size in points.
+#   texts: One or more strings.
+#
+# Returns:
+#   A (width, height) tuple in absolute units.
+#
+function text_extents(font_family::String, pts::Float64, texts::String...)
+    pango_set_font(pangolayout, font_family, pts)
+    max_width  = 0mm
+    max_height = 0mm
+    for text in texts
+        (width, height) = pango_text_extents(pangolayout, text)
+        max_width  = max_width.value  < width.value  ? width  : max_width
+        max_height = max_height.value < height.value ? height : max_height
+    end
+    (max_width, max_height)
+end
+
+# Same as text_extents but with font_size in arbitrary absolute units.
+function text_extents(font_family::String, size::SimpleMeasure{MillimeterUnit},
+                      texts::String...)
+    text_extents(font_family, size/pt, texts...)
+end
+
 
 const pango_attrs = [
     (:PANGO_ATTR_LANGUAGE,        :PangoAttrLanguage),
@@ -140,21 +268,21 @@ end
 #   should be applied starting at that position.
 #
 function unpack_pango_attr_list(ptr::Ptr{Void})
-    attr_it = ccall(dlsym(libpango, :pango_attr_list_get_iterator),
+    attr_it = ccall((:pango_attr_list_get_iterator, libpango),
                     Ptr{Void}, (Ptr{Void},), ptr)
 
     # Alias some ugly C calls.
-    attr_it_next = () -> ccall(dlsym(libpango, :pango_attr_iterator_next),
+    attr_it_next = () -> ccall((:pango_attr_iterator_next, libpango),
                                Int32, (Ptr{Void},), attr_it)
 
-    attr_it_get = attr_name -> ccall(dlsym(libpango, :pango_attr_iterator_get),
+    attr_it_get = attr_name -> ccall((:pango_attr_iterator_get, libpango),
                                      Ptr{Void}, (Ptr{Void}, Int32),
                                      attr_it, eval(attr_name))
 
     attr_it_range = () -> begin
         start_idx = Array(Int32, 1)
         end_idx = Array(Int32, 1)
-        ccall(dlsym(libpango, :pango_attr_iterator_range),
+        ccall((:pango_attr_iterator_range, libpango),
               Void, (Ptr{Void}, Ptr{Int32}, Ptr{Int32}),
               attr_it, start_idx, end_idx)
         (start_idx[1], end_idx[1])
@@ -181,7 +309,7 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
         push!(attrs, (start_idx, attr))
     end
 
-    ccall(dlsym(libpango, :pango_attr_iterator_destroy),
+    ccall((:pango_attr_iterator_destroy, libpango),
           Void, (Ptr{Void},), attr_it)
 
   attrs
@@ -192,7 +320,7 @@ function pango_to_svg(text::String)
     c_stripped_text = Array(Ptr{Uint8}, 1)
     c_attr_list = Array(Ptr{Void}, 1)
 
-    ret = ccall(dlsym(libpango, :pango_parse_markup),
+    ret = ccall((:pango_parse_markup, libpango),
                 Int32, (Ptr{Uint8}, Int32, Uint32, Ptr{Ptr{Void}},
                         Ptr{Ptr{Uint8}}, Ptr{Uint32}, Ptr{Void}),
                 bytestring(text), -1, 0, c_attr_list, c_stripped_text,

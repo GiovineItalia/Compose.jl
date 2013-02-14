@@ -27,6 +27,7 @@ include("property.jl")
 include("form.jl")
 include("canvas.jl")
 #include("cairo.jl")
+include("fontconfig.jl")
 include("pango.jl")
 include("svg.jl")
 
