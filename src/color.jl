@@ -7,7 +7,8 @@ export Color, color, ColorOrNothing, ColorStringOrNothing,
        Colour, colour, ColourOrNothing, ColourStringOrNothing,
        weighted_color_mean, hex,
        RGB, HLS, XYZ, LAB, LUV, LCHab, LCHuv, LMS,
-       cie_color_match, protanopic, deuteranopic, tritanopic
+       cie_color_match, protanopic, deuteranopic, tritanopic,
+       colordiff, distinguishable_colors
 
 abstract Color
 typealias ColorOrNothing Union(Color, String, Nothing)
@@ -1790,5 +1791,166 @@ function cie_color_match(wavelen::Real)
     XYZ(ac[1], ac[2], ac[3])
 end
 
+
+
+# Color Difference Metrics
+# ------------------------
+
+
+# Evaluate the CIEDE2000 color difference formula, implemented according to:
+#   Klaus Witt, CIE Color Difference Metrics, Colorimetry: Understanding the CIE
+#   System. 2007
+#
+# Args:
+#   a, b: Any two colors.
+#
+# Returns:
+#   The CIEDE2000 color difference metric evaluated between a and b.
+#
+function colordiff(a::Color, b::Color)
+    a = convert(LAB, a)
+    b = convert(LAB, b)
+
+    ac, bc = sqrt(a.a^2 + a.b^2), sqrt(b.a^2 + b.b^2)
+    mc = (ac + bc)/2
+    g = (1 - sqrt(mc^7 / (mc^7 + 25^7))) / 2
+    a.a *= 1 + g
+    b.a *= 1 + g
+
+    a = convert(LCHab, a)
+    b = convert(LCHab, b)
+
+    dl, dc, dh = (a.l - b.l), (a.c - b.c), (a.h - b.h)
+    dh = 2 * sqrt(a.c * b.c) * sind(dh/2)
+
+    ml, mc, mh = (a.l+b.l)/2, (a.c+b.c)/2, (a.h+b.h)/2
+
+    # lightness weight
+    mls = (ml - 50)^2
+    sl = 1.0 + 0.015 * mls / sqrt(20 + mls)
+
+    # chroma weight
+    sc = 1 + 0.045mc
+
+    # hue weight
+    t = 1 - 0.17 * cosd(mh - 30) +
+            0.24 * cosd(2mh) +
+            0.32 * cosd(3mh + 6) -
+            0.20 * cosd(4mh - 63)
+    sh = 1 + 0.015 * mc * t
+
+    # rotation term
+    dtheta = 30 * exp(-((mh - 275)/25)^2)
+    cr = 2 * sqrt(mc^7 / (mc^7 + 25^7))
+    tr = -sind(2*dtheta) * cr
+
+    sqrt((dl/sl)^2 + (dc/sc)^2 + (dh/sh)^2 +
+         tr * (dc/sc) * (dh/sh))
+end
+
+
+#colordiff{T <: Color}(a::Color, bs::Vector{T}) = sum([colordiff(a, b) for b in bs])
+
+
+#function colordiff(a::LCHab, b::LCHab)
+    #dl, dc, dh = (a.l - b.l), (a.c - b.c), (a.h - b.h)
+    #dh = 2 * sqrt(a.c * b.c) * sind(dh/2)
+    #sqrt(dl^2 + dc^2 + dh^2)
+#end
+
+
+# Color Scale Generation
+# ----------------------
+
+# Compute the color difference matrix.
+function pairwise_colordiff!{T <: Color}(D::Matrix{Float64}, cs::Vector{T})
+    n = length(cs)
+    for i in 1:n, j in (i+1):n
+        D[i,j] = colordiff(cs[i], cs[j])
+    end
+end
+
+
+# Update the color difference matrix.
+function pairwise_colordiff_update!{T <: Color}(D::Matrix{Float64},
+                                                cs::Vector{T},
+                                                k::Integer)
+    n = length(cs)
+    for j in (k+1):n
+        D[k,j] = colordiff(cs[k], cs[j])
+    end
+
+    for i in 1:(k-1)
+        D[i,k] = colordiff(cs[k], cs[i])
+    end
+end
+
+
+function min_pairwise(D)
+    dmin = Inf
+    n = size(D)[1]
+    for i in 1:n, j in (i+1):n
+        if D[i,j] < dmin
+            dmin = D[i,j]
+        end
+    end
+    dmin
+end
+
+
+# Generate a random palette of n distinguishable colors.
+function distinguishable_colors(n::Integer, transform::Function)
+    minl, maxl = 40.0, 90.0
+    minc, maxc = 20.0, 70.0
+
+    # Seed colors.
+    cs = Color[convert(LAB, LCHab(minl + rand() * (maxl - minl),
+                                  minc + rand() * (maxc - minc),
+                                 360.0 * rand())) for i in 1:n]
+    cst = Color[transform(c) for c in cs]
+
+    # Pairwise difference matrix
+    D = zeros(n, n)
+    Dp = zeros(n, n)
+    m = int(n * (n-1) / 2) # size of the triangular distance matrix
+    pairwise_colordiff!(D, cst)
+    d = min_pairwise(D)
+
+    iterations = 5000
+    for iteration in 1:iterations
+        for i in 1:n
+            c = cs[i]
+            ct = cst[i]
+
+            # propose
+            cs[i] = LCHab(minl + rand() * (maxl - minl),
+                          minc + rand() * (maxc - minc),
+                          360.0 * rand())
+            cst[i] = transform(cs[i])
+
+            copy!(Dp, D)
+            pairwise_colordiff_update!(Dp, cst, i)
+            dp = min_pairwise(Dp)
+
+            # accept/reject
+            improvement = dp - d
+            if improvement >= 0
+                d = dp
+                D, Dp = Dp, D
+            else
+                cs[i] = c
+                cst[i] = ct
+            end
+        end
+    end
+
+    println(D)
+
+    # TODO: just fix this in gadfly
+    for c in cs
+        println(c)
+    end
+    cs
+end
 
 
