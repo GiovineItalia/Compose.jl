@@ -1,5 +1,6 @@
 
 require("Mustache")
+require("Iterators")
 
 module Compose
 

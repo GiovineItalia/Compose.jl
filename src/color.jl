@@ -3,6 +3,8 @@
 # A collection of utilities for handling color.
 #
 
+import Iterators
+
 export Color, color, ColorOrNothing, ColorStringOrNothing,
        Colour, colour, ColourOrNothing, ColourStringOrNothing,
        weighted_color_mean, hex,
@@ -34,6 +36,8 @@ type RGB <: Color
     RGB() = RGB(0, 0, 0)
 end
 
+copy(c::RGB) = RGB(c.r, c.g, b)
+
 
 # HSV (Hue-Saturation-Value)
 type HSV <: Color
@@ -48,6 +52,7 @@ type HSV <: Color
     HSV() = HSV(0, 0, 0)
 end
 
+copy(c::HSV) = HSV(c.h, c.s, v)
 
 # HLS (Hue-Lightness-Saturation)
 type HLS <: Color
@@ -61,6 +66,8 @@ type HLS <: Color
 
     HLS() = HLS(0, 0, 0)
 end
+
+copy(c::HLS) = HLS(c.h, c.l, s)
 
 
 # XYZ (CIE 1931)
@@ -76,6 +83,8 @@ type XYZ <: Color
     XYZ() = XYZ(0, 0, 0)
 end
 
+copy(c::XYZ) = XYZ(c.x, c.y, z)
+
 
 # LAB (CIELAB)
 type LAB <: Color
@@ -89,6 +98,8 @@ type LAB <: Color
 
     LAB() = LAB(0, 0, 0)
 end
+
+copy(c::LAB) = LAB(c.l, c.a, c.b)
 
 
 # LCHab (Luminance-Chroma-Hue, Polar-LAB)
@@ -104,6 +115,8 @@ type LCHab <: Color
     LCHab() = LCHab(0, 0, 0)
 end
 
+copy(c::LCHab) = LCHab(c.l, c.c, c.h)
+
 
 # LUV (CIELUV)
 type LUV <: Color
@@ -117,6 +130,8 @@ type LUV <: Color
 
     LUV() = LUV(0, 0, 0)
 end
+
+copy(c::LUV) = LUV(c.l, c.u, c.v)
 
 
 # LCHuv (Luminance-Chroma-Hue, Polar-LUV)
@@ -132,6 +147,8 @@ type LCHuv <: Color
     LCHuv() = LCHuv(0, 0, 0)
 end
 
+copy(c::LCHuv) = LUV(c.l, c.c, c.h)
+
 
 # LMS (Long Medium Short)
 type LMS <: Color
@@ -145,6 +162,8 @@ type LMS <: Color
 
     LMS() = LMS(0, 0, 0)
 end
+
+copy(c::LMS) = LMS(c.l, c.m, c.s)
 
 
 # Arbitrary ordering
@@ -1820,10 +1839,28 @@ function colordiff(a::Color, b::Color)
     a = convert(LCHab, a)
     b = convert(LCHab, b)
 
-    dl, dc, dh = (a.l - b.l), (a.c - b.c), (a.h - b.h)
+    dl, dc, dh = (b.l - a.l), (b.c - a.c), (b.h - a.h)
+    if a.c * b.c == 0
+        dh = 0
+    elseif dh > 180
+        dh -= 360
+    elseif dh < -180
+        dh += 360
+    end
     dh = 2 * sqrt(a.c * b.c) * sind(dh/2)
 
-    ml, mc, mh = (a.l+b.l)/2, (a.c+b.c)/2, (a.h+b.h)/2
+    ml, mc = (a.l + b.l) / 2, (a.c + b.c) / 2
+    if a.c * b.c == 0
+        mh = a.h + b.h
+    elseif abs(b.h - a.h) > 180
+        if a.h + b.h < 360
+            mh = (a.h + b.h + 360) / 2
+        else
+            mh = (a.h + b.h - 360) / 2
+        end
+    else
+        mh = (a.h + b.h) / 2
+    end
 
     # lightness weight
     mls = (ml - 50)^2
@@ -1898,59 +1935,40 @@ function min_pairwise(D)
 end
 
 
-# Generate a random palette of n distinguishable colors.
 function distinguishable_colors(n::Integer, transform::Function)
-    minl, maxl = 40.0, 90.0
-    minc, maxc = 20.0, 70.0
+    # Limit ourselves to a fixed number of colors. This serves two purposes:
+    # aesthetics and optimizability. The possible colors conist of the cartesian
+    # product of the following possible lightness chroma and ue values.
+    ls = Float64[30, 50, 70]
+    cs = Float64[20, 40, 60, 80]
+    hs = Float64[h for h in 0:10:360]
 
-    # Seed colors.
-    cs = Color[convert(LAB, LCHab(minl + rand() * (maxl - minl),
-                                  minc + rand() * (maxc - minc),
-                                 360.0 * rand())) for i in 1:n]
-    cst = Color[transform(c) for c in cs]
+    # Distances of the current color to each previously selected color.
+    ds = zeros(Float64, n)
+    colors = Array(Color, n)
 
-    # Pairwise difference matrix
-    D = zeros(n, n)
-    Dp = zeros(n, n)
-    m = int(n * (n-1) / 2) # size of the triangular distance matrix
-    pairwise_colordiff!(D, cst)
-    d = min_pairwise(D)
+    # Seed color.
+    # TODO: Manual seeding.
+    colors[1] = LCHab(ls[rand(1:length(ls))],
+                      cs[rand(1:length(cs))],
+                      hs[rand(1:length(hs))])
+    for i in 2:n
+        d_best = 0
+        for (l, c, h) in Iterators.product(ls, cs, hs)
+            candidate = LCHab(l, c, h)
+            for j in 1:(i-1)
+                ds[j] = colordiff(candidate, colors[j])
+            end
+            d = min(ds[1:(i-1)])
 
-    iterations = 5000
-    for iteration in 1:iterations
-        for i in 1:n
-            c = cs[i]
-            ct = cst[i]
-
-            # propose
-            cs[i] = LCHab(minl + rand() * (maxl - minl),
-                          minc + rand() * (maxc - minc),
-                          360.0 * rand())
-            cst[i] = transform(cs[i])
-
-            copy!(Dp, D)
-            pairwise_colordiff_update!(Dp, cst, i)
-            dp = min_pairwise(Dp)
-
-            # accept/reject
-            improvement = dp - d
-            if improvement >= 0
-                d = dp
-                D, Dp = Dp, D
-            else
-                cs[i] = c
-                cst[i] = ct
+            if d > d_best
+                d_best = d
+                colors[i] = candidate
             end
         end
     end
 
-    println(D)
-
-    # TODO: just fix this in gadfly
-    for c in cs
-        println(c)
-    end
-    cs
+    colors
 end
 
 
