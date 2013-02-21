@@ -362,7 +362,9 @@ function emitsvg(data::String)
     htmlout_path, htmlout = mktemp()
     write(htmlout, Mustache.render(templ, {"svgdata" => data}))
     flush(htmlout)
-    open_browser(htmlout_path)
+    htm_path = htmlout_path * ".htm"
+    mv(htmlout_path, htm_path)
+    open_browser(htm_path)
 end
 
 emitters["image/svg+xml"] = emitsvg
