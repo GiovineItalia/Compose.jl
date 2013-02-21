@@ -360,8 +360,11 @@ end
 function emitsvg(data::String)
     templ = readall(joinpath(Pkg.dir("Compose"), "src", "show.html"))
     htmlout_path, htmlout = mktemp()
+    close(htmlout)
+    htmlout_path = htmlout_path * ".html"
+    htmlout = open(htmlout_path, "w")
     write(htmlout, Mustache.render(templ, {"svgdata" => data}))
-    flush(htmlout)
+    close(htmlout)
     open_browser(htmlout_path)
 end
 
