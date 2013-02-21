@@ -1886,84 +1886,54 @@ function colordiff(a::Color, b::Color)
 end
 
 
-#colordiff{T <: Color}(a::Color, bs::Vector{T}) = sum([colordiff(a, b) for b in bs])
-
-
-#function colordiff(a::LCHab, b::LCHab)
-    #dl, dc, dh = (a.l - b.l), (a.c - b.c), (a.h - b.h)
-    #dh = 2 * sqrt(a.c * b.c) * sind(dh/2)
-    #sqrt(dl^2 + dc^2 + dh^2)
-#end
-
 
 # Color Scale Generation
 # ----------------------
 
-# Compute the color difference matrix.
-function pairwise_colordiff!{T <: Color}(D::Matrix{Float64}, cs::Vector{T})
-    n = length(cs)
-    for i in 1:n, j in (i+1):n
-        D[i,j] = colordiff(cs[i], cs[j])
-    end
-end
 
-
-# Update the color difference matrix.
-function pairwise_colordiff_update!{T <: Color}(D::Matrix{Float64},
-                                                cs::Vector{T},
-                                                k::Integer)
-    n = length(cs)
-    for j in (k+1):n
-        D[k,j] = colordiff(cs[k], cs[j])
-    end
-
-    for i in 1:(k-1)
-        D[i,k] = colordiff(cs[k], cs[i])
-    end
-end
-
-
-function min_pairwise(D)
-    dmin = Inf
-    n = size(D)[1]
-    for i in 1:n, j in (i+1):n
-        if D[i,j] < dmin
-            dmin = D[i,j]
-        end
-    end
-    dmin
-end
-
-
-function distinguishable_colors(n::Integer, transform::Function)
-    # Limit ourselves to a fixed number of colors. This serves two purposes:
-    # aesthetics and optimizability. The possible colors conist of the cartesian
-    # product of the following possible lightness chroma and ue values.
-    ls = Float64[30, 50, 70]
-    cs = Float64[20, 40, 60, 80]
-    hs = Float64[h for h in 0:10:360]
+# Generate n maximally distinguishable colors.
+#
+# Args:
+#   n: Number of colors to generate.
+#   transform: Transform applied to colors before measuring distance.
+#   seed: Initial color included in the palette.
+#   ls: Possible lightness values.
+#   cs: Possible chroma values.
+#   hs: Possible hue values.
+#
+# Returns:
+#   A Vector{Color} of length n.
+#
+function distinguishable_colors(n::Integer,
+                                transform::Function,
+                                seed::Color,
+                                ls::Vector{Float64},
+                                cs::Vector{Float64},
+                                hs::Vector{Float64})
 
     # Distances of the current color to each previously selected color.
     ds = zeros(Float64, n)
     colors = Array(Color, n)
+    trans_colors = Array(Color, n)
 
-    # Seed color.
-    # TODO: Manual seeding.
-    colors[1] = LCHab(ls[rand(1:length(ls))],
-                      cs[rand(1:length(cs))],
-                      hs[rand(1:length(hs))])
+    colors[1] = seed
+    trans_colors[1] = transform(seed)
+
     for i in 2:n
         d_best = 0
         for (l, c, h) in Iterators.product(ls, cs, hs)
             candidate = LCHab(l, c, h)
+            trans_candidate = transform(candidate)
             for j in 1:(i-1)
-                ds[j] = colordiff(candidate, colors[j])
+                ds[j] = min(colordiff(trans_candidate, trans_colors[j]),
+                            colordiff(candidate, colors[j]))
             end
             d = min(ds[1:(i-1)])
 
             if d > d_best
                 d_best = d
                 colors[i] = candidate
+                trans_colors[i] = trans_candidate
             end
         end
     end
