@@ -1,6 +1,9 @@
 
 # Cairo backend for compose
-importall Cairo
+import Cairo
+
+import Cairo.CairoContext, Cairo.CairoSurface, Cairo.CairoARGBSurface,
+       Cairo.CairoEPSSurface, Cairo.CairoPDFSurface, Cairo.CairoSVGSurface
 
 export PNG, PDF, PS
 
@@ -55,26 +58,30 @@ type Image{B <: ImageBackend} <: Backend
     state_stack::Vector{ImagePropertyState}
 
 
-    function Image(surface::CairoSurface,context::CairoContext,filename::String)
+    function Image(surface::CairoSurface, ctx::CairoContext, filename::String)
         img = new()
         img.filename = filename
         img.surface = surface
-        img.ctx = CairoContext(surface)
+        img.ctx = ctx
         img.stroke = RGB(0., 0., 0.)
         img.fill   = RGB(0., 0., 0.)
         img.state_stack = Array(ImagePropertyState, 0)
         img.owns_surface = false
         img
     end
-    Image(surface::CairoSurface,context::CairoContext) = Image(surface,context,"")
-    Image(surface::CairoSurface) = Image(surface, CairoContext(surface))
+
+    function Image(surface::CairoSurface, ctx::CairoContext)
+        Image{B}(surface, ctx, "")
+    end
+
+    Image(surface::CairoSurface) = Image{B}(surface, CairoContext(surface))
 
     function Image(filename::String,
                    width::MeasureOrNumber,
                    height::MeasureOrNumber)
 
-        w  = native_measure(width,  img).value
-        h = native_measure(height, img).value
+        w = native_measure(width, B).value
+        h = native_measure(height, B).value
 
         # Try opening the file for writing immediately so we can fail early if
         # it doesn't exist.
@@ -86,23 +93,23 @@ type Image{B <: ImageBackend} <: Backend
 
         local surface::CairoSurface
         if B == SVGBackend
-            surface = SVGSurface(f,w,h)
+            surface = CairoSVGSurface(f, w, h)
         elseif B == PNGBackend
             close(f)
             surface = CairoARGBSurface(round(w), round(h))
         elseif B == PDFBackend
-            surface = CairoPDFSurface(f,w,h)
+            surface = CairoPDFSurface(f, w, h)
         elseif B == PSBackend
-            surface = CairoEPSSurface(f,w,h)
+            surface = CairoEPSSurface(f, w, h)
         else
             error("Unkown Cairo backend.")
         end
 
-        if status(img.surface) != CAIRO_STATUS_SUCCESS
+        if Cairo.status(surface) != Cairo.CAIRO_STATUS_SUCCESS
             error("Unable to create cairo surface.")
         end
 
-        img = Image(surface,filename)
+        img = Image{B}(surface, CairoContext(surface), filename)
         img.owns_surface = true
         img
     end
@@ -113,16 +120,19 @@ Image(args...) = Image{ImageBackend}(args...)
 width{B}(img::Image{B}) = ImageMeasure{B}(Cairo.width(img.surface))
 height{B}(img::Image{B}) = ImageMeasure{B}(Cairo.height(img.surface))
 
-finish(::Type,img::Image) = nothing
-finish(::Type{PNGBackend},img::Image) = write_to_png(img.surf, img.filename)
+finish(::Type, img::Image) = nothing
 
-function finish{B<:ImageBackend}(img::Image{B})
+function finish(::Type{PNGBackend}, img::Image)
+    Cairo.write_to_png(img.surface, img.filename)
+end
+
+function finish{B <: ImageBackend}(img::Image{B})
     if(img.owns_surface)
-      destroy(img.ctx)
+        Cairo.destroy(img.ctx)
     end
-    finish(B,img)
+    finish(B, img)
     if(img.owns_surface)
-      destroy(img.surface)
+        Cairo.destroy(img.surface)
     end
 end
 
@@ -148,81 +158,118 @@ native_zero{T}(backend::Image{T}) = ImageMeasure{T}(0.0)
 
 # PNG conversion to native units (i.e., pixels)
 
-function native_measure{K <: ImageBackend}(u::Number,
-                        backend::Image{K})
+function native_measure{K <: ImageBackend}(u::Number, ::Type{K})
     ImageMeasure{K}(convert(Float64, u))
 end
 
 
 function native_measure{K <: ImageBackend}(u::SimpleMeasure{PixelUnit},
-                        backend::Image{K})
+                                           ::Type{K})
     ImageMeasure{K}(u.value)
 end
 
 
 function native_measure{K <: ImageBackend}(u::SimpleMeasure{MillimeterUnit},
-                        backend::Image{K})
+                                           ::Type{K})
+    native_measure(convert(SimpleMeasure{PixelUnit}, u), K)
+end
 
-    native_measure(convert(SimpleMeasure{PixelUnit}, u), backend)
+
+function native_measure{K <: ImageBackend}(u::Number, backend::Image{K})
+    native_measure(u, K)
+end
+
+
+function native_measure{K <: ImageBackend}(u::SimpleMeasure{PixelUnit},
+                        backend::Image{K})
+    native_measure(u, K)
+end
+
+
+function native_measure{K <: ImageBackend}(u::SimpleMeasure{MillimeterUnit},
+                        backend::Image{K})
+    native_measure(u, K)
 end
 
 
 # SVG/PDF/PS conversion to native units (i.e., pts)
 
+function native_measure{K <: VectorImageBackend}(u::Number, ::Type{K})
+    ImageMeasure{K}(convert(Float64, u))
+end
+
+
+function native_measure{K <: VectorImageBackend}(u::SimpleMeasure{PixelUnit},
+                                                 ::Type{K})
+    native_measure(convert(SimpleMeasure{MillimeterUnit}, u), K)
+end
+
+
+function native_measure{K <: VectorImageBackend}(u::SimpleMeasure{MillimeterUnit},
+                                                 ::Type{K})
+    ImageMeasure{K}(u / pt)
+end
+
+
+
 function native_measure{K <: VectorImageBackend}(
         u::Number,
         backend::Image{K})
-    ImageMeasure{K}(convert(Float64, u))
+    native_measure(u, K)
 end
 
 
 function native_measure{K <: VectorImageBackend}(
         u::SimpleMeasure{PixelUnit},
         backend::Image{K})
-    native_measure(convert(SimpleMeasure{MillimeterUnit}, u), backend)
+    native_measure(u, K)
 end
 
 
 function native_measure{K <: VectorImageBackend}(
         u::SimpleMeasure{MillimeterUnit},
         backend::Image{K})
-    ImageMeasure{K}(u / pt)
+    native_measure(u, K)
 end
 
 
 # Drawing
 
-move_to(img::Image, point::Point) = move_to(img.ctx, point.x.value, point.y.value)
-line_to(img::Image, point::Point) = line_to(img.ctx, point.x.value, point.y.value)
+move_to(img::Image, point::Point) = Cairo.move_to(img.ctx, point.x.value, point.y.value)
+line_to(img::Image, point::Point) = Cairo.line_to(img.ctx, point.x.value, point.y.value)
+
+# TODO: What is the equivalent Cairo call?
 curve_to(img::Image, ctrl0::Point, ctrl1::Point, anchor1::Point) =
     curve_to(img.ctx, ctrl0.x.value, ctrl0.y.value, ctrl1.x.value, ctrl1.y.value,
             anchor1.x.value, anchor1.y.value)
 
-close_path(img::Image) = close_path(img.ctx)
+close_path(img::Image) = Cairo.close_path(img.ctx)
 
-arc(img::Image, x::Float64, y::Float64, radius::Float64, angle1::Float64, 
-    angle2::Float64) = arc(img.ctx,x,y,radius,angle1,angle2)
+function arc(img::Image, x::Float64, y::Float64, radius::Float64,
+             angle1::Float64, angle2::Float64)
+    Cairo.arc(img.ctx,x,y,radius,angle1,angle2)
+end
 
-translate(img::Image, tx::Float64, ty::Float64) = translate(img.ctx,dx,dy)
-scale(img::Image, sx::Float64, sy::Float64) = scale(img.ctx,sx,sy)
-rotate(img::Image, theta::Float64) = rotate(img.ctx,theta)
+translate(img::Image, tx::Float64, ty::Float64) = Cairo.translate(img.ctx, dx,dy)
+scale(img::Image, sx::Float64, sy::Float64) = Cairo.scale(img.ctx, sx,sy)
+rotate(img::Image, theta::Float64) = Cairo.rotate(img.ctx, theta)
 
 
 function fillstroke(img::Image)
     if img.fill != nothing
         rgb = convert(RGB, img.fill)
-        set_source_rgb(img.ctx, rgb.r, rgb.g, rgb.b)
+        Cairo.set_source_rgb(img.ctx, rgb.r, rgb.g, rgb.b)
 
         if img.stroke != nothing
-            fill_preserve(img.ctx)
+            Cairo.fill_preserve(img.ctx)
         else
-            fill(img.ctx)
+            Cairo.fill(img.ctx)
         end
     end
 
     if img.stroke != nothing
         rgb = convert(RGB, img.stroke)
-        set_source_rgb(img.ctx, rgb.r, rgb.g, rgb.b)
+        Cairo.set_source_rgb(img.ctx, rgb.r, rgb.g, rgb.b)
 
         Cairo.stroke(img.ctx)
     end
@@ -231,7 +278,7 @@ end
 
 function save_state(img::Image)
     push!(img.state_stack, ImagePropertyState(img.stroke, img.fill))
-    save(img.ctx)
+    Cairo.save(img.ctx)
 end
 
 
@@ -239,7 +286,7 @@ function restore_state(img::Image)
     state = pop!(img.state_stack)
     img.stroke = state.stroke
     img.fill = state.fill
-    restore(img.ctx)
+    Cairo.restore(img.ctx)
 end
 
 
@@ -316,7 +363,7 @@ function draw(img::Image, form::Text)
     end
 
     move_to(img, pos)
-    show_text(img,form.value)
+    show_text(img, form.value)
 end
 
 
@@ -347,7 +394,18 @@ function apply_property(img::Image, p::Fill)
 end
 
 
-apply_property(img::Image, property::LineWidth) = set_line_width(img.ctx, property.value.value)
-apply_property(img::Image, property::Font) = select_font_face(img.ctx,property.family,CAIRO_FONT_SLANT_NORMAL,CAIRO_FONT_WEIGHT_NORMAL)
-apply_property(img::Image, property::FontSize) = set_font_size(img.ctx, property.value.value)
+function apply_property(img::Image, property::LineWidth)
+    Cairo.set_line_width(img.ctx, property.value.value)
+end
+
+
+function apply_property(img::Image, property::Font)
+    Cairo.select_font_face(img.ctx, property.family,
+                           CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
+end
+
+
+function apply_property(img::Image, property::FontSize)
+    Cairo.set_font_size(img.ctx, property.value.value)
+end
 
