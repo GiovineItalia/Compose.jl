@@ -43,7 +43,7 @@ end
 
 
 # Backend used to compute text extents.
-ccall((:g_type_init, libpango), Void, ())
+ccall((:g_type_init, "libgobject-2.0"), Void, ())
 const pango_cairo_fm = ccall((:pango_cairo_font_map_new, libpango),
                              Ptr{Void}, ())
 const pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),

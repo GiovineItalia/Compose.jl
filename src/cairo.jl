@@ -250,8 +250,8 @@ function arc(img::Image, x::Float64, y::Float64, radius::Float64,
     Cairo.arc(img.ctx,x,y,radius,angle1,angle2)
 end
 
-translate(img::Image, tx::Float64, ty::Float64) = Cairo.translate(img.ctx, dx,dy)
-scale(img::Image, sx::Float64, sy::Float64) = Cairo.scale(img.ctx, sx,sy)
+translate(img::Image, tx::Float64, ty::Float64) = Cairo.translate(img.ctx, tx, ty)
+scale(img::Image, sx::Float64, sy::Float64) = Cairo.scale(img.ctx, sx, sy)
 rotate(img::Image, theta::Float64) = Cairo.rotate(img.ctx, theta)
 
 
@@ -345,7 +345,7 @@ function draw(img::Image, form::Text)
 
     if form.halign != hleft || form.valign != vtop
         extents = Array(Float64, 6)
-        text_extents(img.ctx, bytestring(form.value), extents)
+        Cairo.text_extents(img.ctx, bytestring(form.value), extents)
 
         width, height = extents[3], extents[4]
 
@@ -363,7 +363,8 @@ function draw(img::Image, form::Text)
     end
 
     move_to(img, pos)
-    show_text(img, form.value)
+    # TODO: This causes segfaults.
+    #Cairo.show_text(img.ctx, form.value)
 end
 
 
@@ -384,6 +385,11 @@ function pop_property(img::Image)
 end
 
 
+# Nop catchall
+function apply_property(img::Image, p::PropertyPrimitive)
+end
+
+
 function apply_property(img::Image, p::Stroke)
     img.stroke = p.value
 end
@@ -401,7 +407,8 @@ end
 
 function apply_property(img::Image, property::Font)
     Cairo.select_font_face(img.ctx, property.family,
-                           CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
+                           Cairo.CAIRO_FONT_SLANT_NORMAL,
+                           Cairo.CAIRO_FONT_WEIGHT_NORMAL)
 end
 
 
