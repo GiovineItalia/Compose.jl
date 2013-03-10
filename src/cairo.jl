@@ -54,6 +54,8 @@ type Image{B <: ImageBackend} <: Backend
     ctx::CairoContext
     stroke::ColorOrNothing
     fill::ColorOrNothing
+    opacity::Float64 # in [0,1]
+    visible::Bool
     owns_surface::Bool
     state_stack::Vector{ImagePropertyState}
 
@@ -65,6 +67,8 @@ type Image{B <: ImageBackend} <: Backend
         img.ctx = ctx
         img.stroke = RGB(0., 0., 0.)
         img.fill   = RGB(0., 0., 0.)
+        img.opacity = 1.0
+        img.visible = true
         img.state_stack = Array(ImagePropertyState, 0)
         img.owns_surface = false
         img
@@ -93,14 +97,14 @@ type Image{B <: ImageBackend} <: Backend
 
         local surface::CairoSurface
         if B == SVGBackend
-            surface = CairoSVGSurface(f, w, h)
+            surface = CairoSVGSurface(filename, w, h)
         elseif B == PNGBackend
             close(f)
             surface = CairoARGBSurface(round(w), round(h))
         elseif B == PDFBackend
-            surface = CairoPDFSurface(f, w, h)
+            surface = CairoPDFSurface(filename, w, h)
         elseif B == PSBackend
-            surface = CairoEPSSurface(f, w, h)
+            surface = CairoEPSSurface(filename, w, h)
         else
             error("Unkown Cairo backend.")
         end
@@ -120,7 +124,7 @@ Image(args...) = Image{ImageBackend}(args...)
 width{B}(img::Image{B}) = ImageMeasure{B}(Cairo.width(img.surface))
 height{B}(img::Image{B}) = ImageMeasure{B}(Cairo.height(img.surface))
 
-finish(::Type, img::Image) = nothing
+finish{B <: ImageBackend}(::Type{B}, img::Image) = nothing
 
 function finish(::Type{PNGBackend}, img::Image)
     Cairo.write_to_png(img.surface, img.filename)
@@ -256,9 +260,9 @@ rotate(img::Image, theta::Float64) = Cairo.rotate(img.ctx, theta)
 
 
 function fillstroke(img::Image)
-    if img.fill != nothing
+    if img.fill != nothing && img.opacity > 0.0 && img.visible
         rgb = convert(RGB, img.fill)
-        Cairo.set_source_rgb(img.ctx, rgb.r, rgb.g, rgb.b)
+        Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.opacity)
 
         if img.stroke != nothing
             Cairo.fill_preserve(img.ctx)
@@ -341,6 +345,10 @@ end
 
 
 function draw(img::Image, form::Text)
+    if !img.visible || img.opacity == 0.0 || img.fill === nothing
+        return
+    end
+
     pos = copy(form.pos)
 
     if form.halign != hleft || form.valign != vtop
@@ -362,9 +370,15 @@ function draw(img::Image, form::Text)
         end
     end
 
+    rgb = convert(RGB, img.fill)
+    Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.opacity)
+
+    save_state(img)
+    Cairo.translate(img.ctx, form.t.M[1,3], form.t.M[2,3])
+    rotate(img, atan2(form.t.M[2,1], form.t.M[1,1]))
     move_to(img, pos)
-    # TODO: This causes segfaults.
-    #Cairo.show_text(img.ctx, form.value)
+    Cairo.show_text(img.ctx, form.value)
+    restore_state(img)
 end
 
 
@@ -397,6 +411,16 @@ end
 
 function apply_property(img::Image, p::Fill)
     img.fill = p.value
+end
+
+
+function apply_property(img::Image, p::Opacity)
+    img.opacity = p.value
+end
+
+
+function apply_property(img::Image, p::Visible)
+    img.visible = p.value
 end
 
 
