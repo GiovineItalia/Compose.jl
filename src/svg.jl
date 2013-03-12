@@ -307,9 +307,14 @@ function push_property(img::SVG, property::Property)
         # There can only be one property of each type. E.g, defining 'fill'
         # twice in the same element is not valid svg.
         properties = Dict{Type, PropertyPrimitive}()
+        rawproperties = {}
         p = property
         while !is(p, empty_property)
-            properties[typeof(p.primitive)] = p.primitive
+            if typeof(p.primitive) == SVGAttribute
+                push!(rawproperties, p.primitive)
+            else
+                properties[typeof(p.primitive)] = p.primitive
+            end
             p = p.next
         end
 
@@ -331,7 +336,7 @@ function push_property(img::SVG, property::Property)
         end
 
         write(img.f, "<g")
-        for p in values(properties)
+        for p in Iterators.chain(values(properties), rawproperties)
             apply_property(img, p)
         end
         write(img.f, ">\n")
@@ -435,7 +440,7 @@ end
 
 # Add some javascript. Return the unique name generated for the wrapper function
 # containing the given code.
-function add_script(img::SVG, js::String, obj_id::Uint64)
+function add_script(img::SVG, js::String, obj_id::Integer)
     fn_name = @sprintf("js_chunk_%x", obj_id)
     if !has(img.scripts, fn_name)
         img.scripts[fn_name] = replace(js, r"^"m, "  ")
