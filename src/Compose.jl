@@ -1,8 +1,12 @@
 
-require("Mustache")
+require("Color")
 require("Iterators")
+require("Mustache")
 
 module Compose
+
+using Color
+typealias ColorOrNothing Union(ColorValue, Nothing)
 
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty, Base.insert,
@@ -22,7 +26,6 @@ include("util.jl")
 include("list.jl")
 include("measure.jl")
 include("backend.jl")
-include("color.jl")
 include("property.jl")
 include("form.jl")
 include("canvas.jl")
