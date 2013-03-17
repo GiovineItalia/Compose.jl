@@ -7,8 +7,8 @@ It is forming the basis for the statistical graphics system
 
 ## Synopsis
 
-Unilke most vector graphics libraries, compose is thoroughly declaritive. Rather
-that issues a sequence of drawing commands, graphics are formed by sticking
+Unilke most vector graphics libraries, compose is thoroughly declarative. Rather
+than issue a sequence of drawing commands, graphics are formed by sticking
 various things together and then letting the library figure out how to draw it.
 The "things" in this case fall one of three types: Property, Form, and Canves.
 "Sticking together" is primary achieved with the `compose` function.
@@ -50,7 +50,7 @@ system relative to its parent canvas. One canvas is made a child of another with
 a call to `compose(a::Canvas, b::Canvas)`.
 
 Canvases may also have children of type `Form` which are rectangles, ellipses,
-text, and other things that end up being drawn. Properties, which effect how
+text, and other things that end up being drawn. Properties, which affect how
 forms are drawn, may be children of `Canvas` or `Form` objects.
 
 ## Fancier compositions
