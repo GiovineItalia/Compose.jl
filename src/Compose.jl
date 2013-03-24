@@ -15,6 +15,7 @@ import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
 
 export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
 
+import Iterators
 import Mustache
 
 # Empty combine. This violates the rules a bit, since nothing is not the

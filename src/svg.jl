@@ -23,6 +23,10 @@ function svg_fmt_float(x::Float64)
     a[1:n]
 end
 
+# Format a color for SVG.
+svg_fmt_color(c::ColorValue) = @sprintf("#%s", hex(c))
+svg_fmt_color(c::Nothing) = "none"
+
 
 # The SVG image we generate are going to use millimeters everywhere.
 type SVGMeasure <: NativeMeasure
@@ -370,12 +374,12 @@ end
 
 
 function apply_property(img::SVG, p::Stroke)
-    @printf(img.f, " stroke=\"%s\"", cssfmt(p.value))
+    @printf(img.f, " stroke=\"%s\"", svg_fmt_color(p.value))
 end
 
 
 function apply_property(img::SVG, p::Fill)
-    @printf(img.f, " fill=\"%s\"", cssfmt(p.value))
+    @printf(img.f, " fill=\"%s\"", svg_fmt_color(p.value))
 end
 
 
