@@ -34,6 +34,7 @@ include("cairo.jl")
 include("fontconfig.jl")
 include("pango.jl")
 include("svg.jl")
+include("d3.jl")
 
 typealias ComposeType Union(Canvas, Form, Property)
 
