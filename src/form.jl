@@ -249,6 +249,18 @@ type Ellipse <: FormPrimitive
     center::Point
     x_point::Point
     y_point::Point
+
+    function Ellipse(center::Point, x_point::Point, y_point::Point)
+        new(center, x_point, y_point)
+    end
+
+    function Ellipse(x::Float64, y::Float64, rx::Float64, ry::Float64)
+        x = x_measure(x)
+        y = y_measure(y)
+        new(Point(x, y),
+            Point(x + x_measure(rx), y),
+            Point(x, y + y_measure(ry)))
+    end
 end
 function contents(io, f::Ellipse, n::Int, indent)
     println(io, indent, "Ellipse centered at ", f.center)

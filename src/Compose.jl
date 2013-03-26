@@ -1,12 +1,17 @@
 
 require("Color")
+require("DataFrames")
 require("Iterators")
+require("JSON")
 require("Mustache")
 
 module Compose
 
 using Color
 typealias ColorOrNothing Union(ColorValue, Nothing)
+
+using DataFrames
+using JSON
 
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty, Base.insert,
@@ -35,6 +40,7 @@ include("fontconfig.jl")
 include("pango.jl")
 include("svg.jl")
 include("d3.jl")
+include("dataform.jl")
 
 typealias ComposeType Union(Canvas, Form, Property)
 

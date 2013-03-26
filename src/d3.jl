@@ -43,6 +43,12 @@ type D3 <: Backend
     # printiing them.
     empty_properties::Vector{Bool}
 
+    # Form count used to generate unique classes for DataForms.
+    dataform_count::Int
+
+    # Store datasets for serialization.
+    data::Dict{Uint64, (AbstractDataFrame, Int)}
+
     function D3(f::IO,
                 width::MeasureOrNumber,
                 height::MeasureOrNumber)
@@ -53,18 +59,21 @@ type D3 <: Backend
         img.close_stream = false
         img.indentation = 0
         img.empty_properties = Array(Bool, 0)
+        img.dataform_count = 0
+        img.data = Dict{Uint64, (AbstractDataFrame, Int)}()
 
         width_value = svg_fmt_float(width.value)
         height_value = svg_fmt_float(height.value)
         write(img.out,
               """
-              var g = d3.select("#chart")
-                        .append("svg")
-                          .attr("width", "$(width_value)mm")
-                          .attr("height", "$(height_value)mm")
-                          .attr("viewBox", "0 0 $(width_value) $(height_value)")
-                          .attr("stroke-width", "0.5")
-                          .attr("style", "stroke:black;fill:black");
+              function draw(data) {
+                var g = d3.select("#chart")
+                          .append("svg")
+                            .attr("width", "$(width_value)mm")
+                            .attr("height", "$(height_value)mm")
+                            .attr("viewBox", "0 0 $(width_value) $(height_value)")
+                            .attr("stroke-width", "0.5")
+                            .attr("style", "stroke:black;fill:black");
               """)
         img
     end
@@ -80,11 +89,70 @@ type D3 <: Backend
 end
 
 
+# Serialize a DataFrame as an array of objects with fields named for columns.
+function write_data_frame(img::D3, df::AbstractDataFrame)
+    names = colnames(df)
+    n, m = size(df)
+    write(img.out, "  [")
+    for i in 1:n
+        if i > 1
+            write(img.out, "   ")
+        end
+        write(img.out, "{")
+        for j in 1:m
+            @printf(img.out, "\"%s\": %s",
+                    names[j], to_json(df[i,j]))
+            if j < m
+                write(img.out, ", ")
+            end
+        end
+        write(img.out, "}")
+        if i < n
+            write(img.out, ",\n")
+        end
+    end
+    write(img.out, "]")
+end
+
+
+function write_data(img::D3)
+    write(img.out, "var data = [\n")
+    for (i, (_, (df, _))) in enumerate(img.data)
+        write_data_frame(img::D3, df)
+        if i < length(img.data)
+            write(img.out, ",\n")
+        end
+    end
+    write(img.out, "];\n\n")
+end
+
+
 function finish(img::D3)
-    # TODO
+    write(img.out, "}\n\n")
+    write_data(img)
+    write(img.out, "draw(data);")
     if img.close_stream
         close(img.out)
     end
+end
+
+
+# Generate a unique class for a data form
+function next_dataform_class(backend::D3)
+    class = @sprintf("form%d", backend.dataform_count)
+    backend.dataform_count += 1
+    class
+end
+
+
+# Register a dataframe on first use. Return a javascript expression needed to
+# access it.
+function get_data_expr(backend::D3, df::AbstractDataFrame)
+    id = object_id(df)
+    if !has(backend.data, id)
+        backend.data[id] = (df, length(backend.data))
+    end
+    @sprintf("data[%d]", backend.data[id][2])
 end
 
 
