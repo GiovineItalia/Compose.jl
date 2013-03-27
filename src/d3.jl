@@ -3,8 +3,6 @@
 
 export D3
 
-
-
 # In d3 svg we use millimeters as the base measure.
 type D3Measure <: NativeMeasure
     value::Float64
@@ -47,7 +45,7 @@ type D3 <: Backend
     dataform_count::Int
 
     # Store datasets for serialization.
-    data::Dict{Uint64, (AbstractDataFrame, Int)}
+    data::Dict{Uint64, (Any, Int)}
 
     function D3(f::IO,
                 width::MeasureOrNumber,
@@ -60,7 +58,7 @@ type D3 <: Backend
         img.indentation = 0
         img.empty_properties = Array(Bool, 0)
         img.dataform_count = 0
-        img.data = Dict{Uint64, (AbstractDataFrame, Int)}()
+        img.data = Dict{Uint64, (Any, Int)}()
 
         width_value = svg_fmt_float(width.value)
         height_value = svg_fmt_float(height.value)
@@ -115,10 +113,23 @@ function write_data_frame(img::D3, df::AbstractDataFrame)
 end
 
 
+function write_data(img::D3, d::AbstractArray)
+    write(img.out, "  [")
+    n = length(d)
+    for (i, x) in enumerate(d)
+        write(img.out, to_json(x))
+        if i < n
+            write(img.out, ",")
+        end
+    end
+    write(img.out, "]")
+end
+
+
 function write_data(img::D3)
     write(img.out, "var data = [\n")
-    for (i, (_, (df, _))) in enumerate(img.data)
-        write_data_frame(img::D3, df)
+    for (i, (_, (d, _))) in enumerate(img.data)
+        write_data(img, d)
         if i < length(img.data)
             write(img.out, ",\n")
         end
@@ -145,14 +156,21 @@ function next_dataform_class(backend::D3)
 end
 
 
+# Index of the the given array in the serialized data.
+function data_idx(backend::D3, d::AbstractArray)
+    id = object_id(d)
+    if !has(backend.data, d)
+        backend.data[id] = (d, length(backend.data))
+    end
+    backend.data[id][2]
+end
+
+
 # Register a dataframe on first use. Return a javascript expression needed to
 # access it.
-function get_data_expr(backend::D3, df::AbstractDataFrame)
-    id = object_id(df)
-    if !has(backend.data, id)
-        backend.data[id] = (df, length(backend.data))
-    end
-    @sprintf("data[%d]", backend.data[id][2])
+function data_expr(backend::D3, ds::Vector{AbstractArray})
+    @sprintf("d3.zip(%s)",
+             join(["data[$(data_idx(backend, d))]" for d in ds], ","))
 end
 
 
@@ -190,22 +208,6 @@ end
 
 # Nop catchall
 function draw(img::D3, form::FormPrimitive)
-    # Ignoring properties for the time being, we have to figure out a way to
-    # make d3's vector-based syntax jive with composes's scalar-based syntax,
-    # even if that means changing compose.
-
-    # The simplest way to do this is to simply append the shapes that compose
-    # declares. However, I don't want to totally disregard system for operating
-    # on single data set. It seems then that the only solution is to add
-    # vector-based form primitives to compose.
-
-    # How should these be implemented so that we don't have to add a bunch of
-    # code to the SVG or Cairo backends?
-
-    # Actually, that's not so hard. We implement a catchall Draw function that
-    # takes these and calls draw on each scalar. Then we implement a specialized
-    # draw on the D3 backend that does fancy stuff.
-
 end
 
 
@@ -278,7 +280,6 @@ function pop_property(img::D3)
         return
     end
 
-    println("pop_property")
     img.indentation -= 1;
     indent(img)
     write(img.out, "}(g.append(\"g\")));\n")
