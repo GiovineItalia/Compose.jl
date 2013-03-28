@@ -57,9 +57,6 @@ end
 
 function to_json(a::SimpleMeasure)
     repr(string(a))
-    #b = IOBuffer()
-    #print(b, string(a))
-    ##repr(takebuf_string(b))
 end
 
 

@@ -269,12 +269,13 @@ type Ellipse <: FormPrimitive
         new(center, x_point, y_point)
     end
 
-    function Ellipse(x::Real, y::Real, rx::Real, ry::Real)
-        x = x_measure(float64(x))
-        y = y_measure(float64(y))
+    function Ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
+                     rx::MeasureOrNumber, ry::MeasureOrNumber)
+        x = x_measure(x)
+        y = y_measure(y)
         new(Point(x, y),
-            Point(x + x_measure(float64(rx)), y),
-            Point(x, y + y_measure(float64(ry))))
+            Point(x + x_measure(rx), y),
+            Point(x, y + y_measure(ry)))
     end
 end
 function contents(io, f::Ellipse, n::Int, indent)

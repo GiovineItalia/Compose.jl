@@ -76,6 +76,8 @@ function pcompose(df::DataForm, dp::DataProperty)
     df
 end
 
+pcompose(x, y, zs...) = pcompose(pcompose(x, y), zs...)
+
 
 # DataForm constructors
 function ellipse(x::AbstractArray, y::AbstractArray,
@@ -97,10 +99,10 @@ function draw{T}(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
     # generate properties 
     n = max(map(length, form.ds))
     ps = Property[empty_property for _ in 1:n]
-    for dataprop in enumerate(form.dataprops)
+    for dataprop in form.dataprops
         T = primitive(dataprop)
         for (i, row) in enumerate(zip([take(cycle(d), n) for d in dataprop.ds]...))
-            ps[i] = combine(ps[i], T(row...))
+            ps[i] = combine(ps[i], PropertySeq(T(row...)))
         end
     end
 
@@ -142,11 +144,8 @@ function make_d3_x_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
 
     # For singleton values, we compute the transform in place.
     if length(ds) == 1
-        if T <: Real
-            svg_fmt_float(ds[1] * mx + bx)
-        else
-            to_json(ds[1])
-        end
+        x = native_measure(x_measure(ds[1]), unit_box, box, backend)
+        svg_fmt_float(x.value + box.x0.value)
     else
         idx = data_idx(backend, ds)
         if !has(dataindexes, idx)
@@ -156,6 +155,30 @@ function make_d3_x_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
         if T <: Real
             @sprintf("function(d) { return d[%d] * %s + %s; }",
                      rowidx, svg_fmt_float(mx), svg_fmt_float(bx))
+        else
+            @sprintf("function(d) { return d[%d]; }", rowidx)
+        end
+    end
+end
+
+
+function make_d3_width_attr{T, N}(backend::D3, ds::AbstractArray{T, N}, 
+                                  unit_box::BoundingBox, box::NativeBoundingBox,
+                                  dataindexes::Dict{Int, Int})
+    mx = box.width.value / unit_box.width.value
+
+    if length(ds) == 1
+        x = native_measure(x_measure(ds[1]), unit_box, box, backend)
+        svg_fmt_float(x.value)
+    else
+        idx = data_idx(backend, ds)
+        if !has(dataindexes, idx)
+            dataindexes[idx] = length(dataindexes)
+        end
+        rowidx = dataindexes[idx]
+        if T <: Real
+            @sprintf("function(d) { return d[%d] * %s; }",
+                     rowidx, svg_fmt_float(mx))
         else
             @sprintf("function(d) { return d[%d]; }", rowidx)
         end
@@ -187,11 +210,8 @@ function make_d3_y_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
 
     # For singleton values, we compute the transform in place.
     if length(ds) == 1
-        if T <: Real
-            svg_fmt_float(ds[1] * my + by)
-        else
-            to_json(ds[1])
-        end
+        y = native_measure(x_measure(ds[1]), unit_box, box, backend)
+        svg_fmt_float(y.value + box.y0.value)
     else
         idx = data_idx(backend, ds)
         if !has(dataindexes, idx)
@@ -207,6 +227,30 @@ function make_d3_y_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
     end
 end
 
+
+function make_d3_height_attr{T, N}(backend::D3, ds::AbstractArray{T, N}, 
+                                   unit_box::BoundingBox, box::NativeBoundingBox,
+                                   dataindexes::Dict{Int, Int})
+    my = box.height.value / unit_box.height.value
+
+    # For singleton values, we compute the transform in place.
+    if length(ds) == 1
+        y = native_measure(x_measure(ds[1]), unit_box, box, backend)
+        svg_fmt_float(y.value)
+    else
+        idx = data_idx(backend, ds)
+        if !has(dataindexes, idx)
+            dataindexes[idx] = length(dataindexes)
+        end
+        rowidx = dataindexes[idx]
+        if T <: Real
+            @sprintf("function(d) { return d[%d] * %s; }",
+                     rowidx, svg_fmt_float(my))
+        else
+            @sprintf("function(d) { return d[%d]; }", rowidx)
+        end
+    end
+end
 
 # Build a series of ".attr" expressions representing properties applied to a
 # data form.
@@ -294,7 +338,7 @@ function draw(backend::D3, t::NativeTransform, unit_box::BoundingBox,
                                          dataindexes, form.dataprops)
 
     if rx == ry
-        r_expr = make_d3_x_attr(backend, rx, unit_box, box, dataindexes)
+        r_expr = make_d3_width_attr(backend, rx, unit_box, box, dataindexes)
         @printf(backend.out,
                 "g.selectAll(\"%s\")
                   .data(%s)
@@ -305,8 +349,8 @@ function draw(backend::D3, t::NativeTransform, unit_box::BoundingBox,
         @printf(backend.out, ".attr(\"cy\", %s)\n", y_expr)
         @printf(backend.out, ".attr(\"r\", %s)\n", r_expr)
     else
-        rx_expr = make_d3_x_attr(backend, rx, unit_box, box, dataindexes)
-        ry_expr = make_d3_y_attr(backend, ry, unit_box, box, dataindexes)
+        rx_expr = make_d3_width_attr(backend, rx, unit_box, box, dataindexes)
+        ry_expr = make_d3_height_attr(backend, ry, unit_box, box, dataindexes)
         @printf(backend.out,
                 "g.selectAll(\"%s\")
                   .data(%s)

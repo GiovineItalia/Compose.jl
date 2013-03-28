@@ -88,32 +88,6 @@ type D3 <: Backend
 end
 
 
-# Serialize a DataFrame as an array of objects with fields named for columns.
-#function write_data_frame(img::D3, df::AbstractDataFrame)
-    #names = colnames(df)
-    #n, m = size(df)
-    #write(img.out, "  [")
-    #for i in 1:n
-        #if i > 1
-            #write(img.out, "   ")
-        #end
-        #write(img.out, "{")
-        #for j in 1:m
-            #@printf(img.out, "\"%s\": %s",
-                    #names[j], to_json(df[i,j]))
-            #if j < m
-                #write(img.out, ", ")
-            #end
-        #end
-        #write(img.out, "}")
-        #if i < n
-            #write(img.out, ",\n")
-        #end
-    #end
-    #write(img.out, "]")
-#end
-
-
 to_json(c::ColorValue) = repr("#$(hex(c))")
 
 
@@ -233,6 +207,64 @@ function draw(img::D3, form::Polygon)
 end
 
 
+function draw(img::D3, form::Lines)
+    n = length(form.points)
+    if n <= 1; return; end
+
+    indent(img)
+    write(img.out, "g.append(\"svg:path\")\n")
+    indent(img)
+    write(img.out, "   .attr(\"d\", \"")
+    @printf(img.out, "M %s %s L",
+        svg_fmt_float(form.points[1].x.value),
+        svg_fmt_float(form.points[1].y.value))
+    for point in form.points[2:]
+        @printf(img.out, " %s %s",
+            svg_fmt_float(point.x.value),
+            svg_fmt_float(point.y.value))
+    end
+    write(img.out, "\");\n")
+end
+
+
+
+function draw(img::D3, form::Text)
+    indent(img)
+    write(img.out, "g.append(\"svg:text\")\n")
+    indent(img)
+    @printf(img.out, "   .attr(\"x\", %s)\n", svg_fmt_float(form.pos.x.value))
+    indent(img)
+    @printf(img.out, "   .attr(\"y\", %s)\n", svg_fmt_float(form.pos.y.value))
+
+    if is(form.halign, hcenter)
+        indent(img)
+        print(img.out, "   .attr(\"text-anchor\", \"middle\")\n")
+    elseif is(form.halign, hright)
+        indent(img)
+        print(img.out, "   .attr(\"text-anchor\", \"end\")\n")
+    end
+
+    if is(form.valign, vcenter)
+        indent(img)
+        print(img.out, "   .style(\"dominant-baseline\", \"central\")\n")
+    elseif is(form.valign, vtop)
+        indent(img)
+        print(img.out, "   .style(\"dominant-baseline\", \"text-before-edge\")\n")
+    end
+
+    if !isidentity(form.t)
+        indent(img)
+        @printf(img.out, "   .attr(\"transform\", \"rotate(%s, %s, %s)\")\n",
+                svg_fmt_float(radians2degrees(atan2(form.t.M[2,1], form.t.M[1,1]))),
+                svg_fmt_float(form.pos.x.value),
+                svg_fmt_float(form.pos.y.value))
+    end
+
+    indent(img)
+    @printf(img.out, "   .text(\"%s\");\n", pango_to_svg(form.value))
+end
+
+
 # Nop catchall
 function push_property(img::D3, property::Property)
     if property === empty_property
@@ -309,9 +341,16 @@ function apply_property(img::D3, p::LineWidth)
 end
 
 
+function apply_property(img::D3, p::Font)
+    @printf(img.out, ".attr(\"font-family\", \"%s\")",
+            escape_string(p.family))
+end
 
-# TODO: more forms, motherfucker.
 
+function apply_property(img::D3, p::FontSize)
+    @printf(img.out, ".attr(\"font-size\", \"%s\")",
+            svg_fmt_float(p.value.value))
+end
 
 
 
