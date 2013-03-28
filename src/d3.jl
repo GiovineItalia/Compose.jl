@@ -3,6 +3,7 @@
 
 export D3
 
+
 # In d3 svg we use millimeters as the base measure.
 type D3Measure <: NativeMeasure
     value::Float64
@@ -88,29 +89,32 @@ end
 
 
 # Serialize a DataFrame as an array of objects with fields named for columns.
-function write_data_frame(img::D3, df::AbstractDataFrame)
-    names = colnames(df)
-    n, m = size(df)
-    write(img.out, "  [")
-    for i in 1:n
-        if i > 1
-            write(img.out, "   ")
-        end
-        write(img.out, "{")
-        for j in 1:m
-            @printf(img.out, "\"%s\": %s",
-                    names[j], to_json(df[i,j]))
-            if j < m
-                write(img.out, ", ")
-            end
-        end
-        write(img.out, "}")
-        if i < n
-            write(img.out, ",\n")
-        end
-    end
-    write(img.out, "]")
-end
+#function write_data_frame(img::D3, df::AbstractDataFrame)
+    #names = colnames(df)
+    #n, m = size(df)
+    #write(img.out, "  [")
+    #for i in 1:n
+        #if i > 1
+            #write(img.out, "   ")
+        #end
+        #write(img.out, "{")
+        #for j in 1:m
+            #@printf(img.out, "\"%s\": %s",
+                    #names[j], to_json(df[i,j]))
+            #if j < m
+                #write(img.out, ", ")
+            #end
+        #end
+        #write(img.out, "}")
+        #if i < n
+            #write(img.out, ",\n")
+        #end
+    #end
+    #write(img.out, "]")
+#end
+
+
+to_json(c::ColorValue) = repr("#$(hex(c))")
 
 
 function write_data(img::D3, d::AbstractArray)
@@ -128,7 +132,13 @@ end
 
 function write_data(img::D3)
     write(img.out, "var data = [\n")
-    for (i, (_, (d, _))) in enumerate(img.data)
+    datapairs = Array(Tuple, length(img.data))
+    for (i, (_, (d, j))) in enumerate(img.data)
+        datapairs[i] = (j, d)
+    end
+    sortby!(datapairs, jd -> jd[1])
+
+    for (i, (_, d)) in enumerate(datapairs)
         write_data(img, d)
         if i < length(img.data)
             write(img.out, ",\n")
@@ -163,14 +173,6 @@ function data_idx(backend::D3, d::AbstractArray)
         backend.data[id] = (d, length(backend.data))
     end
     backend.data[id][2]
-end
-
-
-# Register a dataframe on first use. Return a javascript expression needed to
-# access it.
-function data_expr(backend::D3, ds::Vector{AbstractArray})
-    @sprintf("d3.zip(%s)",
-             join(["data[$(data_idx(backend, d))]" for d in ds], ","))
 end
 
 
@@ -264,7 +266,7 @@ function push_property(img::D3, property::Property)
 
     indent(img)
     write(img.out, "g")
-    for (i, p) in enumerate(Iterators.chain(values(properties), rawproperties))
+    for (i, p) in enumerate(chain(values(properties), rawproperties))
         apply_property(img, p)
         if i < n
             write(img.out, "\n ")

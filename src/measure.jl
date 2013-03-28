@@ -55,6 +55,14 @@ function show{U}(io::IO, a::SimpleMeasure{U})
 end
 
 
+function to_json(a::SimpleMeasure)
+    repr(string(a))
+    #b = IOBuffer()
+    #print(b, string(a))
+    ##repr(takebuf_string(b))
+end
+
+
 function +{U}(a::SimpleMeasure{U}, b::SimpleMeasure{U})
     SimpleMeasure{U}(a.value + b.value)
 end

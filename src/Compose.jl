@@ -11,7 +11,10 @@ using Color
 typealias ColorOrNothing Union(ColorValue, Nothing)
 
 using DataFrames
+using Iterators
 using JSON
+
+import JSON.to_json
 
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty, Base.insert,
@@ -20,7 +23,6 @@ import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
 
 export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
 
-import Iterators
 import Mustache
 
 # Empty combine. This violates the rules a bit, since nothing is not the

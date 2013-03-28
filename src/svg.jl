@@ -340,7 +340,7 @@ function push_property(img::SVG, property::Property)
         end
 
         write(img.f, "<g")
-        for p in Iterators.chain(values(properties), rawproperties)
+        for p in chain(values(properties), rawproperties)
             apply_property(img, p)
         end
         write(img.f, ">\n")

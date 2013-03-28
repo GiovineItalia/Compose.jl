@@ -116,6 +116,15 @@ function compose(a::EmptyForm, b::Property)
 end
 
 
+# Nop drawing of empty forms.
+function draw(backend::Backend,
+              t::NativeTransform,
+              unit_box::BoundingBox,
+              box::NativeBoundingBox,
+              root_form::EmptyForm)
+end
+
+
 # Does a property in a node apply to it's siblings? No!
 function draw(backend::Backend,
               t::NativeTransform,
