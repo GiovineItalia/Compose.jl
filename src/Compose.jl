@@ -44,8 +44,6 @@ include("svg.jl")
 include("d3.jl")
 include("dataform.jl")
 
-typealias ComposeType Union(Canvas, Form, Property)
-
 # Compose operator
 <<(a::Form,   b::Property) = compose(a, b)
 <<(a::Canvas, b::Form)     = compose(a, b)
@@ -62,7 +60,7 @@ typealias ComposeType Union(Canvas, Form, Property)
 |(xs::Form...)     = combine(xs...)
 
 # Compose over hetergenous lists of things.
-compose(x::ComposeType) = x
+compose(x) = x
 compose(xs::Tuple) = compose(xs...)
 compose(xs::Array) = compose(xs...)
 compose(x, y, zs...) = compose(compose(compose(x), compose(y)), zs...)

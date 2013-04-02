@@ -277,33 +277,16 @@ function push_property(img::D3, property::Property)
     write(img.out, "(function (g) {\n")
     img.indentation += 1
 
-    # There can only be one property of each type. E.g, defining 'fill'
-    # twice in the same element is not valid svg.
-    properties = Dict{Type, PropertyPrimitive}()
-    rawproperties = {}
-    p = property
-    while !is(p, empty_property)
-        if typeof(p.primitive) == SVGAttribute
-            push!(rawproperties, p.primitive)
-        else
-            properties[typeof(p.primitive)] = p.primitive
-        end
-        p = p.next
-    end
-
-    n = length(properties) + length(rawproperties)
-    if n == 0
-        return
-    end
-
     indent(img)
     write(img.out, "g")
-    for (i, p) in enumerate(chain(values(properties), rawproperties))
-        apply_property(img, p)
-        if i < n
+    p = property
+    while !is(p, empty_property)
+        apply_property(img, p.primitive)
+        if !is(p.next , empty_property)
             write(img.out, "\n ")
             indent(img)
         end
+        p = p.next
     end
     write(img.out, ";\n");
 end
@@ -353,4 +336,17 @@ function apply_property(img::D3, p::FontSize)
 end
 
 
+function apply_property(img::D3, p::SVGID)
+    @printf(img.out, ".attr(\"id\", \"%s\"\)", escape_string(p.value))
+end
+
+
+function apply_property(img::D3, p::SVGClass)
+    @printf(img.out, ".attr(\"class\", \"%s\"\)", escape_string(p.value))
+end
+
+
+function apply_property(img::D3, p::D3Embed)
+    print(img.out, p.code)
+end
 

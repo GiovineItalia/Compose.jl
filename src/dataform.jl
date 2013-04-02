@@ -1,7 +1,4 @@
 
-export pcompose
-
-# TODO: rename this file to pcompose.jl
 
 
 # Data forms are 
@@ -22,12 +19,7 @@ primitive{T}(dp::DataProperty{T}) = T
 
 fill(ds::AbstractArray) = DataProperty{Fill}(AbstractArray[ds])
 stroke(ds::AbstractArray) = DataProperty{Stroke}(AbstractArray[ds])
-
-
-#map(::Type{Fill},   ds::AbstractArray) = DataProperty{Fill}(AbstractArray[ds])
-#map(::Type{Stroke}, ds::AbstractArray) = DataProperty{Stroke}(AbstractArray[ds])
-# TODO: others
-
+svgclass(ds::AbstractArray) = DataProperty{SVGClass}(AbstractArray[ds])
 
 
 type DataForm{T <: FormPrimitive} <: Form
@@ -70,19 +62,18 @@ end
 
 
 # Parallel compose.
-function pcompose(df::DataForm, dp::DataProperty)
+function compose(df::DataForm, dp::DataProperty)
     df = copy(df)
     df.dataprops = cons(dp, df.dataprops)
     df
 end
 
-pcompose(x, y, zs...) = pcompose(pcompose(x, y), zs...)
+#pcompose(x, y, zs...) = pcompose(pcompose(x, y), zs...)
 
 
 # DataForm constructors
 function ellipse(x::AbstractArray, y::AbstractArray,
                  rx::AbstractArray, ry::AbstractArray)
-                 
     DataForm{Ellipse}(AbstractArray[x, y, rx, ry])
 end
 
@@ -96,7 +87,7 @@ end
 # backend.
 function draw{T}(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
                  box::NativeBoundingBox, form::DataForm{T})
-    # generate properties 
+    # generate properties
     n = max(map(length, form.ds))
     ps = Property[empty_property for _ in 1:n]
     for dataprop in form.dataprops
@@ -202,7 +193,7 @@ end
 # Modifies:
 #   dataindexes
 #
-function make_d3_y_attr{T, N}(backend::D3, ds::AbstractArray{T, N}, 
+function make_d3_y_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
                               unit_box::BoundingBox, box::NativeBoundingBox,
                               dataindexes::Dict{Int, Int})
     my = box.height.value / unit_box.height.value
@@ -228,7 +219,7 @@ function make_d3_y_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
 end
 
 
-function make_d3_height_attr{T, N}(backend::D3, ds::AbstractArray{T, N}, 
+function make_d3_height_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
                                    unit_box::BoundingBox, box::NativeBoundingBox,
                                    dataindexes::Dict{Int, Int})
     my = box.height.value / unit_box.height.value
@@ -306,6 +297,25 @@ function make_d3_data_property_expr(backend::D3,
 end
 
 
+function make_d3_data_property_expr(backend::D3,
+                                    unit_box::BoundingBox,
+                                    box::NativeBoundingBox,
+                                    dataindexes::Dict{Int, Int},
+                                    dp::DataProperty{SVGClass})
+    classes = dp.ds[1]
+    if length(classes) == 1
+        @sprintf(".attr(\"class\", \"%s\")\n", escape_string(classes[1]))
+    else
+        idx = data_idx(backend, classes)
+        if !has(dataindexes, idx)
+            dataindexes[idx] = length(dataindexes)
+        end
+        rowidx = dataindexes[idx]
+        @sprintf(".attr(\"class\", function(d) { return d[%d]; })\n", rowidx)
+    end
+end
+
+
 
 # Build expression suitable for the argument of a '.data(...)' call.
 #
@@ -336,6 +346,7 @@ function draw(backend::D3, t::NativeTransform, unit_box::BoundingBox,
 
     dp_expr = make_d3_data_property_expr(backend, unit_box, box,
                                          dataindexes, form.dataprops)
+    push_property(backend, form.property)
 
     if rx == ry
         r_expr = make_d3_width_attr(backend, rx, unit_box, box, dataindexes)
@@ -365,6 +376,7 @@ function draw(backend::D3, t::NativeTransform, unit_box::BoundingBox,
 
     print(backend.out, dp_expr)
     print(backend.out, ";\n")
+    pop_property(backend)
 end
 
 
