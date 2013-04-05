@@ -1,11 +1,9 @@
 
 
 
-# Data forms are 
-
-# The purpose is twofold: it's a slightly more convenient way of generating a
-# bunch of similar forms, and secondly, it allows us to exploit some of the
-# nicer features of d3.
+# Data forms are forms applied over vectors. The purpose is twofold: it's a
+# slightly more convenient way of generating a bunch of similar forms, and
+# secondly, it allows us to exploit some of the nicer features of d3.
 
 
 # A DataProperty is a leaf node that may only be attached to a DataForm.
@@ -20,6 +18,8 @@ primitive{T}(dp::DataProperty{T}) = T
 fill(ds::AbstractArray) = DataProperty{Fill}(AbstractArray[ds])
 stroke(ds::AbstractArray) = DataProperty{Stroke}(AbstractArray[ds])
 svgclass(ds::AbstractArray) = DataProperty{SVGClass}(AbstractArray[ds])
+d3embed(code::String) = DataProperty{D3Embed}(AbstractArray[[code]])
+
 
 
 type DataForm{T <: FormPrimitive} <: Form
@@ -68,7 +68,9 @@ function compose(df::DataForm, dp::DataProperty)
     df
 end
 
-#pcompose(x, y, zs...) = pcompose(pcompose(x, y), zs...)
+
+# DataProperties with regular forms.
+compose(f::FormTree, dp::DataProperty) = compose(f, convert(PropertySeq, dp))
 
 
 # DataForm constructors
@@ -82,11 +84,23 @@ function circle(x::AbstractArray, y::AbstractArray, r::AbstractArray)
 end
 
 
+# Convert a DataProperty to a sequence of properties for processing by a non-d3
+# backend.
+function convert(::Type{PropertySeq}, dp::DataProperty)
+    T = primitive(dp)
+    PropertySeq(T([d[1] for d in dp.ds]...))
+end
+
+
+# Compose data properties with canvases
+compose(a::CanvasTree, b::DataProperty) = compose(a, convert(PropertySeq, b))
+
 
 # Default handling of data forms. Generate scalar forms and feed them into the
 # backend.
 function draw{T}(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
                  box::NativeBoundingBox, form::DataForm{T})
+    convert(Vector{Property}, form.dataprops)
     # generate properties
     n = max(map(length, form.ds))
     ps = Property[empty_property for _ in 1:n]
@@ -153,7 +167,7 @@ function make_d3_x_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
 end
 
 
-function make_d3_width_attr{T, N}(backend::D3, ds::AbstractArray{T, N}, 
+function make_d3_width_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
                                   unit_box::BoundingBox, box::NativeBoundingBox,
                                   dataindexes::Dict{Int, Int})
     mx = box.width.value / unit_box.width.value
@@ -313,6 +327,15 @@ function make_d3_data_property_expr(backend::D3,
         rowidx = dataindexes[idx]
         @sprintf(".attr(\"class\", function(d) { return d[%d]; })\n", rowidx)
     end
+end
+
+
+function make_d3_data_property_expr(backend::D3,
+                                    unit_box::BoundingBox,
+                                    box::NativeBoundingBox,
+                                    dataindexes::Dict{Int, Int},
+                                    dp::DataProperty{D3Embed})
+    string(dp.ds[1][1], "\n")
 end
 
 

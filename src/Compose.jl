@@ -45,15 +45,19 @@ include("d3.jl")
 include("dataform.jl")
 
 # Compose operator
-<<(a::Form,   b::Property) = compose(a, b)
-<<(a::Canvas, b::Form)     = compose(a, b)
-<<(a::Canvas, b::Property) = compose(a, b)
-<<(a::Canvas, b::Canvas)   = compose(a, b)
+<<(a::Form,   b::Property)     = compose(a, b)
+<<(a::Form,   b::DataProperty) = compose(a, b)
+<<(a::Canvas, b::Form)         = compose(a, b)
+<<(a::Canvas, b::Property)     = compose(a, b)
+<<(a::Canvas, b::DataProperty) = compose(a, b)
+<<(a::Canvas, b::Canvas)       = compose(a, b)
 
->>(b::Property, a::Form)   = compose(a, b)
->>(b::Form,     a::Canvas) = compose(a, b)
->>(b::Property, a::Canvas) = compose(a, b)
->>(b::Canvas,   a::Canvas) = compose(a, b)
+>>(b::Property,     a::Form)   = compose(a, b)
+>>(b::DataProperty, a::Form)   = compose(a, b)
+>>(b::Form,         a::Canvas) = compose(a, b)
+>>(b::Property,     a::Canvas) = compose(a, b)
+>>(b::DataProperty, a::Canvas) = compose(a, b)
+>>(b::Canvas,       a::Canvas) = compose(a, b)
 
 # Combine operator
 |(xs::Property...) = combine(xs...)
