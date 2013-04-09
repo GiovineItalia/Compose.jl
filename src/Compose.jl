@@ -13,6 +13,9 @@ export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
 
 import Mustache
 
+using Color
+typealias ColorOrNothing Union(ColorValue, Nothing)
+
 # Empty combine. This violates the rules a bit, since nothing is not the
 # identity element in any of the monoids, but it's sometimes convenient if it
 # behaves as such.
@@ -22,7 +25,7 @@ include("util.jl")
 include("list.jl")
 include("measure.jl")
 include("backend.jl")
-include("color.jl")
+#include("color.jl")
 include("property.jl")
 include("form.jl")
 include("canvas.jl")
