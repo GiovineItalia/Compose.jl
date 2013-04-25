@@ -38,8 +38,21 @@ include("property.jl")
 include("form.jl")
 include("canvas.jl")
 include("cairo.jl")
-include("fontconfig.jl")
-include("pango.jl")
+
+# If available, pango and fontconfig are used to compute text extents and match
+# fonts. Otherwise a simplistic pure-julia fallback is used.
+try
+    # Trigger an exception if unavailable.
+    dlopen("libfontconfig")
+    dlopen("libpangocairo-1.0")
+    dlopen("libpango-1.0")
+
+    include("fontconfig.jl")
+    include("pango.jl")
+catch
+    include("fontfallback.jl")
+end
+
 include("svg.jl")
 include("d3.jl")
 include("dataform.jl")
