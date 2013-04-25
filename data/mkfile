@@ -1,0 +1,25 @@
+
+# Mkfile for updating the glyphsize table. This is not intended for general use.
+# If you really want to use it, you'll probably have to change FONTS to point to
+# the font files you want to serialize, then obtain a copy of mk, either from
+# plan9port, or from github.com/dcjones/mk. Then just type 'mk'.
+
+all:V: glyphsize.json
+
+FONTS=/System/Library/Fonts/HelveticaNeue.dfont \
+      /System/Library/Fonts/Helvetica.dfont \
+      /Library/Fonts/Arial.ttf \
+      /Library/Fonts/PTSans.ttc \
+      /Users/dcjones/Library/Fonts/SourceSansPro-Regular.otf
+
+glyphsize.json: glyphsize $FONTS
+    ./glyphsize $FONTS > $target
+
+CFLAGS=-Wall -g -I/usr/local/include/freetype2
+
+glyphsize: glyphsize.c
+    gcc $CFLAGS -o $target $prereq -lfreetype
+
+clean:V:
+    rm -f glyphsize
+
