@@ -2,7 +2,8 @@
 # Font handling when pango and fontconfig are not available.
 
 # Serialized glyph sizes for commont fonts.
-const glyphsizes = JSON.parse(open(joinpath(Pkg.dir("Compose"), "data", "glyphsize.json")))
+const glyphsizes = JSON.parse(
+    readall(open(joinpath(Pkg.dir("Compose"), "data", "glyphsize.json"))))
 
 
 # Normalized Levenshtein distance between two strings.
@@ -66,4 +67,22 @@ function text_extents(font_family::String, size::SimpleMeasure{MillimeterUnit},
     (scale * width * mm, scale * height * mm)
 end
 
+
+# Amazingly crude fallback to parse pango markup into svg.
+function pango_to_svg(text::String)
+    whitelist = Set("sup", "sub")
+    pat = r"</?\s*([^>]*)\s*>"
+    input = convert(Array{Uint8}, text)
+    output = Array(Uint8,0)
+    lastpos = 1
+    for mat in eachmatch(pat, text)
+        append!(output, input[lastpos:mat.offset-1])
+        if contains(whitelist, mat.captures[1])
+            append!(output, convert(Array{Uint8}, mat.match))
+        end
+        lastpos = mat.offset + length(mat.match)
+    end
+    append!(output, input[lastpos:end])
+    bytestring(output)
+end
 

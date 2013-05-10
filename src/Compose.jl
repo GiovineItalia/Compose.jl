@@ -37,7 +37,6 @@ include("backend.jl")
 include("property.jl")
 include("form.jl")
 include("canvas.jl")
-include("cairo.jl")
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
@@ -49,6 +48,7 @@ try
 
     include("fontconfig.jl")
     include("pango.jl")
+    include("cairo.jl")
 catch
     include("fontfallback.jl")
 end
