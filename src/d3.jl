@@ -38,6 +38,9 @@ type D3 <: Backend
     # Current level of indentation.
     indentation::Int
 
+    # Code to be inserted after the end of a property group.
+    hooks::Vector{String}
+
     # Keep track of which properties that are push are empty to we can avoid
     # printiing them.
     empty_properties::Vector{Bool}
@@ -57,6 +60,7 @@ type D3 <: Backend
         img.out = f
         img.close_stream = false
         img.indentation = 0
+        img.hooks = Array(String, 0)
         img.empty_properties = Array(Bool, 0)
         img.dataform_count = 0
         img.data = Dict{Uint64, (Any, Int)}()
@@ -73,6 +77,8 @@ type D3 <: Backend
                             .attr("viewBox", "0 0 $(width_value) $(height_value)")
                             .attr("stroke-width", "0.5")
                             .attr("style", "stroke:black;fill:black");
+                var t = {"x": 0.0,
+                         "y": 0.0};
               """)
         img
     end
@@ -267,6 +273,15 @@ end
 
 # Nop catchall
 function push_property(img::D3, property::Property)
+    p = property
+    hasproperties = false;
+    while !is(p, empty_property)
+        if !is(typeof(p.primitive), D3Hook)
+            hasproperties = true
+        end
+        p = p.next
+    end
+
     if property === empty_property
         push!(img.empty_properties, true)
         return
@@ -278,17 +293,27 @@ function push_property(img::D3, property::Property)
     img.indentation += 1
 
     indent(img)
-    write(img.out, "g")
+    if hasproperties
+        write(img.out, "g")
+    end
     p = property
+    hook = ""
     while !is(p, empty_property)
-        apply_property(img, p.primitive)
+        if typeof(p.primitive) === D3Hook
+            hook = string(hook, "\n", p.primitive.code)
+        else
+            apply_property(img, p.primitive)
+        end
         if !is(p.next , empty_property)
             write(img.out, "\n ")
             indent(img)
         end
         p = p.next
     end
-    write(img.out, ";\n");
+    if hasproperties
+        write(img.out, ";\n");
+    end
+    push!(img.hooks, hook)
 end
 
 
@@ -297,6 +322,8 @@ function pop_property(img::D3)
         return
     end
 
+    hook = pop!(img.hooks)
+    write(img.out, hook)
     img.indentation -= 1;
     indent(img)
     write(img.out, "}(g.append(\"g\")));\n")

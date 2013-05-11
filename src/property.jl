@@ -6,7 +6,7 @@ import Base.fill
 export stroke, fill, linewidth, font, fontsize, visible, opacity, svgid, svgclass,
        svglink, onactive, onclick, onfocusin, onfocusout, onload, onmousedown,
        onmousemove, onmouseout, onmouseover, onmouseup, svgmask, svgdefmask,
-       svgembed, svgattribute, d3embed
+       svgembed, svgattribute, d3embed, d3hook
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
@@ -327,4 +327,9 @@ type D3Embed <: PropertyPrimitive
     code::String
 end
 
+type D3Hook <: PropertyPrimitive
+    code::String
+end
+
+d3hook(code::String) = PropertySeq(D3Hook(code))
 
