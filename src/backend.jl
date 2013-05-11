@@ -146,10 +146,19 @@ function native_measure(point::Point,
                         parent_box::NativeBoundingBox,
                         backend::Backend)
 
-    x = parent_box.x0 + native_measure(point.x, t, unit_box,
-                                       parent_box, backend)
-    y = parent_box.y0 + native_measure(point.y, t, unit_box,
-                                       parent_box, backend)
+    if typeof(point.x) <: NativeMeasure
+        x = point.x
+    else
+        x = parent_box.x0 + native_measure(point.x, t, unit_box,
+                                           parent_box, backend)
+    end
+
+    if typeof(point.y) <: NativeMeasure
+        y = point.y
+    else
+        y = parent_box.y0 + native_measure(point.y, t, unit_box,
+                                           parent_box, backend)
+    end
 
     xy = [convert(Float64, x), convert(Float64, y), 1.0]
     xyt = t.M * xy

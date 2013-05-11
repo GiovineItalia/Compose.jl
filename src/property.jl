@@ -3,10 +3,10 @@
 
 import Base.fill
 
-export stroke, fill, linewidth, font, fontsize, visible, opacity, svgid, svgclass,
-       svglink, onactive, onclick, onfocusin, onfocusout, onload, onmousedown,
-       onmousemove, onmouseout, onmouseover, onmouseup, svgmask, svgdefmask,
-       svgembed, svgattribute, d3embed, d3hook
+export stroke, fill, linewidth, font, fontsize, visible, clip, opacity, svgid,
+       svgclass, svglink, onactive, onclick, onfocusin, onfocusout, onload,
+       onmousedown, onmousemove, onmouseout, onmouseover, onmouseup, svgmask,
+       svgdefmask, svgembed, svgattribute, d3embed, d3hook
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
@@ -189,6 +189,26 @@ end
 
 opacity(value::Number) = PropertySeq(Opacity(convert(Float64, value)))
 
+
+# Clipping path
+type Clip <: PropertyPrimitive
+    points::Vector{Point}
+end
+
+
+function clip(points::XYTupleOrPoint...)
+    PropertySeq(Clip([convert(Point, point) for point in points]))
+end
+
+
+function native_measure(property::Clip,
+                        t::NativeTransform,
+                        unit_box::BoundingBox,
+                        box::NativeBoundingBox,
+                        backend::Backend)
+    Clip([native_measure(point, t, unit_box, box, backend)
+          for point in property.points])
+end
 
 
 # A property primitive assigning an ID, in particular in SVG, to enable

@@ -48,8 +48,12 @@ type D3 <: Backend
     # Form count used to generate unique classes for DataForms.
     dataform_count::Int
 
+    # A counter to assign unique ids to clip paths.
+    clippath_count::Int
+
     # Store datasets for serialization.
     data::Dict{Uint64, (Any, Int)}
+
 
     function D3(f::IO,
                 width::MeasureOrNumber,
@@ -63,6 +67,7 @@ type D3 <: Backend
         img.hooks = Array(String, 0)
         img.empty_properties = Array(Bool, 0)
         img.dataform_count = 0
+        img.clippath_count = 0
         img.data = Dict{Uint64, (Any, Int)}()
 
         width_value = svg_fmt_float(width.value)
@@ -77,6 +82,7 @@ type D3 <: Backend
                             .attr("viewBox", "0 0 $(width_value) $(height_value)")
                             .attr("stroke-width", "0.5")
                             .attr("style", "stroke:black;fill:black");
+                g.append("defs");
                 var t = {"x": 0.0,
                          "y": 0.0};
               """)
@@ -193,6 +199,20 @@ function draw(img::D3, form::FormPrimitive)
 end
 
 
+function make_svg_path(points::Vector{Point})
+    path = IOBuffer()
+    @printf(path, "M %s %s L",
+        svg_fmt_float(points[1].x.value),
+        svg_fmt_float(points[1].y.value))
+    for point in points[2:]
+        @printf(path, " %s %s",
+            svg_fmt_float(point.x.value),
+            svg_fmt_float(point.y.value))
+    end
+    bytestring(path)
+end
+
+
 function draw(img::D3, form::Polygon)
     n = length(form.points)
     if n <= 1; return; end
@@ -201,14 +221,7 @@ function draw(img::D3, form::Polygon)
     write(img.out, "g.append(\"svg:path\")\n")
     indent(img)
     write(img.out, "   .attr(\"d\", \"")
-    @printf(img.out, "M %s %s L",
-        svg_fmt_float(form.points[1].x.value),
-        svg_fmt_float(form.points[1].y.value))
-    for point in form.points[2:]
-        @printf(img.out, " %s %s",
-            svg_fmt_float(point.x.value),
-            svg_fmt_float(point.y.value))
-    end
+    write(img.out, make_svg_path(form.points))
     write(img.out, " z\");\n")
 end
 
@@ -221,14 +234,7 @@ function draw(img::D3, form::Lines)
     write(img.out, "g.append(\"svg:path\")\n")
     indent(img)
     write(img.out, "   .attr(\"d\", \"")
-    @printf(img.out, "M %s %s L",
-        svg_fmt_float(form.points[1].x.value),
-        svg_fmt_float(form.points[1].y.value))
-    for point in form.points[2:]
-        @printf(img.out, " %s %s",
-            svg_fmt_float(point.x.value),
-            svg_fmt_float(point.y.value))
-    end
+    write(img.out, make_svg_path(form.points))
     write(img.out, "\");\n")
 end
 
@@ -275,13 +281,18 @@ end
 function push_property(img::D3, property::Property)
     p = property
     hasproperties = false;
+    clip = nothing
     while !is(p, empty_property)
         if !is(typeof(p.primitive), D3Hook)
             hasproperties = true
         end
+        if typeof(p.primitive) === Clip
+                clip = p.primitive
+        end
         p = p.next
     end
 
+    # Nothing to do
     if property === empty_property
         push!(img.empty_properties, true)
         return
@@ -291,8 +302,21 @@ function push_property(img::D3, property::Property)
     indent(img)
     write(img.out, "(function (g) {\n")
     img.indentation += 1
-
     indent(img)
+
+    if !is(clip, nothing)
+        clipid = @sprintf("clippath%d", img.clippath_count)
+        img.clippath_count += 1
+        write(img.out,
+            """
+                d3.select("defs")
+                  .append("svg:clipPath")
+                    .attr("id", "$(clipid)")
+                    .append("svg:path")
+                      .attr("d", "$(make_svg_path(clip.points)) z");
+            """)
+    end
+
     if hasproperties
         write(img.out, "g")
     end
@@ -363,6 +387,12 @@ function apply_property(img::D3, p::FontSize)
 end
 
 
+function apply_property(img::D3, p::Clip)
+    clipid = @sprintf("clippath%d", img.clippath_count - 1)
+    @printf(img.out, ".attr(\"clip-path\", \"url(#%s)\")", clipid)
+end
+
+
 function apply_property(img::D3, p::SVGID)
     @printf(img.out, ".attr(\"id\", \"%s\"\)", escape_string(p.value))
 end
@@ -376,4 +406,6 @@ end
 function apply_property(img::D3, p::D3Embed)
     print(img.out, p.code)
 end
+
+
 
