@@ -17,6 +17,9 @@ export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
 
 import Iterators
 import Mustache
+import Iterators
+
+using Color
 
 # Empty combine. This violates the rules a bit, since nothing is not the
 # identity element in any of the monoids, but it's sometimes convenient if it
