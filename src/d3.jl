@@ -83,8 +83,7 @@ type D3 <: Backend
                             .attr("stroke-width", "0.5")
                             .attr("style", "stroke:black;fill:black");
                 g.append("defs");
-                var t = {"x": 0.0,
-                         "y": 0.0};
+                var t = {"scale": 1.0};
               """)
         img
     end

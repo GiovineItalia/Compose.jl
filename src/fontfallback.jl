@@ -6,6 +6,13 @@ const glyphsizes = JSON.parse(
     readall(open(joinpath(Pkg.dir("Compose"), "data", "glyphsize.json"))))
 
 
+# It's better to overestimate text extents than to underestimes, since the later
+# leads to overlaping where the former just results in some extra space. So, we
+# scale estimated text extends by this number.
+const text_extents_scale_x = 1.2
+const text_extents_scale_y = 1.2
+
+
 # Normalized Levenshtein distance between two strings.
 function levenshtein(a::String, b::String)
     a = replace(lowercase(a), r"\s+", "")
@@ -64,7 +71,8 @@ function text_extents(font_family::String, size::SimpleMeasure{MillimeterUnit},
     widths = glyphsizes[font_family]["widths"]
 
     width = max([text_width(widths, text, size/pt) for text in texts])
-    (scale * width * mm, scale * height * mm)
+    (text_extents_scale_x * scale * width * mm,
+     text_extents_scale_y * scale * height * mm)
 end
 
 

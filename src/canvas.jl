@@ -102,7 +102,7 @@ type CanvasTree <: Canvas
                         clip::Bool)
 
         new(box, form, property, unit_box, rot,
-            children, order, units_inherited)
+            children, order, units_inherited, clip)
     end
 
     function CanvasTree(x0::MeasureOrNumber=0.0w,
@@ -306,7 +306,7 @@ function drawpart(backend::Backend, root_canvas::Canvas)
                              Point(box.x0, box.y0 + box.height))
         end
 
-        if !is(property, empty_canvas)
+        if !is(property, empty_property)
             push!(S, :POP_PROPERTY)
             push_property(backend, native_measure(property, t, unit_box,
                                                   box, backend))
