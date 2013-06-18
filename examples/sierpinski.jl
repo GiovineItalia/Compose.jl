@@ -17,6 +17,7 @@ function sierpinski(n)
 end
 
 
-img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
+#img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
+img = D3("sierpinski.js", 4inch, 4(sqrt(3)/2)inch)
 draw(img, sierpinski(8) << linewidth(0.1mm) << fill(nothing))
 

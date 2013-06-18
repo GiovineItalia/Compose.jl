@@ -1,12 +1,20 @@
 
 require("Color")
+require("DataFrames")
 require("Iterators")
+require("JSON")
 require("Mustache")
 
 module Compose
 
 using Color
 typealias ColorOrNothing Union(ColorValue, Nothing)
+
+using DataFrames
+using Iterators
+using JSON
+
+import JSON.to_json
 
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty, Base.insert,
@@ -15,7 +23,6 @@ import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
 
 export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
 
-import Iterators
 import Mustache
 import Iterators
 
@@ -33,30 +40,47 @@ include("backend.jl")
 include("property.jl")
 include("form.jl")
 include("canvas.jl")
-include("cairo.jl")
-include("fontconfig.jl")
-include("pango.jl")
-include("svg.jl")
 
-typealias ComposeType Union(Canvas, Form, Property)
+# If available, pango and fontconfig are used to compute text extents and match
+# fonts. Otherwise a simplistic pure-julia fallback is used.
+try
+    # Trigger an exception if unavailable.
+    dlopen("libfontconfig")
+    dlopen("libpangocairo-1.0")
+    dlopen("libpango-1.0")
+
+    include("fontconfig.jl")
+    include("pango.jl")
+    include("cairo.jl")
+catch
+    include("fontfallback.jl")
+end
+
+include("svg.jl")
+include("d3.jl")
+include("dataform.jl")
 
 # Compose operator
-<<(a::Form,   b::Property) = compose(a, b)
-<<(a::Canvas, b::Form)     = compose(a, b)
-<<(a::Canvas, b::Property) = compose(a, b)
-<<(a::Canvas, b::Canvas)   = compose(a, b)
+<<(a::Form,   b::Property)     = compose(a, b)
+<<(a::Form,   b::DataProperty) = compose(a, b)
+<<(a::Canvas, b::Form)         = compose(a, b)
+<<(a::Canvas, b::Property)     = compose(a, b)
+<<(a::Canvas, b::DataProperty) = compose(a, b)
+<<(a::Canvas, b::Canvas)       = compose(a, b)
 
->>(b::Property, a::Form)   = compose(a, b)
->>(b::Form,     a::Canvas) = compose(a, b)
->>(b::Property, a::Canvas) = compose(a, b)
->>(b::Canvas,   a::Canvas) = compose(a, b)
+>>(b::Property,     a::Form)   = compose(a, b)
+>>(b::DataProperty, a::Form)   = compose(a, b)
+>>(b::Form,         a::Canvas) = compose(a, b)
+>>(b::Property,     a::Canvas) = compose(a, b)
+>>(b::DataProperty, a::Canvas) = compose(a, b)
+>>(b::Canvas,       a::Canvas) = compose(a, b)
 
 # Combine operator
 |(xs::Property...) = combine(xs...)
 |(xs::Form...)     = combine(xs...)
 
 # Compose over hetergenous lists of things.
-compose(x::ComposeType) = x
+compose(x) = x
 compose(xs::Tuple) = compose(xs...)
 compose(xs::Array) = compose(xs...)
 compose(x, y, zs...) = compose(compose(compose(x), compose(y)), zs...)
@@ -354,7 +378,7 @@ emitters = Dict{String, Function}()
 function emit(emitable::Emitable)
     if has(emitters, emitable.mime)
         emitter = emitters[emitable.mime]
-        emitter(emitable.data)
+        emitter(emitable.mime, emitable.data)
     else
         warn("Unable to emit data of type ", string(typeof(data)))
     end

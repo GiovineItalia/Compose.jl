@@ -27,21 +27,21 @@ length(f::EmptyForm) = 0
 type FormTree <: Form
     primitive::Union(Nothing, FormPrimitive)
     property::Property
-    children::List{FormTree}
+    children::List{Form}
 
     function FormTree(primitive::Union(Nothing, FormPrimitive),
                       property::Property,
-                      children::List{FormTree})
-        new(primitive, property, convert(List{FormTree}, children))
+                      children::List{Form})
+        new(primitive, property, convert(List{Form}, children))
     end
 
     function FormTree(primitive::Union(Nothing, FormPrimitive),
                       property::Property)
-        new(primitive, property, ListNil{FormTree}())
+        new(primitive, property, ListNil{Form}())
     end
 
     function FormTree(primitive::FormPrimitive)
-        new(primitive, empty_property, ListNil{FormTree}())
+        new(primitive, empty_property, ListNil{Form}())
     end
 
     # shallow copy constructor
@@ -68,6 +68,8 @@ end
 
 copy(a::FormTree) = FormTree(a)
 
+children(a::FormTree) = a.children
+
 
 function removable(a::FormTree)
     a.primitive === nothing && a.property === empty_property
@@ -85,7 +87,7 @@ end
 # There is a trick here to avoid an exceess of nop or "removable" nodes.
 #
 function combine(forms::Form...)
-    children = ListNil{FormTree}()
+    children = ListNil{Form}()
     for form in forms
         if form === empty_form
             continue
@@ -114,12 +116,21 @@ function compose(a::EmptyForm, b::Property)
 end
 
 
+# Nop drawing of empty forms.
+function draw(backend::Backend,
+              t::NativeTransform,
+              unit_box::BoundingBox,
+              box::NativeBoundingBox,
+              root_form::EmptyForm)
+end
+
+
 # Does a property in a node apply to it's siblings? No!
 function draw(backend::Backend,
               t::NativeTransform,
               unit_box::BoundingBox,
               box::NativeBoundingBox,
-              root_form::Form)
+              root_form::FormTree)
 
     S = {root_form}
 
@@ -138,12 +149,16 @@ function draw(backend::Backend,
                                              box, backend))
             end
 
-            for child in form.children
+            for child in children(form)
                 push!(S, child)
             end
 
-            if !is(form.primitive, nothing)
-                draw(backend, t, unit_box, box, form.primitive)
+            if typeof(form) === FormTree
+                if !(form.primitive === nothing)
+                    draw(backend, t, unit_box, box, form.primitive)
+                end
+            else
+                draw(backend, t, unit_box, box, form)
             end
         end
     end
@@ -249,6 +264,19 @@ type Ellipse <: FormPrimitive
     center::Point
     x_point::Point
     y_point::Point
+
+    function Ellipse(center::Point, x_point::Point, y_point::Point)
+        new(center, x_point, y_point)
+    end
+
+    function Ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
+                     rx::MeasureOrNumber, ry::MeasureOrNumber)
+        x = x_measure(x)
+        y = y_measure(y)
+        new(Point(x, y),
+            Point(x + x_measure(rx), y),
+            Point(x, y + y_measure(ry)))
+    end
 end
 function contents(io, f::Ellipse, n::Int, indent)
     println(io, indent, "Ellipse centered at ", f.center)
@@ -268,6 +296,10 @@ end
 function ellipse()
     ellipse(0.5w, 0.5h, 0.5w, 0.5h)
 end
+
+
+# Despite the innacuracy, this is convenient is a few places.
+typealias Circle Ellipse
 
 
 function circle(x::MeasureOrNumber, y::MeasureOrNumber, radius::MeasureOrNumber)
