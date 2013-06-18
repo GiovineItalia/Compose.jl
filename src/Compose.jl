@@ -375,7 +375,7 @@ emitters = Dict{String, Function}()
 function emit(emitable::Emitable)
     if has(emitters, emitable.mime)
         emitter = emitters[emitable.mime]
-        emitter(emitable.data)
+        emitter(emitable.mime, emitable.data)
     else
         warn("Unable to emit data of type ", string(typeof(data)))
     end

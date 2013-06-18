@@ -74,8 +74,8 @@ type D3 <: Backend
         height_value = svg_fmt_float(height.value)
         write(img.out,
               """
-              function draw(data) {
-                var g = d3.select("#chart")
+              function draw_with_data(data, parent_id) {
+                var g = d3.select(parent_id)
                           .append("svg")
                             .attr("width", "$(width_value)mm")
                             .attr("height", "$(height_value)mm")
@@ -94,6 +94,12 @@ type D3 <: Backend
         f = open(filename, "w")
         img = D3(f, width, height)
         img.close_stream = true
+        img
+    end
+
+    function D3(width::MeasureOrNumber, height::MeasureOrNumber)
+        img = D3(IOString(), width, height)
+        img.close_stream = false
         img
     end
 end
@@ -136,8 +142,19 @@ end
 function finish(img::D3)
     write(img.out, "}\n\n")
     write_data(img)
-    write(img.out, "draw(data);")
+    write(img.out,
+        """
+        var draw = function(parent_id) {
+            draw_with_data(data, parent_id);
+        };
+        """)
     if img.close_stream
+        close(img.out)
+    end
+
+    if typeof(img.out) == IOString
+        seek(img.out, 0)
+        emit(Emitable("application/javascript", readall(img.out)))
         close(img.out)
     end
 end
@@ -238,6 +255,62 @@ function draw(img::D3, form::Lines)
 end
 
 
+# Converting text with tango markup to d3 code. Messy business.
+
+function pango_tag_to_tspan(out, tag::String, indent::String)
+    print(out, ".append(\"tspan\")\n")
+    if tag == "sup"
+        print(out, indent, "  ", ".attr(\"baseline-shift\", \"super\")\n")
+    elseif tag == "sub"
+        print(out, indent, "  ", ".attr(\"baseline-shift\", \"sub\")\n")
+    end
+end
+
+
+function pango_to_d3(out, text::String, indentnum=0)
+    print(out, Base.repeat(" ", indentnum))
+    print(out, ".call(function(text) {\n")
+
+    indentnum += 2; indent = Base.repeat(" ", indentnum)
+    print(out, indent, "text");
+    indentnum += 4; indent = Base.repeat(" ", indentnum)
+
+    opentagpat = r"<\s*([^>\s]*)\s*>"
+    openmat = match(opentagpat, text)
+    if !is(openmat, nothing)
+
+        # find end tag
+        closemat = match(Regex(string(".*(</\\s*", openmat.captures[1], "\\s*>)")), text)
+        if closemat === nothing
+            error("No matching tag for <$(openmat.captures[1])>")
+        end
+
+        tag = openmat.captures[1]
+        i0 = openmat.offset
+        i1 = i0 + length(openmat.match)
+        j0 = closemat.offsets[1]
+        j1 = j0 + length(closemat.captures[1])
+
+        if i0 > 1
+            print(out, ".append(\"tspan\").text(\"$(escape_string(text[1:i0-1]))\")\n")
+            print(out, indent)
+        end
+
+        pango_tag_to_tspan(out, tag, indent)
+        pango_to_d3(out, text[i1:j0-1], indentnum)
+
+        if j1 < length(text)
+            print(out, indent, ".append(\"tspan\").text(\"$(escape_string(text[j1:end]))\")\n")
+        end
+        print(out, indent, ";\n");
+    else
+        print(out, ".text(\"$(escape_string(text))\");\n")
+    end
+
+    indentnum -= 6; indent = Base.repeat(" ", indentnum)
+    print(out, indent, "})\n");
+end
+
 
 function draw(img::D3, form::Text)
     indent(img)
@@ -272,7 +345,10 @@ function draw(img::D3, form::Text)
     end
 
     indent(img)
-    @printf(img.out, "   .text(\"%s\");\n", pango_to_svg(form.value))
+    pango_to_d3(img.out, form.value)
+    print(img.out, ";\n")
+    #@printf(img.out, "   .text(\"%s\");\n",
+            #escape_string(pango_to_svg(form.value)))
 end
 
 
@@ -310,7 +386,7 @@ function push_property(img::D3, property::Property)
             """
                 d3.select("defs")
                   .append("svg:clipPath")
-                    .attr("id", "$(clipid)")
+                    .attr("id", parent_id + "_$(clipid)")
                     .append("svg:path")
                       .attr("d", "$(make_svg_path(clip.points)) z");
             """)
@@ -388,7 +464,7 @@ end
 
 function apply_property(img::D3, p::Clip)
     clipid = @sprintf("clippath%d", img.clippath_count - 1)
-    @printf(img.out, ".attr(\"clip-path\", \"url(#%s)\")", clipid)
+    @printf(img.out, ".attr(\"clip-path\", \"url(#\" + parent_id + \"_%s)\")", clipid)
 end
 
 
@@ -401,6 +477,10 @@ function apply_property(img::D3, p::SVGClass)
     @printf(img.out, ".attr(\"class\", \"%s\"\)", escape_string(p.value))
 end
 
+
+function apply_property(img::D3, p::SVGAttribute)
+    @printf(img.out, ".attr(\"%s\", \"%s\")", p.attribute, p.value)
+end
 
 function apply_property(img::D3, p::D3Embed)
     print(img.out, p.code)
