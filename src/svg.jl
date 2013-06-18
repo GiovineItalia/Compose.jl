@@ -61,6 +61,9 @@ type SVG <: Backend
     # a map of unique function names to javascript code.
     scripts::Dict{String, String}
 
+    # Clip-paths that need to be defined at the end of the document.
+    clippaths::Vector{Vector{Point}}
+
     # Miscelaneous embedded objects included immediately before the </svg> tag,
     # such as extra javascript or css.
     embobj::Set{String}
@@ -85,6 +88,7 @@ type SVG <: Backend
         img.f = f
         img.close_stream = false
         img.indentation = 0
+        img.clippaths = Array(Vector{Point}, 0)
         img.scripts = Dict{String, String}()
         img.embobj = Set{String}()
         img.empty_properties = Array(Bool, 0)
@@ -131,6 +135,16 @@ function finish(img::SVG)
         write(img.f, "]]></script>\n")
     end
 
+    if length(img.clippaths) > 0
+        write(img.f, "<defs>\n")
+        for (i, clippath) in enumerate(img.clippaths)
+            write(img.f, "  <clipPath id=\"clippath$(i)\">\n    ")
+            printpath(img.f, clippath)
+            write(img.f, "  </clipPath>\n")
+        end
+        write(img.f, "</defs>\n")
+    end
+
     write(img.f, "</svg>\n")
     if img.close_stream
         close(img.f)
@@ -143,7 +157,6 @@ function finish(img::SVG)
         close(img.f)
     end
 end
-
 
 
 function root_box(img::SVG)
@@ -180,21 +193,25 @@ end
 # Draw
 
 
-function draw(img::SVG, form::Lines)
-    n = length(form.points)
-    if n <= 1; return; end
-
-    indent(img)
-    write(img.f, "<path d=\"")
-    @printf(img.f, "M%s,%s L",
-        svg_fmt_float(form.points[1].x.value),
-        svg_fmt_float(form.points[1].y.value))
-    for point in form.points[2:]
-        @printf(img.f, " %s %s",
+function printpath(out, points::Vector{Point})
+    write(out, "<path d=\"")
+    @printf(out, "M%s,%s L",
+        svg_fmt_float(points[1].x.value),
+        svg_fmt_float(points[1].y.value))
+    for point in points[2:]
+        @printf(out, " %s %s",
             svg_fmt_float(point.x.value),
             svg_fmt_float(point.y.value))
     end
-    write(img.f, "\" />\n")
+    write(out, "\" />\n")
+end
+
+
+function draw(img::SVG, form::Lines)
+    n = length(form.points)
+    if n <= 1; return; end
+    indent(img)
+    printpath(img.f, form.points)
 end
 
 
@@ -415,6 +432,11 @@ function apply_property(img::SVG, p::FontSize)
     @printf(img.f, " font-size=\"%s\"", svg_fmt_float(p.value.value))
 end
 
+function apply_property(img::SVG, p::Clip)
+    push!(img.clippaths, p.points)
+    i = length(img.clippaths)
+    write(img.f, " clip-path=\"url(#clippath$(i))\"")
+end
 
 function apply_property(img::SVG, p::SVGEmbed)
     add!(img.embobj, p.markup)

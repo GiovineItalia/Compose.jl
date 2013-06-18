@@ -440,3 +440,15 @@ function apply_property(img::Image, property::FontSize)
     Cairo.set_font_size(img.ctx, property.value.value)
 end
 
+
+function apply_property(img::Image, property::Clip)
+    if isempty(property.points); return; end
+    move_to(img, property.points[1])
+    for point in property.points[2:]
+        line_to(img, point)
+    end
+    close_path(img)
+    Cairo.clip(img.ctx)
+end
+
+
