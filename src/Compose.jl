@@ -60,6 +60,11 @@ include("svg.jl")
 include("d3.jl")
 include("dataform.jl")
 
+
+
+typealias Composable Union(Form, Property, Canvas)
+
+
 # Compose operator
 <<(a::Form,   b::Property)     = compose(a, b)
 <<(a::Form,   b::DataProperty) = compose(a, b)
@@ -84,6 +89,11 @@ compose(x) = x
 compose(xs::Tuple) = compose(xs...)
 compose(xs::Array) = compose(xs...)
 compose(x, y, zs...) = compose(compose(compose(x), compose(y)), zs...)
+
+# Make nothings go away.
+compose(::Nothing, ::Nothing) = nothing
+compose(::Nothing, x::Composable) = x
+compose(x::Composable, ::Nothing) = x
 
 
 # Helpful functions# Create a new canvas containing the given canvas with margins on all sides of

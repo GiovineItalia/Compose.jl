@@ -236,7 +236,7 @@ function compose(a::EmptyCanvas, b::Property)
 end
 
 
-function compose(a::DeferredCanvas, b)
+function compose(a::DeferredCanvas, b::Union(Canvas, Form, Property))
     error("Error: Deferred canvases cannot be composed with.")
 end
 
