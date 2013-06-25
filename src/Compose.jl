@@ -51,9 +51,21 @@ try
 
     include("fontconfig.jl")
     include("pango.jl")
-    include("cairo.jl")
 catch
     include("fontfallback.jl")
+end
+
+# Use cairo for the PNG, PS, PDF if its installed.
+try
+    import Cairo
+    include("cairo.jl")
+catch
+    PNG(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PNG backend.")
+    PS(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PS backend.")
+    PDF(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PDF backend.")
 end
 
 include("svg.jl")
