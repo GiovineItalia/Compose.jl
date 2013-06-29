@@ -29,7 +29,7 @@ const PANGO_SCALE = 1024.0
 let cached_font_matches = Dict{(String, Float64), Ptr{Void}}()
     global match_font
     function match_font(family::String, size::Float64)
-        if has(cached_font_matches, (family, size))
+        if haskey(cached_font_matches, (family, size))
             return cached_font_matches[(family, size)]
         end
 

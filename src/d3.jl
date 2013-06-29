@@ -54,10 +54,13 @@ type D3 <: Backend
     # Store datasets for serialization.
     data::Dict{Uint64, (Any, Int)}
 
+    # Emit the graphic on finish when writing to a buffer.
+    emit_on_finish::Bool
 
     function D3(f::IO,
                 width::MeasureOrNumber,
-                height::MeasureOrNumber)
+                height::MeasureOrNumber;
+                emit_on_finish::Bool=true)
         img = new()
         img.width  = native_measure(width, img)
         img.height = native_measure(height, img)
@@ -69,6 +72,7 @@ type D3 <: Backend
         img.dataform_count = 0
         img.clippath_count = 0
         img.data = Dict{Uint64, (Any, Int)}()
+        img.emit_on_finish = emit_on_finish
 
         width_value = svg_fmt_float(width.value)
         height_value = svg_fmt_float(height.value)
@@ -97,8 +101,9 @@ type D3 <: Backend
         img
     end
 
-    function D3(width::MeasureOrNumber, height::MeasureOrNumber)
-        img = D3(IOString(), width, height)
+    function D3(width::MeasureOrNumber, height::MeasureOrNumber;
+                emit_on_finish::Bool=true)
+        img = D3(IOString(), width, height, emit_on_finish=emit_on_finish)
         img.close_stream = false
         img
     end
@@ -152,7 +157,7 @@ function finish(img::D3)
         close(img.out)
     end
 
-    if typeof(img.out) == IOString
+    if img.emit_on_finish && typeof(img.out) == IOString
         seek(img.out, 0)
         emit(Emitable("application/javascript", readall(img.out)))
         close(img.out)

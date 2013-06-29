@@ -79,9 +79,13 @@ type SVG <: Backend
     # Keep track of mask objects.
     mask_properties::Vector{Bool}
 
+    # Emit the graphic on finish when writing to a buffer.
+    emit_on_finish::Bool
+
     function SVG(f::IO,
                  width::MeasureOrNumber,
-                 height::MeasureOrNumber)
+                 height::MeasureOrNumber;
+                 emit_on_finish::Bool=true)
         img = new()
         img.width  = native_measure(width,  img)
         img.height = native_measure(height, img)
@@ -94,6 +98,7 @@ type SVG <: Backend
         img.empty_properties = Array(Bool, 0)
         img.linked_properties = Array(Bool, 0)
         img.mask_properties = Array(Bool, 0)
+        img.emit_on_finish = emit_on_finish
 
         write(img.f, @sprintf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
               svg_fmt_float(img.width.value), svg_fmt_float(img.height.value),
@@ -113,8 +118,9 @@ type SVG <: Backend
 
     # Write to buffer.
     function SVG(width::MeasureOrNumber,
-                 height::MeasureOrNumber)
-        img = SVG(IOString(), width, height)
+                 height::MeasureOrNumber;
+                 emit_on_finish::Bool=true)
+        img = SVG(IOString(), width, height, emit_on_finish=emit_on_finish)
         img.close_stream = false
         img
     end
@@ -151,7 +157,7 @@ function finish(img::SVG)
     end
 
     # If we are writing to a buffer. Collect the string and emit it.
-    if typeof(img.f) == IOString
+    if img.emit_on_finish && typeof(img.f) == IOString
         seek(img.f, 0)
         emit(Emitable("image/svg+xml", readall(img.f)))
         close(img.f)

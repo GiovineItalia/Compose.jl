@@ -402,7 +402,7 @@ function emit(emitable::Emitable)
         emitter = emitters[emitable.mime]
         emitter(emitable.data)
     else
-        warn("Unable to emit data of type ", string(typeof(data)))
+        warn("Unable to emit data of type ", string(typeof(emitable)))
     end
 end
 

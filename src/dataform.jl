@@ -105,7 +105,7 @@ function draw{T}(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
     ps = Property[empty_property for _ in 1:n]
     for dataprop in form.dataprops
         T = primitive(dataprop)
-        for (i, row) in enumerate(zip([take(cycle(d), n) for d in dataprop.ds]...))
+        for (i, row) in enumerate(zip({take(cycle(d), n) for d in dataprop.ds}...))
             ps[i] = combine(ps[i], PropertySeq(T(row...)))
         end
     end

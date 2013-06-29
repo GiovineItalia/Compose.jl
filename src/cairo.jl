@@ -59,7 +59,6 @@ type Image{B <: ImageBackend} <: Backend
     owns_surface::Bool
     state_stack::Vector{ImagePropertyState}
 
-
     function Image(surface::CairoSurface, ctx::CairoContext, filename::String)
         img = new()
         img.filename = filename
