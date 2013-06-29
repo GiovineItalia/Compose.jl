@@ -140,7 +140,7 @@ end
 # Modifies:
 #   dataindexes
 #
-function make_d3_x_attr{T, N}(backend::D3, ds::AbstractArray{T, N}, 
+function make_d3_x_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
                               unit_box::BoundingBox, box::NativeBoundingBox,
                               dataindexes::Dict{Int, Int})
     mx = box.width.value / unit_box.width.value
@@ -157,8 +157,8 @@ function make_d3_x_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
         end
         rowidx = dataindexes[idx]
         if T <: Real
-            @sprintf("function(d) { return d[%d] * %s + %s; }",
-                     rowidx, svg_fmt_float(mx), svg_fmt_float(bx))
+            @sprintf("function(d) { return d[%d] * %e + %s; }",
+                     rowidx, mx, svg_fmt_float(bx))
         else
             @sprintf("function(d) { return d[%d]; }", rowidx)
         end
@@ -181,8 +181,8 @@ function make_d3_width_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
         end
         rowidx = dataindexes[idx]
         if T <: Real
-            @sprintf("function(d) { return d[%d] * %s; }",
-                     rowidx, svg_fmt_float(mx))
+            @sprintf("function(d) { return d[%d] * %e; }",
+                     rowidx, mx)
         else
             @sprintf("function(d) { return d[%d]; }", rowidx)
         end
@@ -223,8 +223,8 @@ function make_d3_y_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
         end
         rowidx = dataindexes[idx]
         if T <: Real
-            @sprintf("function(d) { return d[%d] * %s + %s; }",
-                     rowidx, svg_fmt_float(my), svg_fmt_float(by))
+            @sprintf("function(d) { return d[%d] * %e + %s; }",
+                     rowidx, my, svg_fmt_float(by))
         else
             @sprintf("function(d) { return d[%d]; }", rowidx)
         end
@@ -248,8 +248,8 @@ function make_d3_height_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
         end
         rowidx = dataindexes[idx]
         if T <: Real
-            @sprintf("function(d) { return d[%d] * %s; }",
-                     rowidx, svg_fmt_float(my))
+            @sprintf("function(d) { return d[%d] * %e; }",
+                     rowidx, my)
         else
             @sprintf("function(d) { return d[%d]; }", rowidx)
         end
