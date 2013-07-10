@@ -413,8 +413,8 @@ function emitsvg(data::String)
     templ = readall(joinpath(Pkg.dir("Compose"), "src", "show.html"))
     htmlout_path, htmlout = mktemp()
     write(htmlout, Mustache.render(templ, {"svgdata" => data}))
-    flush(htmlout)
-    htm_path = htmlout_path * ".htm"
+    close(htmlout)
+    htm_path = htmlout_path * ".html"
     mv(htmlout_path, htm_path)
     open_browser(htm_path)
 end

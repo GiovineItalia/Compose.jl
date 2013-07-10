@@ -36,7 +36,7 @@ const html_escaped_chars =
 # Escape a string for printing it html or svg documents.
 function html_escape_string(io, s::String)
     for c in s
-        if has(html_escaped_chars, c)
+        if haskey(html_escaped_chars, c)
             print(io, html_escaped_chars[c])
         else
             print(io, c)
