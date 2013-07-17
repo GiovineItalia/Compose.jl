@@ -54,7 +54,7 @@ function open_browser(filename)
     elseif OS_NAME == :Linux || OS_NAME == :FreeBSD
         run(`xdg-open $(filename)`)
     elseif OS_NAME == :Windows
-        run(`start $(filename)`)
+        run(`$(ENV["COMSPEC"]) /c start $(filename)`)
     else
         warn("Unable to show graphic due to the strangeness of your OS.")
     end
