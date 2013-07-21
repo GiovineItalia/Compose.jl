@@ -198,26 +198,50 @@ end
 
 # Draw
 
+## return array of paths to draw with printpath
+## array is formed by splitting by NaN values
+function make_paths(points::Vector{Point})
+    paths = Any[]
+    nans = filter(i->isnan(points[i].y.value), [1:length(points)])
+
+    if length(nans) == 0
+        push!(paths, points)
+    else
+        nans = [0, nans, length(points) + 1]
+        i, n = 1, length(nans)
+
+        while i <= n-1
+            if nans[i] + 1 < nans[i + 1]
+                push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])
+            end
+            i += 1
+        end
+    end
+    paths
+end
 
 function printpath(out, points::Vector{Point})
     write(out, "<path d=\"")
     @printf(out, "M%s,%s L",
-        svg_fmt_float(points[1].x.value),
-        svg_fmt_float(points[1].y.value))
+            svg_fmt_float(points[1].x.value),
+            svg_fmt_float(points[1].y.value))
     for point in points[2:]
         @printf(out, " %s %s",
-            svg_fmt_float(point.x.value),
-            svg_fmt_float(point.y.value))
+                svg_fmt_float(point.x.value),
+                svg_fmt_float(point.y.value))
     end
     write(out, "\" />\n")
 end
-
+    
 
 function draw(img::SVG, form::Lines)
     n = length(form.points)
     if n <= 1; return; end
     indent(img)
-    printpath(img.f, form.points)
+    paths = make_paths(form.points)
+    for path in paths
+        printpath(img.f, path)
+    end
 end
 
 
