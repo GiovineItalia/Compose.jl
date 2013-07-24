@@ -379,8 +379,7 @@ function push_property(img::D3, property::Property)
                   .append("svg:clipPath")
                     .attr("id", parent_id + "_$(clipid)")
                     .append("svg:path")
-                      .attr("d", "
-            """)
+                      .attr("d", " """)
         print_svg_path(img.out, clip.points)
         write(img.out, " z\");")
     end

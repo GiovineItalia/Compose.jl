@@ -277,7 +277,7 @@ function max(measures::Measure...)
     for measure in measures
         if isa(measure, CompoundMeasure)
             for (t, value) in measure.values
-                if has(maximums, t)
+                if haskey(maximums, t)
                     maximums[t] = max(maximums[t], value)
                 else
                     maximums[t] = value
@@ -285,7 +285,7 @@ function max(measures::Measure...)
             end
         else
             t = measure_unit(measure)
-            if has(maximums, t)
+            if haskey(maximums, t)
                 maximums[t] = max(maximums[t], measure.value)
             else
                 maximums[t] = measure.value
