@@ -152,7 +152,7 @@ function make_d3_x_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
         svg_fmt_float(x.value + box.x0.value)
     else
         idx = data_idx(backend, ds)
-        if !has(dataindexes, idx)
+        if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
@@ -176,7 +176,7 @@ function make_d3_width_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
         svg_fmt_float(x.value)
     else
         idx = data_idx(backend, ds)
-        if !has(dataindexes, idx)
+        if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
@@ -218,7 +218,7 @@ function make_d3_y_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
         svg_fmt_float(y.value + box.y0.value)
     else
         idx = data_idx(backend, ds)
-        if !has(dataindexes, idx)
+        if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
@@ -243,7 +243,7 @@ function make_d3_height_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
         svg_fmt_float(y.value)
     else
         idx = data_idx(backend, ds)
-        if !has(dataindexes, idx)
+        if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
@@ -282,7 +282,7 @@ function make_d3_data_property_expr(backend::D3,
         @sprintf(".attr(\"fill\", %s)\n", to_json(color(colors[1])))
     else
         idx = data_idx(backend, colors)
-        if !has(dataindexes, idx)
+        if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
@@ -301,7 +301,7 @@ function make_d3_data_property_expr(backend::D3,
         @sprintf(".attr(\"stroke\", %s)\n", to_json(color(colors[1])))
     else
         idx = data_idx(backend, colors)
-        if !has(dataindexes, idx)
+        if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
@@ -320,7 +320,7 @@ function make_d3_data_property_expr(backend::D3,
         @sprintf(".attr(\"class\", \"%s\")\n", escape_string(classes[1]))
     else
         idx = data_idx(backend, classes)
-        if !has(dataindexes, idx)
+        if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]

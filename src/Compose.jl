@@ -57,7 +57,7 @@ end
 
 # Use cairo for the PNG, PS, PDF if its installed.
 try
-    import Cairo
+    require("Cairo")
     include("cairo.jl")
 catch
     PNG(::String, ::MeasureOrNumber, ::MeasureOrNumber) =

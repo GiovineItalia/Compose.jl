@@ -144,9 +144,9 @@ function finish(img::SVG)
     if length(img.clippaths) > 0
         write(img.f, "<defs>\n")
         for (i, clippath) in enumerate(img.clippaths)
-            write(img.f, "  <clipPath id=\"clippath$(i)\">\n    ")
-            printpath(img.f, clippath)
-            write(img.f, "  </clipPath>\n")
+            write(img.f, "<clipPath id=\"clippath$(i)\">\n  <path d=\"")
+            print_svg_path(img.f, clippath)
+            write(img.f, "\" />\n</clipPath\n>")
         end
         write(img.f, "</defs>\n")
     end
@@ -198,30 +198,7 @@ end
 
 # Draw
 
-## return array of paths to draw with printpath
-## array is formed by splitting by NaN values
-function make_paths(points::Vector{Point})
-    paths = Any[]
-    nans = filter(i->isnan(points[i].y.value), [1:length(points)])
-
-    if length(nans) == 0
-        push!(paths, points)
-    else
-        nans = [0, nans, length(points) + 1]
-        i, n = 1, length(nans)
-
-        while i <= n-1
-            if nans[i] + 1 < nans[i + 1]
-                push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])
-            end
-            i += 1
-        end
-    end
-    paths
-end
-
-function printpath(out, points::Vector{Point})
-    write(out, "<path d=\"")
+function print_svg_path(out, points::Vector{Point})
     @printf(out, "M%s,%s L",
             svg_fmt_float(points[1].x.value),
             svg_fmt_float(points[1].y.value))
@@ -230,9 +207,8 @@ function printpath(out, points::Vector{Point})
                 svg_fmt_float(point.x.value),
                 svg_fmt_float(point.y.value))
     end
-    write(out, "\" />\n")
 end
-    
+
 
 function draw(img::SVG, form::Lines)
     n = length(form.points)
@@ -240,7 +216,9 @@ function draw(img::SVG, form::Lines)
     indent(img)
     paths = make_paths(form.points)
     for path in paths
-        printpath(img.f, path)
+        write(img.f, "<path d=\"")
+        print_svg_path(img.f, path)
+        write(img.f, "\" />\n")
     end
 end
 
@@ -265,14 +243,7 @@ function draw(img::SVG, form::Polygon)
 
     indent(img)
     write(img.f, "<path d=\"")
-    @printf(img.f, "M %s %s L",
-        svg_fmt_float(form.points[1].x.value),
-        svg_fmt_float(form.points[1].y.value))
-    for point in form.points[2:]
-        @printf(img.f, " %s %s",
-            svg_fmt_float(point.x.value),
-            svg_fmt_float(point.y.value))
-    end
+    print_svg_path(img.f, form.points)
     write(img.f, " z\" />\n")
 end
 
@@ -370,7 +341,7 @@ function push_property(img::SVG, property::Property)
         end
 
         # Special-case for the mask property.
-        if has(properties, SVGDefineMask)
+        if haskey(properties, SVGDefineMask)
             write(img.f, @sprintf("<mask id=\"%s\">", properties[SVGDefineMask].id))
             push!(img.mask_properties, true)
         else
@@ -378,7 +349,7 @@ function push_property(img::SVG, property::Property)
         end
 
         # Special-case for links.
-        if has(properties, SVGLink)
+        if haskey(properties, SVGLink)
             write(img.f, @sprintf("<a xlink:href=\"%s\">",
                   properties[SVGLink].target === nothing ? '#' : properties[SVGLink].target))
             push!(img.linked_properties, true)
@@ -498,7 +469,7 @@ end
 # containing the given code.
 function add_script(img::SVG, js::String, obj_id::Integer)
     fn_name = @sprintf("js_chunk_%x", obj_id)
-    if !has(img.scripts, fn_name)
+    if !haskey(img.scripts, fn_name)
         img.scripts[fn_name] = replace(js, r"^"m, "  ")
     end
     fn_name

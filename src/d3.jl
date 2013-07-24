@@ -132,7 +132,7 @@ function write_data(img::D3)
     for (i, (_, (d, j))) in enumerate(img.data)
         datapairs[i] = (j, d)
     end
-    sortby!(datapairs, jd -> jd[1])
+    sort!(datapairs, by=jd -> jd[1])
 
     for (i, (_, d)) in enumerate(datapairs)
         write_data(img, d)
@@ -176,7 +176,7 @@ end
 # Index of the the given array in the serialized data.
 function data_idx(backend::D3, d::AbstractArray)
     id = object_id(d)
-    if !has(backend.data, d)
+    if !haskey(backend.data, d)
         backend.data[id] = (d, length(backend.data))
     end
     backend.data[id][2]
@@ -220,20 +220,6 @@ function draw(img::D3, form::FormPrimitive)
 end
 
 
-function make_svg_path(points::Vector{Point})
-    path = IOBuffer()
-    @printf(path, "M %s %s L",
-        svg_fmt_float(points[1].x.value),
-        svg_fmt_float(points[1].y.value))
-    for point in points[2:]
-        @printf(path, " %s %s",
-            svg_fmt_float(point.x.value),
-            svg_fmt_float(point.y.value))
-    end
-    bytestring(path)
-end
-
-
 function draw(img::D3, form::Polygon)
     n = length(form.points)
     if n <= 1; return; end
@@ -242,7 +228,7 @@ function draw(img::D3, form::Polygon)
     write(img.out, "g.append(\"svg:path\")\n")
     indent(img)
     write(img.out, "   .attr(\"d\", \"")
-    write(img.out, make_svg_path(form.points))
+    print_svg_path(img.out, form.points)
     write(img.out, " z\");\n")
 end
 
@@ -255,7 +241,7 @@ function draw(img::D3, form::Lines)
     write(img.out, "g.append(\"svg:path\")\n")
     indent(img)
     write(img.out, "   .attr(\"d\", \"")
-    write(img.out, make_svg_path(form.points))
+    print_svg_path(img.out, form.points)
     write(img.out, "\");\n")
 end
 
@@ -393,8 +379,10 @@ function push_property(img::D3, property::Property)
                   .append("svg:clipPath")
                     .attr("id", parent_id + "_$(clipid)")
                     .append("svg:path")
-                      .attr("d", "$(make_svg_path(clip.points)) z");
+                      .attr("d", "
             """)
+        print_svg_path(img.out, clip.points)
+        write(img.out, " z\");")
     end
 
     if hasproperties

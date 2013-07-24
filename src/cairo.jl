@@ -296,11 +296,14 @@ end
 function draw(img::Image, form::Lines)
     if isempty(form.points); return; end
 
-    move_to(img, form.points[1])
-    for point in form.points[2:]
-        line_to(img, point)
+    paths = make_paths(form.points)
+    for path in paths
+        move_to(img, path[1])
+        for point in path[2:]
+            line_to(img, point)
+        end
+        fillstroke(img)
     end
-    fillstroke(img)
 end
 
 

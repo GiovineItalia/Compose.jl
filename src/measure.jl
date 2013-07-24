@@ -141,7 +141,7 @@ end
 
 function +{U}(a::CompoundMeasure, b::SimpleMeasure{U})
     c = CompoundMeasure(copy(a.values))
-    if has(c.values, U)
+    if haskey(c.values, U)
         c.values[U] += b.value
     else
         c.values[U] = b.value
@@ -155,7 +155,7 @@ end
 
 function -{U}(a::CompoundMeasure, b::SimpleMeasure{U})
     c = CompoundMeasure(copy(a.values))
-    if has(c.values, U)
+    if haskey(c.values, U)
         c.values[U] -= b.value
     else
         c.values[U] = -b.value
@@ -168,7 +168,7 @@ function -{U}(a::SimpleMeasure{U}, b::CompoundMeasure)
     c = CompoundMeasure()
     c.values[U] = a.value
     for (V, value) in b.values
-        if has(c.values, V)
+        if haskey(c.values, V)
             c.values[V] -= value
         else
             c.values[V] = -value
@@ -181,7 +181,7 @@ end
 function +(a::CompoundMeasure, b::CompoundMeasure)
     c = CompoundMeasure(copy(a.values))
     for (k, v) in b.values
-        if has(c.values, k)
+        if haskey(c.values, k)
             c.values[k] += v
         else
             c.values[k] = v
@@ -194,7 +194,7 @@ end
 function -(a::CompoundMeasure, b::CompoundMeasure)
     c = CompoundMeasure(copy(a.values))
     for (k, v) in b.values
-        if has(c.values, k)
+        if haskey(c.values, k)
             c.values[k] -= v
         else
             c.values[k] = -v
@@ -325,6 +325,29 @@ end
 
 
 copy(point::Point) = Point(point)
+
+
+# Return array of paths to draw with printpath
+# array is formed by splitting by NaN values
+function make_paths(points::Vector{Point})
+    paths = Any[]
+    nans = filter(i->isnan(points[i].y.value), [1:length(points)])
+
+    if length(nans) == 0
+        push!(paths, points)
+    else
+        nans = [0, nans, length(points) + 1]
+        i, n = 1, length(nans)
+
+        while i <= n-1
+            if nans[i] + 1 < nans[i + 1]
+                push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])
+            end
+            i += 1
+        end
+    end
+    paths
+end
 
 
 # Support specifying points as tuples.
