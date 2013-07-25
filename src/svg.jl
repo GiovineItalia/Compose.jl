@@ -84,7 +84,7 @@ type SVG <: Backend
 
     function SVG(f::IO,
                  width::MeasureOrNumber,
-                 height::MeasureOrNumber;
+                 height::MeasureOrNumber,
                  emit_on_finish::Bool=true)
         img = new()
         img.width  = native_measure(width,  img)

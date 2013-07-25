@@ -59,7 +59,7 @@ type D3 <: Backend
 
     function D3(f::IO,
                 width::MeasureOrNumber,
-                height::MeasureOrNumber;
+                height::MeasureOrNumber,
                 emit_on_finish::Bool=true)
         img = new()
         img.width  = native_measure(width, img)
@@ -101,7 +101,7 @@ type D3 <: Backend
         img
     end
 
-    function D3(width::MeasureOrNumber, height::MeasureOrNumber;
+    function D3(width::MeasureOrNumber, height::MeasureOrNumber,
                 emit_on_finish::Bool=true)
         img = D3(IOString(), width, height, emit_on_finish=emit_on_finish)
         img.close_stream = false

@@ -49,19 +49,31 @@ type ImagePropertyState
 end
 
 type Image{B <: ImageBackend} <: Backend
-    filename::String
+    out::IO
     surface::CairoSurface
     ctx::CairoContext
+
+    # Current state
     stroke::ColorOrNothing
     fill::ColorOrNothing
     opacity::Float64 # in [0,1]
     visible::Bool
-    owns_surface::Bool
+
+    # Keep track of property
     state_stack::Vector{ImagePropertyState}
 
-    function Image(surface::CairoSurface, ctx::CairoContext, filename::String)
+    # Close the surface when finished
+    owns_surface::Bool
+
+    # Close the stream when finished
+    close_stream::Bool
+
+    # Emit on finish
+    emit_on_finish::Bool
+
+    function Image(surface::CairoSurface, ctx::CairoContext, out::IO)
         img = new()
-        img.filename = filename
+        img.out = out
         img.surface = surface
         img.ctx = ctx
         img.stroke = RGB(0., 0., 0.)
@@ -70,40 +82,33 @@ type Image{B <: ImageBackend} <: Backend
         img.visible = true
         img.state_stack = Array(ImagePropertyState, 0)
         img.owns_surface = false
+        img.emit_on_finish = false
         img
     end
 
     function Image(surface::CairoSurface, ctx::CairoContext)
-        Image{B}(surface, ctx, "")
+        Image{B}(surface, ctx, IOString())
     end
 
     Image(surface::CairoSurface) = Image{B}(surface, CairoContext(surface))
 
-    function Image(filename::String,
+    function Image(out::IO,
                    width::MeasureOrNumber,
-                   height::MeasureOrNumber)
+                   height::MeasureOrNumber,
+                   emit_on_finish::Bool=true)
 
         w = native_measure(width, B).value
         h = native_measure(height, B).value
 
-        # Try opening the file for writing immediately so we can fail early if
-        # it doesn't exist.
-        f = try
-            open(filename, "w")
-        catch
-            error(@printf("Can't write to %s.", filename))
-        end
-
         local surface::CairoSurface
         if B == SVGBackend
-            surface = CairoSVGSurface(filename, w, h)
+            surface = CairoSVGSurface(out, w, h)
         elseif B == PNGBackend
-            close(f)
             surface = CairoARGBSurface(round(w), round(h))
         elseif B == PDFBackend
-            surface = CairoPDFSurface(filename, w, h)
+            surface = CairoPDFSurface(out, w, h)
         elseif B == PSBackend
-            surface = CairoEPSSurface(filename, w, h)
+            surface = CairoEPSSurface(out, w, h)
         else
             error("Unkown Cairo backend.")
         end
@@ -112,13 +117,22 @@ type Image{B <: ImageBackend} <: Backend
             error("Unable to create cairo surface.")
         end
 
-        img = Image{B}(surface, CairoContext(surface), filename)
+        img = Image{B}(surface, CairoContext(surface), out)
         img.owns_surface = true
+        img.close_stream = false
+        img.emit_on_finish = emit_on_finish
+        img
+    end
+
+    function Image(filename::String,
+                   width::MeasureOrNumber,
+                   height::MeasureOrNumber)
+        img = Image{B}(open(filename, "w"), width, height)
+        img.close_stream = true
         img
     end
 end
 
-Image(args...) = Image{ImageBackend}(args...)
 
 width{B}(img::Image{B}) = ImageMeasure{B}(Cairo.width(img.surface))
 height{B}(img::Image{B}) = ImageMeasure{B}(Cairo.height(img.surface))
@@ -126,7 +140,7 @@ height{B}(img::Image{B}) = ImageMeasure{B}(Cairo.height(img.surface))
 finish{B <: ImageBackend}(::Type{B}, img::Image) = nothing
 
 function finish(::Type{PNGBackend}, img::Image)
-    Cairo.write_to_png(img.surface, img.filename)
+    Cairo.write_to_png(img.surface, img.out)
 end
 
 function finish{B <: ImageBackend}(img::Image{B})
@@ -136,6 +150,21 @@ function finish{B <: ImageBackend}(img::Image{B})
     finish(B, img)
     if(img.owns_surface)
         Cairo.destroy(img.surface)
+    end
+
+    if img.emit_on_finish && typeof(img.out) == IOString
+        seek(img.out, 0)
+        if B == PNGBackend
+            mime = "image/png"
+        elseif B == SVGBackend
+            mime = "image/svg+xml"
+        elseif B == "PSBackend"
+            mime = "application/postscript"
+        elseif B == "PDFBackend"
+            mime = "application/pdf"
+        end
+        emit(Emitable(mime, readall(img.f)))
+        close(img.out)
     end
 end
 
