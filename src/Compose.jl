@@ -127,7 +127,7 @@ end
 #  aligned_canvases: One or more canveses accompanied with a vertical alignment
 #                    specifier, giving the vertical positioning of the canvas.
 #
-function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber,height::MeasureOrNumber,
+function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber, height::MeasureOrNumber,
                 aligned_canvases::(Canvas, VAlignment)...)
 
     # To get the expected results, we scale width units, so that everything
@@ -164,7 +164,9 @@ function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber,height::MeasureOrNumber
             canvas.box.width.value /= total_width_units
         elseif typeof(canvas.box.width) == CompoundMeasure &&
                has(canvas.box.width.values, WidthUnit)
-            canvas.box.width.values[WidthUnit] /= total_width_units
+            if canvas.box.width.value[WidthUnit] > 0.0
+                canvas.box.width.values[WidthUnit] /= total_width_units
+            end
         end
 
         # Should we interpret vbottom to mean 0?
@@ -194,8 +196,11 @@ hstack() = canvas()
 # 0cy, and its height will be the maximum of the canvases it contains. All
 # canvases will be centered vertically.
 #
-function hstack(canvases::Canvas...)
-    height = max([canvas.box.height for canvas in canvases])
+function hstack(canvases::Canvas...; x0::MeasureOrNumber=0,
+                y0::MeasureOrNumber=0, height=0)
+    if height == 0
+        height = max([canvas.box.height for canvas in canvases])
+    end
     hstack(0, 0, height, [(canvas, vcenter) for canvas in canvases]...)
 end
 
@@ -245,7 +250,9 @@ function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber
             canvas.box.height.value /= total_height_units
         elseif typeof(canvas.box.height) == CompoundMeasure &&
                has(canvas.box.height.values, HeightUnit)
-            canvas.box.height.values[HeightUnit] /= total_height_units
+            if canvas.box.height.values[HeightUnit] > 0.0
+                canvas.box.height.values[HeightUnit] /= total_height_units
+            end
         end
 
         canvas.box.y0 = y
@@ -274,8 +281,11 @@ vstack() = canvas()
 # its width will be the maximum of the canvases it contains. All canvases will
 # be centered horizontally..
 #
-function vstack(canvases::Canvas...)
-    width = max([canvas.box.width for canvas in canvases])
+function vstack(canvases::Canvas...; x0::MeasureOrNumber=0,
+                y0::MeasureOrNumber=0, width::MeasureOrNumber=0)
+    if width == 0
+        width = max([canvas.box.width for canvas in canvases]...)
+    end
     vstack(0, 0, width, [(canvas, hcenter) for canvas in canvases]...)
 end
 

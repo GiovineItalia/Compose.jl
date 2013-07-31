@@ -118,9 +118,9 @@ type SVG <: Backend
 
     # Write to buffer.
     function SVG(width::MeasureOrNumber,
-                 height::MeasureOrNumber;
+                 height::MeasureOrNumber,
                  emit_on_finish::Bool=true)
-        img = SVG(IOString(), width, height, emit_on_finish=emit_on_finish)
+        img = SVG(IOString(), width, height, emit_on_finish)
         img.close_stream = false
         img
     end
