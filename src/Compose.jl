@@ -14,7 +14,7 @@ using DataFrames
 using Iterators
 using JSON
 
-import JSON.to_json
+import JSON.json
 
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty, Base.insert,

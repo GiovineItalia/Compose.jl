@@ -279,7 +279,7 @@ function make_d3_data_property_expr(backend::D3,
                                     dp::DataProperty{Fill})
     colors = dp.ds[1]
     if length(colors) == 1
-        @sprintf(".attr(\"fill\", %s)\n", to_json(color(colors[1])))
+        @sprintf(".attr(\"fill\", %s)\n", json(color(colors[1])))
     else
         idx = data_idx(backend, colors)
         if !haskey(dataindexes, idx)
@@ -298,7 +298,7 @@ function make_d3_data_property_expr(backend::D3,
                                     dp::DataProperty{Stroke})
     colors = dp.ds[1]
     if length(colors) == 1
-        @sprintf(".attr(\"stroke\", %s)\n", to_json(color(colors[1])))
+        @sprintf(".attr(\"stroke\", %s)\n", json(color(colors[1])))
     else
         idx = data_idx(backend, colors)
         if !haskey(dataindexes, idx)
