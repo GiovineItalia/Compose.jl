@@ -113,7 +113,7 @@ type Image{B <: ImageBackend} <: Backend
             error("Unkown Cairo backend.")
         end
 
-        if Cairo.status(surface) != Cairo.CAIRO_STATUS_SUCCESS
+        if Cairo.status(surface) != Cairo.STATUS_SUCCESS
             error("Unable to create cairo surface.")
         end
 
@@ -462,8 +462,8 @@ end
 
 function apply_property(img::Image, property::Font)
     Cairo.select_font_face(img.ctx, property.family,
-                           Cairo.CAIRO_FONT_SLANT_NORMAL,
-                           Cairo.CAIRO_FONT_WEIGHT_NORMAL)
+                           Cairo.FONT_SLANT_NORMAL,
+                           Cairo.FONT_WEIGHT_NORMAL)
 end
 
 
