@@ -21,7 +21,8 @@ import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
        Base.<<, Base.>>, Base.show, Base.hex
 
-export |, <<, >>, pad, hstack, vstack, gridstack, compose, combine, contents, decompose
+export |, <<, >>, pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
+       combine, contents, decompose
 
 import Mustache
 import Iterators
@@ -110,10 +111,27 @@ compose(x::Composable, ::Nothing) = x
 
 # Helpful functions# Create a new canvas containing the given canvas with margins on all sides of
 # size u.
-function pad(c::Canvas, u::MeasureOrNumber)
+function pad_outer(c::Canvas, u::MeasureOrNumber)
     u = size_measure(u)
+    root = canvas(c.box.x0, c.box.y0, c.box.width + 2u, c.box.height + 2u,
+                  units_inherited=true)
+    c = copy(c)
+    c.box = copy(c.box)
+    c.box.width = 1w -2u
+    c.box.height = 1h - 2u
+    c.box.x0 = u
+    c.box.y0 = u
+
+    compose(root, c)
+end
+
+
+function pad_inner(c::Canvas, u::MeasureOrNumber)
     compose(canvas(), (canvas(u, u, 1w - 2u, 1h - 2u), c))
 end
+
+
+const pad = pad_outer
 
 # TODO: pad_top, pad_bottom, pad_left, pad_right
 
@@ -290,29 +308,42 @@ function vstack(canvases::Canvas...; x0::MeasureOrNumber=0,
 end
 
 
+
+
+function scale_width_height_units(u::CompoundMeasure,
+                                  width_scale::Measure,
+                                  height_scale::Measure)
+    u = copy(u)
+    if haskey(u.values, WidthUnit)
+        val = u.values[WidthUnit]
+        u.values[WidthUnit] = 0.0
+        u += val * width_scale
+    end
+
+    if haskey(u.values, HeightUnit)
+        val = u.values[HeightUnit]
+        u.values[HeightUnit] = 0.0
+        u += val * height_scale
+    end
+
+    u
+end
+
+
+function scale_width_height_units(u::SimpleMeasure,
+                                  width_scale::Measure,
+                                  height_scale::Measure)
+    scale_width_height_units(convert(CompoundMeasure, u),
+                             width_scale, height_scale)
+end
+
+
 # Arrange a matrix of canvases in a grid.
 #
 # This just works like a simultaneous hstack and vstack.
 #
 function gridstack(canvases::AbstractMatrix{Canvas},
                    x0::MeasureOrNumber=0, y0::MeasureOrNumber=0)
-    #root_width_units = 1
-    #root_height_units = 1
-    #for canvas in canvases
-        #if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
-            #root_width_units += canvas.box.width.value
-        #elseif typeof(canvas.box.width) == CompoundMeasure &&
-               #has(canvas.box.width.values, WidthUnit)
-            #root_height_units += canvas.box.width.values[WidthUnit]
-       #end
-
-        #if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
-            #root_height_units += canvas.box.height.value
-        #elseif typeof(canvas.box.height) == CompoundMeasure &&
-               #has(canvas.box.height.values, HeightUnit)
-            #root_height_units += canvas.box.height.values[HeightUnit]
-       #end
-    #end
 
     n, m = size(canvases)
 
@@ -325,16 +356,25 @@ function gridstack(canvases::AbstractMatrix{Canvas},
     root_width_units = convert(CompoundMeasure, sum(col_widths)).values[WidthUnit]
     root_height_units = convert(CompoundMeasure, sum(row_heights)).values[HeightUnit]
 
+    root_abs_x_units = copy(sum(col_widths))
+    root_abs_x_units.values[WidthUnit] = 0.0
+
+    root_abs_y_units = copy(sum(row_heights))
+    root_abs_y_units.values[HeightUnit] = 0.0
+
+    root_width_unit_scale = (1.0w - root_abs_x_units) / root_width_units
+    root_height_unit_scale = (1.0h - root_abs_y_units) / root_height_units
+
     row_positions = Array(CompoundMeasure, n)
     row_positions[1] = 0h
     for i in 2:n
         row_positions[i] = row_positions[i - 1] + row_heights[i - 1]
     end
 
-    if root_height_units > 0
-        for i in 1:n
-            row_positions[i].values[HeightUnit] /= root_height_units
-        end
+    for i in 2:n
+        row_positions[i] = scale_width_height_units(row_positions[i],
+                                                    root_width_unit_scale,
+                                                    root_height_unit_scale)
     end
 
     col_positions = Array(CompoundMeasure, m)
@@ -343,42 +383,34 @@ function gridstack(canvases::AbstractMatrix{Canvas},
         col_positions[j] = col_positions[j - 1] + col_widths[j - 1]
     end
 
-    if root_width_units > 0
-        for j in 1:m
-            col_positions[j].values[WidthUnit] /= root_width_units
-        end
+    for j in 2:m
+        col_positions[j] = scale_width_height_units(col_positions[j],
+                                                    root_width_unit_scale,
+                                                    root_width_unit_scale)
     end
 
-    root_width = sum(col_widths)
-    root_width.values[WidthUnit] /= root_width_units
+    #root_width = sum(col_widths)
+    #root_width.values[WidthUnit] /= root_width_units
 
-    root_height = sum(row_heights)
-    root_height.values[HeightUnit] /= root_height_units
+    #root_height = sum(row_heights)
+    #root_height.values[HeightUnit] /= root_height_units
 
-    root = canvas(x0, y0, root_width, root_height)
+    #root = canvas(x0, y0, root_width, root_height)
+
+    root = canvas(x0, y0, 1w, 1h)
 
     for i in 1:n, j in 1:m
         canvas = copy(canvases[i,j])
         canvas.box = copy(canvas.box)
 
         # Make adjustments to the interpretation of width/height units.
-        if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
-            canvas.box.width.value /= root_width_units
-        elseif typeof(canvas.box.width) == CompoundMeasure &&
-               has(canvas.box.width.values, WidthUnit)
-            if canvas.box.width.value[WidthUnit] > 0.0
-                canvas.box.width.values[WidthUnit] /= root_width_units
-            end
-        end
+        canvas.box.width = scale_width_height_units(canvas.box.width,
+                                                    root_width_unit_scale,
+                                                    root_height_unit_scale)
 
-        if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
-            canvas.box.height.value /= root_height_units
-        elseif typeof(canvas.box.height) == CompoundMeasure &&
-               has(canvas.box.height.values, HeightUnit)
-            if canvas.box.height.values[HeightUnit] > 0.0
-                canvas.box.height.values[HeightUnit] /= root_height_units
-            end
-        end
+        canvas.box.height = scale_width_height_units(canvas.box.height,
+                                                     root_width_unit_scale,
+                                                     root_height_unit_scale)
 
         canvas.box.x0 = col_positions[j]
         canvas.box.y0 = row_positions[i]

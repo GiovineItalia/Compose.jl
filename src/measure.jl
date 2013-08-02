@@ -121,6 +121,11 @@ function convert{T}(::Type{CompoundMeasure}, a::SimpleMeasure{T})
 end
 
 
+function copy(a::CompoundMeasure)
+    CompoundMeasure(copy(a.values))
+end
+
+
 function promote_rule(::Type{SimpleMeasure}, ::Type{CompoundMeasure})
     CompoundMeasure
 end
