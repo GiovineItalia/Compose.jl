@@ -21,7 +21,7 @@ import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
        Base.<<, Base.>>, Base.show, Base.hex
 
-export |, <<, >>, pad, hstack, vstack, compose, combine, contents, decompose
+export |, <<, >>, pad, hstack, vstack, gridstack, compose, combine, contents, decompose
 
 import Mustache
 import Iterators
@@ -289,6 +289,105 @@ function vstack(canvases::Canvas...; x0::MeasureOrNumber=0,
     vstack(0, 0, width, [(canvas, hcenter) for canvas in canvases]...)
 end
 
+
+# Arrange a matrix of canvases in a grid.
+#
+# This just works like a simultaneous hstack and vstack.
+#
+function gridstack(canvases::AbstractMatrix{Canvas},
+                   x0::MeasureOrNumber=0, y0::MeasureOrNumber=0)
+    #root_width_units = 1
+    #root_height_units = 1
+    #for canvas in canvases
+        #if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
+            #root_width_units += canvas.box.width.value
+        #elseif typeof(canvas.box.width) == CompoundMeasure &&
+               #has(canvas.box.width.values, WidthUnit)
+            #root_height_units += canvas.box.width.values[WidthUnit]
+       #end
+
+        #if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
+            #root_height_units += canvas.box.height.value
+        #elseif typeof(canvas.box.height) == CompoundMeasure &&
+               #has(canvas.box.height.values, HeightUnit)
+            #root_height_units += canvas.box.height.values[HeightUnit]
+       #end
+    #end
+
+    n, m = size(canvases)
+
+    row_heights = fill(CompoundMeasure() + 0h, n)
+    col_widths  = fill(CompoundMeasure() + 0w, m)
+    for i in 1:n, j in 1:m
+        row_heights[i] = max(row_heights[i], canvases[i, j].box.height)
+        col_widths[j]  = max(col_widths[j], canvases[i, j].box.width)
+    end
+    root_width_units = convert(CompoundMeasure, sum(col_widths)).values[WidthUnit]
+    root_height_units = convert(CompoundMeasure, sum(row_heights)).values[HeightUnit]
+
+    row_positions = Array(CompoundMeasure, n)
+    row_positions[1] = 0h
+    for i in 2:n
+        row_positions[i] = row_positions[i - 1] + row_heights[i - 1]
+    end
+
+    if root_height_units > 0
+        for i in 1:n
+            row_positions[i].values[HeightUnit] /= root_height_units
+        end
+    end
+
+    col_positions = Array(CompoundMeasure, m)
+    col_positions[1] = 0w
+    for j in 2:m
+        col_positions[j] = col_positions[j - 1] + col_widths[j - 1]
+    end
+
+    if root_width_units > 0
+        for j in 1:m
+            col_positions[j].values[WidthUnit] /= root_width_units
+        end
+    end
+
+    root_width = sum(col_widths)
+    root_width.values[WidthUnit] /= root_width_units
+
+    root_height = sum(row_heights)
+    root_height.values[HeightUnit] /= root_height_units
+
+    root = canvas(x0, y0, root_width, root_height)
+
+    for i in 1:n, j in 1:m
+        canvas = copy(canvases[i,j])
+        canvas.box = copy(canvas.box)
+
+        # Make adjustments to the interpretation of width/height units.
+        if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
+            canvas.box.width.value /= root_width_units
+        elseif typeof(canvas.box.width) == CompoundMeasure &&
+               has(canvas.box.width.values, WidthUnit)
+            if canvas.box.width.value[WidthUnit] > 0.0
+                canvas.box.width.values[WidthUnit] /= root_width_units
+            end
+        end
+
+        if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
+            canvas.box.height.value /= root_height_units
+        elseif typeof(canvas.box.height) == CompoundMeasure &&
+               has(canvas.box.height.values, HeightUnit)
+            if canvas.box.height.values[HeightUnit] > 0.0
+                canvas.box.height.values[HeightUnit] /= root_height_units
+            end
+        end
+
+        canvas.box.x0 = col_positions[j]
+        canvas.box.y0 = row_positions[i]
+
+        root <<= canvas
+    end
+
+    root
+end
 
 
 # Turn the tree represented by a ComposeType into a nested array (S-expression)
