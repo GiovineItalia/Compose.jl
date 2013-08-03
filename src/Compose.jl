@@ -343,7 +343,9 @@ end
 # This just works like a simultaneous hstack and vstack.
 #
 function gridstack(canvases::AbstractMatrix{Canvas},
-                   x0::MeasureOrNumber=0, y0::MeasureOrNumber=0)
+                   x0::MeasureOrNumber=0, y0::MeasureOrNumber=0;
+                   halign::HAlignment=hleft, valign::VAlignment=vtop)
+
 
     n, m = size(canvases)
 
@@ -365,37 +367,29 @@ function gridstack(canvases::AbstractMatrix{Canvas},
     root_width_unit_scale = (1.0w - root_abs_x_units) / root_width_units
     root_height_unit_scale = (1.0h - root_abs_y_units) / root_height_units
 
-    row_positions = Array(CompoundMeasure, n)
+    row_positions = Array(CompoundMeasure, n+1)
     row_positions[1] = 0h
-    for i in 2:n
+    for i in 2:n+1
         row_positions[i] = row_positions[i - 1] + row_heights[i - 1]
     end
 
-    for i in 2:n
+    for i in 2:n+1
         row_positions[i] = scale_width_height_units(row_positions[i],
                                                     root_width_unit_scale,
                                                     root_height_unit_scale)
     end
 
-    col_positions = Array(CompoundMeasure, m)
+    col_positions = Array(CompoundMeasure, m+1)
     col_positions[1] = 0w
-    for j in 2:m
+    for j in 2:m+1
         col_positions[j] = col_positions[j - 1] + col_widths[j - 1]
     end
 
-    for j in 2:m
+    for j in 2:m+1
         col_positions[j] = scale_width_height_units(col_positions[j],
                                                     root_width_unit_scale,
                                                     root_width_unit_scale)
     end
-
-    #root_width = sum(col_widths)
-    #root_width.values[WidthUnit] /= root_width_units
-
-    #root_height = sum(row_heights)
-    #root_height.values[HeightUnit] /= root_height_units
-
-    #root = canvas(x0, y0, root_width, root_height)
 
     root = canvas(x0, y0, 1w, 1h)
 
@@ -412,8 +406,23 @@ function gridstack(canvases::AbstractMatrix{Canvas},
                                                      root_width_unit_scale,
                                                      root_height_unit_scale)
 
-        canvas.box.x0 = col_positions[j]
-        canvas.box.y0 = row_positions[i]
+        if halign == hleft
+            canvas.box.x0 = col_positions[j]
+        elseif halign == hcenter
+            canvas.box.x0 =
+                (col_positions[j] + col_positions[j+1] + canvas.box.width) / 2
+        elseif halign == hright
+            canvas.box.x0 = col_positions[j+1] - canvas.box.width
+        end
+
+        if valign == vtop
+            canvas.box.y0 = row_positions[i]
+        elseif valign == vcenter
+            canvas.box.y0 =
+                (row_positions[i] + row_positions[i+1] + canvas.box.height) / 2
+        elseif valign == vright
+            canvas.box.y0 = row_positions[i+1] - canvas.box.height
+        end
 
         root <<= canvas
     end
