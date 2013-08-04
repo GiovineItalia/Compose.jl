@@ -254,6 +254,10 @@ function pango_tag_to_tspan(out, tag::String, indent::String)
         print(out, indent, "  ", ".attr(\"baseline-shift\", \"super\")\n")
     elseif tag == "sub"
         print(out, indent, "  ", ".attr(\"baseline-shift\", \"sub\")\n")
+    elseif tag == "i"
+        print(out, indent, "  ", ".attr(\"font-style\", \"italic\")\n")
+    elseif tag == "b"
+        print(out, indent, "  ", ".attr(\"font-weight\", \"bold\")\n")
     end
 end
 

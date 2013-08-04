@@ -162,14 +162,33 @@ for (i, (attr, t)) in enumerate(pango_attrs)
 end
 
 
+const PANGO_STYLE_NORMAL  = 0
+const PANGO_STYLE_OBLIQUE = 1
+const PANGO_STYLE_ITALIC  = 2
+
+
+const PANGO_WEIGHT_THIN = 100
+const PANGO_WEIGHT_ULTRALIGHT = 200
+const PANGO_WEIGHT_LIGHT = 300
+const PANGO_WEIGHT_BOOK = 380
+const PANGO_WEIGHT_NORMAL = 400
+const PANGO_WEIGHT_MEDIUM = 500
+const PANGO_WEIGHT_SEMIBOLD = 600
+const PANGO_WEIGHT_BOLD = 700
+const PANGO_WEIGHT_ULTRABOLD = 800
+const PANGO_WEIGHT_HEAVY = 900
+const PANGO_WEIGHT_ULTRAHEAVY = 1000
+
+
 # A Julia manifestation of a set of pango attributes
 type PangoAttr
     rise::Maybe(Int)
     scale::Maybe(Float64)
-    # TODO: more attributes
+    style::Maybe(Int)
+    weight::Maybe(Int)
 
     function PangoAttr()
-        new(nothing, nothing)
+        new(nothing, nothing, nothing, nothing)
     end
 end
 
@@ -190,9 +209,13 @@ end
 #   The attr.
 function update_pango_attr(attr::PangoAttr, attr_name::Symbol, value)
     if attr_name == :PANGO_ATTR_RISE
-        attr.rise = convert(Int, value)
+        attr.rise = int64(value)
     elseif attr_name == :PANGO_ATTR_SCALE
         attr.scale = value
+    elseif attr_name == :PANGO_ATTR_STYLE
+        attr.style = int64(value)
+    elseif attr_name == :PANGO_ATTR_WEIGHT
+        attr.weight = int64(value)
     end
     attr
 end
@@ -365,6 +388,21 @@ function pango_to_svg(text::String)
                 @printf(io, " font-size=\"%s%%\"",
                         fmt_float(100.0 * attr.scale))
             end
+
+            if !(attr.style === nothing)
+                if attr.style == PANGO_STYLE_NORMAL
+                    @printf(io, " font-style=\"%s\"", "normal")
+                elseif attr.style == PANGO_STYLE_OBLIQUE
+                    @printf(io, " font-style=\"%s\"", "oblique")
+                elseif attr.style == PANGO_STYLE_ITALIC
+                    @printf(io, " font-style=\"%s\"", "italic")
+                end
+            end
+
+            if !(attr.weight === nothing)
+                @printf(io, " font-weight=\"%d\"", attr.weight)
+            end
+
             write(io, ">")
         end
 

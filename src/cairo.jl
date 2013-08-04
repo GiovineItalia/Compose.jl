@@ -380,14 +380,12 @@ function draw(img::Image, form::Text)
         return
     end
 
+    Cairo.set_text(img.ctx, form.value, true)
     pos = copy(form.pos)
+    width, height = Cairo.get_layout_size(img.ctx)
+    pos.y.value -= height
 
     if form.halign != hleft || form.valign != vtop
-        extents = Array(Float64, 6)
-        Cairo.text_extents(img.ctx, bytestring(form.value), extents)
-
-        width, height = extents[3], extents[4]
-
         if form.halign == hcenter
             pos.x.value -= width / 2
         elseif form.halign == hright
@@ -408,7 +406,7 @@ function draw(img::Image, form::Text)
     Cairo.translate(img.ctx, form.t.M[1,3], form.t.M[2,3])
     rotate(img, atan2(form.t.M[2,1], form.t.M[1,1]))
     move_to(img, pos)
-    Cairo.show_text(img.ctx, form.value)
+    Cairo.show_layout(img.ctx)
     restore_state(img)
 end
 
@@ -461,14 +459,23 @@ end
 
 
 function apply_property(img::Image, property::Font)
-    Cairo.select_font_face(img.ctx, property.family,
-                           Cairo.FONT_SLANT_NORMAL,
-                           Cairo.FONT_WEIGHT_NORMAL)
+    Cairo.set_font_face(img.ctx, property.family)
 end
 
 
 function apply_property(img::Image, property::FontSize)
-    Cairo.set_font_size(img.ctx, property.value.value)
+    font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
+                      Ptr{Void}, (Ptr{Void},), img.ctx.layout)
+
+    if font_desc == C_NULL
+        family = "sans"
+    else
+        family = ccall((:pango_font_description_get_family, Cairo._jl_libpango),
+                       Ptr{Uint8}, (Ptr{Void},), font_desc)
+        family = bytestring(family)
+    end
+
+    Cairo.set_font_face(img.ctx, @sprintf("%s %.2f", family, property.value.value))
 end
 
 

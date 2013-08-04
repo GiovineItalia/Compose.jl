@@ -79,18 +79,30 @@ end
 # Amazingly crude fallback to parse pango markup into svg.
 function pango_to_svg(text::String)
     whitelist = Set("sup", "sub")
-    pat = r"</?\s*([^>]*)\s*>"
+    pat = r"<(/?)\s*([^>]*)\s*>"
     input = convert(Array{Uint8}, text)
-    output = Array(Uint8,0)
+    output = IOBuffer()
     lastpos = 1
     for mat in eachmatch(pat, text)
-        append!(output, input[lastpos:mat.offset-1])
-        if contains(whitelist, mat.captures[1])
-            append!(output, convert(Array{Uint8}, mat.match))
+        write(output, input[lastpos:mat.offset-1])
+        if contains(whitelist, mat.captures[2])
+            write(output, mat.match)
+        elseif mat.captures[2] == "i"
+            if mat.captures[1] == "/"
+                write(output, "</tspan>")
+            else
+                write(output, "<tspan font-style=\"italic\">")
+            end
+        elseif mat.captures[2] == "b"
+            if mat.captures[1] == "/"
+                write(output, "</tspan>")
+            else
+                write(output, "<tspan font-weight=\"bold\">")
+            end
         end
         lastpos = mat.offset + length(mat.match)
     end
-    append!(output, input[lastpos:end])
+    write(output, input[lastpos:end])
     bytestring(output)
 end
 
