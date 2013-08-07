@@ -91,13 +91,13 @@ function pango_to_svg(text::String)
             if mat.captures[1] == "/"
                 write(output, "</tspan>")
             else
-                write(output, "<tspan font-style=\"italic\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" font-style=\"italic\">")
             end
         elseif mat.captures[2] == "b"
             if mat.captures[1] == "/"
                 write(output, "</tspan>")
             else
-                write(output, "<tspan font-weight=\"bold\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" font-weight=\"bold\">")
             end
         end
         lastpos = mat.offset + length(mat.match)
