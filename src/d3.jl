@@ -4,6 +4,17 @@
 export D3
 
 
+# Include the the d3 javascript library
+function prepare_display(d::Display)
+    display(d, "text/html", """<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>""")
+end
+
+try
+    display("text/html", """<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>""")
+catch
+end
+
+
 # In d3 svg we use millimeters as the base measure.
 type D3Measure <: NativeMeasure
     value::Float64
@@ -54,6 +65,9 @@ type D3 <: Backend
     # Store datasets for serialization.
     data::Dict{Uint64, (Any, Int)}
 
+    # True when finish has been called and no more drawing should occur
+    finished::Bool
+
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
@@ -72,6 +86,7 @@ type D3 <: Backend
         img.dataform_count = 0
         img.clippath_count = 0
         img.data = Dict{Uint64, (Any, Int)}()
+        img.finished = false
         img.emit_on_finish = emit_on_finish
 
         width_value = svg_fmt_float(width.value)
@@ -103,7 +118,7 @@ type D3 <: Backend
 
     function D3(width::MeasureOrNumber, height::MeasureOrNumber,
                 emit_on_finish::Bool=true)
-        img = D3(IOString(), width, height, emit_on_finish=emit_on_finish)
+        img = D3(IOBuffer(), width, height, emit_on_finish)
         img.close_stream = false
         img
     end
@@ -145,6 +160,10 @@ end
 
 
 function finish(img::D3)
+    if img.finished
+        return
+    end
+
     write(img.out, "}\n\n")
     write_data(img)
     write(img.out,
@@ -157,11 +176,24 @@ function finish(img::D3)
         close(img.out)
     end
 
-    if img.emit_on_finish && typeof(img.out) == IOString
-        seek(img.out, 0)
-        emit(Emitable("application/javascript", readall(img.out)))
-        close(img.out)
+    img.finished = true
+
+    if img.emit_on_finish && typeof(img.out) == IOBuffer
+        display(img)
     end
+end
+
+
+function writemime(io::IO, ::@MIME("text/html"), img::D3)
+    divid = string("gadflyplot-", randstring(20))
+    write(io,
+    """
+    <div id="$(divid)"></div>
+    <script>
+    $(takebuf_string(img.out))
+    draw("#$(divid)");
+    </script>
+    """)
 end
 
 

@@ -68,6 +68,9 @@ type Image{B <: ImageBackend} <: Backend
     # Close the stream when finished
     close_stream::Bool
 
+    # True when finish has been called and no more drawing should occur
+    finished::Bool
+
     # Emit on finish
     emit_on_finish::Bool
 
@@ -83,11 +86,12 @@ type Image{B <: ImageBackend} <: Backend
         img.state_stack = Array(ImagePropertyState, 0)
         img.owns_surface = false
         img.emit_on_finish = false
+        img.finished = false
         img
     end
 
     function Image(surface::CairoSurface, ctx::CairoContext)
-        Image{B}(surface, ctx, IOString())
+        Image{B}(surface, ctx, IOBuffer())
     end
 
     Image(surface::CairoSurface) = Image{B}(surface, CairoContext(surface))
@@ -131,7 +135,19 @@ type Image{B <: ImageBackend} <: Backend
         img.close_stream = true
         img
     end
+
+    function Image(width::MeasureOrNumber,
+                   height::MeasureOrNumber,
+                   emit_on_finish::Bool=true)
+        img = Image{B}(IOBuffer(), width, height, emit_on_finish)
+        img.close_stream = false
+        img
+    end
 end
+
+typealias PNG Image{PNGBackend}
+typealias PDF Image{PDFBackend}
+typealias PS  Image{PSBackend}
 
 
 width{B}(img::Image{B}) = ImageMeasure{B}(Cairo.width(img.surface))
@@ -144,6 +160,10 @@ function finish(::Type{PNGBackend}, img::Image)
 end
 
 function finish{B <: ImageBackend}(img::Image{B})
+    if img.finished
+        return
+    end
+
     if(img.owns_surface)
         Cairo.destroy(img.ctx)
     end
@@ -152,26 +172,27 @@ function finish{B <: ImageBackend}(img::Image{B})
         Cairo.destroy(img.surface)
     end
 
+    img.finished = true
+
     if img.emit_on_finish && typeof(img.out) == IOString
-        seek(img.out, 0)
-        if B == PNGBackend
-            mime = "image/png"
-        elseif B == SVGBackend
-            mime = "image/svg+xml"
-        elseif B == "PSBackend"
-            mime = "application/postscript"
-        elseif B == "PDFBackend"
-            mime = "application/pdf"
-        end
-        emit(Emitable(mime, readall(img.f)))
-        close(img.out)
+        display(img)
     end
 end
 
 
-typealias PNG Image{PNGBackend}
-typealias PDF Image{PDFBackend}
-typealias PS  Image{PSBackend}
+function writemime(io::IO, ::@MIME("image/png"), img::PNG)
+    write(io, takebuf_string(img.out))
+end
+
+
+function writemime(io::IO, ::@MIME("application/pdf"), img::PDF)
+    write(io, takebuf_string(img.out))
+end
+
+
+function writemime(io::IO, ::@MIME("application/postscript"), img::PS)
+    write(io, takebuf_string(img.out))
+end
 
 
 # sizes

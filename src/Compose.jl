@@ -19,7 +19,7 @@ import JSON.json
 import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
        Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty, Base.insert,
        Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
-       Base.<<, Base.>>, Base.show, Base.hex
+       Base.<<, Base.>>, Base.show, Base.hex, Base.writemime
 
 export |, <<, >>, pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
        combine, contents, decompose
