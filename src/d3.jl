@@ -110,14 +110,14 @@ type D3 <: Backend
 end
 
 
-to_json(c::ColorValue) = repr("#$(hex(c))")
+json(c::ColorValue) = repr("#$(hex(c))")
 
 
 function write_data(img::D3, d::AbstractArray)
     write(img.out, "  [")
     n = length(d)
     for (i, x) in enumerate(d)
-        write(img.out, to_json(x))
+        write(img.out, json(x))
         if i < n
             write(img.out, ",")
         end

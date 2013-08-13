@@ -55,7 +55,7 @@ function show{U}(io::IO, a::SimpleMeasure{U})
 end
 
 
-function to_json(a::SimpleMeasure)
+function json(a::SimpleMeasure)
     repr(string(a))
 end
 
