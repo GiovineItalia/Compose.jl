@@ -155,7 +155,7 @@ function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber, height::MeasureOrNumbe
         if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
             total_width_units += canvas.box.width.value
         elseif typeof(canvas.box.width) == CompoundMeasure &&
-               has(canvas.box.width.values, WidthUnit)
+               haskey(canvas.box.width.values, WidthUnit)
             total_width_units += canvas.box.width.values[WidthUnit]
        end
     end
@@ -181,7 +181,7 @@ function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber, height::MeasureOrNumbe
         if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
             canvas.box.width.value /= total_width_units
         elseif typeof(canvas.box.width) == CompoundMeasure &&
-               has(canvas.box.width.values, WidthUnit)
+               haskey(canvas.box.width.values, WidthUnit)
             if canvas.box.width.value[WidthUnit] > 0.0
                 canvas.box.width.values[WidthUnit] /= total_width_units
             end
@@ -241,7 +241,7 @@ function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber
         if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
             total_height_units += canvas.box.height.value
         elseif typeof(canvas.box.height) == CompoundMeasure &&
-               has(canvas.box.height.values, HeightUnit)
+               haskey(canvas.box.height.values, HeightUnit)
             total_height_units += canvas.box.height.values[HeightUnit]
        end
     end
@@ -267,7 +267,7 @@ function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber
         if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
             canvas.box.height.value /= total_height_units
         elseif typeof(canvas.box.height) == CompoundMeasure &&
-               has(canvas.box.height.values, HeightUnit)
+               haskey(canvas.box.height.values, HeightUnit)
             if canvas.box.height.values[HeightUnit] > 0.0
                 canvas.box.height.values[HeightUnit] /= total_height_units
             end
@@ -548,7 +548,7 @@ emitters = Dict{String, Function}()
 
 
 function emit(emitable::Emitable)
-    if has(emitters, emitable.mime)
+    if haskey(emitters, emitable.mime)
         emitter = emitters[emitable.mime]
         emitter(emitable.data)
     else
