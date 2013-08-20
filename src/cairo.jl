@@ -43,6 +43,15 @@ function -{T}(u::ImageMeasure{T}, v::ImageMeasure{T})
     ImageMeasure{T}(u.value - v.value)
 end
 
+function convert(::Type{SimpleMeasure{MillimeterUnit}},
+                 u::ImageMeasure{PNGBackend})
+    convert(SimpleMeasure{MillimeterUnit}, SimpleMeasure{PixelUnit}(u.value))
+end
+
+function convert{T}(::Type{SimpleMeasure{MillimeterUnit}}, u::ImageMeasure{T})
+    SimpleMeasure{MillimeterUnit}(u.value)
+end
+
 type ImagePropertyState
     stroke::ColorOrNothing
     fill::ColorOrNothing
@@ -178,7 +187,6 @@ function finish{B <: ImageBackend}(img::Image{B})
         display(img)
     end
 end
-
 
 function writemime(io::IO, ::@MIME("image/png"), img::PNG)
     write(io, takebuf_string(img.out))

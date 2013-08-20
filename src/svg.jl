@@ -167,7 +167,7 @@ function finish(img::SVG)
     img.finished = true
 
     # If we are writing to a buffer. Collect the string and emit it.
-    if img.emit_on_finish && typeof(img.f) == IOString
+    if img.emit_on_finish && typeof(img.f) == IOBuffer
         display(img)
     end
 end
