@@ -4,13 +4,15 @@
 export D3
 
 
+const d3_js = readall(joinpath(Pkg.dir("Compose"), "data", "d3.min.js"))
+
 # Include the the d3 javascript library
 function prepare_display(d::Display)
-    display(d, "text/html", """<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>""")
+    display(d, "text/html", """<script charset="utf-8">$(d3_js)</script>""")
 end
 
 try
-    display("text/html", """<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>""")
+    display("text/html", """<script charset="utf-8">$(d3_js)</script>""")
 catch
 end
 

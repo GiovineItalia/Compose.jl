@@ -164,7 +164,7 @@ end
 
 
 # Similar to dump(), but briefer
-function contents(io, c::CanvasTree, n::Int, indent)
+function contents(io::IO, c::CanvasTree, n::Int, indent)
     lc = length(c.children)
     lf = length(c.form)
     println(indent, "Canvas with ", lc, lc == 1 ? " child" : " children",
@@ -184,8 +184,8 @@ function contents(io, c::CanvasTree, n::Int, indent)
         contents(io, c.form, n, indent)
     end
 end
-contents(io, c::CanvasTree, n::Int) = contents(io, c, n, "")
-contents(io, c::CanvasTree) = contents(io, c, 10, "")
+contents(io::IO, c::CanvasTree, n::Int) = contents(io, c, n, "")
+contents(io::IO, c::CanvasTree) = contents(io, c, 10, "")
 contents(c::CanvasTree, args...) = contents(OUTPUT_STREAM, c, args...)
 
 
