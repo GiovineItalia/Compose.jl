@@ -167,11 +167,24 @@ end
 
 type Lines <: FormPrimitive
     points::Vector{Point}
+
+    function Lines(points::Vector{Point})
+        new(points)
+    end
+
+    function Lines(points::Point...)
+        new(Point[point for point in points])
+    end
 end
 
 
 function contents(io, f::Lines, n::Int, indent)
     println(io, indent, "Line with ", length(f.points), " points")
+end
+
+
+function lines()
+    empty_form
 end
 
 

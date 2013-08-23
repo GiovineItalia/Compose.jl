@@ -83,6 +83,11 @@ function circle(x::AbstractArray, y::AbstractArray, r::AbstractArray)
     ellipse(x, y, r, r)
 end
 
+function lines(pointss::AbstractArray...)
+    DataForm{Lines}(AbstractArray[[[convert(Point, point) for point in points]
+                                   for points in pointss]])
+end
+
 
 # Convert a DataProperty to a sequence of properties for processing by a non-d3
 # backend.
