@@ -85,7 +85,7 @@ function pango_to_svg(text::String)
     lastpos = 1
     for mat in eachmatch(pat, text)
         write(output, input[lastpos:mat.offset-1])
-        if contains(whitelist, mat.captures[2])
+        if in(mat.captures[2], whitelist)
             write(output, mat.match)
         elseif mat.captures[2] == "i"
             if mat.captures[1] == "/"

@@ -173,7 +173,7 @@ function finish(img::SVG)
 end
 
 
-function writemime(io::IO, ::@MIME("image/svg+xml"), img::SVG)
+function writemime(io::IO, ::MIME"image/svg+xml", img::SVG)
     write(io, takebuf_string(img.f))
 end
 

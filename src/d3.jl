@@ -186,7 +186,7 @@ function finish(img::D3)
 end
 
 
-function writemime(io::IO, ::@MIME("text/html"), img::D3)
+function writemime(io::IO, ::MIME"text/html", img::D3)
     divid = string("gadflyplot-", randstring(20))
     write(io,
     """

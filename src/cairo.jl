@@ -188,17 +188,17 @@ function finish{B <: ImageBackend}(img::Image{B})
     end
 end
 
-function writemime(io::IO, ::@MIME("image/png"), img::PNG)
+function writemime(io::IO, ::MIME"image/png", img::PNG)
     write(io, takebuf_string(img.out))
 end
 
 
-function writemime(io::IO, ::@MIME("application/pdf"), img::PDF)
+function writemime(io::IO, ::MIME"application/pdf", img::PDF)
     write(io, takebuf_string(img.out))
 end
 
 
-function writemime(io::IO, ::@MIME("application/postscript"), img::PS)
+function writemime(io::IO, ::MIME"application/postscript", img::PS)
     write(io, takebuf_string(img.out))
 end
 
