@@ -186,6 +186,10 @@ function finish{B <: ImageBackend}(img::Image{B})
     if img.emit_on_finish && typeof(img.out) == IOString
         display(img)
     end
+
+    if img.close_stream
+        close(img.out)
+    end
 end
 
 
