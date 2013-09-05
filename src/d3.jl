@@ -186,6 +186,11 @@ function finish(img::D3)
 end
 
 
+function isfinished(img::D3)
+    img.finished
+end
+
+
 function writemime(io::IO, ::MIME"text/html", img::D3)
     divid = string("gadflyplot-", randstring(20))
     write(io,

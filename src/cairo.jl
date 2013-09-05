@@ -188,6 +188,12 @@ function finish{B <: ImageBackend}(img::Image{B})
     end
 end
 
+
+function isfinished(img::Image)
+    img.finished
+end
+
+
 function writemime(io::IO, ::MIME"image/png", img::PNG)
     write(io, takebuf_string(img.out))
 end
