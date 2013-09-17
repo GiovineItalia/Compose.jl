@@ -291,7 +291,7 @@ function make_d3_data_property_expr(backend::D3,
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
-        @sprintf(".attr(\"fill\", function(d) { return d[%d]; })\n", rowidx)
+        @sprintf(".attr(\"fill\", function(d, i) { return d[%d]; })\n", rowidx)
     end
 end
 

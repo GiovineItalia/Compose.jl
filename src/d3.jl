@@ -130,10 +130,9 @@ end
 json(c::ColorValue) = repr("#$(hex(c))")
 
 
-function write_data(img::D3, d::AbstractArray)
+function write_data(img::D3, d::AbstractArray, n)
     write(img.out, "  [")
-    n = length(d)
-    for (i, x) in enumerate(d)
+    for (i, x) in enumerate(take(cycle(d), n))
         write(img.out, json(x))
         if i < n
             write(img.out, ",")
@@ -151,8 +150,12 @@ function write_data(img::D3)
     end
     sort!(datapairs, by=jd -> jd[1])
 
+    # cycle data shorter than the longest to replicate the
+    # behavior of the other backends
+    n = max([length(d) for (_, d) in datapairs])
+
     for (i, (_, d)) in enumerate(datapairs)
-        write_data(img, d)
+        write_data(img, d, n)
         if i < length(img.data)
             write(img.out, ",\n")
         end
