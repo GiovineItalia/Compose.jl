@@ -1,6 +1,5 @@
 
 require("Color")
-require("DataFrames")
 require("Iterators")
 require("JSON")
 require("Mustache")
@@ -10,7 +9,6 @@ module Compose
 using Color
 typealias ColorOrNothing Union(ColorValue, Nothing)
 
-using DataFrames
 using Iterators
 using JSON
 
