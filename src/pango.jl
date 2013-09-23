@@ -87,9 +87,10 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function pango_text_extents(pangolayout::PangoLayout, text::String)
+    textarray = convert(Vector{Uint8}, bytestring(text))
     ccall((:pango_layout_set_markup, libpango),
           Void, (Ptr{Void}, Ptr{Uint8}, Int32),
-          pangolayout.layout, bytestring(text), length(text))
+          pangolayout.layout, textarray, length(textarray))
 
     extents = Array(Int32, 4)
     ccall((:pango_layout_get_extents, libpango),
