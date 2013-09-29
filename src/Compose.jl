@@ -14,12 +14,10 @@ using JSON
 
 import JSON.json
 
-import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
-       Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty,
-       Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
-       Base.<<, Base.>>, Base.show, Base.hex, Base.writemime
+import Base: +, -, *, /, convert, length, ==, <, <=, >=, isempty, start, next,
+             done, copy, isless, max, show, hex, writemime
 
-export |, <<, >>, pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
+export pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
        combine, contents, decompose
 
 import Mustache
@@ -73,25 +71,6 @@ include("dataform.jl")
 
 typealias Composable Union(Form, Property, Canvas)
 
-
-# Compose operator
-<<(a::Form,   b::Property)     = compose(a, b)
-<<(a::Form,   b::DataProperty) = compose(a, b)
-<<(a::Canvas, b::Form)         = compose(a, b)
-<<(a::Canvas, b::Property)     = compose(a, b)
-<<(a::Canvas, b::DataProperty) = compose(a, b)
-<<(a::Canvas, b::Canvas)       = compose(a, b)
-
->>(b::Property,     a::Form)   = compose(a, b)
->>(b::DataProperty, a::Form)   = compose(a, b)
->>(b::Form,         a::Canvas) = compose(a, b)
->>(b::Property,     a::Canvas) = compose(a, b)
->>(b::DataProperty, a::Canvas) = compose(a, b)
->>(b::Canvas,       a::Canvas) = compose(a, b)
-
-# Combine operator
-|(xs::Property...) = combine(xs...)
-|(xs::Form...)     = combine(xs...)
 
 # Compose over hetergenous lists of things.
 compose(x) = x
@@ -193,7 +172,7 @@ function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber, height::MeasureOrNumbe
             canvas.box.y0 = height - canvas.box.height
         end
 
-        root <<= canvas
+        root = compose(root, canvas)
         x += canvas.box.width
     end
 
@@ -278,7 +257,7 @@ function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber
             canvas.box.x0 = width - canvas.box.width
         end
 
-        root <<= canvas
+        root = compose(root, canvas)
         y += canvas.box.height
     end
 
@@ -420,7 +399,7 @@ function gridstack(canvases::AbstractMatrix{Canvas},
             canvas.box.y0 = row_positions[i+1] - canvas.box.height
         end
 
-        root <<= canvas
+        root = compose(root, canvas)
     end
 
     root
