@@ -103,7 +103,7 @@ function absolute_units(property::PropertySeq,
                         box::AbsoluteBoundingBox)
     p = property = copy(property)
     while !is(p, empty_property)
-        p.primitive = native_measure(p.primitive, t, unit_box, box)
+        p.primitive = absolute_units(p.primitive, t, unit_box, box)
         p.next = copy(p.next)
         p = p.next
     end
@@ -151,12 +151,12 @@ stroke(value) = PropertySeq(Stroke(value))
 immutable LineWidth <: PropertyPrimitive
     value::Measure
 
-    LineWidth(value::MeasureOrNumber) = new(size_measure(value))
+    LineWidth(value) = new(size_measure(value))
 end
 
 
 # Singleton sequence contructor.
-linewidth(value::MeasureOrNumber) = PropertySeq(LineWidth(value))
+linewidth(value) = PropertySeq(LineWidth(value))
 
 
 # Unit conversion
@@ -164,7 +164,7 @@ function absolute_units(property::LineWidth,
                         t::Transform,
                         unit_box::UnitBox,
                         box::AbsoluteBoundingBox)
-    LineWidth(native_measure(property.value, t, unit_box, box))
+    LineWidth(absolute_units(property.value, t, unit_box, box))
 end
 
 
@@ -251,12 +251,12 @@ font(family::String) = PropertySeq(Font(family))
 immutable FontSize <: PropertyPrimitive
     value::Measure
 
-    FontSize(value::MeasureOrNumber) = new(size_measure(value))
+    FontSize(value) = new(size_measure(value))
 end
 
 
 # Singletone sequence constructor.
-fontsize(value::MeasureOrNumber) = PropertySeq(FontSize(value))
+fontsize(value) = PropertySeq(FontSize(value))
 
 
 # Native unit conversion.
@@ -264,7 +264,7 @@ function absolute_units(property::FontSize,
                         t::Transform,
                         unit_box::UnitBox,
                         box::AbsoluteBoundingBox)
-    FontSize(Measure(abs=native_measure(property.value, t, unit_box, box)))
+    FontSize(absolute_units(property.value, t, unit_box, box))
 end
 
 

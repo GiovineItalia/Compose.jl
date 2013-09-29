@@ -126,8 +126,11 @@ function text_extents(font_family::String, pts::Float64, texts::String...)
 end
 
 # Same as text_extents but with font_size in arbitrary absolute units.
-function text_extents(font_family::String, size::SimpleMeasure{MillimeterUnit},
+function text_extents(font_family::String, size::Measure,
                       texts::String...)
+    if !isabsolute(size)
+        error("text_extents requries font size be in absolute units")
+    end
     text_extents(font_family, size/pt, texts...)
 end
 

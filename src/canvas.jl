@@ -69,11 +69,11 @@ type CanvasTree <: Canvas
             children, order, units_inherited, clip)
     end
 
-    function CanvasTree(x0::MeasureOrNumber=0.0w,
-                        y0::MeasureOrNumber=0.0h,
-                        width::MeasureOrNumber=1.0w,
-                        height::MeasureOrNumber=1.0h;
-                        unit_box=UnitsBox(),
+    function CanvasTree(x0=0.0w,
+                        y0=0.0h,
+                        width=1.0w,
+                        height=1.0h;
+                        unit_box=UnitBox(),
                         rotation=Rotation(),
                         units_inherited=false,
                         order=0,
@@ -231,7 +231,7 @@ end
 
 # Draw without finishing the backend.
 function drawpart(backend::Backend, root_canvas::Canvas)
-    S = {(root_canvas, NativeTransform(), UnitBox(), root_box(backend))}
+    S = {(root_canvas, Transform(), UnitBox(), root_box(backend))}
     while !isempty(S)
         s = pop!(S)
 
@@ -272,8 +272,7 @@ function drawpart(backend::Backend, root_canvas::Canvas)
 
         if !is(property, empty_property)
             push!(S, :POP_PROPERTY)
-            push_property(backend, native_measure(property, t, unit_box,
-                                                  box, backend))
+            push_property(backend, absolute_units(property, t, unit_box, box))
         end
 
         draw(backend, t, unit_box, box, canvas.form)

@@ -1,36 +1,49 @@
 
-import Base: zero, copy, show, *, /, max
 
 # All measures in Compose are specified as the sum
 immutable Measure{T <: Number}
-    abs::T # absolute measurement in millimeters
-    cx::T  # canvas x-units
-    cy::T  # canvas y-units
-    cw::T  # proportion of canvas width
-    ch::T  # proportion of canvas height
+    abs::Float64 # absolute measurement in millimeters
+    cx::T        # canvas x-units
+    cy::T        # canvas y-units
+    cw::Float64  # proportion of canvas width
+    ch::Float64  # proportion of canvas height
 
-    function Measure(abs::T, cx::T, cy::T, cw::T, ch::T)
+    function Measure(abs::Number, cx::T, cy::T, cw::Number, ch::Number)
         new(abs, cx, cy, cw, ch)
     end
 
-    function Measure(; abs::T=zero(T), cx::T=zero(T), cy::T=zero(T),
-                     cw::T=zero(T), ch::T=zero(T))
+    function Measure(; abs::T=0.0, cx::T=zero(T), cy::T=zero(T),
+                     cw::T=0.0, ch::T=0.0)
         new(abs, cx, cy, cw, ch)
     end
 end
 
 
 function Measure(abs, cx, cy, cw, ch)
-    abs, cx, cy, cw, ch = promote(abs, cx, cy, cw, ch)
-    Measure{typeof(abs)}(abs, cx, cy, cw, ch)
+    cx, cy = promote(cx, cy)
+    Measure{typeof(cx)}(abs, cx, cy, cw, ch)
 end
 
 
 function Measure(; abs=0.0, cx=0.0, cy=0.0, cw=0.0, ch=0.0)
-    abs, cx, cy, cw, ch = promote(abs, cx, cy, cw, ch)
-    T = typeof(abs)
-    Measure{T}(abs, cx, cy, cw, ch)
+    cx, cy = promote(cx, cy)
+    Measure{typeof(cx)}(abs, cx, cy, cw, ch)
 end
+
+
+# copy wiile substituting
+function Measure{T}(u::Measure{T};
+                    abs=nothing, cx=nothing, cy=nothing,
+                    cw=nothing, ch=nothing)
+    Measure(abs === nothing ? u.abs : abs,
+            cx  === nothing ? u.cx  : cx,
+            cy  === nothing ? u.cy  : cy,
+            cw  === nothing ? u.cw  : cw,
+            cy  === nothing ? u.ch  : ch)
+end
+
+
+typealias MeasureOrNumber Union(Measure, Number)
 
 
 function zero{T}(::Type{Measure{T}})
@@ -38,13 +51,8 @@ function zero{T}(::Type{Measure{T}})
 end
 
 
-function isabsolute(u::Measure{Float64})
-    u.cx == 0.0 && u.cy == 0.0 && u.cw == 0.0 && u.ch == 0.0
-end
-
-# absolute units are always specified in Float64
-function isabsolute(u::Measure)
-    false
+function isabsolute{T}(u::Measure{T})
+    iszero(u.cx) && iszero(u.cy) && u.cw == 0.0 && u.ch == 0.0
 end
 
 
@@ -102,13 +110,31 @@ end
 # Measure Arithmatic
 # ------------------
 
-function +(a::Measure, b::Measure)
-    Measure(a.abs + b.abs, a.cx + b.cx, a.cy + b.cy, a.cw + b.cw, a.ch + b.ch)
+function +{T, S}(a::Measure{T}, b::Measure{S})
+    Measure(a.abs + b.abs,
+
+            a.cx == zero(T) ? b.cx :
+            b.cx == zero(S) ? a.cx : a.cx + b.cx,
+
+            a.cy == zero(T) ? b.cy :
+            b.cy == zero(S) ? a.cy : a.cy + b.cy,
+
+            a.cw + b.cw,
+            a.ch + b.ch)
 end
 
 
-function -(a::Measure, b::Measure)
-    Measure(a.abs - b.abs, a.cx - b.cx, a.cy - b.cy, a.cw - b.cw, a.ch - b.ch)
+function -{T, S}(a::Measure{T}, b::Measure{S})
+    Measure(a.abs - b.abs,
+
+            a.cx == zero(T) ? -b.cx :
+            b.cx == zero(S) ?  a.cx : a.cx - b.cx,
+
+            a.cy == zero(T) ? -b.cy :
+            b.cy == zero(S) ?  a.cy : a.cy - b.cy,
+
+            a.cw - b.cw,
+            a.ch - b.ch)
 end
 
 
@@ -124,7 +150,8 @@ function /{T, S}(a::Measure{T}, b::Measure{S})
         vala = getfield(a, unit)
         valb = getfield(b, unit)
 
-        if vala == zero(T) && valb == zero(S)
+        if vala == zero(typeof(vala)) &&
+           valb == zero(typeof(valb))
             continue
         end
 
@@ -291,6 +318,18 @@ immutable BoundingBox
         new(box.x0, box.y0, box.width, box.height)
     end
 
+    function BoundingBox(box::BoundingBox;
+                         x0=nothing,
+                         y0=nothing,
+                         width=nothing,
+                         height=nothing)
+        BoundingBox(x0     === nothing ? box.x0     : x0,
+                    y0     === nothing ? box.y0     : y0,
+                    width  === nothing ? box.width  : width,
+                    height === nothing ? box.height : height)
+    end
+
+
     function BoundingBox()
         new(0cx, 0cy, 1cx, 1cy)
     end
@@ -320,17 +359,24 @@ immutable UnitBox{T}
     width::T
     height::T
 
-    function UnitBox()
-        new(0.0, 0.0, 1.0, 1.0)
+    function UnitBox(x0::T, y0::T, width::T, height::T)
+        new(x0, y0, width, height)
     end
 
     function UnitBox(width, height)
-        new(0.0, 0.0, width, height)
+        x0, y0, width, height = promote(0.0, 0.0, width, height)
+        new(x0, y0, width, height)
     end
 
     function UnitBox(x0, y0, width, height)
+        x0, y0, width, height = promote(x0, y0, width, height)
         new(x0, y0, width, height)
     end
+end
+
+
+function UnitBox()
+    UnitBox{Float64}(0.0, 0.0, 1.0, 1.0)
 end
 
 
@@ -427,8 +473,9 @@ function absolute_units(rot::Rotation,
     st = sin(rot.theta)
     x0 = off.x - (ct * off.x - st * off.y)
     y0 = off.y - (st * off.x + ct * off.y)
-    Transform([ct  -st  convert(Float64, x0)
-               st   ct  convert(Float64, y0)
+
+    Transform([ct  -st  x0.abs
+               st   ct  y0.abs
                0.0 0.0  1.0])
 end
 

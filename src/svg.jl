@@ -28,25 +28,10 @@ svg_fmt_color(c::ColorValue) = @sprintf("#%s", hex(c))
 svg_fmt_color(c::Nothing) = "none"
 
 
-# The SVG image we generate are going to use millimeters everywhere.
-type SVGMeasure <: NativeMeasure
-    value::Float64
-end
-
-*(u::Float64, v::SVGMeasure) = SVGMeasure(u * v.value)
-+(u::SVGMeasure, v::SVGMeasure) = SVGMeasure(u.value + v.value)
--(u::SVGMeasure, v::SVGMeasure) = SVGMeasure(u.value - v.value)
-convert(::Type{Float64}, u::SVGMeasure) = u.value
-convert(::Type{SVGMeasure}, u::Float64) = SVGMeasure(u)
-function convert(::Type{SimpleMeasure{MillimeterUnit}}, u::SVGMeasure)
-    SimpleMeasure{MillimeterUnit}(u.value)
-end
-
-
 type SVG <: Backend
     # Image size in millimeters.
-    width::SVGMeasure
-    height::SVGMeasure
+    width::Float64
+    height::Float64
 
     # Output stream.
     f::IO
@@ -86,12 +71,18 @@ type SVG <: Backend
     emit_on_finish::Bool
 
     function SVG(f::IO,
-                 width::MeasureOrNumber,
-                 height::MeasureOrNumber,
+                 width,
+                 height,
                  emit_on_finish::Bool=true)
+        width = size_measure(width)
+        height = size_measure(height)
+        if !isabsolute(width) || !isabsolute(height)
+            error("SVG image size must be specified in absolute units")
+        end
+
         img = new()
-        img.width  = native_measure(width,  img)
-        img.height = native_measure(height, img)
+        img.width  = width.abs
+        img.height = height.abs
         img.f = f
         img.close_stream = false
         img.indentation = 0
@@ -105,15 +96,13 @@ type SVG <: Backend
         img.emit_on_finish = emit_on_finish
 
         write(img.f, @sprintf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
-              svg_fmt_float(img.width.value), svg_fmt_float(img.height.value),
-              svg_fmt_float(img.width.value), svg_fmt_float(img.height.value)))
+              svg_fmt_float(img.width), svg_fmt_float(img.height),
+              svg_fmt_float(img.width), svg_fmt_float(img.height)))
         img
     end
 
     # Write to a file.
-    function SVG(filename::String,
-                 width::MeasureOrNumber,
-                 height::MeasureOrNumber)
+    function SVG(filename::String, width, height)
         f = open(filename, "w")
         img = SVG(f, width, height)
         img.close_stream = true
@@ -121,8 +110,7 @@ type SVG <: Backend
     end
 
     # Write to buffer.
-    function SVG(width::MeasureOrNumber,
-                 height::MeasureOrNumber,
+    function SVG(width::MeasureOrNumber, height::MeasureOrNumber,
                  emit_on_finish::Bool=true)
         img = SVG(IOBuffer(), width, height, emit_on_finish)
         img.close_stream = false
@@ -184,15 +172,8 @@ end
 
 
 function root_box(img::SVG)
-    NativeBoundingBox(
-        SVGMeasure(0.0),
-        SVGMeasure(0.0),
-        img.width,
-        img.height)
+    AbsoluteBoundingBox(0.0, 0.0, img.width, img.height)
 end
-
-
-native_zero(::SVG) = SVGMeasure(0.0)
 
 
 function indent(img::SVG)
@@ -202,28 +183,16 @@ function indent(img::SVG)
 end
 
 
-function native_measure(u::SimpleMeasure{PixelUnit},
-                        img::SVG)
-    native_measure(convert(SimpleMeasure{MillimeterUnit}, u), img)
-end
-
-
-function native_measure(u::SimpleMeasure{MillimeterUnit},
-                        img::SVG)
-    SVGMeasure(u.value)
-end
-
-
 # Draw
 
 function print_svg_path(out, points::Vector{Point})
     @printf(out, "M%s,%s L",
-            svg_fmt_float(points[1].x.value),
-            svg_fmt_float(points[1].y.value))
+            svg_fmt_float(points[1].x.abs),
+            svg_fmt_float(points[1].y.abs))
     for point in points[2:]
         @printf(out, " %s %s",
-                svg_fmt_float(point.x.value),
-                svg_fmt_float(point.y.value))
+                svg_fmt_float(point.x.abs),
+                svg_fmt_float(point.y.abs[]))
     end
 end
 
@@ -244,14 +213,14 @@ end
 function draw(img::SVG, form::Curve)
     indent(img)
     @printf(img.f, "<path d=\"M%s,%s C%s,%s %s,%s %s,%s\" />\n",
-        svg_fmt_float(form.anchor0.x.value),
-        svg_fmt_float(form.anchor0.y.value),
-        svg_fmt_float(form.ctrl0.x.value),
-        svg_fmt_float(form.ctrl0.y.value),
-        svg_fmt_float(form.ctrl1.x.value),
-        svg_fmt_float(form.ctrl1.y.value),
-        svg_fmt_float(form.anchor1.x.value),
-        svg_fmt_float(form.anchor1.y.value))
+        svg_fmt_float(form.anchor0.x.abs),
+        svg_fmt_float(form.anchor0.y.abs),
+        svg_fmt_float(form.ctrl0.x.abs),
+        svg_fmt_float(form.ctrl0.y.abs),
+        svg_fmt_float(form.ctrl1.x.abs),
+        svg_fmt_float(form.ctrl1.y.abs),
+        svg_fmt_float(form.anchor1.x.abs),
+        svg_fmt_float(form.anchor1.y.abs))
 end
 
 
@@ -270,14 +239,14 @@ minmax(a, b) = a < b ? (a,b) : (b,a)
 
 
 function draw(img::SVG, form::Ellipse)
-    cx = form.center.x.value
-    cy = form.center.y.value
-    rx = sqrt((form.x_point.x.value - cx)^2 +
-              (form.x_point.y.value - cy)^2)
-    ry = sqrt((form.y_point.x.value - cx)^2 +
-              (form.y_point.y.value - cy)^2)
-    theta = radians2degrees(atan2(form.x_point.y.value - cy,
-                                  form.x_point.x.value - cx))
+    cx = form.center.x.abs
+    cy = form.center.y.abs
+    rx = sqrt((form.x_point.x.abs - cx)^2 +
+              (form.x_point.y.abs - cy)^2)
+    ry = sqrt((form.y_point.x.abs - cx)^2 +
+              (form.y_point.y.abs - cy)^2)
+    theta = radians2degrees(atan2(form.x_point.y.abs - cy,
+                                  form.x_point.x.abs - cx))
 
     indent(img)
     eps = 1e-6
@@ -305,8 +274,8 @@ end
 function draw(img::SVG, form::Text)
     indent(img)
     @printf(img.f, "<text x=\"%s\" y=\"%s\"",
-            svg_fmt_float(form.pos.x.value),
-            svg_fmt_float(form.pos.y.value))
+            svg_fmt_float(form.pos.x.abs),
+            svg_fmt_float(form.pos.y.abs))
 
     if is(form.halign, hcenter)
         print(img.f, " text-anchor=\"middle\"")
@@ -323,8 +292,8 @@ function draw(img::SVG, form::Text)
     if !isidentity(form.t)
         @printf(img.f, " transform=\"rotate(%s, %s, %s)\"",
                 svg_fmt_float(radians2degrees(atan2(form.t.M[2,1], form.t.M[1,1]))),
-                svg_fmt_float(form.pos.x.value),
-                svg_fmt_float(form.pos.y.value))
+                svg_fmt_float(form.pos.x.abs),
+                svg_fmt_float(form.pos.y.abs))
     end
 
     # TODO: escape special characters
@@ -420,7 +389,7 @@ end
 
 
 function apply_property(img::SVG, p::LineWidth)
-    @printf(img.f, " stroke-width=\"%s\"", svg_fmt_float(p.value.value))
+    @printf(img.f, " stroke-width=\"%s\"", svg_fmt_float(p.value.abs))
 end
 
 
@@ -448,7 +417,7 @@ function apply_property(img::SVG, p::Font)
 end
 
 function apply_property(img::SVG, p::FontSize)
-    @printf(img.f, " font-size=\"%s\"", svg_fmt_float(p.value.value))
+    @printf(img.f, " font-size=\"%s\"", svg_fmt_float(p.value.abs))
 end
 
 function apply_property(img::SVG, p::Clip)
