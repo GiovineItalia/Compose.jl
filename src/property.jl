@@ -21,7 +21,7 @@ abstract Property
 
 # An empty (i.e., nop) property which form the identity element of the Property
 # monoid.
-type EmptyProperty <: Property end
+immutable EmptyProperty <: Property end
 const empty_property = EmptyProperty()
 
 
@@ -87,25 +87,23 @@ combine(head::Property, ::Nothing) = head
 
 # Unit conversion functions.
 
-function native_measure(property::EmptyProperty,
-                        t::NativeTransform,
-                        unit_box::BoundingBox,
-                        box::NativeBoundingBox,
-                        backend::Backend)
+function absolute_units(property::EmptyProperty,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        box::AbsoluteBoundingBox)
     property
 end
 
 
 # Convert a sequence of properties to a sequence of properties in native
 # coordinates.
-function native_measure(property::PropertySeq,
-                        t::NativeTransform,
-                        unit_box::BoundingBox,
-                        box::NativeBoundingBox,
-                        backend::Backend)
+function absolute_units(property::PropertySeq,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        box::AbsoluteBoundingBox)
     p = property = copy(property)
     while !is(p, empty_property)
-        p.primitive = native_measure(p.primitive, t, unit_box, box, backend)
+        p.primitive = native_measure(p.primitive, t, unit_box, box)
         p.next = copy(p.next)
         p = p.next
     end
@@ -114,17 +112,16 @@ end
 
 
 # Catchall for properties that don't require unit conversion.
-function native_measure(property::PropertyPrimitive,
-                        t::NativeTransform,
-                        unit_box::BoundingBox,
-                        box::NativeBoundingBox,
-                        backend::Backend)
+function absolute_units(property::PropertyPrimitive,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        box::AbsoluteBoundingBox)
     property
 end
 
 
 # A property primitive controlling the fill color (or lack of color) of a form.
-type Fill <: PropertyPrimitive
+immutable Fill <: PropertyPrimitive
     value::ColorOrNothing
 
     Fill(value::ColorOrNothing) = new(value)
@@ -137,7 +134,7 @@ fill(value) = PropertySeq(Fill(value))
 
 
 # A property primitive controlling the strok color (or lack of color) of a form.
-type Stroke <: PropertyPrimitive
+immutable Stroke <: PropertyPrimitive
     value::ColorOrNothing
 
     Stroke(value::ColorOrNothing) = new(value)
@@ -151,7 +148,7 @@ stroke(value) = PropertySeq(Stroke(value))
 
 # A property primitive controlling the widths of lines drawn in stroke
 # operations.
-type LineWidth <: PropertyPrimitive
+immutable LineWidth <: PropertyPrimitive
     value::Measure
 
     LineWidth(value::MeasureOrNumber) = new(size_measure(value))
@@ -163,18 +160,17 @@ linewidth(value::MeasureOrNumber) = PropertySeq(LineWidth(value))
 
 
 # Unit conversion
-function native_measure(property::LineWidth,
-                        t::NativeTransform,
-                        unit_box::BoundingBox,
-                        box::NativeBoundingBox,
-                        backend::Backend)
-    LineWidth(native_measure(property.value, t, unit_box, box, backend))
+function absolute_units(property::LineWidth,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        box::AbsoluteBoundingBox)
+    LineWidth(native_measure(property.value, t, unit_box, box))
 end
 
 
 # Set the visible attribute in SVG output, or just skip rendering in raster
 # graphics.
-type Visible <: PropertyPrimitive
+immutable Visible <: PropertyPrimitive
     value::Bool
 end
 
@@ -182,7 +178,7 @@ end
 visible(value::Bool) = PropertySeq(Visible(value))
 
 
-type Opacity <: PropertyPrimitive
+immutable Opacity <: PropertyPrimitive
     value::Float64
 end
 
@@ -191,7 +187,7 @@ opacity(value::Number) = PropertySeq(Opacity(convert(Float64, value)))
 
 
 # Clipping path
-type Clip <: PropertyPrimitive
+immutable Clip <: PropertyPrimitive
     points::Vector{Point}
 end
 
@@ -201,19 +197,18 @@ function clip(points::XYTupleOrPoint...)
 end
 
 
-function native_measure(property::Clip,
-                        t::NativeTransform,
-                        unit_box::BoundingBox,
-                        box::NativeBoundingBox,
-                        backend::Backend)
-    Clip([native_measure(point, t, unit_box, box, backend)
+function absolute_units(property::Clip,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        box::AbsoluteBoundingBox)
+    Clip([absolute_units(point, t, unit_box, box)
           for point in property.points])
 end
 
 
 # A property primitive assigning an ID, in particular in SVG, to enable
 # manipulation of portions of the graphic.
-type SVGID <: PropertyPrimitive
+immutable SVGID <: PropertyPrimitive
     value::String
 end
 
@@ -223,7 +218,7 @@ svgid(value::String) = PropertySeq(SVGID(html_escape_string(value)))
 
 
 # A property setting the class field in a form's group element.
-type SVGClass <: PropertyPrimitive
+immutable SVGClass <: PropertyPrimitive
     value::String
 end
 
@@ -233,7 +228,7 @@ svgclass(value::String) = PropertySeq(SVGClass(html_escape_string(value)))
 
 
 # A SVG <a> tag.
-type SVGLink <: PropertyPrimitive
+immutable SVGLink <: PropertyPrimitive
     target::String
 end
 
@@ -243,7 +238,7 @@ svglink(target::String) = PropertySeq(SVGLink(target))
 
 
 # The font property primitive.
-type Font <: PropertyPrimitive
+immutable Font <: PropertyPrimitive
     family::String
 end
 
@@ -253,7 +248,7 @@ font(family::String) = PropertySeq(Font(family))
 
 
 # The font size property.
-type FontSize <: PropertyPrimitive
+immutable FontSize <: PropertyPrimitive
     value::Measure
 
     FontSize(value::MeasureOrNumber) = new(size_measure(value))
@@ -265,12 +260,11 @@ fontsize(value::MeasureOrNumber) = PropertySeq(FontSize(value))
 
 
 # Native unit conversion.
-function native_measure(property::FontSize,
-                        t::NativeTransform,
-                        unit_box::BoundingBox,
-                        box::NativeBoundingBox,
-                        backend::Backend)
-    FontSize(native_measure(property.value, t, unit_box, box, backend))
+function absolute_units(property::FontSize,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        box::AbsoluteBoundingBox)
+    FontSize(Measure(abs=native_measure(property.value, t, unit_box, box)))
 end
 
 
@@ -285,7 +279,7 @@ const events = (:OnActivate, :OnClick, :OnFocusIn, :OnFocusOut,
 for event in events
     event_lc  = symbol(lowercase(string(event)))
     @eval begin
-        type ($event) <: PropertyPrimitive
+        immutable ($event) <: PropertyPrimitive
             value::String
         end
 
@@ -298,7 +292,7 @@ end
 
 # SVG Mask objects
 
-type SVGMask <: PropertyPrimitive
+immutable SVGMask <: PropertyPrimitive
     id::String
 end
 
@@ -306,7 +300,7 @@ end
 svgmask(id::String) = PropertySeq(SVGMask(id))
 
 
-type SVGDefineMask <: PropertyPrimitive
+immutable SVGDefineMask <: PropertyPrimitive
     id::String
 end
 
@@ -316,7 +310,7 @@ svgdefmask(id::String) = PropertySeq(SVGDefineMask(id))
 
 # A general purpose SVG attribute.
 
-type SVGAttribute <: PropertyPrimitive
+immutable SVGAttribute <: PropertyPrimitive
     attribute::String
     value::String
 end
@@ -333,7 +327,7 @@ end
 # end of the SVG file, but ignored by default on other backends. This allows us
 # to use some of SVGs more obsure features without exposing all of SVG.
 
-type SVGEmbed <: PropertyPrimitive
+immutable SVGEmbed <: PropertyPrimitive
     markup::String
 end
 
@@ -343,11 +337,11 @@ svgembed(markup::String) = PropertySeq(SVGEmbed(markup))
 
 # Embedding raw js code in D3 output.
 
-type D3Embed <: PropertyPrimitive
+immutable D3Embed <: PropertyPrimitive
     code::String
 end
 
-type D3Hook <: PropertyPrimitive
+immutable D3Hook <: PropertyPrimitive
     code::String
 end
 

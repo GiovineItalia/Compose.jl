@@ -2,7 +2,6 @@
 require("Color")
 require("Iterators")
 require("JSON")
-require("Mustache")
 
 module Compose
 
@@ -20,7 +19,6 @@ import Base: +, -, *, /, convert, length, ==, <, <=, >=, isempty, start, next,
 export pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
        combine, contents, decompose
 
-import Mustache
 import Iterators
 
 # Empty combine. This violates the rules a bit, since nothing is not the

@@ -3,13 +3,13 @@
 
 abstract List{T}
 
-type ListNil{T} <: List{T} end
+immutable ListNil{T} <: List{T} end
 
 
 copy{T}(l::ListNil{T}) = l
 
 
-type ListNode{T} <: List{T}
+immutable ListNode{T} <: List{T}
     head::T
     tail::List{T}
 end
@@ -70,18 +70,11 @@ end
 
 
 function list{T}(xs::AbstractArray{T})
-    if length(xs) == 0
-        return nothing
-    else
-        u = v = ListNode(xs[1], ListNil{T}())
-        i = 2
-        while i <= length(xs)
-            v.tail = ListNode{T}(xs[i], ListNil{T}())
-            v = v.tail
-            i += 1
-        end
-        u
+    l = ListNil{T}
+    for x in xs
+        l = cons(x, l)
     end
+    l
 end
 
 

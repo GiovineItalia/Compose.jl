@@ -38,6 +38,16 @@ function zero{T}(::Type{Measure{T}})
 end
 
 
+function isabsolute(u::Measure{Float64})
+    u.cx == 0.0 && u.cy == 0.0 && u.cw == 0.0 && u.ch == 0.0
+end
+
+# absolute units are always specified in Float64
+function isabsolute(u::Measure)
+    false
+end
+
+
 function copy{T}(a::Measure{T})
     Measure(abs=a.abs, cx=a.cx, cy=a.cy, cw=a.cw, ch=a.ch)
 end
@@ -248,6 +258,202 @@ immutable Point
 end
 
 
-copy(point::Point) = Point(point)
+function copy(point::Point)
+    Point(point)
+end
 
 
+function isabsolute(point::Point)
+    isabsolute(point.x) && isabsolute(point.y)
+end
+
+
+typealias XYTupleOrPoint Union(NTuple{2}, Point)
+
+
+# Bounding Boxes
+# --------------
+
+# Measure based bounding box used to specify the extent and positioning
+# of canvases.
+immutable BoundingBox
+    x0::Measure
+    y0::Measure
+    width::Measure
+    height::Measure
+
+    function BoundingBox(x0, y0, width, height)
+        new(x_measure(x0), y_measure(y0),
+            x_measure(width), y_measure(height))
+    end
+
+    function BoundingBox(box::BoundingBox)
+        new(box.x0, box.y0, box.width, box.height)
+    end
+
+    function BoundingBox()
+        new(0cx, 0cy, 1cx, 1cy)
+    end
+end
+
+
+function copy(box::BoundingBox)
+    BoundingBox(box)
+end
+
+
+# Absolute measure bounding box. This is used to keep track of
+# coordinates when traversing canvas trees to perform drawing.
+immutable AbsoluteBoundingBox
+    x0::Float64
+    y0::Float64
+    width::Float64
+    height::Float64
+end
+
+
+# The same type-signature is used for a box used to assign
+# a custom coordinate system to a canvas.
+immutable UnitBox{T}
+    x0::T
+    y0::T
+    width::T
+    height::T
+
+    function UnitBox()
+        new(0.0, 0.0, 1.0, 1.0)
+    end
+
+    function UnitBox(width, height)
+        new(0.0, 0.0, width, height)
+    end
+
+    function UnitBox(x0, y0, width, height)
+        new(x0, y0, width, height)
+    end
+end
+
+
+# Canvas Transforms
+# -----------------
+
+
+# Transform matrix in absolute coordinates
+immutable Transform
+    M::Matrix{Float64}
+
+    function Transform()
+        new([1.0 0.0 0.0
+             0.0 1.0 0.0
+             0.0 0.0 1.0])
+    end
+
+    function Transform(M::Matrix{Float64})
+        new(M)
+    end
+end
+
+
+const identity_transform = Transform()
+
+
+function isidentity(a::Transform)
+    a.M == identity_native_transform.M
+end
+
+
+function combine(a::Transform, b::Transform)
+    Transform(a.M * b.M)
+end
+
+
+# Rotation about a point.
+type Rotation
+    theta::Float64
+    offset::Point
+
+    function Rotation()
+        new(0.0, Point(0., 0.))
+    end
+
+    function Rotation(theta::Number)
+        Rotation(theta, 0.0, 0.0)
+    end
+
+    function Rotation(theta::Number, offset::XYTupleOrPoint)
+        new(convert(Float64, theta), convert(Point, offset))
+    end
+
+    function Rotation(theta::Number, offset_x, offset_y)
+        new(convert(Float64, theta), Point(offset_x, offset_y))
+    end
+
+    # copy constructor
+    function Rotation(rot::Rotation)
+        new(copy(rot.theta),
+            copy(rot.offset))
+    end
+end
+
+
+copy(rot::Rotation) = Rotation(rot)
+
+
+# Conversion to absolute units
+# ----------------------------
+
+
+# Covert a Measure to a Float64
+function absolute_units(u::Measure,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        parent_box::AbsoluteBoundingBox)
+    u.abs +
+      float64(((u.cx - unit_box.x0) / unit_box.width)) * parent_box.width +
+      float64(((u.cy - unit_box.y0) / unit_box.height)) * parent_box.height +
+      u.cw * parent_box.width +
+      u.ch * parent_box.height
+end
+
+
+# Convert a Rotation to a Transform
+function absolute_units(rot::Rotation,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        parent_box::AbsoluteBoundingBox)
+
+    off = absolute_units(rot.offset, t, unit_box, parent_box)
+    ct = cos(rot.theta)
+    st = sin(rot.theta)
+    x0 = off.x - (ct * off.x - st * off.y)
+    y0 = off.y - (st * off.x + ct * off.y)
+    Transform([ct  -st  convert(Float64, x0)
+               st   ct  convert(Float64, y0)
+               0.0 0.0  1.0])
+end
+
+
+# Convert a BoundingBox to a AbsoluteBoundingBox
+function absolute_units(box::BoundingBox,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        parent_box::AbsoluteBoundingBox)
+    AbsoluteBoundingBox(
+        parent_box.x0 + absolute_units(box.x0, t, unit_box, parent_box),
+        parent_box.y0 + absolute_units(box.y0, t, unit_box, parent_box),
+        absolute_units(box.width, t, unit_box, parent_box),
+        absolute_units(box.width, t, unit_box, parent_box))
+end
+
+
+# Convert a Point to a Point in absolute units
+function absolute_units(point::Point,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        parent_box::AbsoluteBoundingBox)
+    x = parent_box.x0 + absolute_units(point.x, t, unit_box, parent_box)
+    y = parent_box.y0 + absolute_units(point.y, t, unit_box, parent_box)
+    xyt = t.M * [x, y, 1.0]
+
+    Point(Measure(abs=xyt[1]), Measure(abs=xyt[2]))
+end
