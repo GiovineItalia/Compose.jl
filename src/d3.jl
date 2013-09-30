@@ -78,8 +78,8 @@ type D3 <: Backend
         img.finished = false
         img.emit_on_finish = emit_on_finish
 
-        width_value = svg_fmt_float(width.value)
-        height_value = svg_fmt_float(height.value)
+        width_value = svg_fmt_float(width.abs)
+        height_value = svg_fmt_float(height.abs)
         write(img.out,
               """
               function draw_with_data(data, parent_id) {
@@ -112,6 +112,9 @@ type D3 <: Backend
         img
     end
 end
+
+
+typealias JS D3
 
 
 json(c::ColorValue) = repr("#$(hex(c))")

@@ -380,14 +380,26 @@ function draw(img::Image, form::Ellipse)
 end
 
 
+function get_layout_size(img::PNG)
+    width, height = Cairo.get_layout_size(img.ctx)
+    width / assumed_ppmm, height / assumed_ppmm
+end
+
+
+function get_layout_size(img::Image)
+    width, height = Cairo.get_layout_size(img.ctx)
+    25.4 * width / 72, 25.4 * height / 72
+end
+
+
 function draw(img::Image, form::Text)
     if !img.visible || img.opacity == 0.0 || img.fill === nothing
         return
     end
 
-    Cairo.set_text(img.ctx, form.value, true)
     pos = copy(form.pos)
-    width, height = Cairo.get_layout_size(img.ctx)
+    Cairo.set_text(img.ctx, form.value, true)
+    width, height = get_layout_size(img)
     pos = Point(pos.x, Measure(abs=pos.y.abs - height))
 
     if form.halign != hleft || form.valign != vtop
@@ -404,12 +416,14 @@ function draw(img::Image, form::Text)
         end
     end
 
+    Cairo.set_text(img.ctx, form.value, true)
     rgb = convert(RGB, img.fill)
     Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.opacity)
 
     save_state(img)
     translate(img, form.t.M[1,3], form.t.M[2,3])
     rotate(img, atan2(form.t.M[2,1], form.t.M[1,1]))
+
     move_to(img, pos)
     Cairo.show_layout(img.ctx)
     restore_state(img)
