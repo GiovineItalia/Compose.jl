@@ -77,7 +77,7 @@ type SVG <: Backend
         width = size_measure(width)
         height = size_measure(height)
         if !isabsolute(width) || !isabsolute(height)
-            error("SVG image size must be specified in absolute units")
+            error("SVG image size must be specified in absolute units.")
         end
 
         img = new()
@@ -194,6 +194,29 @@ function print_svg_path(out, points::Vector{Point})
                 svg_fmt_float(point.x.abs),
                 svg_fmt_float(point.y.abs[]))
     end
+end
+
+
+# Return array of paths to draw with printpath
+# array is formed by splitting by NaN values
+function make_paths(points::Vector{Point})
+    paths = {}
+    nans = find(isnan, [point.y.abs for point in points])
+
+    if length(nans) == 0
+        push!(paths, points)
+    else
+        nans = [0, nans, length(points) + 1]
+        i, n = 1, length(nans)
+
+        while i <= n-1
+            if nans[i] + 1 < nans[i + 1]
+                push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])
+            end
+            i += 1
+        end
+    end
+    paths
 end
 
 

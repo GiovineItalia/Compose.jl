@@ -1,75 +1,111 @@
 
 
+# Measures without Canvas Units
+# -----------------------------
+
+# Rather than introducing a new type to represent measures that
+# have no canvas unit dimension, we just parameterize Measure
+# over a special type that promotes appropriately.
+immutable MeasureNil
+end
+
+const measure_nil = MeasureNil()
+
+zero(::Type{MeasureNil}) = measure_nil
+
+# ambiguity warning
+max(::Function, b::MeasureNil) = measure_nil
+
+max(a::MeasureNil, b::MeasureNil) = measure_nil
+max(a::MeasureNil, b)             = b
+max(a, b::MeasureNil)             = a
+
++(a::MeasureNil, b::MeasureNil) = measure_nil
++(a::MeasureNil, b)             = b
++(a, b::MeasureNil)             = a
+
+-(a::MeasureNil, b::MeasureNil) = measure_nil
+-(a::MeasureNil, b)             = -b
+-(a, b::MeasureNil)             =  a
+
+*(a::MeasureNil, b::MeasureNil) = error("Two measure_nil objects multiplied")
+*(a::MeasureNil, b)             = measure_nil
+*(a, b::MeasureNil)             = measure_nil
+
+/(a::MeasureNil, b::MeasureNil) = error("Division by a measure_nil")
+/(a, b::MeasureNil)             = error("Division by a measure_nil")
+/(a::MeasureNil, b)             = measure_nil
+
+
 # All measures in Compose are specified as the sum
-immutable Measure{T <: Number}
+immutable Measure{S, T}
     abs::Float64 # absolute measurement in millimeters
-    cx::T        # canvas x-units
+    cx::S        # canvas x-units
     cy::T        # canvas y-units
     cw::Float64  # proportion of canvas width
     ch::Float64  # proportion of canvas height
 
-    function Measure(abs::Number, cx::T, cy::T, cw::Number, ch::Number)
+    function Measure(abs::Number, cx::S, cy::T, cw::Number, ch::Number)
         new(abs, cx, cy, cw, ch)
     end
 
-    function Measure(; abs::T=0.0, cx::T=zero(T), cy::T=zero(T),
-                     cw::T=0.0, ch::T=0.0)
+    function Measure(; abs=0.0, cx::S=zero(T), cy::T=zero(T), cw=0.0, ch=0.0)
         new(abs, cx, cy, cw, ch)
     end
 end
 
 
 function Measure(abs, cx, cy, cw, ch)
-    cx, cy = promote(cx, cy)
-    Measure{typeof(cx)}(abs, cx, cy, cw, ch)
+    Measure{typeof(cx), typeof(cy)}(abs, cx, cy, cw, ch)
 end
 
 
-function Measure(; abs=0.0, cx=0.0, cy=0.0, cw=0.0, ch=0.0)
-    cx, cy = promote(cx, cy)
-    Measure{typeof(cx)}(abs, cx, cy, cw, ch)
+function Measure(; abs=0.0, cx=measure_nil, cy=measure_nil, cw=0.0, ch=0.0)
+    Measure{typeof(cx), typeof(cy)}(abs, cx, cy, cw, ch)
 end
 
 
 # copy wiile substituting
-function Measure{T}(u::Measure{T};
+function Measure{S, T}(u::Measure{S, T};
                     abs=nothing, cx=nothing, cy=nothing,
                     cw=nothing, ch=nothing)
     Measure(abs === nothing ? u.abs : abs,
             cx  === nothing ? u.cx  : cx,
             cy  === nothing ? u.cy  : cy,
             cw  === nothing ? u.cw  : cw,
-            cy  === nothing ? u.ch  : ch)
+            ch  === nothing ? u.ch  : ch)
 end
 
 
 typealias MeasureOrNumber Union(Measure, Number)
 
 
-function zero{T}(::Type{Measure{T}})
-    Measure{T}()
+function zero{S, T}(::Type{Measure{S, T}})
+    Measure{S, T}()
 end
 
 
-function isabsolute{T}(u::Measure{T})
+function isabsolute{S, T}(u::Measure{S, T})
     iszero(u.cx) && iszero(u.cy) && u.cw == 0.0 && u.ch == 0.0
 end
 
 
-function copy{T}(a::Measure{T})
-    Measure(abs=a.abs, cx=a.cx, cy=a.cy, cw=a.cw, ch=a.ch)
+function copy{S, T}(a::Measure{S, T})
+    Measure{S, T}(abs=a.abs, cx=a.cx, cy=a.cy, cw=a.cw, ch=a.ch)
 end
 
 
-function show{T}(io::IO, a::Measure{T})
+function show{S, T}(io::IO, a::Measure{S, T})
     first = true
-    z = zero(T)
-    if a.abs != z
+    xz = zero(S)
+    yz = zero(T)
+
+    if a.abs != 0.0
         print(io, a.abs, "mm")
         first = false
     end
 
-    if a.cx != z
+    if a.cx != xz
         if !first
             print(io, " + ")
         end
@@ -77,7 +113,7 @@ function show{T}(io::IO, a::Measure{T})
         first = false
     end
 
-    if a.cy != z
+    if a.cy != yz
         if !first
             print(io, " + ")
         end
@@ -85,7 +121,7 @@ function show{T}(io::IO, a::Measure{T})
         first = false
     end
 
-    if a.cw != z
+    if a.cw != 0.0
         if !first
             print(io, " + ")
         end
@@ -93,7 +129,7 @@ function show{T}(io::IO, a::Measure{T})
         first = false
     end
 
-    if a.ch != z
+    if a.ch != 0.0
         if !first
             print(io, " + ")
         end
@@ -107,34 +143,25 @@ function show{T}(io::IO, a::Measure{T})
 end
 
 
+
 # Measure Arithmatic
 # ------------------
 
-function +{T, S}(a::Measure{T}, b::Measure{S})
+function +(a::Measure, b::Measure)
     Measure(a.abs + b.abs,
-
-            a.cx == zero(T) ? b.cx :
-            b.cx == zero(S) ? a.cx : a.cx + b.cx,
-
-            a.cy == zero(T) ? b.cy :
-            b.cy == zero(S) ? a.cy : a.cy + b.cy,
-
-            a.cw + b.cw,
-            a.ch + b.ch)
+            a.cx  + b.cx,
+            a.cy  + b.cy,
+            a.cw  + b.cw,
+            a.ch  + b.ch)
 end
 
 
-function -{T, S}(a::Measure{T}, b::Measure{S})
+function -(a::Measure, b::Measure)
     Measure(a.abs - b.abs,
-
-            a.cx == zero(T) ? -b.cx :
-            b.cx == zero(S) ?  a.cx : a.cx - b.cx,
-
-            a.cy == zero(T) ? -b.cy :
-            b.cy == zero(S) ?  a.cy : a.cy - b.cy,
-
-            a.cw - b.cw,
-            a.ch - b.ch)
+            a.cx  - b.cx,
+            a.cy  - b.cy,
+            a.cw  - b.cw,
+            a.ch  - b.ch)
 end
 
 
@@ -176,8 +203,8 @@ end
 function max(measures::Measure...)
     # current maximums
     abs = 0.0
-    cx = 0.0
-    cy = 0.0
+    cx = measure_nil
+    cy = measure_nil
     cw = 0.0
     ch = 0.0
 
@@ -195,16 +222,16 @@ end
 
 # Versus plain numbers
 
-function *(a::Measure, b)
+function *(a::Measure, b::Number)
     Measure(a.abs*b, a.cx*b, a.cy*b, a.cw*b, a.ch*b)
 end
 
-function *(a, b::Measure)
+function *(a::Number, b::Measure)
     b * a
 end
 
 
-function /{T}(a::Measure{T}, b)
+function /{T}(a::Measure{T}, b::Number)
     Measure(a.abs/b, a.cx/b, a.cy/b, a.cw/b, a.ch/b)
 end
 
@@ -230,7 +257,7 @@ const cy   = Measure(cy=1.0)
 # 'px' constant, we just punt and give something do something vagually
 # reasonable.
 
-const assumed_ppmm = 4.5
+const assumed_ppmm = 3.78 # equivalent to 96 DPI
 const px = Measure(abs=1.0/assumed_ppmm)
 
 
@@ -298,6 +325,11 @@ end
 typealias XYTupleOrPoint Union(NTuple{2}, Point)
 
 
+function convert(::Type{Point}, xy::NTuple{2})
+    Point(xy[1], xy[2])
+end
+
+
 # Bounding Boxes
 # --------------
 
@@ -353,6 +385,7 @@ end
 
 # The same type-signature is used for a box used to assign
 # a custom coordinate system to a canvas.
+# TODO: There should not be one fixed type for every parameter
 immutable UnitBox{T}
     x0::T
     y0::T
@@ -363,15 +396,18 @@ immutable UnitBox{T}
         new(x0, y0, width, height)
     end
 
-    function UnitBox(width, height)
-        x0, y0, width, height = promote(0.0, 0.0, width, height)
-        new(x0, y0, width, height)
-    end
+end
 
-    function UnitBox(x0, y0, width, height)
-        x0, y0, width, height = promote(x0, y0, width, height)
-        new(x0, y0, width, height)
-    end
+
+function UnitBox(width, height)
+    x0, y0, width, height = promote(0.0, 0.0, width, height)
+    UnitBox{typeof(x0)}(x0, y0, width, height)
+end
+
+
+function UnitBox(x0, y0, width, height)
+    x0, y0, width, height = promote(x0, y0, width, height)
+    UnitBox{typeof(x0)}(x0, y0, width, height)
 end
 
 
@@ -404,7 +440,7 @@ const identity_transform = Transform()
 
 
 function isidentity(a::Transform)
-    a.M == identity_native_transform.M
+    a.M == identity_transform.M
 end
 
 
@@ -449,17 +485,19 @@ copy(rot::Rotation) = Rotation(rot)
 # ----------------------------
 
 
+
 # Covert a Measure to a Float64
 function absolute_units(u::Measure,
                         t::Transform,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
     u.abs +
-      float64(((u.cx - unit_box.x0) / unit_box.width)) * parent_box.width +
-      float64(((u.cy - unit_box.y0) / unit_box.height)) * parent_box.height +
+      (u.cx / unit_box.width) * parent_box.width +
+      (u.cy / unit_box.height) * parent_box.height +
       u.cw * parent_box.width +
       u.ch * parent_box.height
 end
+
 
 
 # Convert a Rotation to a Transform
@@ -480,16 +518,66 @@ function absolute_units(rot::Rotation,
 end
 
 
+function absolute_position_cx(::MeasureNil, unit_box::UnitBox,
+                              parent_box::AbsoluteBoundingBox)
+    0.0
+end
+
+
+function absolute_position_cx(cx, unit_box::UnitBox,
+                              parent_box::AbsoluteBoundingBox)
+    float64(((cx - unit_box.x0) / unit_box.width)) * parent_box.width
+end
+
+
+function absolute_position_cy(::MeasureNil, unit_box::UnitBox,
+                              parent_box::AbsoluteBoundingBox)
+    0.0
+end
+
+
+function absolute_position_cy(cy, unit_box::UnitBox,
+                              parent_box::AbsoluteBoundingBox)
+    float64(((cy - unit_box.y0) / unit_box.height)) * parent_box.height
+end
+
+
+function absolute_x_position(u::Measure,
+                             t::Transform,
+                             unit_box::UnitBox,
+                             parent_box::AbsoluteBoundingBox)
+    parent_box.x0 +
+      u.abs +
+      absolute_position_cx(u.cx, unit_box, parent_box) +
+      absolute_position_cy(u.cy, unit_box, parent_box) +
+      u.cw * parent_box.width +
+      u.ch * parent_box.height
+end
+
+
+function absolute_y_position(u::Measure,
+                             t::Transform,
+                             unit_box::UnitBox,
+                             parent_box::AbsoluteBoundingBox)
+    parent_box.y0 +
+      u.abs +
+      absolute_position_cx(u.cx, unit_box, parent_box) +
+      absolute_position_cy(u.cy, unit_box, parent_box) +
+      u.cw * parent_box.width +
+      u.ch * parent_box.height
+end
+
+
 # Convert a BoundingBox to a AbsoluteBoundingBox
 function absolute_units(box::BoundingBox,
                         t::Transform,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
     AbsoluteBoundingBox(
-        parent_box.x0 + absolute_units(box.x0, t, unit_box, parent_box),
-        parent_box.y0 + absolute_units(box.y0, t, unit_box, parent_box),
+        absolute_x_position(box.x0, t, unit_box, parent_box),
+        absolute_y_position(box.y0, t, unit_box, parent_box),
         absolute_units(box.width, t, unit_box, parent_box),
-        absolute_units(box.width, t, unit_box, parent_box))
+        absolute_units(box.height, t, unit_box, parent_box))
 end
 
 
@@ -498,8 +586,9 @@ function absolute_units(point::Point,
                         t::Transform,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
-    x = parent_box.x0 + absolute_units(point.x, t, unit_box, parent_box)
-    y = parent_box.y0 + absolute_units(point.y, t, unit_box, parent_box)
+
+    x = absolute_x_position(point.x, t, unit_box, parent_box)
+    y = absolute_y_position(point.y, t, unit_box, parent_box)
     xyt = t.M * [x, y, 1.0]
 
     Point(Measure(abs=xyt[1]), Measure(abs=xyt[2]))

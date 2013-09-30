@@ -15,43 +15,6 @@ abstract SVGBackend <: VectorImageBackend
 abstract PDFBackend <: VectorImageBackend
 abstract PSBackend  <: VectorImageBackend
 
-# Native unit
-type ImageMeasure{T <: ImageBackend} <: NativeMeasure
-    value::Float64
-end
-
-copy{T}(u::ImageMeasure{T}) = ImageMeasure{T}(u.value)
-
-convert(::Type{Float64}, u::ImageMeasure) = u.value
-function convert{T}(::Type{ImageMeasure{T}}, u::Number)
-    ImageMeasure{T}(convert(Float64, u))
-end
-
-function *{T}(u::Number, v::ImageMeasure{T})
-    ImageMeasure{T}(convert(Float64, u) * v.value)
-end
-
-function /{T}(u::ImageMeasure{T}, v::Number)
-    ImageMeasure{T}(u.value / convert(Float64, v))
-end
-
-function +{T}(u::ImageMeasure{T}, v::ImageMeasure{T})
-    ImageMeasure{T}(u.value + v.value)
-end
-
-function -{T}(u::ImageMeasure{T}, v::ImageMeasure{T})
-    ImageMeasure{T}(u.value - v.value)
-end
-
-function convert(::Type{SimpleMeasure{MillimeterUnit}},
-                 u::ImageMeasure{PNGBackend})
-    convert(SimpleMeasure{MillimeterUnit}, SimpleMeasure{PixelUnit}(u.value))
-end
-
-function convert{T}(::Type{SimpleMeasure{MillimeterUnit}}, u::ImageMeasure{T})
-    SimpleMeasure{MillimeterUnit}(u.value)
-end
-
 type ImagePropertyState
     stroke::ColorOrNothing
     fill::ColorOrNothing
@@ -105,23 +68,31 @@ type Image{B <: ImageBackend} <: Backend
 
     Image(surface::CairoSurface) = Image{B}(surface, CairoContext(surface))
 
+
     function Image(out::IO,
                    width::MeasureOrNumber,
                    height::MeasureOrNumber,
                    emit_on_finish::Bool=true)
 
-        w = native_measure(width, B).value
-        h = native_measure(height, B).value
+        width = size_measure(width)
+        height = size_measure(height)
+
+        if !isabsolute(width) || !isabsolute(height)
+            error("Image size must be specificed in absolute units.")
+        end
+
+        width = absolute_native_units(B, width.abs)
+        height = absolute_native_units(B, height.abs)
 
         local surface::CairoSurface
         if B == SVGBackend
-            surface = CairoSVGSurface(out, w, h)
+            surface = CairoSVGSurface(out, width, height)
         elseif B == PNGBackend
-            surface = CairoARGBSurface(round(w), round(h))
+            surface = CairoARGBSurface(iround(width), iround(height))
         elseif B == PDFBackend
-            surface = CairoPDFSurface(out, w, h)
+            surface = CairoPDFSurface(out, width, height)
         elseif B == PSBackend
-            surface = CairoEPSSurface(out, w, h)
+            surface = CairoEPSSurface(out, width, height)
         else
             error("Unkown Cairo backend.")
         end
@@ -159,8 +130,44 @@ typealias PDF Image{PDFBackend}
 typealias PS  Image{PSBackend}
 
 
-width{B}(img::Image{B}) = ImageMeasure{B}(Cairo.width(img.surface))
-height{B}(img::Image{B}) = ImageMeasure{B}(Cairo.height(img.surface))
+# convert compose absolute units (millimeters) to the absolute units used by the
+# cairo surface (pixels for PNG, points for all others)
+function absolute_native_units(::Type{PNGBackend}, u::Float64)
+    assumed_ppmm * u
+end
+
+
+function absolute_native_units{B <: ImageBackend}(::Type{B},
+                                                  u::Float64)
+    72 * u / 25.4
+end
+
+
+function absolute_native_units{B}(img::Image{B}, u::Float64)
+    absolute_native_units(B, u)
+end
+
+
+# Width and height of a backend in absolute units
+function width(img::PNG)
+    Cairo.width(img.surface) / assumed_ppmm
+end
+
+
+function width(img::Image)
+    25.4 * Cairo.width(img.surface) / 72
+end
+
+
+function height(img::PNG)
+    Cairo.height(img.surface) / assumed_ppmm
+end
+
+
+function height(img::Image)
+    25.4 * Cairo.height(img.surface) / 72
+end
+
 
 finish{B <: ImageBackend}(::Type{B}, img::Image) = nothing
 
@@ -216,114 +223,73 @@ end
 # sizes
 
 function root_box{B}(img::Image{B})
-    NativeBoundingBox(
-        ImageMeasure{B}(0.),
-        ImageMeasure{B}(0.),
-        width(img),
-        height(img))
-end
-
-
-native_zero{T}(backend::Image{T}) = ImageMeasure{T}(0.0)
-
-
-# PNG conversion to native units (i.e., pixels)
-
-function native_measure{K <: ImageBackend}(u::Number, ::Type{K})
-    ImageMeasure{K}(convert(Float64, u))
-end
-
-
-function native_measure{K <: ImageBackend}(u::SimpleMeasure{PixelUnit},
-                                           ::Type{K})
-    ImageMeasure{K}(u.value)
-end
-
-
-function native_measure{K <: ImageBackend}(u::SimpleMeasure{MillimeterUnit},
-                                           ::Type{K})
-    native_measure(convert(SimpleMeasure{PixelUnit}, u), K)
-end
-
-
-function native_measure{K <: ImageBackend}(u::Number, backend::Image{K})
-    native_measure(u, K)
-end
-
-
-function native_measure{K <: ImageBackend}(u::SimpleMeasure{PixelUnit},
-                        backend::Image{K})
-    native_measure(u, K)
-end
-
-
-function native_measure{K <: ImageBackend}(u::SimpleMeasure{MillimeterUnit},
-                        backend::Image{K})
-    native_measure(u, K)
-end
-
-
-# SVG/PDF/PS conversion to native units (i.e., pts)
-
-function native_measure{K <: VectorImageBackend}(u::Number, ::Type{K})
-    ImageMeasure{K}(convert(Float64, u))
-end
-
-
-function native_measure{K <: VectorImageBackend}(u::SimpleMeasure{PixelUnit},
-                                                 ::Type{K})
-    native_measure(convert(SimpleMeasure{MillimeterUnit}, u), K)
-end
-
-
-function native_measure{K <: VectorImageBackend}(u::SimpleMeasure{MillimeterUnit},
-                                                 ::Type{K})
-    ImageMeasure{K}(u / pt)
-end
-
-
-
-function native_measure{K <: VectorImageBackend}(
-        u::Number,
-        backend::Image{K})
-    native_measure(u, K)
-end
-
-
-function native_measure{K <: VectorImageBackend}(
-        u::SimpleMeasure{PixelUnit},
-        backend::Image{K})
-    native_measure(u, K)
-end
-
-
-function native_measure{K <: VectorImageBackend}(
-        u::SimpleMeasure{MillimeterUnit},
-        backend::Image{K})
-    native_measure(u, K)
+    AbsoluteBoundingBox(0.0, 0.0, width(img), height(img))
 end
 
 
 # Drawing
 
-move_to(img::Image, point::Point) = Cairo.move_to(img.ctx, point.x.value, point.y.value)
-line_to(img::Image, point::Point) = Cairo.line_to(img.ctx, point.x.value, point.y.value)
-
-# TODO: What is the equivalent Cairo call?
-curve_to(img::Image, ctrl0::Point, ctrl1::Point, anchor1::Point) =
-    curve_to(img.ctx, ctrl0.x.value, ctrl0.y.value, ctrl1.x.value, ctrl1.y.value,
-            anchor1.x.value, anchor1.y.value)
-
-close_path(img::Image) = Cairo.close_path(img.ctx)
-
-function arc(img::Image, x::Float64, y::Float64, radius::Float64,
-             angle1::Float64, angle2::Float64)
-    Cairo.arc(img.ctx,x,y,radius,angle1,angle2)
+function move_to(img::Image, point::Point)
+    Cairo.move_to(
+        img.ctx,
+        absolute_native_units(img, point.x.abs),
+        absolute_native_units(img, point.y.abs))
 end
 
-translate(img::Image, tx::Float64, ty::Float64) = Cairo.translate(img.ctx, tx, ty)
-scale(img::Image, sx::Float64, sy::Float64) = Cairo.scale(img.ctx, sx, sy)
-rotate(img::Image, theta::Float64) = Cairo.rotate(img.ctx, theta)
+
+function line_to(img::Image, point::Point)
+    Cairo.line_to(
+        img.ctx,
+        absolute_native_units(img, point.x.abs),
+        absolute_native_units(img, point.y.abs))
+end
+
+
+function curve_to(img::Image, ctrl1::Point, ctrl2::Point, anchor::Point)
+    Cairo.curve_to(
+        img.ctx,
+        absolute_native_units(img, ctrl1.x.abs),
+        absolute_native_units(img, ctrl1.y.abs),
+        absolute_native_units(img, ctrl2.x.abs),
+        absolute_native_units(img, ctrl2.y.abs),
+        absolute_native_units(img, anchor.x.abs),
+        absolute_native_units(img, anchor.y.abs))
+end
+
+
+function close_path(img::Image)
+    Cairo.close_path(img.ctx)
+end
+
+
+function arc(img::Image, x::Float64, y::Float64, radius::Float64,
+                angle1::Float64, angle2::Float64)
+    Cairo.arc(
+        img.ctx,
+        absolute_native_units(img, x),
+        absolute_native_units(img, y),
+        absolute_native_units(img, radius),
+        absolute_native_units(img, angle1),
+        absolute_native_units(img, angle2))
+end
+
+
+function translate(img::Image, tx::Float64, ty::Float64)
+    Cairo.translate(
+        img.ctx,
+        absolute_native_units(img, tx),
+        absolute_native_units(img, ty))
+end
+
+
+function scale(img::Image, sx::Float64, sy::Float64)
+    Cairo.scale(img.ctx, sx, sy)
+end
+
+
+function rotate(img::Image, theta::Float64)
+    Cairo.rotate(img.ctx, theta)
+end
 
 
 function fillstroke(img::Image)
@@ -394,14 +360,14 @@ end
 
 
 function draw(img::Image, form::Ellipse)
-    cx = form.center.x.value
-    cy = form.center.y.value
-    rx = sqrt((form.x_point.x.value - cx)^2 +
-              (form.x_point.y.value - cy)^2)
-    ry = sqrt((form.y_point.x.value - cx)^2 +
-              (form.y_point.y.value - cy)^2)
-    theta = atan2(form.x_point.y.value - cy,
-                  form.x_point.x.value - cx)
+    cx = form.center.x.abs
+    cy = form.center.y.abs
+    rx = sqrt((form.x_point.x.abs - cx)^2 +
+              (form.x_point.y.abs - cy)^2)
+    ry = sqrt((form.y_point.x.abs - cx)^2 +
+              (form.y_point.y.abs - cy)^2)
+    theta = atan2(form.x_point.y.abs - cy,
+                  form.x_point.x.abs - cx)
 
     save_state(img)
     translate(img, cx, cy)
@@ -422,19 +388,19 @@ function draw(img::Image, form::Text)
     Cairo.set_text(img.ctx, form.value, true)
     pos = copy(form.pos)
     width, height = Cairo.get_layout_size(img.ctx)
-    pos.y.value -= height
+    pos = Point(pos.x, Measure(abs=pos.y.abs - height))
 
     if form.halign != hleft || form.valign != vtop
         if form.halign == hcenter
-            pos.x.value -= width / 2
+            pos = Point(Measure(abs=pos.x.abs - width/2), pos.y)
         elseif form.halign == hright
-            pos.x.value -= width
+            pos = Point(Measure(abs=pos.x.abs - width), pos.y)
         end
 
         if form.valign == vcenter
-            pos.y.value += height / 2
+            pos = Point(pos.x, Measure(abs=pos.y.abs + height/2))
         elseif form.valign == vtop
-            pos.y.value += height
+            pos = Point(pos.x, Measure(abs=pos.y.abs + height))
         end
     end
 
@@ -442,7 +408,7 @@ function draw(img::Image, form::Text)
     Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.opacity)
 
     save_state(img)
-    Cairo.translate(img.ctx, form.t.M[1,3], form.t.M[2,3])
+    translate(img, form.t.M[1,3], form.t.M[2,3])
     rotate(img, atan2(form.t.M[2,1], form.t.M[1,1]))
     move_to(img, pos)
     Cairo.show_layout(img.ctx)
@@ -493,7 +459,9 @@ end
 
 
 function apply_property(img::Image, property::LineWidth)
-    Cairo.set_line_width(img.ctx, property.value.value)
+    Cairo.set_line_width(
+        img.ctx,
+        absolute_native_units(img, property.value.abs))
 end
 
 
@@ -514,7 +482,10 @@ function apply_property(img::Image, property::FontSize)
         family = bytestring(family)
     end
 
-    Cairo.set_font_face(img.ctx, @sprintf("%s %.2f", family, property.value.value))
+    Cairo.set_font_face(img.ctx,
+        @sprintf("%s %.2f",
+            family,
+            absolute_native_units(img, property.value.abs)))
 end
 
 
@@ -527,5 +498,3 @@ function apply_property(img::Image, property::Clip)
     close_path(img)
     Cairo.clip(img.ctx)
 end
-
-

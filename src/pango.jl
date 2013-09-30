@@ -119,8 +119,8 @@ function text_extents(font_family::String, pts::Float64, texts::String...)
     max_height = 0mm
     for text in texts
         (width, height) = pango_text_extents(pangolayout, text)
-        max_width  = max_width.value  < width.value  ? width  : max_width
-        max_height = max_height.value < height.value ? height : max_height
+        max_width  = max_width.abs  < width.abs  ? width  : max_width
+        max_height = max_height.abs < height.abs ? height : max_height
     end
     (max_width, max_height)
 end

@@ -264,10 +264,8 @@ function drawpart(backend::Backend, root_canvas::Canvas)
         property = canvas.property
         if canvas.clip
             property = combine(property,
-                           clip(Point(box.x0, box.y0),
-                                Point(box.x0 + box.width, box.y0),
-                                Point(box.x0 + box.width, box.y0 + box.height),
-                                Point(box.x0, box.y0 + box.height)))
+                            clip(Point(0w, 0h), Point(1w, 0h),
+                                 Point(1w, 1h), Point(0w, 1h)))
         end
 
         if !is(property, empty_property)

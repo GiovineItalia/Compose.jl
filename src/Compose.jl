@@ -17,8 +17,10 @@ import Base: +, -, *, /, convert, length, ==, <, <=, >=, isempty, start, next,
              done, copy, isless, max, show, hex, writemime, zero
 
 export pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
-       combine, contents, decompose, Measure, BoundingBox,
-       mm, cm, inch, pt, w, h, px, cx, cy
+       combine, contents, decompose, text_extents,
+       Measure, BoundingBox, UnitBox,
+       mm, cm, inch, pt, w, h, px, cx, cy,
+       SVG, D3, JS, PNG, PS, PDF
 
 import Iterators
 
@@ -52,28 +54,29 @@ catch
 end
 
 # Use cairo for the PNG, PS, PDF if its installed.
-# TODO: fix this shit up
-# try
-#     require("Cairo")
-#     include("cairo_backends.jl")
-# catch
-#     PNG(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
-#         error("Cairo must be installed to use the PNG backend.")
-#     PS(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
-#         error("Cairo must be installed to use the PS backend.")
-#     PDF(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
-#         error("Cairo must be installed to use the PDF backend.")
-# end
+try
+    require("Cairo")
+    include("cairo_backends.jl")
+catch
+    global PNG
+    global PS
+    global PDF
+    PNG(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PNG backend.")
+    PS(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PS backend.")
+    PDF(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PDF backend.")
+end
 
 include("svg.jl")
-
-# TODO: fix this shit up
-# include("d3.jl")
-# include("dataform.jl")
+include("d3.jl")
+include("dataform.jl")
 
 
 
-typealias Composable Union(Form, Property, Canvas)
+typealias Composable Union(Form, Property, Canvas,
+                           DataForm, DataProperty)
 
 
 # Compose over hetergenous lists of things.
@@ -95,11 +98,7 @@ function pad_outer(c::Canvas, u)
     root = canvas(c.box.x0, c.box.y0, c.box.width + 2u, c.box.height + 2u,
                   units_inherited=true)
     c = copy(c)
-    c.box = copy(c.box)
-    c.box.width = 1w -2u
-    c.box.height = 1h - 2u
-    c.box.x0 = u
-    c.box.y0 = u
+    c.box = BoundingBox(u, u, 1w - 2u, 1h - 2u)
 
     compose(root, c)
 end
@@ -127,7 +126,7 @@ const pad = pad_outer
 function hstack(x0, y0, height, aligned_canvases::(Canvas, VAlignment)...)
 
     if isempty(aligned_canvases)
-        convas()
+        return canvas(x0, y0, 0, height)
     end
 
     # To get the expected results, we scale width units, so that everything
@@ -143,8 +142,7 @@ function hstack(x0, y0, height, aligned_canvases::(Canvas, VAlignment)...)
     height = y_measure(height)
 
     root = canvas(x0, y0, width, height)
-    T = typeof(canvas.box.width.cx)
-    x = Measure{T}()
+    x = Measure()
     for (canvas, aln) in aligned_canvases
         canvas = copy(canvas)
         canvas.box = copy(canvas.box)
@@ -157,7 +155,7 @@ function hstack(x0, y0, height, aligned_canvases::(Canvas, VAlignment)...)
         end
 
         # Should we interpret vbottom to mean 0?
-        canvas.box.x0 = x
+        canvas.box = BoundingBox(canvas.box, x0=x)
         if aln == vtop
             canvas.box = BoundingBox(canvas.box, y0=Measure{T}())
         elseif aln == vcenter
@@ -206,7 +204,7 @@ end
 function vstack(x0, y0, width, aligned_canvases::(Canvas, HAlignment)...)
 
     if isempty(aligned_canvases)
-        canvas()
+        return canvas(x0, y0, width, 0)
     end
 
     # Scale height units
@@ -221,8 +219,7 @@ function vstack(x0, y0, width, aligned_canvases::(Canvas, HAlignment)...)
     width = x_measure(width)
 
     root = canvas(x0, y0, width, height)
-    T = typeof(canvas.box.height.cx)
-    y = Measure{T}()
+    y = Measure()
     for (canvas, aln) in aligned_canvases
         canvas = copy(canvas)
         canvas.box = copy(canvas.box)
@@ -234,7 +231,7 @@ function vstack(x0, y0, width, aligned_canvases::(Canvas, HAlignment)...)
                         ch=canvas.box.height.ch / total_height_units))
         end
 
-        canvas.box.y0 = y
+        canvas.box = BoundingBox(canvas.box, y0=y)
         if aln == hleft
             canvas.box = BoundingBox(canvas.box, x0=Measure{T}())
         elseif aln == hcenter
@@ -301,12 +298,8 @@ function gridstack(canvases::AbstractMatrix{Canvas},
 
     n, m = size(canvases)
 
-    # we're sort of assuming that each canvas's bounding box uses
-    # measures based on the same type
-    T = typeof(canvases[1,1].box.cx)
-
-    row_heights = fill(Measure{T}(), n)
-    col_widths  = fill(Measure{T}(), m)
+    row_heights = fill(Measure(), n)
+    col_widths  = fill(Measure(), m)
     for i in 1:n, j in 1:m
         row_heights[i] = max(row_heights[i], canvases[i, j].box.height)
         col_widths[j]  = max(col_widths[j], canvases[i, j].box.width)
