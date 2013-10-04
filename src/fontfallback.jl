@@ -55,8 +55,9 @@ end
 #   Approximate text width in millimeters.
 #
 function text_width(widths::Dict, text::String, size::Float64)
+    stripped_text = replace(text, r"<[^>]*>", "")
     width = 0
-    for c in text
+    for c in stripped_text
         width += get(widths, c, widths["w"])
     end
     width
@@ -73,6 +74,11 @@ function text_extents(font_family::String, size::Measure,
     height = glyphsizes[font_family]["height"]
     widths = glyphsizes[font_family]["widths"]
 
+    # nudge the height if the text contains <sub> or <sup> tags
+    if any([match(r"<su(p|b)>", text) != nothing for text in texts])
+        height *= 1.5
+    end
+
     width = max([text_width(widths, text, size/pt) for text in texts])
     (text_extents_scale_x * scale * width * mm,
      text_extents_scale_y * scale * height * mm)
@@ -81,15 +87,25 @@ end
 
 # Amazingly crude fallback to parse pango markup into svg.
 function pango_to_svg(text::String)
-    whitelist = Set("sup", "sub")
     pat = r"<(/?)\s*([^>]*)\s*>"
     input = convert(Array{Uint8}, text)
     output = IOBuffer()
     lastpos = 1
     for mat in eachmatch(pat, text)
         write(output, input[lastpos:mat.offset-1])
-        if in(mat.captures[2], whitelist)
-            write(output, mat.match)
+
+        if mat.captures[2] == "sup"
+            if mat.captures[1] == "/"
+                write(output, "</tspan>")
+            else
+                write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"super\">")
+            end
+        elseif mat.captures[2] == "sub"
+            if mat.captures[1] == "/"
+                write(output, "</tspan>")
+            else
+                write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"sub\">")
+            end
         elseif mat.captures[2] == "i"
             if mat.captures[1] == "/"
                 write(output, "</tspan>")
