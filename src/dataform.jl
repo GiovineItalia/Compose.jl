@@ -149,51 +149,42 @@ function make_d3_x_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
                               t::Transform, unit_box::UnitBox,
                               box::AbsoluteBoundingBox,
                               dataindexes::Dict{Int, Int})
-    mx = box.width.value / unit_box.width.value
-    bx = box.x0.value - unit_box.x0.value * box.width.value / unit_box.width.value
 
     # For singleton values, we compute the transform in place.
     if length(ds) == 1
-        x = absolute_units(x_measure(ds[1]), t, unit_box, box)
-        svg_fmt_float(x.value + box.x0.value)
+        svg_fmt_float(absolute_x_position(x_measure(ds[1]), t, unit_box, box))
     else
+        ds = Float64[absolute_x_position(x_measure(d), t, unit_box, box)
+                     for d in ds]
+
         idx = data_idx(backend, ds)
         if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
-        if T <: Real
-            @sprintf("function(d) { return d[%d] * %e + %s; }",
-                     rowidx, mx, svg_fmt_float(bx))
-        else
-            @sprintf("function(d) { return d[%d]; }", rowidx)
-        end
+
+        @sprintf("function(d) { return d[%d]; }", rowidx)
     end
 end
 
 
 function make_d3_width_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
                                   t::Transform,
-                                  unit_box::BoundingBox,
+                                  unit_box::UnitBox,
                                   box::AbsoluteBoundingBox,
                                   dataindexes::Dict{Int, Int})
-    mx = box.width.value / unit_box.width.value
-
     if length(ds) == 1
-        x = absolute_units(x_measure(ds[1]), t, unit_box, box)
-        svg_fmt_float(x.value)
+        svg_fmt_float(absolute_units(x_measure(ds[1]), t, unit_box, box))
     else
+        ds = Float64[absolute_x_position(x_measure(d), t, unit_box, box)
+                     for d in ds]
+
         idx = data_idx(backend, ds)
         if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
-        if T <: Real
-            @sprintf("function(d) { return d[%d] * %e; }",
-                     rowidx, mx)
-        else
-            @sprintf("function(d) { return d[%d]; }", rowidx)
-        end
+        @sprintf("function(d) { return d[%d]; }", rowidx)
     end
 end
 
@@ -219,25 +210,20 @@ function make_d3_y_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
                               unit_box::UnitBox,
                               box::AbsoluteBoundingBox,
                               dataindexes::Dict{Int, Int})
-    my = box.height.value / unit_box.height.value
-    by = box.y0.value - unit_box.y0.value * box.height.value / unit_box.height.value
 
     # For singleton values, we compute the transform in place.
     if length(ds) == 1
-        y = absolute_units(x_measure(ds[1]), t, unit_box, box)
-        svg_fmt_float(y.value + box.y0.value)
+        svg_fmt_float(absolute_y_position(y_measure(ds[1]), t, unit_box, box))
     else
+        ds = Float64[absolute_y_position(y_measure(d), t, unit_box, box)
+                     for d in ds]
+
         idx = data_idx(backend, ds)
         if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
-        if T <: Real
-            @sprintf("function(d) { return d[%d] * %e + %s; }",
-                     rowidx, my, svg_fmt_float(by))
-        else
-            @sprintf("function(d) { return d[%d]; }", rowidx)
-        end
+        @sprintf("function(d) { return d[%d]; }", rowidx)
     end
 end
 
@@ -247,24 +233,19 @@ function make_d3_height_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
                                    unit_box::UnitBox,
                                    box::AbsoluteBoundingBox,
                                    dataindexes::Dict{Int, Int})
-    my = box.height.value / unit_box.height.value
-
     # For singleton values, we compute the transform in place.
     if length(ds) == 1
-        y = absolute_units(x_measure(ds[1]), t, unit_box, box)
-        svg_fmt_float(y.value)
+        svg_fmt_float(absolute_units(y_measure(ds[1]), t, unit_box, box))
     else
+        ds = Float64[absolute_units(y_measure(ds[1]), t, unit_box, box)
+                     for d in ds]
+
         idx = data_idx(backend, ds)
         if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
-        if T <: Real
-            @sprintf("function(d) { return d[%d] * %e; }",
-                     rowidx, my)
-        else
-            @sprintf("function(d) { return d[%d]; }", rowidx)
-        end
+        @sprintf("function(d) { return d[%d]; }", rowidx)
     end
 end
 
@@ -383,7 +364,7 @@ function draw(backend::D3, t::Transform, unit_box::UnitBox,
     x_expr = make_d3_x_attr(backend, x, t, unit_box, box, dataindexes)
     y_expr = make_d3_y_attr(backend, y, t, unit_box, box, dataindexes)
 
-    dp_expr = make_d3_data_property_expr(backend, unit_box, box,
+    dp_expr = make_d3_data_property_expr(backend, t, unit_box, box,
                                          dataindexes, form.dataprops)
     push_property(backend, form.property)
 
