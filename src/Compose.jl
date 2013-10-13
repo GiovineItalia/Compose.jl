@@ -270,15 +270,19 @@ end
 
 
 function scale_width_height_units(u::Measure,
-                                  width_scale::Float64,
-                                  height_scale::Float64)
+                                  width_scale::Measure,
+                                  height_scale::Measure)
     u = copy(u)
     if u.cw > 0.0
-        u = Measure(u, cw=u.cw * width_scale)
+        val = u.cw
+        u = Measure(u, cw=0.0)
+        u += val * width_scale
     end
 
     if u.ch > 0.0
-        u = Measure(u, ch=u.ch * height_scale)
+        val = u.ch
+        u = Measure(u, ch=0.0)
+        u += val * height_scale
     end
 
     u
@@ -316,10 +320,10 @@ function gridstack(canvases::AbstractMatrix{Canvas},
     root_abs_x_units = Measure(sum(col_widths), cw=0.0)
     root_abs_y_units = Measure(sum(row_heights), ch=0.0)
 
-    # root_width_unit_scale = (1.0w - root_abs_x_units) / root_width_units
-    # root_height_unit_scale = (1.0h - root_abs_y_units) / root_height_units
-    root_width_unit_scale = 1.0 / root_width_units
-    root_height_unit_scale = 1.0 / root_height_units
+    root_width_unit_scale = (1.0w - root_abs_x_units) / root_width_units
+    root_height_unit_scale = (1.0h - root_abs_y_units) / root_height_units
+    # root_width_unit_scale = 1.0 / root_width_units
+    # root_height_unit_scale = 1.0 / root_height_units
 
     # ----------------------------------------
     row_positions = Array(Measure, n+1)
