@@ -247,7 +247,7 @@ function drawpart(backend::Backend, root_canvas::Canvas)
         end
 
         if typeof(canvas) == DeferredCanvas
-            canvas = canvas.f(parent_box, unit_box)
+            canvas = canvas.f(parent_t, unit_box, parent_box)
             if !(typeof(canvas) <: Canvas)
                 error("Error: A deferred canvas function did not evaluate to a canvas.")
             end

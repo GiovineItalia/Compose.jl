@@ -18,7 +18,8 @@ import Base: +, -, *, /, convert, length, ==, <, <=, >=, isempty, start, next,
 
 export pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
        combine, contents, decompose, text_extents,
-       Measure, BoundingBox, UnitBox,
+       Measure, AbsoluteBoundingBox, BoundingBox, UnitBox,
+       absolute_x_position, absolute_y_position, absolute_units,
        mm, cm, inch, pt, w, h, px, cx, cy,
        SVG, D3, JS, PNG, PS, PDF
 
@@ -269,8 +270,8 @@ end
 
 
 function scale_width_height_units(u::Measure,
-                                  width_scale::Measure,
-                                  height_scale::Measure)
+                                  width_scale::Float64,
+                                  height_scale::Float64)
     u = copy(u)
     if u.cw > 0.0
         u = Measure(u, cw=u.cw * width_scale)
@@ -298,21 +299,27 @@ function gridstack(canvases::AbstractMatrix{Canvas},
 
     n, m = size(canvases)
 
-    row_heights = fill(Measure(), n)
-    col_widths  = fill(Measure(), m)
+    row_heights = Array(Measure, n)
+    fill!(row_heights, canvases[1, 1].box.height)
+
+    col_widths  = Array(Measure, m)
+    fill!(col_widths, canvases[1, 1].box.width)
+
     for i in 1:n, j in 1:m
         row_heights[i] = max(row_heights[i], canvases[i, j].box.height)
         col_widths[j]  = max(col_widths[j], canvases[i, j].box.width)
     end
 
     root_width_units = sum(col_widths).cw
-    root_height_units = sum(row_height).ch
+    root_height_units = sum(row_heights).ch
 
     root_abs_x_units = Measure(sum(col_widths), cw=0.0)
     root_abs_y_units = Measure(sum(row_heights), ch=0.0)
 
-    root_width_unit_scale = (1.0w - root_abs_x_units) / root_width_units
-    root_height_unit_scale = (1.0h - root_abs_y_units) / root_height_units
+    # root_width_unit_scale = (1.0w - root_abs_x_units) / root_width_units
+    # root_height_unit_scale = (1.0h - root_abs_y_units) / root_height_units
+    root_width_unit_scale = 1.0 / root_width_units
+    root_height_unit_scale = 1.0 / root_height_units
 
     # ----------------------------------------
     row_positions = Array(Measure, n+1)
@@ -343,16 +350,17 @@ function gridstack(canvases::AbstractMatrix{Canvas},
 
     for i in 1:n, j in 1:m
         canvas = copy(canvases[i,j])
-        canvas.box = copy(canvas.box)
 
         # Make adjustments to the interpretation of width/height units.
-        canvas.box.width = scale_width_height_units(canvas.box.width,
-                                                    root_width_unit_scale,
-                                                    root_height_unit_scale)
+        box_width = scale_width_height_units(canvas.box.width,
+                                             root_width_unit_scale,
+                                             root_height_unit_scale)
 
-        canvas.box.height = scale_width_height_units(canvas.box.height,
-                                                     root_width_unit_scale,
-                                                     root_height_unit_scale)
+        box_height = scale_width_height_units(canvas.box.height,
+                                              root_width_unit_scale,
+                                              root_height_unit_scale)
+
+        canvas.box = BoundingBox(canvas.box, width=box_width, height=box_height)
 
         if halign == hleft
             canvas.box = BoundingBox(canvas.box, x0=col_positions[j])
@@ -365,12 +373,12 @@ function gridstack(canvases::AbstractMatrix{Canvas},
         end
 
         if valign == vtop
-            canvas.box = BoundingBox(y0=row_positions[i])
+            canvas.box = BoundingBox(canvas.box, y0=row_positions[i])
         elseif valign == vcenter
-            canvas.box = BoundingBox(
+            canvas.box = BoundingBox(canvas.box,
                 y0=(row_positions[i] + row_positions[i+1] + canvas.box.height) / 2)
         elseif valign == vright
-            canvas.box = BoundingBox(
+            canvas.box = BoundingBox(canvas.box,
                 y0=row_positions[i+1] - canvas.box.height)
         end
 

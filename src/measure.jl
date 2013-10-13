@@ -46,11 +46,11 @@ immutable Measure{S, T}
     ch::Float64  # proportion of canvas height
 
     function Measure(abs::Number, cx::S, cy::T, cw::Number, ch::Number)
-        new(abs, cx, cy, cw, ch)
+        new(float64(abs), cx, cy, float64(cw), float64(ch))
     end
 
     function Measure(; abs=0.0, cx::S=zero(T), cy::T=zero(T), cw=0.0, ch=0.0)
-        new(abs, cx, cy, cw, ch)
+        new(float64(abs), cx, cy, float64(cw), float64(ch))
     end
 end
 
@@ -380,39 +380,52 @@ immutable AbsoluteBoundingBox
     y0::Float64
     width::Float64
     height::Float64
+
+    function AbsoluteBoundingBox(x0::Number, y0::Number, width::Number, height::Number)
+        new(x0, y0, width, height)
+    end
+
+    function AbsoluteBoundingBox()
+        new(0.0, 0.0, 1.0, 1.0)
+    end
 end
+
+
 
 
 # The same type-signature is used for a box used to assign
 # a custom coordinate system to a canvas.
 # TODO: There should not be one fixed type for every parameter
-immutable UnitBox{T}
-    x0::T
+immutable UnitBox{S, T}
+    x0::S
     y0::T
-    width::T
+    width::S
     height::T
 
-    function UnitBox(x0::T, y0::T, width::T, height::T)
+    function UnitBox(x0::S, y0::T, width::S, height::T)
         new(x0, y0, width, height)
     end
 
 end
 
 
-function UnitBox(width, height)
-    x0, y0, width, height = promote(0.0, 0.0, width, height)
-    UnitBox{typeof(x0)}(x0, y0, width, height)
+function UnitBox{S,T}(width::S, height::T)
+    x0 = zero(S)
+    y0 = zero(T)
+
+    UnitBox{S, T}(x0, y0, width, height)
 end
 
 
 function UnitBox(x0, y0, width, height)
-    x0, y0, width, height = promote(x0, y0, width, height)
-    UnitBox{typeof(x0)}(x0, y0, width, height)
+    x0, width  = promote(x0, width)
+    y0, height = promote(y0, height)
+    UnitBox{typeof(x0), typeof(y0)}(x0, y0, width, height)
 end
 
 
 function UnitBox()
-    UnitBox{Float64}(0.0, 0.0, 1.0, 1.0)
+    UnitBox{Float64, Float64}(0.0, 0.0, 1.0, 1.0)
 end
 
 
@@ -593,3 +606,5 @@ function absolute_units(point::Point,
 
     Point(Measure(abs=xyt[1]), Measure(abs=xyt[2]))
 end
+
+

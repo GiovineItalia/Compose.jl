@@ -385,7 +385,7 @@ function pango_to_svg(text::String)
             write(io, "<tspan style=\"dominant-baseline:inherit\"")
             if !(attr.rise === nothing)
                 @printf(io, " baseline-shift=\"%s\"",
-                       fmt_float(((attr.rise / PANGO_SCALE)pt).value))
+                       fmt_float(((attr.rise / PANGO_SCALE)pt).abs))
             end
 
             if !(attr.scale === nothing)
