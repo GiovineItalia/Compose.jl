@@ -119,15 +119,18 @@ function text_extents(font_family::String, pts::Float64, texts::String...)
     max_height = 0mm
     for text in texts
         (width, height) = pango_text_extents(pangolayout, text)
-        max_width  = max_width.value  < width.value  ? width  : max_width
-        max_height = max_height.value < height.value ? height : max_height
+        max_width  = max_width.abs  < width.abs  ? width  : max_width
+        max_height = max_height.abs < height.abs ? height : max_height
     end
     (max_width, max_height)
 end
 
 # Same as text_extents but with font_size in arbitrary absolute units.
-function text_extents(font_family::String, size::SimpleMeasure{MillimeterUnit},
+function text_extents(font_family::String, size::Measure,
                       texts::String...)
+    if !isabsolute(size)
+        error("text_extents requries font size be in absolute units")
+    end
     text_extents(font_family, size/pt, texts...)
 end
 
@@ -382,7 +385,7 @@ function pango_to_svg(text::String)
             write(io, "<tspan style=\"dominant-baseline:inherit\"")
             if !(attr.rise === nothing)
                 @printf(io, " baseline-shift=\"%s\"",
-                       fmt_float(((attr.rise / PANGO_SCALE)pt).value))
+                       fmt_float(((attr.rise / PANGO_SCALE)pt).abs))
             end
 
             if !(attr.scale === nothing)

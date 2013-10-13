@@ -13,13 +13,15 @@ using JSON
 
 import JSON.json
 
-import Base.+, Base.-, Base.*, Base./, Base.|, Base.convert,
-       Base.length, Base.==, Base.<, Base.<=, Base.>=, Base.isempty,
-       Base.start, Base.next, Base.done, Base.copy, Base.isless, Base.max,
-       Base.<<, Base.>>, Base.show, Base.hex, Base.writemime
+import Base: +, -, *, /, convert, length, ==, <, <=, >=, isempty, start, next,
+             done, copy, isless, max, show, hex, writemime, zero
 
-export |, <<, >>, pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
-       combine, contents, decompose
+export pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
+       combine, contents, decompose, text_extents,
+       Measure, AbsoluteBoundingBox, BoundingBox, UnitBox,
+       absolute_x_position, absolute_y_position, absolute_units,
+       mm, cm, inch, pt, w, h, px, cx, cy,
+       SVG, D3, JS, PNG, PS, PDF
 
 import Iterators
 
@@ -28,13 +30,15 @@ import Iterators
 # behaves as such.
 combine() = nothing
 
+abstract Backend
+
 include("util.jl")
 include("list.jl")
 include("measure.jl")
-include("backend.jl")
 include("property.jl")
 include("form.jl")
 include("canvas.jl")
+
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
@@ -53,8 +57,11 @@ end
 # Use cairo for the PNG, PS, PDF if its installed.
 try
     require("Cairo")
-    include("cairo.jl")
+    include("cairo_backends.jl")
 catch
+    global PNG
+    global PS
+    global PDF
     PNG(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
         error("Cairo must be installed to use the PNG backend.")
     PS(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
@@ -69,30 +76,12 @@ include("dataform.jl")
 
 
 
-typealias Composable Union(Form, Property, Canvas)
+typealias Composable Union(Form, Property, Canvas,
+                           DataForm, DataProperty)
 
-
-# Compose operator
-<<(a::Form,   b::Property)     = compose(a, b)
-<<(a::Form,   b::DataProperty) = compose(a, b)
-<<(a::Canvas, b::Form)         = compose(a, b)
-<<(a::Canvas, b::Property)     = compose(a, b)
-<<(a::Canvas, b::DataProperty) = compose(a, b)
-<<(a::Canvas, b::Canvas)       = compose(a, b)
-
->>(b::Property,     a::Form)   = compose(a, b)
->>(b::DataProperty, a::Form)   = compose(a, b)
->>(b::Form,         a::Canvas) = compose(a, b)
->>(b::Property,     a::Canvas) = compose(a, b)
->>(b::DataProperty, a::Canvas) = compose(a, b)
->>(b::Canvas,       a::Canvas) = compose(a, b)
-
-# Combine operator
-|(xs::Property...) = combine(xs...)
-|(xs::Form...)     = combine(xs...)
 
 # Compose over hetergenous lists of things.
-compose(x) = x
+compose(x::Composable) = x
 compose(xs::Tuple) = compose(xs...)
 compose(xs::Array) = compose(xs...)
 compose(x, y, zs...) = compose(compose(compose(x), compose(y)), zs...)
@@ -105,22 +94,18 @@ compose(x::Composable, ::Nothing) = x
 
 # Helpful functions# Create a new canvas containing the given canvas with margins on all sides of
 # size u.
-function pad_outer(c::Canvas, u::MeasureOrNumber)
+function pad_outer(c::Canvas, u)
     u = size_measure(u)
     root = canvas(c.box.x0, c.box.y0, c.box.width + 2u, c.box.height + 2u,
                   units_inherited=true)
     c = copy(c)
-    c.box = copy(c.box)
-    c.box.width = 1w -2u
-    c.box.height = 1h - 2u
-    c.box.x0 = u
-    c.box.y0 = u
+    c.box = BoundingBox(u, u, 1w - 2u, 1h - 2u)
 
     compose(root, c)
 end
 
 
-function pad_inner(c::Canvas, u::MeasureOrNumber)
+function pad_inner(c::Canvas, u)
     compose(canvas(), (canvas(u, u, 1w - 2u, 1h - 2u), c))
 end
 
@@ -139,59 +124,50 @@ const pad = pad_outer
 #  aligned_canvases: One or more canveses accompanied with a vertical alignment
 #                    specifier, giving the vertical positioning of the canvas.
 #
-function hstack(x0::MeasureOrNumber, y0::MeasureOrNumber, height::MeasureOrNumber,
-                aligned_canvases::(Canvas, VAlignment)...)
+function hstack(x0, y0, height, aligned_canvases::(Canvas, VAlignment)...)
+
+    if isempty(aligned_canvases)
+        return canvas(x0, y0, 0, height)
+    end
 
     # To get the expected results, we scale width units, so that everything
     # fits.
-    total_width_units = 0
-    for (canvas, _)  in aligned_canvases
-        if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
-            total_width_units += canvas.box.width.value
-        elseif typeof(canvas.box.width) == CompoundMeasure &&
-               haskey(canvas.box.width.values, WidthUnit)
-            total_width_units += canvas.box.width.values[WidthUnit]
-       end
-    end
-
-    width = CompoundMeasure() + 0w
-
-    if length(aligned_canvases) > 0
-        width += sum([canvas.box.width for (canvas, _) in aligned_canvases])
-    end
-
-    if width.values[WidthUnit] > 0
-        width.values[WidthUnit] /= total_width_units
-    end
+    total_width_units = sum([canvas.box.width.cw
+                             for (canvas, _) in aligned_canvases])
+    width = sum([canvas.box.width
+                 for (canvas, _) in aligned_canvases])
+    width = Measure(width,
+                    cw=total_width_units > 0.0 ?
+                        width.cw / total_width_units : 0.0)
 
     height = y_measure(height)
 
     root = canvas(x0, y0, width, height)
-    x = 0cx
+    x = Measure()
     for (canvas, aln) in aligned_canvases
         canvas = copy(canvas)
         canvas.box = copy(canvas.box)
 
-        if typeof(canvas.box.width) == SimpleMeasure{WidthUnit}
-            canvas.box.width.value /= total_width_units
-        elseif typeof(canvas.box.width) == CompoundMeasure &&
-               haskey(canvas.box.width.values, WidthUnit)
-            if canvas.box.width.value[WidthUnit] > 0.0
-                canvas.box.width.values[WidthUnit] /= total_width_units
-            end
+        if canvas.box.width.cw != 0.0
+            canvas.box =
+                BoundingBox(canvas.box,
+                    width=Measure(canvas.box.width,
+                        cw=canvas.box.width.cw / total_width_units))
         end
 
         # Should we interpret vbottom to mean 0?
-        canvas.box.x0 = x
+        canvas.box = BoundingBox(canvas.box, x0=x)
         if aln == vtop
-            canvas.box.y0 = 0cy
+            canvas.box = BoundingBox(canvas.box, y0=Measure{T}())
         elseif aln == vcenter
-            canvas.box.y0 = (height / 2) - (canvas.box.height / 2)
+            canvas.box = BoundingBox(canvas.box,
+                            y0=(height / 2) - (canvas.box.height / 2))
         elseif aln == vbottom
-            canvas.box.y0 = height - canvas.box.height
+            canvas.box = BoundingBox(canvas.box,
+                            y0=height - canvas.box.height)
         end
 
-        root <<= canvas
+        root = compose(root, canvas)
         x += canvas.box.width
     end
 
@@ -213,7 +189,7 @@ function hstack(canvases::Canvas...; x0::MeasureOrNumber=0,
     if height == 0
         height = max([canvas.box.height for canvas in canvases])
     end
-    hstack(0, 0, height, [(canvas, vcenter) for canvas in canvases]...)
+    hstack(x0, y0, height, [(canvas, vcenter) for canvas in canvases]...)
 end
 
 
@@ -226,57 +202,48 @@ end
 #  aligned_canvases: One or more canveses accompanied with a horizontal alignment
 #                    specifier, giving the horizontal positioning of the canvas.
 #
-function vstack(x0::MeasureOrNumber, y0::MeasureOrNumber, width::MeasureOrNumber,
-                aligned_canvases::(Canvas, HAlignment)...)
+function vstack(x0, y0, width, aligned_canvases::(Canvas, HAlignment)...)
+
+    if isempty(aligned_canvases)
+        return canvas(x0, y0, width, 0)
+    end
 
     # Scale height units
-    total_height_units = 0
-    for (canvas, _)  in aligned_canvases
-        if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
-            total_height_units += canvas.box.height.value
-        elseif typeof(canvas.box.height) == CompoundMeasure &&
-               haskey(canvas.box.height.values, HeightUnit)
-            total_height_units += canvas.box.height.values[HeightUnit]
-       end
-    end
+    total_height_units = sum([canvas.box.height.ch
+                              for (canvas, _) in aligned_canvases])
+    height = sum([canvas.box.height
+                  for (canvas, _) in aligned_canvases])
+    height = Measure(height,
+                     ch=total_height_units > 0.0 ?
+                          height.ch / total_height_units : 0.0)
 
     width = x_measure(width)
 
-    height = CompoundMeasure() + 0h
-
-    if length(aligned_canvases) > 0
-        height += sum([canvas.box.height for (canvas, _) in aligned_canvases])
-    end
-
-    if height.values[HeightUnit] > 0
-        height.values[HeightUnit] /= total_height_units
-    end
-
     root = canvas(x0, y0, width, height)
-    y = 0cy
+    y = Measure()
     for (canvas, aln) in aligned_canvases
         canvas = copy(canvas)
         canvas.box = copy(canvas.box)
 
-        if typeof(canvas.box.height) == SimpleMeasure{HeightUnit}
-            canvas.box.height.value /= total_height_units
-        elseif typeof(canvas.box.height) == CompoundMeasure &&
-               haskey(canvas.box.height.values, HeightUnit)
-            if canvas.box.height.values[HeightUnit] > 0.0
-                canvas.box.height.values[HeightUnit] /= total_height_units
-            end
+        if canvas.box.height.ch != 0.0
+            canvas.box =
+                BoundingBox(canvas.box,
+                    height=Measure(canvas.box.height,
+                        ch=canvas.box.height.ch / total_height_units))
         end
 
-        canvas.box.y0 = y
+        canvas.box = BoundingBox(canvas.box, y0=y)
         if aln == hleft
-            canvas.box.x0 = 0cx
+            canvas.box = BoundingBox(canvas.box, x0=Measure{T}())
         elseif aln == hcenter
-            canvas.box.x0 = (width / 2) - (canvas.box.width / 2)
+            canvas.box = BoundingBox(canvas.box,
+                            x0=(width / 2) - (canvas.box.width / 2))
         elseif aln == hright
-            canvas.box.x0 = width - canvas.box.width
+            canvas.box = BoundingBox(canvas.box,
+                            x0 = width - canvas.box.width)
         end
 
-        root <<= canvas
+        root = compose(root, canvas)
         y += canvas.box.height
     end
 
@@ -298,37 +265,23 @@ function vstack(canvases::Canvas...; x0::MeasureOrNumber=0,
     if width == 0
         width = max([canvas.box.width for canvas in canvases]...)
     end
-    vstack(0, 0, width, [(canvas, hcenter) for canvas in canvases]...)
+    vstack(x0, y0, width, [(canvas, hcenter) for canvas in canvases]...)
 end
 
 
-
-
-function scale_width_height_units(u::CompoundMeasure,
-                                  width_scale::Measure,
-                                  height_scale::Measure)
+function scale_width_height_units(u::Measure,
+                                  width_scale::Float64,
+                                  height_scale::Float64)
     u = copy(u)
-    if haskey(u.values, WidthUnit)
-        val = u.values[WidthUnit]
-        u.values[WidthUnit] = 0.0
-        u += val * width_scale
+    if u.cw > 0.0
+        u = Measure(u, cw=u.cw * width_scale)
     end
 
-    if haskey(u.values, HeightUnit)
-        val = u.values[HeightUnit]
-        u.values[HeightUnit] = 0.0
-        u += val * height_scale
+    if u.ch > 0.0
+        u = Measure(u, ch=u.ch * height_scale)
     end
 
     u
-end
-
-
-function scale_width_height_units(u::SimpleMeasure,
-                                  width_scale::Measure,
-                                  height_scale::Measure)
-    scale_width_height_units(convert(CompoundMeasure, u),
-                             width_scale, height_scale)
 end
 
 
@@ -337,31 +290,39 @@ end
 # This just works like a simultaneous hstack and vstack.
 #
 function gridstack(canvases::AbstractMatrix{Canvas},
-                   x0::MeasureOrNumber=0, y0::MeasureOrNumber=0;
+                   x0=0.0, y0=0.0;
                    halign::HAlignment=hleft, valign::VAlignment=vtop)
 
+    if isempty(canvases)
+        canvas()
+    end
 
     n, m = size(canvases)
 
-    row_heights = fill(CompoundMeasure() + 0h, n)
-    col_widths  = fill(CompoundMeasure() + 0w, m)
+    row_heights = Array(Measure, n)
+    fill!(row_heights, canvases[1, 1].box.height)
+
+    col_widths  = Array(Measure, m)
+    fill!(col_widths, canvases[1, 1].box.width)
+
     for i in 1:n, j in 1:m
         row_heights[i] = max(row_heights[i], canvases[i, j].box.height)
         col_widths[j]  = max(col_widths[j], canvases[i, j].box.width)
     end
-    root_width_units = convert(CompoundMeasure, sum(col_widths)).values[WidthUnit]
-    root_height_units = convert(CompoundMeasure, sum(row_heights)).values[HeightUnit]
 
-    root_abs_x_units = copy(sum(col_widths))
-    root_abs_x_units.values[WidthUnit] = 0.0
+    root_width_units = sum(col_widths).cw
+    root_height_units = sum(row_heights).ch
 
-    root_abs_y_units = copy(sum(row_heights))
-    root_abs_y_units.values[HeightUnit] = 0.0
+    root_abs_x_units = Measure(sum(col_widths), cw=0.0)
+    root_abs_y_units = Measure(sum(row_heights), ch=0.0)
 
-    root_width_unit_scale = (1.0w - root_abs_x_units) / root_width_units
-    root_height_unit_scale = (1.0h - root_abs_y_units) / root_height_units
+    # root_width_unit_scale = (1.0w - root_abs_x_units) / root_width_units
+    # root_height_unit_scale = (1.0h - root_abs_y_units) / root_height_units
+    root_width_unit_scale = 1.0 / root_width_units
+    root_height_unit_scale = 1.0 / root_height_units
 
-    row_positions = Array(CompoundMeasure, n+1)
+    # ----------------------------------------
+    row_positions = Array(Measure, n+1)
     row_positions[1] = 0h
     for i in 2:n+1
         row_positions[i] = row_positions[i - 1] + row_heights[i - 1]
@@ -373,7 +334,7 @@ function gridstack(canvases::AbstractMatrix{Canvas},
                                                     root_height_unit_scale)
     end
 
-    col_positions = Array(CompoundMeasure, m+1)
+    col_positions = Array(Measure, m+1)
     col_positions[1] = 0w
     for j in 2:m+1
         col_positions[j] = col_positions[j - 1] + col_widths[j - 1]
@@ -389,36 +350,40 @@ function gridstack(canvases::AbstractMatrix{Canvas},
 
     for i in 1:n, j in 1:m
         canvas = copy(canvases[i,j])
-        canvas.box = copy(canvas.box)
 
         # Make adjustments to the interpretation of width/height units.
-        canvas.box.width = scale_width_height_units(canvas.box.width,
-                                                    root_width_unit_scale,
-                                                    root_height_unit_scale)
+        box_width = scale_width_height_units(canvas.box.width,
+                                             root_width_unit_scale,
+                                             root_height_unit_scale)
 
-        canvas.box.height = scale_width_height_units(canvas.box.height,
-                                                     root_width_unit_scale,
-                                                     root_height_unit_scale)
+        box_height = scale_width_height_units(canvas.box.height,
+                                              root_width_unit_scale,
+                                              root_height_unit_scale)
+
+        canvas.box = BoundingBox(canvas.box, width=box_width, height=box_height)
 
         if halign == hleft
-            canvas.box.x0 = col_positions[j]
+            canvas.box = BoundingBox(canvas.box, x0=col_positions[j])
         elseif halign == hcenter
-            canvas.box.x0 =
-                (col_positions[j] + col_positions[j+1] + canvas.box.width) / 2
+            canvas.box = BoundingBox(canvas.box,
+                x0=(col_positions[j] + col_positions[j+1] + canvas.box.width) / 2)
         elseif halign == hright
-            canvas.box.x0 = col_positions[j+1] - canvas.box.width
+            canvas.box = BoundingBox(canvas.box,
+                x0=col_positions[j+1] - canvas.box.width)
         end
 
         if valign == vtop
-            canvas.box.y0 = row_positions[i]
+            canvas.box = BoundingBox(canvas.box, y0=row_positions[i])
         elseif valign == vcenter
-            canvas.box.y0 =
-                (row_positions[i] + row_positions[i+1] + canvas.box.height) / 2
+            canvas.box = BoundingBox(canvas.box,
+                y0=(row_positions[i] + row_positions[i+1] + canvas.box.height) / 2)
         elseif valign == vright
-            canvas.box.y0 = row_positions[i+1] - canvas.box.height
+            canvas.box = BoundingBox(canvas.box,
+                y0=row_positions[i+1] - canvas.box.height)
         end
 
-        root <<= canvas
+        root = compose(root, canvas)
+
     end
 
     root

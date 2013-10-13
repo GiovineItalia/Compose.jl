@@ -17,30 +17,10 @@ catch
 end
 
 
-# In d3 svg we use millimeters as the base measure.
-type D3Measure <: NativeMeasure
-    value::Float64
-end
-
-*(u::Float64, v::D3Measure) = D3Measure(u * v.value)
-+(u::D3Measure, v::D3Measure) = D3Measure(u.value + v.value)
--(u::D3Measure, v::D3Measure) = D3Measure(u.value - v.value)
-convert(::Type{Float64}, u::D3Measure) = u.value
-convert(::Type{D3Measure}, u::Float64) = D3Measure(u)
-function convert(::Type{SimpleMeasure{MillimeterUnit}}, u::D3Measure)
-    SimpleMeasure{MillimeterUnit}(u.value)
-end
-
-
-function show(io::IO, u::D3Measure)
-    @printf(io, "%smm", svg_fmt_float(u.value))
-end
-
-
 type D3 <: Backend
     # Image size in millimeters
-    width::D3Measure
-    height::D3Measure
+    width::Float64
+    height::Float64
 
     # Output stream
     out::IO
@@ -77,9 +57,16 @@ type D3 <: Backend
                 width::MeasureOrNumber,
                 height::MeasureOrNumber,
                 emit_on_finish::Bool=true)
+        width = size_measure(width)
+        height = size_measure(height)
+
+        if !isabsolute(width) || !isabsolute(height)
+            Error("D3 image size must be given in absolute units.")
+        end
+
         img = new()
-        img.width  = native_measure(width, img)
-        img.height = native_measure(height, img)
+        img.width  = width.abs
+        img.height = height.abs
         img.out = f
         img.close_stream = false
         img.indentation = 0
@@ -91,8 +78,8 @@ type D3 <: Backend
         img.finished = false
         img.emit_on_finish = emit_on_finish
 
-        width_value = svg_fmt_float(width.value)
-        height_value = svg_fmt_float(height.value)
+        width_value = svg_fmt_float(width.abs)
+        height_value = svg_fmt_float(height.abs)
         write(img.out,
               """
               function draw_with_data(data, parent_id) {
@@ -125,6 +112,9 @@ type D3 <: Backend
         img
     end
 end
+
+
+typealias JS D3
 
 
 json(c::ColorValue) = repr("#$(hex(c))")
@@ -225,29 +215,13 @@ function data_idx(backend::D3, d::AbstractArray)
 end
 
 
-# Conversion to D3 units (i.e. millimeters)
-function native_measure(u::SimpleMeasure{PixelUnit},
-                        img::D3)
-    native_measure(convert(SimpleMeasure{MillimeterUnit}, u), img)
-end
-
-
-function native_measure(u::SimpleMeasure{MillimeterUnit},
-                        img::D3)
-    D3Measure(u.value)
-end
-
-
 function root_box(img::D3)
-    NativeBoundingBox(
-        D3Measure(0.0),
-        D3Measure(0.0),
+    AbsoluteBoundingBox(
+        0.0,
+        0.0,
         img.width,
         img.height)
 end
-
-
-native_zero(::D3) = D3Measure(0.0)
 
 
 function indent(img::D3)
@@ -353,9 +327,9 @@ function draw(img::D3, form::Text)
     indent(img)
     write(img.out, "g.append(\"svg:text\")\n")
     indent(img)
-    @printf(img.out, "   .attr(\"x\", %s)\n", svg_fmt_float(form.pos.x.value))
+    @printf(img.out, "   .attr(\"x\", %s)\n", svg_fmt_float(form.pos.x.abs))
     indent(img)
-    @printf(img.out, "   .attr(\"y\", %s)\n", svg_fmt_float(form.pos.y.value))
+    @printf(img.out, "   .attr(\"y\", %s)\n", svg_fmt_float(form.pos.y.abs))
 
     if is(form.halign, hcenter)
         indent(img)
@@ -377,8 +351,8 @@ function draw(img::D3, form::Text)
         indent(img)
         @printf(img.out, "   .attr(\"transform\", \"rotate(%s, %s, %s)\")\n",
                 svg_fmt_float(radians2degrees(atan2(form.t.M[2,1], form.t.M[1,1]))),
-                svg_fmt_float(form.pos.x.value),
-                svg_fmt_float(form.pos.y.value))
+                svg_fmt_float(form.pos.x.abs),
+                svg_fmt_float(form.pos.y.abs))
     end
 
     indent(img)
@@ -484,7 +458,7 @@ end
 
 function apply_property(img::D3, p::LineWidth)
     @printf(img.out, ".attr(\"stroke-width\", \"%s\")",
-            svg_fmt_float(p.value.value))
+            svg_fmt_float(p.value.abs))
 end
 
 
@@ -496,7 +470,7 @@ end
 
 function apply_property(img::D3, p::FontSize)
     @printf(img.out, ".attr(\"font-size\", \"%s\")",
-            svg_fmt_float(p.value.value))
+            svg_fmt_float(p.value.abs))
 end
 
 

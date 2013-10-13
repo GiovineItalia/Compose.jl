@@ -64,8 +64,11 @@ function text_width(widths::Dict, text::String, size::Float64)
 end
 
 
-function text_extents(font_family::String, size::SimpleMeasure{MillimeterUnit},
+function text_extents(font_family::String, size::Measure,
                       texts::String...)
+    if !isabsolute(size)
+        error("text_extents requries font size be in absolute units")
+    end
     scale = size / 12pt
     font_family = match_font(font_family)
     height = glyphsizes[font_family]["height"]

@@ -118,18 +118,18 @@ end
 
 # Nop drawing of empty forms.
 function draw(backend::Backend,
-              t::NativeTransform,
-              unit_box::BoundingBox,
-              box::NativeBoundingBox,
+              t::Transform,
+              unit_box::UnitBox,
+              box::AbsoluteBoundingBox,
               root_form::EmptyForm)
 end
 
 
 # Does a property in a node apply to it's siblings? No!
 function draw(backend::Backend,
-              t::NativeTransform,
-              unit_box::BoundingBox,
-              box::NativeBoundingBox,
+              t::Transform,
+              unit_box::UnitBox,
+              box::AbsoluteBoundingBox,
               root_form::FormTree)
 
     S = {root_form}
@@ -145,8 +145,7 @@ function draw(backend::Backend,
             if !is(form.property, empty_property)
                 push!(S, :POP_PROPERTY)
                 push_property(backend,
-                              native_measure(form.property, t, unit_box,
-                                             box, backend))
+                              absolute_units(form.property, t, unit_box, box))
             end
 
             for child in children(form)
@@ -165,7 +164,7 @@ function draw(backend::Backend,
 end
 
 
-type Lines <: FormPrimitive
+immutable Lines <: FormPrimitive
     points::Vector{Point}
 
     function Lines(points::Vector{Point})
@@ -193,15 +192,15 @@ function lines(points::XYTupleOrPoint...)
 end
 
 
-function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::Lines)
-    native_form = Lines([native_measure(point, t, unit_box, box, backend)
+function draw(backend::Backend, t::Transform, unit_box::UnitBox,
+              box::AbsoluteBoundingBox, form::Lines)
+    native_form = Lines([absolute_units(point, t, unit_box, box)
                          for point in form.points])
     draw(backend, native_form)
 end
 
 
-type Curve <: FormPrimitive
+immutable Curve <: FormPrimitive
     anchor0::Point
     ctrl0::Point
     ctrl1::Point
@@ -222,19 +221,18 @@ function curve(anchor0::XYTupleOrPoint, ctrl0::XYTupleOrPoint,
 end
 
 
-function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::Curve)
-    native_form = Curve(native_measure(form.anchor0, t, unit_box, box, backend),
-                        native_measure(form.ctrl0, t, unit_box, box, backend),
-                        native_measure(form.ctrl1, t, unit_box, box, backend),
-                        native_measure(form.anchor1, t, unit_box, box, backend))
+function draw(backend::Backend, t::Transform, unit_box::UnitBox,
+              box::AbsoluteBoundingBox, form::Curve)
+    native_form = Curve(absolute_units(form.anchor0, t, unit_box, box),
+                        absolute_units(form.ctrl0, t, unit_box, box),
+                        absolute_units(form.ctrl1, t, unit_box, box),
+                        absolute_units(form.anchor1, t, unit_box, box))
     draw(backend, native_form)
 end
 
 
-type Polygon <: FormPrimitive
+immutable Polygon <: FormPrimitive
     points::Vector{Point}
-
 end
 
 
@@ -248,16 +246,15 @@ function polygon(points::XYTupleOrPoint...)
 end
 
 
-function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::Polygon)
-    native_form = Polygon([native_measure(point, t, unit_box, box, backend)
+function draw(backend::Backend, t::Transform, unit_box::UnitBox,
+              box::AbsoluteBoundingBox, form::Polygon)
+    native_form = Polygon([absolute_units(point, t, unit_box, box)
                            for point in form.points])
     draw(backend, native_form)
 end
 
 
-function rectangle(x0::MeasureOrNumber, y0::MeasureOrNumber,
-                   width::MeasureOrNumber, height::MeasureOrNumber)
+function rectangle(x0, y0, width, height)
     x0 = x_measure(x0)
     y0 = y_measure(y0)
     width = x_measure(width)
@@ -273,7 +270,7 @@ function rectangle()
 end
 
 
-type Ellipse <: FormPrimitive
+immutable Ellipse <: FormPrimitive
     center::Point
     x_point::Point
     y_point::Point
@@ -282,8 +279,7 @@ type Ellipse <: FormPrimitive
         new(center, x_point, y_point)
     end
 
-    function Ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
-                     rx::MeasureOrNumber, ry::MeasureOrNumber)
+    function Ellipse(x, y, rx, ry)
         x = x_measure(x)
         y = y_measure(y)
         new(Point(x, y),
@@ -291,13 +287,14 @@ type Ellipse <: FormPrimitive
             Point(x, y + y_measure(ry)))
     end
 end
+
+
 function contents(io, f::Ellipse, n::Int, indent)
     println(io, indent, "Ellipse centered at ", f.center)
 end
 
 
-function ellipse(x::MeasureOrNumber, y::MeasureOrNumber,
-                 x_radius::MeasureOrNumber, y_radius::MeasureOrNumber)
+function ellipse(x, y, x_radius, y_radius)
     x = x_measure(x)
     y = y_measure(y)
     FormTree(Ellipse(Point(x, y),
@@ -315,40 +312,40 @@ end
 typealias Circle Ellipse
 
 
-function circle(x::MeasureOrNumber, y::MeasureOrNumber, radius::MeasureOrNumber)
+function circle(x, y, radius)
     ellipse(x, y, radius, radius)
 end
 
 
-function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::Ellipse)
+function draw(backend::Backend, t::Transform, unit_box::UnitBox,
+              box::AbsoluteBoundingBox, form::Ellipse)
     native_form = Ellipse(
-        native_measure(form.center, t, unit_box, box, backend),
-        native_measure(form.x_point, t, unit_box, box, backend),
-        native_measure(form.y_point, t, unit_box, box, backend))
+        absolute_units(form.center, t, unit_box, box),
+        absolute_units(form.x_point, t, unit_box, box),
+        absolute_units(form.y_point, t, unit_box, box))
     draw(backend, native_form)
 end
 
 
 abstract HAlignment
-type HLeft   <: HAlignment end
-type HCenter <: HAlignment end
-type HRight  <: HAlignment end
+immutable HLeft   <: HAlignment end
+immutable HCenter <: HAlignment end
+immutable HRight  <: HAlignment end
 
 const hleft   = HLeft()
 const hcenter = HCenter()
 const hright  = HRight()
 
 abstract VAlignment
-type VTop    <: VAlignment end
-type VCenter <: VAlignment end
-type VBottom <: VAlignment end
+immutable VTop    <: VAlignment end
+immutable VCenter <: VAlignment end
+immutable VBottom <: VAlignment end
 
 const vtop    = VTop()
 const vcenter = VCenter()
 const vbottom = VBottom()
 
-type Text <: FormPrimitive
+immutable Text <: FormPrimitive
     pos::Point
     value::String
     halign::HAlignment
@@ -356,24 +353,24 @@ type Text <: FormPrimitive
 
     # Text forms need their own rotation field unfortunately, since there is no
     # way to give orientation with just a position point.
-    t::NativeTransform
+    t::Transform
 end
 
-function text(x::MeasureOrNumber, y::MeasureOrNumber, value::String,
+function text(x, y, value::String,
               halign::HAlignment, valign::VAlignment)
     FormTree(Text(Point(x_measure(x), y_measure(y)),
-                  value, halign, valign, NativeTransform()))
+                  value, halign, valign, Transform()))
 end
 
 
-function text(x::MeasureOrNumber, y::MeasureOrNumber, value::String)
+function text(x, y, value::String)
     text(x, y, value, hleft, vbottom)
 end
 
 
-function draw(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::Text)
-    form = Text(native_measure(form.pos, t, unit_box, box, backend),
+function draw(backend::Backend, t::Transform, unit_box::UnitBox,
+              box::AbsoluteBoundingBox, form::Text)
+    form = Text(absolute_units(form.pos, t, unit_box, box),
                 form.value, form.halign, form.valign, t)
 
     draw(backend, form)

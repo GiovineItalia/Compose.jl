@@ -60,3 +60,8 @@ function open_browser(filename)
     end
 end
 
+
+# This should maybe be in julia?
+function iszero{T}(x::T)
+    x == zero(T)
+end

@@ -5,49 +5,13 @@ export Canvas, Units, Rotation, canvas, deferredcanvas,
        draw, drawpart, set_unit_box, set_box
 
 
-# A box giving the coordinate system used by a canvas.
-type Units
-    x0::Float64
-    y0::Float64
-    width::Float64
-    height::Float64
-
-    function Units()
-        new(0.0, 0.0, 1.0, 1.0)
-    end
-
-    function Units(width::Number,
-                   height::Number)
-        new(0.0, 0.0, width, height)
-    end
-
-    function Units(x0::Number,
-                   y0::Number,
-                   width::Number,
-                   height::Number)
-        new(x0, y0, width, height)
-    end
-end
-
-
-# Note: Units has almost the same representation as BoundingBox, except no unit
-# is associated with the numbers.
-function convert(::Type{BoundingBox}, u::Units)
-    BoundingBox(u.x0, u.y0, u.width, u.height)
-end
-
-function convert(::Type{Units}, u::BoundingBox)
-    Units(u.x0.value, u.y0.value, u.width.value, u.height.value)
-end
-
-
 # Canvases are containers for forms and other canvases with an associated
 # coordinate transform.
 abstract Canvas
 
 
 # An identity element for the canvas monoid.
-type EmptyCanvas <: Canvas end
+immutable EmptyCanvas <: Canvas end
 const empty_canvas = EmptyCanvas()
 
 
@@ -78,7 +42,7 @@ type CanvasTree <: Canvas
     box::BoundingBox
     form::Form
     property::Property
-    unit_box::Units
+    unit_box::UnitBox
     rot::Rotation
     children::List{Canvas}
 
@@ -94,7 +58,7 @@ type CanvasTree <: Canvas
     function CanvasTree(box::BoundingBox,
                         form::Form,
                         property::Property,
-                        unit_box::Units,
+                        unit_box::UnitBox,
                         rot::Rotation,
                         children::List{Canvas},
                         order::Integer,
@@ -105,24 +69,24 @@ type CanvasTree <: Canvas
             children, order, units_inherited, clip)
     end
 
-    function CanvasTree(x0::MeasureOrNumber=0.0w,
-                        y0::MeasureOrNumber=0.0h,
-                        width::MeasureOrNumber=1.0w,
-                        height::MeasureOrNumber=1.0h;
-                        unit_box=Units(),
+    function CanvasTree(x0=0.0w,
+                        y0=0.0h,
+                        width=1.0w,
+                        height=1.0h;
+                        unit_box=UnitBox(),
                         rotation=Rotation(),
                         units_inherited=false,
                         order=0,
                         clip=false)
         new(BoundingBox(x0, y0, width, height),
-                empty_form,
-                empty_property,
-                unit_box,
-                rotation,
-                ListNil{Canvas}(),
-                order,
-                units_inherited,
-                clip)
+            empty_form,
+            empty_property,
+            unit_box,
+            rotation,
+            ListNil{Canvas}(),
+            order,
+            units_inherited,
+            clip)
     end
 
     # shallow copy constructor
@@ -141,7 +105,7 @@ copy(c::CanvasTree) = CanvasTree(c)
 
 
 # Return a new Canvas with unit_box substituted.
-function set_unit_box(c::CanvasTree, unit_box::Units)
+function set_unit_box(c::CanvasTree, unit_box::UnitBox)
     c = copy(c)
     c.unit_box = unit_box
     c
@@ -206,6 +170,7 @@ function compose(canvases::Canvas...)
         elseif root === empty_canvas
             root = copy(canvas)
         else
+            # TODO: make immutable compatible
             root.children = cons(canvas, root.children)
         end
     end
@@ -266,7 +231,7 @@ end
 
 # Draw without finishing the backend.
 function drawpart(backend::Backend, root_canvas::Canvas)
-    S = {(root_canvas, NativeTransform(), BoundingBox(), root_box(backend))}
+    S = {(root_canvas, Transform(), UnitBox(), root_box(backend))}
     while !isempty(S)
         s = pop!(S)
 
@@ -282,38 +247,30 @@ function drawpart(backend::Backend, root_canvas::Canvas)
         end
 
         if typeof(canvas) == DeferredCanvas
-            abs_parent_box =
-                BoundingBox(convert(SimpleMeasure{MillimeterUnit}, parent_box.x0),
-                            convert(SimpleMeasure{MillimeterUnit}, parent_box.y0),
-                            convert(SimpleMeasure{MillimeterUnit}, parent_box.width),
-                            convert(SimpleMeasure{MillimeterUnit}, parent_box.height))
-
-            canvas = canvas.f(abs_parent_box, unit_box)
+            canvas = canvas.f(parent_t, unit_box, parent_box)
             if !(typeof(canvas) <: Canvas)
                 error("Error: A deferred canvas function did not evaluate to a canvas.")
             end
         end
 
-        box = native_measure(canvas.box, parent_t, unit_box, parent_box, backend)
-        rot = native_measure(canvas.rot, parent_t, unit_box, box, backend)
+        box = absolute_units(canvas.box, parent_t, unit_box, parent_box)
+        rot = absolute_units(canvas.rot, parent_t, unit_box, box)
         t = combine(rot, parent_t)
 
         if !canvas.units_inherited
-            unit_box = convert(BoundingBox, canvas.unit_box)
+            unit_box = canvas.unit_box
         end
 
         property = canvas.property
         if canvas.clip
-            property |= clip(Point(box.x0, box.y0),
-                             Point(box.x0 + box.width, box.y0),
-                             Point(box.x0 + box.width, box.y0 + box.height),
-                             Point(box.x0, box.y0 + box.height))
+            property = combine(property,
+                            clip(Point(0w, 0h), Point(1w, 0h),
+                                 Point(1w, 1h), Point(0w, 1h)))
         end
 
         if !is(property, empty_property)
             push!(S, :POP_PROPERTY)
-            push_property(backend, native_measure(property, t, unit_box,
-                                                  box, backend))
+            push_property(backend, absolute_units(property, t, unit_box, box))
         end
 
         draw(backend, t, unit_box, box, canvas.form)

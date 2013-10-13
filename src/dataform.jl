@@ -103,8 +103,8 @@ compose(a::CanvasTree, b::DataProperty) = compose(a, convert(PropertySeq, b))
 
 # Default handling of data forms. Generate scalar forms and feed them into the
 # backend.
-function draw{T}(backend::Backend, t::NativeTransform, unit_box::BoundingBox,
-                 box::NativeBoundingBox, form::DataForm{T})
+function draw{T}(backend::Backend, t::Transform, unit_box::UnitBox,
+                 box::AbsoluteBoundingBox, form::DataForm{T})
     # generate properties
     n = max(map(length, form.ds))
     ps = Property[empty_property for _ in 1:n]
@@ -146,51 +146,45 @@ end
 #   dataindexes
 #
 function make_d3_x_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
-                              unit_box::BoundingBox, box::NativeBoundingBox,
+                              t::Transform, unit_box::UnitBox,
+                              box::AbsoluteBoundingBox,
                               dataindexes::Dict{Int, Int})
-    mx = box.width.value / unit_box.width.value
-    bx = box.x0.value - unit_box.x0.value * box.width.value / unit_box.width.value
 
     # For singleton values, we compute the transform in place.
     if length(ds) == 1
-        x = native_measure(x_measure(ds[1]), unit_box, box, backend)
-        svg_fmt_float(x.value + box.x0.value)
+        svg_fmt_float(absolute_x_position(x_measure(ds[1]), t, unit_box, box))
     else
+        ds = Float64[absolute_x_position(x_measure(d), t, unit_box, box)
+                     for d in ds]
+
         idx = data_idx(backend, ds)
         if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
-        if T <: Real
-            @sprintf("function(d) { return d[%d] * %e + %s; }",
-                     rowidx, mx, svg_fmt_float(bx))
-        else
-            @sprintf("function(d) { return d[%d]; }", rowidx)
-        end
+
+        @sprintf("function(d) { return d[%d]; }", rowidx)
     end
 end
 
 
 function make_d3_width_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
-                                  unit_box::BoundingBox, box::NativeBoundingBox,
+                                  t::Transform,
+                                  unit_box::UnitBox,
+                                  box::AbsoluteBoundingBox,
                                   dataindexes::Dict{Int, Int})
-    mx = box.width.value / unit_box.width.value
-
     if length(ds) == 1
-        x = native_measure(x_measure(ds[1]), unit_box, box, backend)
-        svg_fmt_float(x.value)
+        svg_fmt_float(absolute_units(x_measure(ds[1]), t, unit_box, box))
     else
+        ds = Float64[absolute_x_position(x_measure(d), t, unit_box, box)
+                     for d in ds]
+
         idx = data_idx(backend, ds)
         if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
-        if T <: Real
-            @sprintf("function(d) { return d[%d] * %e; }",
-                     rowidx, mx)
-        else
-            @sprintf("function(d) { return d[%d]; }", rowidx)
-        end
+        @sprintf("function(d) { return d[%d]; }", rowidx)
     end
 end
 
@@ -212,65 +206,60 @@ end
 #   dataindexes
 #
 function make_d3_y_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
-                              unit_box::BoundingBox, box::NativeBoundingBox,
+                              t::Transform,
+                              unit_box::UnitBox,
+                              box::AbsoluteBoundingBox,
                               dataindexes::Dict{Int, Int})
-    my = box.height.value / unit_box.height.value
-    by = box.y0.value - unit_box.y0.value * box.height.value / unit_box.height.value
 
     # For singleton values, we compute the transform in place.
     if length(ds) == 1
-        y = native_measure(x_measure(ds[1]), unit_box, box, backend)
-        svg_fmt_float(y.value + box.y0.value)
+        svg_fmt_float(absolute_y_position(y_measure(ds[1]), t, unit_box, box))
     else
+        ds = Float64[absolute_y_position(y_measure(d), t, unit_box, box)
+                     for d in ds]
+
         idx = data_idx(backend, ds)
         if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
-        if T <: Real
-            @sprintf("function(d) { return d[%d] * %e + %s; }",
-                     rowidx, my, svg_fmt_float(by))
-        else
-            @sprintf("function(d) { return d[%d]; }", rowidx)
-        end
+        @sprintf("function(d) { return d[%d]; }", rowidx)
     end
 end
 
 
 function make_d3_height_attr{T, N}(backend::D3, ds::AbstractArray{T, N},
-                                   unit_box::BoundingBox, box::NativeBoundingBox,
+                                   t::Transform,
+                                   unit_box::UnitBox,
+                                   box::AbsoluteBoundingBox,
                                    dataindexes::Dict{Int, Int})
-    my = box.height.value / unit_box.height.value
-
     # For singleton values, we compute the transform in place.
     if length(ds) == 1
-        y = native_measure(x_measure(ds[1]), unit_box, box, backend)
-        svg_fmt_float(y.value)
+        svg_fmt_float(absolute_units(y_measure(ds[1]), t, unit_box, box))
     else
+        ds = Float64[absolute_units(y_measure(ds[1]), t, unit_box, box)
+                     for d in ds]
+
         idx = data_idx(backend, ds)
         if !haskey(dataindexes, idx)
             dataindexes[idx] = length(dataindexes)
         end
         rowidx = dataindexes[idx]
-        if T <: Real
-            @sprintf("function(d) { return d[%d] * %e; }",
-                     rowidx, my)
-        else
-            @sprintf("function(d) { return d[%d]; }", rowidx)
-        end
+        @sprintf("function(d) { return d[%d]; }", rowidx)
     end
 end
 
 # Build a series of ".attr" expressions representing properties applied to a
 # data form.
 function make_d3_data_property_expr(backend::D3,
-                                    unit_box::BoundingBox,
-                                    box::NativeBoundingBox,
+                                    t::Transform,
+                                    unit_box::UnitBox,
+                                    box::AbsoluteBoundingBox,
                                     dataindexes::Dict{Int, Int},
                                     dps::List{DataProperty})
     expr = IOBuffer()
     for dp in dps
-        print(expr, make_d3_data_property_expr(backend, unit_box,
+        print(expr, make_d3_data_property_expr(backend, t, unit_box,
                                                box, dataindexes, dp))
     end
     takebuf_string(expr)
@@ -278,8 +267,9 @@ end
 
 
 function make_d3_data_property_expr(backend::D3,
-                                    unit_box::BoundingBox,
-                                    box::NativeBoundingBox,
+                                    t::Transform,
+                                    unit_box::UnitBox,
+                                    box::AbsoluteBoundingBox,
                                     dataindexes::Dict{Int, Int},
                                     dp::DataProperty{Fill})
     colors = dp.ds[1]
@@ -297,8 +287,9 @@ end
 
 
 function make_d3_data_property_expr(backend::D3,
-                                    unit_box::BoundingBox,
-                                    box::NativeBoundingBox,
+                                    t::Transform,
+                                    unit_box::UnitBox,
+                                    box::AbsoluteBoundingBox,
                                     dataindexes::Dict{Int, Int},
                                     dp::DataProperty{Stroke})
     colors = dp.ds[1]
@@ -316,8 +307,9 @@ end
 
 
 function make_d3_data_property_expr(backend::D3,
-                                    unit_box::BoundingBox,
-                                    box::NativeBoundingBox,
+                                    t::Transform,
+                                    unit_box::UnitBox,
+                                    box::AbsoluteBoundingBox,
                                     dataindexes::Dict{Int, Int},
                                     dp::DataProperty{SVGClass})
     classes = dp.ds[1]
@@ -335,8 +327,9 @@ end
 
 
 function make_d3_data_property_expr(backend::D3,
-                                    unit_box::BoundingBox,
-                                    box::NativeBoundingBox,
+                                    t::Transform,
+                                    unit_box::UnitBox,
+                                    box::AbsoluteBoundingBox,
                                     dataindexes::Dict{Int, Int},
                                     dp::DataProperty{D3Embed})
     string(dp.ds[1][1], "\n")
@@ -361,22 +354,22 @@ function make_d3_data_expr(dataindexes::Dict{Int, Int})
 end
 
 
-function draw(backend::D3, t::NativeTransform, unit_box::BoundingBox,
-              box::NativeBoundingBox, form::DataForm{Ellipse})
+function draw(backend::D3, t::Transform, unit_box::UnitBox,
+              box::AbsoluteBoundingBox, form::DataForm{Ellipse})
 
     class = next_dataform_class(backend)
     x, y, rx, ry = form.ds
 
     dataindexes = Dict{Int, Int}()
-    x_expr = make_d3_x_attr(backend, x, unit_box, box, dataindexes)
-    y_expr = make_d3_y_attr(backend, y, unit_box, box, dataindexes)
+    x_expr = make_d3_x_attr(backend, x, t, unit_box, box, dataindexes)
+    y_expr = make_d3_y_attr(backend, y, t, unit_box, box, dataindexes)
 
-    dp_expr = make_d3_data_property_expr(backend, unit_box, box,
+    dp_expr = make_d3_data_property_expr(backend, t, unit_box, box,
                                          dataindexes, form.dataprops)
     push_property(backend, form.property)
 
     if rx == ry
-        r_expr = make_d3_width_attr(backend, rx, unit_box, box, dataindexes)
+        r_expr = make_d3_width_attr(backend, rx, t, unit_box, box, dataindexes)
         @printf(backend.out,
                 "g.selectAll(\"%s\")
                   .data(%s)
@@ -387,8 +380,8 @@ function draw(backend::D3, t::NativeTransform, unit_box::BoundingBox,
         @printf(backend.out, ".attr(\"cy\", %s)\n", y_expr)
         @printf(backend.out, ".attr(\"r\", %s)\n", r_expr)
     else
-        rx_expr = make_d3_width_attr(backend, rx, unit_box, box, dataindexes)
-        ry_expr = make_d3_height_attr(backend, ry, unit_box, box, dataindexes)
+        rx_expr = make_d3_width_attr(backend, rx, t, unit_box, box, dataindexes)
+        ry_expr = make_d3_height_attr(backend, ry, t, unit_box, box, dataindexes)
         @printf(backend.out,
                 "g.selectAll(\"%s\")
                   .data(%s)
@@ -405,9 +398,4 @@ function draw(backend::D3, t::NativeTransform, unit_box::BoundingBox,
     print(backend.out, ";\n")
     pop_property(backend)
 end
-
-
-# What we need now: text and lines. Also, serialization of the Aesthetics object
-# into JSON.
-
 
