@@ -304,10 +304,10 @@ function gridstack(canvases::AbstractMatrix{Canvas},
     n, m = size(canvases)
 
     row_heights = Array(Measure, n)
-    fill!(row_heights, canvases[1, 1].box.height)
+    fill!(row_heights, Measure())
 
     col_widths  = Array(Measure, m)
-    fill!(col_widths, canvases[1, 1].box.width)
+    fill!(col_widths, Measure())
 
     for i in 1:n, j in 1:m
         row_heights[i] = max(row_heights[i], canvases[i, j].box.height)
@@ -322,10 +322,7 @@ function gridstack(canvases::AbstractMatrix{Canvas},
 
     root_width_unit_scale = (1.0w - root_abs_x_units) / root_width_units
     root_height_unit_scale = (1.0h - root_abs_y_units) / root_height_units
-    # root_width_unit_scale = 1.0 / root_width_units
-    # root_height_unit_scale = 1.0 / root_height_units
 
-    # ----------------------------------------
     row_positions = Array(Measure, n+1)
     row_positions[1] = 0h
     for i in 2:n+1
