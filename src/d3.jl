@@ -309,6 +309,8 @@ function pango_to_d3(out, text::String, indentnum=0)
 
         pango_tag_to_tspan(out, tag, indent)
         pango_to_d3(out, text[i1:j0-1], indentnum)
+        # reset font-style, since that seems to be inherited
+        print(out, ".append(\"tspan\").attr(\"font-style\", \"normal\")")
 
         if j1 < length(text)
             print(out, indent, ".append(\"tspan\").text(\"$(escape_string(text[j1:end]))\")\n")
@@ -497,6 +499,5 @@ end
 function apply_property(img::D3, p::D3Embed)
     print(img.out, p.code)
 end
-
 
 
