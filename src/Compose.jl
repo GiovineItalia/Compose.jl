@@ -132,10 +132,10 @@ function hstack(x0, y0, height, aligned_canvases::(Canvas, VAlignment)...)
 
     # To get the expected results, we scale width units, so that everything
     # fits.
-    total_width_units = sum([canvas.box.width.cw
-                             for (canvas, _) in aligned_canvases])
-    width = sum([canvas.box.width
-                 for (canvas, _) in aligned_canvases])
+    total_width_units = sum(Float64[canvas.box.width.cw
+                                    for (canvas, _) in aligned_canvases])
+    width = sum(Measure[canvas.box.width
+                        for (canvas, _) in aligned_canvases])
     width = Measure(width,
                     cw=total_width_units > 0.0 ?
                         width.cw / total_width_units : 0.0)
@@ -209,10 +209,10 @@ function vstack(x0, y0, width, aligned_canvases::(Canvas, HAlignment)...)
     end
 
     # Scale height units
-    total_height_units = sum([canvas.box.height.ch
-                              for (canvas, _) in aligned_canvases])
-    height = sum([canvas.box.height
-                  for (canvas, _) in aligned_canvases])
+    total_height_units = sum(Float64[canvas.box.height.ch
+                                     for (canvas, _) in aligned_canvases])
+    height = sum(Measure[canvas.box.height
+                         for (canvas, _) in aligned_canvases])
     height = Measure(height,
                      ch=total_height_units > 0.0 ?
                           height.ch / total_height_units : 0.0)
