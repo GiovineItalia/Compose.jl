@@ -106,7 +106,7 @@ compose(a::CanvasTree, b::DataProperty) = compose(a, convert(PropertySeq, b))
 function draw{T}(backend::Backend, t::Transform, unit_box::UnitBox,
                  box::AbsoluteBoundingBox, form::DataForm{T})
     # generate properties
-    n = max(map(length, form.ds))
+    n = maximum(map(length, form.ds))
     ps = Property[empty_property for _ in 1:n]
     for dataprop in form.dataprops
         T = primitive(dataprop)
