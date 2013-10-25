@@ -187,7 +187,7 @@ hstack() = canvas()
 function hstack(canvases::Canvas...; x0::MeasureOrNumber=0,
                 y0::MeasureOrNumber=0, height=0)
     if height == 0
-        height = max([canvas.box.height for canvas in canvases])
+        height = maximum([canvas.box.height for canvas in canvases])
     end
     hstack(x0, y0, height, [(canvas, vcenter) for canvas in canvases]...)
 end

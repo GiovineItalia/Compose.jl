@@ -142,7 +142,7 @@ function write_data(img::D3)
 
     # cycle data shorter than the longest to replicate the
     # behavior of the other backends
-    n = length(datapairs) > 1 ? max([length(d) for (_, d) in datapairs]) : 0
+    n = length(datapairs) > 1 ? maximum([length(d) for (_, d) in datapairs]) : 0
 
     for (i, (_, d)) in enumerate(datapairs)
         write_data(img, d, n)
