@@ -471,7 +471,7 @@ end
 
 
 function apply_property(img::D3, p::FontSize)
-    @printf(img.out, ".attr(\"font-size\", \"%s\")",
+    @printf(img.out, ".style(\"font-size\", \"%s\")",
             svg_fmt_float(p.value.abs))
 end
 
