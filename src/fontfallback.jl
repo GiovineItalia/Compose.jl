@@ -79,7 +79,7 @@ function text_extents(font_family::String, size::Measure,
         height *= 1.5
     end
 
-    width = max([text_width(widths, text, size/pt) for text in texts])
+    width = maximum([text_width(widths, text, size/pt) for text in texts])
     (text_extents_scale_x * scale * width * mm,
      text_extents_scale_y * scale * height * mm)
 end
