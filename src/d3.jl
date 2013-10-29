@@ -459,7 +459,7 @@ end
 
 
 function apply_property(img::D3, p::LineWidth)
-    @printf(img.out, ".attr(\"stroke-width\", \"%s\")",
+    @printf(img.out, ".attr(\"stroke-width\", %s)",
             svg_fmt_float(p.value.abs))
 end
 
@@ -471,7 +471,7 @@ end
 
 
 function apply_property(img::D3, p::FontSize)
-    @printf(img.out, ".style(\"font-size\", \"%s\")",
+    @printf(img.out, ".style(\"font-size\", %s)",
             svg_fmt_float(p.value.abs))
 end
 
