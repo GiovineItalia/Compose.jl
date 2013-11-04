@@ -159,6 +159,18 @@ function finish(img::D3)
         return
     end
 
+    # make all lines invariant to scaling.
+    write(img.out,
+    """
+        d3.selectAll("path")
+          .each(function() {
+              var sw = parseFloat(window.getComputedStyle(this).getPropertyValue("stroke-width"));
+              d3.select(this)
+                .attr("vector-effect", "non-scaling-stroke")
+                .style("stroke-width", sw + "mm");
+          });
+    """)
+
     write(img.out, "}\n\n")
     write_data(img)
     write(img.out,
@@ -471,7 +483,7 @@ end
 
 
 function apply_property(img::D3, p::FontSize)
-    @printf(img.out, ".style(\"font-size\", %s)",
+    @printf(img.out, ".style(\"font-size\", \"%spx\")",
             svg_fmt_float(p.value.abs))
 end
 
