@@ -274,6 +274,41 @@ function draw(img::D3, form::Lines)
 end
 
 
+function draw(img::D3, form::Ellipse)
+    cx = form.center.x.abs
+    cy = form.center.y.abs
+    rx = sqrt((form.x_point.x.abs - cx)^2 +
+              (form.x_point.y.abs - cy)^2)
+    ry = sqrt((form.y_point.x.abs - cx)^2 +
+              (form.y_point.y.abs - cy)^2)
+    theta = radians2degrees(atan2(form.x_point.y.abs - cy,
+                                  form.x_point.x.abs - cx))
+
+    indent(img)
+    eps = 1e-6
+    if abs(rx - ry) < eps
+        write(img.out, "g.append(\"svg:circle\")\n")
+        indent(img)
+        @printf(img.out, "  .attr(\"cx\", %s).attr(\"cy\", %s).attr(\"r\", %s)\n",
+                svg_fmt_float(cx), svg_fmt_float(cy), svg_fmt_float(rx))
+    else
+        write(img.out, "g.append(\"svg:circle\")\n")
+        indent(img)
+        @printf(img.out, "  .attr(\"cx\", %s).attr(\"cy\", %s).attr(\"rx\", %s).attr(\"ry\", %s)\n",
+                svg_fmt_float(cx), svg_fmt_float(cy),
+                svg_fmt_float(rx), svg_fmt_float(ry))
+    end
+    indent(img)
+
+    if abs(theta) >= eps
+        @printf(img.out, ".attr(\"transform\", \"rotate(%s %s %s)\")",
+                svg_fmt_float(cx), svg_fmt_float(cy), svg_fmt_float(rx))
+    end
+
+    write(img.out, ";\n");
+end
+
+
 # Converting text with tango markup to d3 code. Messy business.
 
 function pango_tag_to_tspan(out, tag::String, indent::String)
