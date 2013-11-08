@@ -314,9 +314,11 @@ end
 function pango_tag_to_tspan(out, tag::String, indent::String)
     print(out, ".append(\"tspan\")\n")
     if tag == "sup"
-        print(out, indent, "  ", ".attr(\"baseline-shift\", \"super\")\n")
+        # print(out, indent, "  ", ".attr(\"baseline-shift\", \"super\")\n")
+        print(out, indent, "  ", ".attr(\"dy\", \"-1ex\")\n")
     elseif tag == "sub"
-        print(out, indent, "  ", ".attr(\"baseline-shift\", \"sub\")\n")
+        # print(out, indent, "  ", ".attr(\"baseline-shift\", \"sub\")\n")
+        print(out, indent, "  ", ".attr(\"dy\", \"1ex\")\n")
     elseif tag == "i"
         print(out, indent, "  ", ".attr(\"font-style\", \"italic\")\n")
     elseif tag == "b"

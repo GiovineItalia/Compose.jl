@@ -383,9 +383,16 @@ function pango_to_svg(text::String)
             open_tag = true
 
             write(io, "<tspan style=\"dominant-baseline:inherit\"")
+
+            # "baseline-shift" is not currentl supported Firefox or IE.
+            # if !(attr.rise === nothing)
+            #     @printf(io, " baseline-shift=\"%s\"",
+            #             fmt_float(((attr.rise / PANGO_SCALE)pt).abs))
+            # end
+
             if !(attr.rise === nothing)
-                @printf(io, " baseline-shift=\"%s\"",
-                       fmt_float(((attr.rise / PANGO_SCALE)pt).abs))
+                @printf(io, " dy=\"%s\"",
+                        fmt_float(-((attr.rise / PANGO_SCALE)pt).abs))
             end
 
             if !(attr.scale === nothing)

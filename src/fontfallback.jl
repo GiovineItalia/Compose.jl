@@ -98,13 +98,15 @@ function pango_to_svg(text::String)
             if mat.captures[1] == "/"
                 write(output, "</tspan>")
             else
-                write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"super\">")
+                # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"super\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"-1ex\">")
             end
         elseif mat.captures[2] == "sub"
             if mat.captures[1] == "/"
                 write(output, "</tspan>")
             else
-                write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"sub\">")
+                # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"sub\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"1ex\">")
             end
         elseif mat.captures[2] == "i"
             if mat.captures[1] == "/"
