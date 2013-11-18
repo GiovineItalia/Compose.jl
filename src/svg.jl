@@ -338,30 +338,30 @@ function push_property(img::SVG, property::Property)
 
         # There can only be one property of each type. E.g, defining 'fill'
         # twice in the same element is not valid svg.
-        properties = Dict{Type, PropertyPrimitive}()
+        properties = Dict{Symbol, PropertyPrimitive}()
         rawproperties = {}
         p = property
         while !is(p, empty_property)
             if typeof(p.primitive) == SVGAttribute
                 push!(rawproperties, p.primitive)
             else
-                properties[typeof(p.primitive)] = p.primitive
+                properties[symbol(string(typeof(p.primitive)))] = p.primitive
             end
             p = p.next
         end
 
         # Special-case for the mask property.
-        if haskey(properties, SVGDefineMask)
-            write(img.f, @sprintf("<mask id=\"%s\">", properties[SVGDefineMask].id))
+        if haskey(properties, :SVGDefineMask)
+            write(img.f, @sprintf("<mask id=\"%s\">", properties[:SVGDefineMask].id))
             push!(img.mask_properties, true)
         else
             push!(img.mask_properties, false)
         end
 
         # Special-case for links.
-        if haskey(properties, SVGLink)
+        if haskey(properties, :SVGLink)
             write(img.f, @sprintf("<a xlink:href=\"%s\">",
-                  properties[SVGLink].target === nothing ? '#' : properties[SVGLink].target))
+                  properties[:SVGLink].target === nothing ? '#' : properties[:SVGLink].target))
             push!(img.linked_properties, true)
         else
             push!(img.linked_properties, false)
