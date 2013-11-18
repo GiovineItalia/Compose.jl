@@ -221,7 +221,7 @@ end
 #
 function draw(backend::Backend, root_canvas::Canvas)
     if isfinished(backend)
-        error("The backend has already been drawn upon.")
+        reset(backend)
     end
 
     drawpart(backend, root_canvas)

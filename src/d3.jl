@@ -1,7 +1,7 @@
 
 # An experimental d3 backend for compose.
 
-export D3
+export D3, JS
 
 
 const d3_js = readall(joinpath(Pkg.dir("Compose"), "data", "d3.min.js"))
@@ -24,9 +24,6 @@ type D3 <: Backend
 
     # Output stream
     out::IO
-
-    # Should f be closed when the backend is finished?
-    close_stream::Bool
 
     # Current level of indentation.
     indentation::Int
@@ -53,7 +50,7 @@ type D3 <: Backend
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
-    function D3(f::IO,
+    function D3(out::IO,
                 width::MeasureOrNumber,
                 height::MeasureOrNumber,
                 emit_on_finish::Bool=true)
@@ -67,8 +64,7 @@ type D3 <: Backend
         img = new()
         img.width  = width.abs
         img.height = height.abs
-        img.out = f
-        img.close_stream = false
+        img.out = out
         img.indentation = 0
         img.hooks = Array(String, 0)
         img.empty_properties = Array(Bool, 0)
@@ -77,38 +73,21 @@ type D3 <: Backend
         img.data = Dict{Uint64, (Any, Int)}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
-
-        width_value = svg_fmt_float(width.abs)
-        height_value = svg_fmt_float(height.abs)
-        write(img.out,
-              """
-              function draw_with_data(data, parent_id) {
-                var g = d3.select(parent_id)
-                          .append("svg")
-                            .attr("width", "$(width_value)mm")
-                            .attr("height", "$(height_value)mm")
-                            .attr("viewBox", "0 0 $(width_value) $(height_value)")
-                            .attr("stroke-width", "0.5")
-                            .attr("style", "stroke:black;fill:black");
-                g.append("defs");
-                var t = {"scale": 1.0};
-              """)
+        writeheader(img)
         img
     end
 
     function D3(filename::String,
                 width::MeasureOrNumber,
                 height::MeasureOrNumber)
-        f = open(filename, "w")
-        img = D3(f, width, height)
-        img.close_stream = true
+        out = open(filename, "w")
+        img = D3(out, width, height)
         img
     end
 
     function D3(width::MeasureOrNumber, height::MeasureOrNumber,
                 emit_on_finish::Bool=true)
         img = D3(IOBuffer(), width, height, emit_on_finish)
-        img.close_stream = false
         img
     end
 end
@@ -179,15 +158,43 @@ function finish(img::D3)
             draw_with_data(data, parent_id);
         };
         """)
-    if img.close_stream
-        close(img.out)
-    end
 
+    flush(img.out)
     img.finished = true
 
     if img.emit_on_finish && typeof(img.out) == IOBuffer
         display(img)
     end
+end
+
+
+function writeheader(img::D3)
+    width_value = svg_fmt_float(img.width)
+    height_value = svg_fmt_float(img.height)
+    write(img.out,
+          """
+          function draw_with_data(data, parent_id) {
+            var g = d3.select(parent_id)
+                      .append("svg")
+                        .attr("width", "$(width_value)mm")
+                        .attr("height", "$(height_value)mm")
+                        .attr("viewBox", "0 0 $(width_value) $(height_value)")
+                        .attr("stroke-width", "0.5")
+                        .attr("style", "stroke:black;fill:black");
+            g.append("defs");
+            var t = {"scale": 1.0};
+          """)
+end
+
+
+function reset(img::D3)
+    try
+        seekstart(img.out)
+    catch
+        error("Backend can't be reused, since the output stream is not seekable.")
+    end
+    writeheader(img)
+    img.finished = false
 end
 
 

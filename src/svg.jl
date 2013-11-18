@@ -34,10 +34,7 @@ type SVG <: Backend
     height::Float64
 
     # Output stream.
-    f::IO
-
-    # Should f be closed when the backend is finished?
-    close_stream::Bool
+    out::IO
 
     # Current level of indentation.
     indentation::Int
@@ -70,7 +67,7 @@ type SVG <: Backend
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
-    function SVG(f::IO,
+    function SVG(out::IO,
                  width,
                  height,
                  emit_on_finish::Bool=true)
@@ -83,8 +80,7 @@ type SVG <: Backend
         img = new()
         img.width  = width.abs
         img.height = height.abs
-        img.f = f
-        img.close_stream = false
+        img.out = out
         img.indentation = 0
         img.clippaths = Array(Vector{Point}, 0)
         img.scripts = Dict{String, String}()
@@ -94,18 +90,13 @@ type SVG <: Backend
         img.mask_properties = Array(Bool, 0)
         img.finished = false
         img.emit_on_finish = emit_on_finish
-
-        write(img.f, @sprintf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
-              svg_fmt_float(img.width), svg_fmt_float(img.height),
-              svg_fmt_float(img.width), svg_fmt_float(img.height)))
-        img
+        writeheader(img)
     end
 
     # Write to a file.
     function SVG(filename::String, width, height)
         f = open(filename, "w")
         img = SVG(f, width, height)
-        img.close_stream = true
         img
     end
 
@@ -113,9 +104,27 @@ type SVG <: Backend
     function SVG(width::MeasureOrNumber, height::MeasureOrNumber,
                  emit_on_finish::Bool=true)
         img = SVG(IOBuffer(), width, height, emit_on_finish)
-        img.close_stream = false
         img
     end
+end
+
+
+function writeheader(img::SVG)
+    write(img.out, @sprintf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
+          svg_fmt_float(img.width), svg_fmt_float(img.height),
+          svg_fmt_float(img.width), svg_fmt_float(img.height)))
+    img
+end
+
+
+function reset(img::SVG)
+    try
+        seekstart(img.out)
+    catch
+        error("Backend can't be reused, since the output stream is not seekable.")
+    end
+    writeheader(img)
+    img.finished = false
 end
 
 
@@ -125,37 +134,35 @@ function finish(img::SVG)
     end
 
     for obj in img.embobj
-        write(img.f, obj)
-        write(img.f, "\n")
+        write(img.out, obj)
+        write(img.out, "\n")
     end
 
     if length(img.scripts) > 0
-        write(img.f, "<script type=\"application/ecmascript\"><![CDATA[\n")
+        write(img.out, "<script type=\"application/ecmascript\"><![CDATA[\n")
         for (fn_name, js) in img.scripts
-            @printf(img.f, "function %s(evt) {\n%s\n}\n\n", fn_name, js)
+            @printf(img.out, "function %s(evt) {\n%s\n}\n\n", fn_name, js)
         end
-        write(img.f, "]]></script>\n")
+        write(img.out, "]]></script>\n")
     end
 
     if length(img.clippaths) > 0
-        write(img.f, "<defs>\n")
+        write(img.out, "<defs>\n")
         for (i, clippath) in enumerate(img.clippaths)
-            write(img.f, "<clipPath id=\"clippath$(i)\">\n  <path d=\"")
-            print_svg_path(img.f, clippath)
-            write(img.f, "\" />\n</clipPath\n>")
+            write(img.out, "<clipPath id=\"clippath$(i)\">\n  <path d=\"")
+            print_svg_path(img.out, clippath)
+            write(img.out, "\" />\n</clipPath\n>")
         end
-        write(img.f, "</defs>\n")
+        write(img.out, "</defs>\n")
     end
 
-    write(img.f, "</svg>\n")
-    if img.close_stream
-        close(img.f)
-    end
+    write(img.out, "</svg>\n")
+    flush(img.out)
 
     img.finished = true
 
     # If we are writing to a buffer. Collect the string and emit it.
-    if img.emit_on_finish && typeof(img.f) == IOBuffer
+    if img.emit_on_finish && typeof(img.out) == IOBuffer
         display(img)
     end
 end
@@ -167,7 +174,7 @@ end
 
 
 function writemime(io::IO, ::MIME"image/svg+xml", img::SVG)
-    write(io, takebuf_string(img.f))
+    write(io, takebuf_string(img.out))
 end
 
 
@@ -178,7 +185,7 @@ end
 
 function indent(img::SVG)
     for i in 1:img.indentation
-        write(img.f, "  ")
+        write(img.out, "  ")
     end
 end
 
@@ -226,16 +233,16 @@ function draw(img::SVG, form::Lines)
     indent(img)
     paths = make_paths(form.points)
     for path in paths
-        write(img.f, "<path d=\"")
-        print_svg_path(img.f, path)
-        write(img.f, "\" />\n")
+        write(img.out, "<path d=\"")
+        print_svg_path(img.out, path)
+        write(img.out, "\" />\n")
     end
 end
 
 
 function draw(img::SVG, form::Curve)
     indent(img)
-    @printf(img.f, "<path d=\"M%s,%s C%s,%s %s,%s %s,%s\" />\n",
+    @printf(img.out, "<path d=\"M%s,%s C%s,%s %s,%s %s,%s\" />\n",
         svg_fmt_float(form.anchor0.x.abs),
         svg_fmt_float(form.anchor0.y.abs),
         svg_fmt_float(form.ctrl0.x.abs),
@@ -252,9 +259,9 @@ function draw(img::SVG, form::Polygon)
     if n <= 1; return; end
 
     indent(img)
-    write(img.f, "<path d=\"")
-    print_svg_path(img.f, form.points)
-    write(img.f, " z\" />\n")
+    write(img.out, "<path d=\"")
+    print_svg_path(img.out, form.points)
+    write(img.out, " z\" />\n")
 end
 
 
@@ -275,52 +282,52 @@ function draw(img::SVG, form::Ellipse)
     eps = 1e-6
 
     if abs(rx - ry) < eps
-        @printf(img.f, "<circle cx=\"%s\" cy=\"%s\" r=\"%s\" />\n",
+        @printf(img.out, "<circle cx=\"%s\" cy=\"%s\" r=\"%s\" />\n",
                 svg_fmt_float(cx), svg_fmt_float(cy), svg_fmt_float(rx))
     else
-        @printf(img.f, "<ellipse cx=\"%s\" cy=\"%s\" rx=\"%s\" ry=\"%s\"",
+        @printf(img.out, "<ellipse cx=\"%s\" cy=\"%s\" rx=\"%s\" ry=\"%s\"",
                 svg_fmt_float(cx), svg_fmt_float(cy),
                 svg_fmt_float(rx), svg_fmt_float(ry))
 
         if abs(theta) >= eps
-            @printf(img.f, " transform=\"rotate(%s %s %s)\"",
+            @printf(img.out, " transform=\"rotate(%s %s %s)\"",
                     svg_fmt_float(theta),
                     svg_fmt_float(cx),
                     svg_fmt_float(cy))
         end
 
-        write(img.f, " />\n")
+        write(img.out, " />\n")
     end
 end
 
 
 function draw(img::SVG, form::Text)
     indent(img)
-    @printf(img.f, "<text x=\"%s\" y=\"%s\"",
+    @printf(img.out, "<text x=\"%s\" y=\"%s\"",
             svg_fmt_float(form.pos.x.abs),
             svg_fmt_float(form.pos.y.abs))
 
     if is(form.halign, hcenter)
-        print(img.f, " text-anchor=\"middle\"")
+        print(img.out, " text-anchor=\"middle\"")
     elseif is(form.halign, hright)
-        print(img.f, " text-anchor=\"end\"")
+        print(img.out, " text-anchor=\"end\"")
     end
 
     if is(form.valign, vcenter)
-        print(img.f, " style=\"dominant-baseline:central\"")
+        print(img.out, " style=\"dominant-baseline:central\"")
     elseif is(form.valign, vtop)
-        print(img.f, " style=\"dominant-baseline:text-before-edge\"")
+        print(img.out, " style=\"dominant-baseline:text-before-edge\"")
     end
 
     if !isidentity(form.t)
-        @printf(img.f, " transform=\"rotate(%s, %s, %s)\"",
+        @printf(img.out, " transform=\"rotate(%s, %s, %s)\"",
                 svg_fmt_float(radians2degrees(atan2(form.t.M[2,1], form.t.M[1,1]))),
                 svg_fmt_float(form.pos.x.abs),
                 svg_fmt_float(form.pos.y.abs))
     end
 
     # TODO: escape special characters
-    @printf(img.f, ">%s</text>\n",
+    @printf(img.out, ">%s</text>\n",
             pango_to_svg(form.value))
 end
 
@@ -352,7 +359,7 @@ function push_property(img::SVG, property::Property)
 
         # Special-case for the mask property.
         if haskey(properties, :SVGDefineMask)
-            write(img.f, @sprintf("<mask id=\"%s\">", properties[:SVGDefineMask].id))
+            write(img.out, @sprintf("<mask id=\"%s\">", properties[:SVGDefineMask].id))
             push!(img.mask_properties, true)
         else
             push!(img.mask_properties, false)
@@ -360,18 +367,18 @@ function push_property(img::SVG, property::Property)
 
         # Special-case for links.
         if haskey(properties, :SVGLink)
-            write(img.f, @sprintf("<a xlink:href=\"%s\">",
+            write(img.out, @sprintf("<a xlink:href=\"%s\">",
                   properties[:SVGLink].target === nothing ? '#' : properties[:SVGLink].target))
             push!(img.linked_properties, true)
         else
             push!(img.linked_properties, false)
         end
 
-        write(img.f, "<g")
+        write(img.out, "<g")
         for p in chain(values(properties), rawproperties)
             apply_property(img, p)
         end
-        write(img.f, ">\n")
+        write(img.out, ">\n")
 
         img.indentation += 1
     end
@@ -384,14 +391,14 @@ function pop_property(img::SVG)
     if !pop!(img.empty_properties)
         img.indentation -= 1
         indent(img)
-        write(img.f, "</g>")
+        write(img.out, "</g>")
         if is_linked
-            write(img.f, "</a>")
+            write(img.out, "</a>")
         end
         if is_mask
-            write(img.f, "</mask>")
+            write(img.out, "</mask>")
         end
-        write(img.f, "\n")
+        write(img.out, "\n")
     end
 end
 
@@ -402,51 +409,51 @@ end
 
 
 function apply_property(img::SVG, p::Stroke)
-    @printf(img.f, " stroke=\"%s\"", svg_fmt_color(p.value))
+    @printf(img.out, " stroke=\"%s\"", svg_fmt_color(p.value))
 end
 
 
 function apply_property(img::SVG, p::Fill)
-    @printf(img.f, " fill=\"%s\"", svg_fmt_color(p.value))
+    @printf(img.out, " fill=\"%s\"", svg_fmt_color(p.value))
 end
 
 
 function apply_property(img::SVG, p::LineWidth)
-    @printf(img.f, " stroke-width=\"%s\"", svg_fmt_float(p.value.abs))
+    @printf(img.out, " stroke-width=\"%s\"", svg_fmt_float(p.value.abs))
 end
 
 
 function apply_property(img::SVG, p::Visible)
-    @printf(img.f, " visibility=\"%s\"",
+    @printf(img.out, " visibility=\"%s\"",
             p.value ? "visible" : "hidden")
 end
 
 
 function apply_property(img::SVG, p::Opacity)
-    @printf(img.f, " opacity=\"%s\"", fmt_float(p.value))
+    @printf(img.out, " opacity=\"%s\"", fmt_float(p.value))
 end
 
 
 function apply_property(img::SVG, p::SVGID)
-    @printf(img.f, " id=\"%s\"", escape_string(p.value))
+    @printf(img.out, " id=\"%s\"", escape_string(p.value))
 end
 
 function apply_property(img::SVG, p::SVGClass)
-    @printf(img.f, " class=\"%s\"", escape_string(p.value))
+    @printf(img.out, " class=\"%s\"", escape_string(p.value))
 end
 
 function apply_property(img::SVG, p::Font)
-    @printf(img.f, " font-family=\"%s\"", escape_string(p.family))
+    @printf(img.out, " font-family=\"%s\"", escape_string(p.family))
 end
 
 function apply_property(img::SVG, p::FontSize)
-    @printf(img.f, " font-size=\"%s\"", svg_fmt_float(p.value.abs))
+    @printf(img.out, " font-size=\"%s\"", svg_fmt_float(p.value.abs))
 end
 
 function apply_property(img::SVG, p::Clip)
     push!(img.clippaths, p.points)
     i = length(img.clippaths)
-    write(img.f, " clip-path=\"url(#clippath$(i))\"")
+    write(img.out, " clip-path=\"url(#clippath$(i))\"")
 end
 
 function apply_property(img::SVG, p::SVGEmbed)
@@ -455,12 +462,12 @@ end
 
 
 function apply_property(img::SVG, p::SVGMask)
-    @printf(img.f, " mask=\"url(#%s)\"", p.id)
+    @printf(img.out, " mask=\"url(#%s)\"", p.id)
 end
 
 
 function apply_property(img::SVG, p::SVGAttribute)
-    @printf(img.f, " %s=\"%s\"", p.attribute, p.value)
+    @printf(img.out, " %s=\"%s\"", p.attribute, p.value)
 end
 
 
@@ -469,7 +476,7 @@ for event in events
     @eval begin
         function apply_property(img::SVG, p::($event))
             fn_name = add_script(img, p.value, object_id(p.value))
-            @printf(img.f, " %s=\"%s(evt)\"", ($prop_name), fn_name)
+            @printf(img.out, " %s=\"%s(evt)\"", ($prop_name), fn_name)
         end
     end
 end

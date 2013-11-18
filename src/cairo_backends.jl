@@ -25,6 +25,9 @@ type Image{B <: ImageBackend} <: Backend
     surface::CairoSurface
     ctx::CairoContext
 
+    width::Float64
+    height::Float64
+
     # Current state
     stroke::ColorOrNothing
     fill::ColorOrNothing
@@ -49,6 +52,8 @@ type Image{B <: ImageBackend} <: Backend
     function Image(surface::CairoSurface, ctx::CairoContext, out::IO)
         img = new()
         img.out = out
+        img.width = 0
+        img.height = 0
         img.surface = surface
         img.ctx = ctx
         img.stroke = RGB(0., 0., 0.)
@@ -84,26 +89,11 @@ type Image{B <: ImageBackend} <: Backend
         width = absolute_native_units(B, width.abs)
         height = absolute_native_units(B, height.abs)
 
-        local surface::CairoSurface
-        if B == SVGBackend
-            surface = CairoSVGSurface(out, width, height)
-        elseif B == PNGBackend
-            surface = CairoARGBSurface(iround(width), iround(height))
-        elseif B == PDFBackend
-            surface = CairoPDFSurface(out, width, height)
-        elseif B == PSBackend
-            surface = CairoEPSSurface(out, width, height)
-        else
-            error("Unkown Cairo backend.")
-        end
-
-        if Cairo.status(surface) != Cairo.STATUS_SUCCESS
-            error("Unable to create cairo surface.")
-        end
-
+        surface = newsurface(B, out, width, height)
         img = Image{B}(surface, CairoContext(surface), out)
+        img.width = width
+        img.height = height
         img.owns_surface = true
-        img.close_stream = false
         img.emit_on_finish = emit_on_finish
         img
     end
@@ -112,7 +102,6 @@ type Image{B <: ImageBackend} <: Backend
                    width::MeasureOrNumber,
                    height::MeasureOrNumber)
         img = Image{B}(open(filename, "w"), width, height)
-        img.close_stream = true
         img
     end
 
@@ -120,7 +109,6 @@ type Image{B <: ImageBackend} <: Backend
                    height::MeasureOrNumber,
                    emit_on_finish::Bool=true)
         img = Image{B}(IOBuffer(), width, height, emit_on_finish)
-        img.close_stream = false
         img
     end
 end
@@ -194,9 +182,46 @@ function finish{B <: ImageBackend}(img::Image{B})
         display(img)
     end
 
-    if img.close_stream
-        close(img.out)
+    flush(img.out)
+end
+
+
+function newsurface{B}(::Type{B}, out, width, height)
+        local surface::CairoSurface
+        if B == SVGBackend
+            surface = CairoSVGSurface(out, width, height)
+        elseif B == PNGBackend
+            surface = CairoARGBSurface(iround(width), iround(height))
+        elseif B == PDFBackend
+            surface = CairoPDFSurface(out, width, height)
+        elseif B == PSBackend
+            surface = CairoEPSSurface(out, width, height)
+        else
+            error("Unkown Cairo backend.")
+        end
+
+        if Cairo.status(surface) != Cairo.STATUS_SUCCESS
+            error("Unable to create cairo surface.")
+        end
+
+        surface
+end
+
+
+function reset{B}(img::Image{B})
+    if !img.owns_surface
+        error("Backend can't be reused since an external cairo surface is being used.")
     end
+
+    try
+        seekstart(img.out)
+    catch
+        error("Backend can't be reused, since the output stream is not seekable.")
+    end
+
+    img.surface = newsurface(B, img.out, img.width, img.height)
+    img.ctx = CairoContext(img.surface)
+    img.finished = false
 end
 
 
