@@ -157,7 +157,9 @@ function finish(img::SVG)
     end
 
     write(img.out, "</svg>\n")
-    flush(img.out)
+    if method_exists(flush, (typeof(img.out),))
+        flush(img.out)
+    end
 
     img.finished = true
 

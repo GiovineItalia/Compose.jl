@@ -141,7 +141,8 @@ function finish(img::D3)
     # make all lines invariant to scaling.
     write(img.out,
     """
-        d3.selectAll("path")
+        d3.select(parent_id)
+          .selectAll("path")
           .each(function() {
               var sw = parseFloat(window.getComputedStyle(this).getPropertyValue("stroke-width"));
               d3.select(this)
@@ -159,7 +160,9 @@ function finish(img::D3)
         };
         """)
 
-    flush(img.out)
+    if method_exists(flush, (typeof(img.out),))
+        flush(img.out)
+    end
     img.finished = true
 
     if img.emit_on_finish && typeof(img.out) == IOBuffer

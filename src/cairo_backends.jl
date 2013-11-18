@@ -182,7 +182,9 @@ function finish{B <: ImageBackend}(img::Image{B})
         display(img)
     end
 
-    flush(img.out)
+    if method_exists(flush, (typeof(img.out),))
+        flush(img.out)
+    end
 end
 
 
