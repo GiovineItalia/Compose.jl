@@ -55,6 +55,10 @@ type CanvasTree <: Canvas
     # True if children of the canvas should be clipped by its bounding box.
     clip::Bool
 
+    # True if the canvas (and its children) should be ignored on non-d3
+    # backends.
+    d3only::Bool
+
     function CanvasTree(box::BoundingBox,
                         form::Form,
                         property::Property,
@@ -63,10 +67,11 @@ type CanvasTree <: Canvas
                         children::List{Canvas},
                         order::Integer,
                         units_inherited::Bool,
-                        clip::Bool)
+                        clip::Bool,
+                        d3only::Bool)
 
         new(box, form, property, unit_box, rot,
-            children, order, units_inherited, clip)
+            children, order, units_inherited, clip, d3only)
     end
 
     function CanvasTree(x0=0.0w,
@@ -77,7 +82,8 @@ type CanvasTree <: Canvas
                         rotation=Rotation(),
                         units_inherited=false,
                         order=0,
-                        clip=false)
+                        clip=false,
+                        d3only=false)
         new(BoundingBox(x0, y0, width, height),
             empty_form,
             empty_property,
@@ -86,13 +92,14 @@ type CanvasTree <: Canvas
             ListNil{Canvas}(),
             order,
             units_inherited,
-            clip)
+            clip,
+            d3only)
     end
 
     # shallow copy constructor
     function CanvasTree(c::CanvasTree)
         new(c.box, c.form, c.property, c.unit_box,
-            c.rot, c.children, c.order, c.units_inherited, c.clip)
+            c.rot, c.children, c.order, c.units_inherited, c.clip, c.d3only)
     end
 end
 
@@ -181,7 +188,8 @@ end
 # Composition of forms into canvases
 function compose(a::CanvasTree, b::Form)
     CanvasTree(a.box, combine(a.form, b), a.property,
-               a.unit_box, a.rot, a.children, a.order, a.units_inherited, a.clip)
+               a.unit_box, a.rot, a.children, a.order, a.units_inherited,
+               a.clip, a.d3only)
 end
 
 
@@ -192,7 +200,8 @@ end
 
 function compose(a::CanvasTree, b::Property)
     CanvasTree(a.box, a.form, combine(a.property, b),
-               a.unit_box, a.rot, a.children, a.order, a.units_inherited, a.clip)
+               a.unit_box, a.rot, a.children, a.order, a.units_inherited,
+               a.clip, a.d3only)
 end
 
 
@@ -242,7 +251,7 @@ function drawpart(backend::Backend, root_canvas::Canvas)
 
         (canvas, parent_t, unit_box, parent_box) = s
 
-        if canvas === empty_canvas
+        if canvas === empty_canvas || (canvas.d3only && !isa(backend, D3))
             continue
         end
 
