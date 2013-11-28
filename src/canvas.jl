@@ -32,10 +32,16 @@ const empty_canvas = EmptyCanvas()
 type DeferredCanvas <: Canvas
     f::Function
     order::Integer
+    d3only::Bool
 end
 
-deferredcanvas(f::Function) = DeferredCanvas(f, 0)
-deferredcanvas(f::Function, order::Integer) = DeferredCanvas(f, order)
+function deferredcanvas(f::Function)
+    DeferredCanvas(f, 0, false)
+end
+
+function deferredcanvas(f::Function, order::Integer, d3only::Bool)
+    DeferredCanvas(f, order, d3only)
+end
 
 # non-empty tree of canvases.
 type CanvasTree <: Canvas
