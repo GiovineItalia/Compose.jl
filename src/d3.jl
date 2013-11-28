@@ -47,6 +47,12 @@ type D3 <: Backend
     # True when finish has been called and no more drawing should occur
     finished::Bool
 
+    # Backend is responsible for opening/closing the file
+    ownedfile::Bool
+
+    # Filename when ownedfile is true
+    filename::Union(String, Nothing)
+
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
@@ -72,6 +78,8 @@ type D3 <: Backend
         img.clippath_count = 0
         img.data = Dict{Uint64, (Any, Int)}()
         img.finished = false
+        img.ownedfile = false
+        img.filename = nothing
         img.emit_on_finish = emit_on_finish
         writeheader(img)
         img
@@ -82,6 +90,8 @@ type D3 <: Backend
                 height::MeasureOrNumber)
         out = open(filename, "w")
         img = D3(out, width, height)
+        img.ownedfile = true
+        img.filename = filename
         img
     end
 
@@ -163,6 +173,10 @@ function finish(img::D3)
     if method_exists(flush, (typeof(img.out),))
         flush(img.out)
     end
+
+    if img.ownedfile
+        close(img.out)
+    end
     img.finished = true
 
     if img.emit_on_finish && typeof(img.out) == IOBuffer
@@ -191,10 +205,14 @@ end
 
 
 function reset(img::D3)
-    try
-        seekstart(img.out)
-    catch
-        error("Backend can't be reused, since the output stream is not seekable.")
+    if img.ownedfile
+        img.out = open(img.filename, "w")
+    else
+        try
+            seekstart(img.out)
+        catch
+            error("Backend can't be reused, since the output stream is not seekable.")
+        end
     end
     writeheader(img)
     img.finished = false

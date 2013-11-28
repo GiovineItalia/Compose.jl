@@ -40,8 +40,11 @@ type Image{B <: ImageBackend} <: Backend
     # Close the surface when finished
     owns_surface::Bool
 
-    # Close the stream when finished
-    close_stream::Bool
+    # Backend is responsible for opening/closing the file
+    ownedfile::Bool
+
+    # Filename when ownedfile is true
+    filename::Union(String, Nothing)
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -62,8 +65,10 @@ type Image{B <: ImageBackend} <: Backend
         img.visible = true
         img.state_stack = Array(ImagePropertyState, 0)
         img.owns_surface = false
-        img.emit_on_finish = false
+        img.ownedfile = false
+        img.filename = nothing
         img.finished = false
+        img.emit_on_finish = false
         img
     end
 
@@ -102,6 +107,8 @@ type Image{B <: ImageBackend} <: Backend
                    width::MeasureOrNumber,
                    height::MeasureOrNumber)
         img = Image{B}(open(filename, "w"), width, height)
+        img.ownedfile = true
+        img.filename = filename
         img
     end
 
@@ -185,6 +192,10 @@ function finish{B <: ImageBackend}(img::Image{B})
     if method_exists(flush, (typeof(img.out),))
         flush(img.out)
     end
+
+    if img.ownedfile
+        close(img.out)
+    end
 end
 
 
@@ -215,10 +226,14 @@ function reset{B}(img::Image{B})
         error("Backend can't be reused since an external cairo surface is being used.")
     end
 
-    try
-        seekstart(img.out)
-    catch
-        error("Backend can't be reused, since the output stream is not seekable.")
+    if img.ownedfile
+        img.out = open(img.filename, "w")
+    else
+        try
+            seekstart(img.out)
+        catch
+            error("Backend can't be reused, since the output stream is not seekable.")
+        end
     end
 
     img.surface = newsurface(B, img.out, img.width, img.height)

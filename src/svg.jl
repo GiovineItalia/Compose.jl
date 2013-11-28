@@ -64,6 +64,12 @@ type SVG <: Backend
     # True when finish has been called and no more drawing should occur
     finished::Bool
 
+    # Backend is responsible for opening/closing the file
+    ownedfile::Bool
+
+    # Filename when ownedfile is true
+    filename::Union(String, Nothing)
+
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
@@ -90,6 +96,8 @@ type SVG <: Backend
         img.mask_properties = Array(Bool, 0)
         img.finished = false
         img.emit_on_finish = emit_on_finish
+        img.ownedfile = false
+        img.filename = nothing
         writeheader(img)
     end
 
@@ -97,6 +105,8 @@ type SVG <: Backend
     function SVG(filename::String, width, height)
         f = open(filename, "w")
         img = SVG(f, width, height)
+        img.ownedfile = true
+        img.filename = filename
         img
     end
 
@@ -118,10 +128,14 @@ end
 
 
 function reset(img::SVG)
-    try
-        seekstart(img.out)
-    catch
-        error("Backend can't be reused, since the output stream is not seekable.")
+    if img.ownedfile
+        img.out = open(img.filename, "w")
+    else
+        try
+            seekstart(img.out)
+        catch
+            error("Backend can't be reused, since the output stream is not seekable.")
+        end
     end
     writeheader(img)
     img.finished = false
@@ -159,6 +173,10 @@ function finish(img::SVG)
     write(img.out, "</svg>\n")
     if method_exists(flush, (typeof(img.out),))
         flush(img.out)
+    end
+
+    if img.ownedfile
+        close(img.out)
     end
 
     img.finished = true
