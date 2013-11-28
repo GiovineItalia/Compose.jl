@@ -339,7 +339,65 @@ svgembed(markup::String) = PropertySeq(SVGEmbed(markup))
 
 immutable D3Embed <: PropertyPrimitive
     code::String
+    args::Vector{Measure}
+
+    function D3Embed(code::String, args::Measure...)
+        property = new(code, Array(Measure, length(args)))
+        for (i, arg) in enumerate(args)
+            property.args[i] = arg
+        end
+        property
+    end
 end
+
+
+function absolute_units(property::D3Embed,
+                        t::Transform,
+                        unit_box::UnitBox,
+                        box::AbsoluteBoundingBox)
+    # we are going to build a new string by scanning across "code" and
+    # replacing %x with translated x values, %y with translated y values
+    # and %s with translated size values. Blah blah blah.
+    newcode = IOBuffer()
+
+    i = 1
+    validx = 1
+    while true
+        j = search(property.code[i:end], '%')
+
+        if j == 0
+            write(newcode, property.code[i:end])
+            break
+        end
+
+        write(newcode, property.code[i:j-1])
+        if j == length(property.code)
+            write(newcode, '%')
+            break
+        elseif property.code[j+1] == '%'
+            write(newcode, '%')
+        elseif property.code[j+1] == 'x'
+            val = absolute_x_position(property.args[validx], t, unit_box, parent_box)
+            write(newcode, svg_fmt_float(val.abs))
+            validx += 1
+        elseif property.code[j+1] == 'y'
+            val = absolute_y_position(property.args[validx], t, unit_box, parent_box)
+            write(newcode, svg_fmt_float(val.abs))
+            validx += 1
+        elseif property.code[j+1] == 's'
+            val = absolute_units(property.args[validx], t, unit_box, parent_box)
+            write(newcode, svg_fmt_float(val.abs))
+            validx += 1
+        else
+            write(newcode, '%', property.code[j+1])
+        end
+
+        i = j + 2
+    end
+
+    D3Embed(takebuf_string(newcode))
+end
+
 
 immutable D3Hook <: PropertyPrimitive
     code::String
