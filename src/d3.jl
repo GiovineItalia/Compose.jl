@@ -185,7 +185,11 @@ function writeheader(img::D3)
                         .attr("stroke-width", "0.5")
                         .attr("style", "stroke:black;fill:black");
             g.append("defs");
-            var t = {"scale": 1.0};
+            var ctx = {
+                "scale": 1.0,
+                "x": 0.0,
+                "y": 0.0
+            };
           """)
 end
 

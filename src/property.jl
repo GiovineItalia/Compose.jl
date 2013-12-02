@@ -351,6 +351,11 @@ immutable D3Embed <: PropertyPrimitive
 end
 
 
+function d3embed(code::String, args::Measure...)
+    PropertySeq(D3Embed(code, args...))
+end
+
+
 function absolute_units(property::D3Embed,
                         t::Transform,
                         unit_box::UnitBox,
@@ -363,7 +368,7 @@ function absolute_units(property::D3Embed,
     i = 1
     validx = 1
     while true
-        j = search(property.code[i:end], '%')
+        j = search(property.code, '%', i)
 
         if j == 0
             write(newcode, property.code[i:end])
@@ -377,15 +382,15 @@ function absolute_units(property::D3Embed,
         elseif property.code[j+1] == '%'
             write(newcode, '%')
         elseif property.code[j+1] == 'x'
-            val = absolute_x_position(property.args[validx], t, unit_box, parent_box)
-            write(newcode, svg_fmt_float(val.abs))
+            val = absolute_x_position(property.args[validx], t, unit_box, box)
+            write(newcode, svg_fmt_float(val))
             validx += 1
         elseif property.code[j+1] == 'y'
-            val = absolute_y_position(property.args[validx], t, unit_box, parent_box)
-            write(newcode, svg_fmt_float(val.abs))
+            val = absolute_y_position(property.args[validx], t, unit_box, box)
+            write(newcode, svg_fmt_float(val))
             validx += 1
         elseif property.code[j+1] == 's'
-            val = absolute_units(property.args[validx], t, unit_box, parent_box)
+            val = absolute_units(property.args[validx], t, unit_box, box)
             write(newcode, svg_fmt_float(val.abs))
             validx += 1
         else
