@@ -436,6 +436,12 @@ function apply_property(img::SVG, p::Opacity)
 end
 
 
+function apply_property(img::SVG, p::StrokeOpacity)
+    @printf(img.out, " stroke-opacity=\"%s\"", fmt_float(p.value))
+end
+
+
+
 function apply_property(img::SVG, p::SVGID)
     @printf(img.out, " id=\"%s\"", escape_string(p.value))
 end

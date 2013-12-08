@@ -4,7 +4,7 @@
 export D3, JS
 
 
-const d3_js = readall(joinpath(Pkg.dir("Compose"), "data", "d3.min.js"))
+const d3_js = readall(joinpath(Pkg.dir("Compose"), "data", "d3.v3.min.js"))
 
 # Include the the d3 javascript library
 function prepare_display(d::Display)
@@ -187,8 +187,8 @@ function writeheader(img::D3)
             g.append("defs");
             var ctx = {
                 "scale": 1.0,
-                "x": 0.0,
-                "y": 0.0
+                "tx": 0.0,
+                "ty": 0.0
             };
           """)
 end
@@ -542,6 +542,16 @@ end
 function apply_property(img::D3, p::Clip)
     clipid = @sprintf("clippath%d", img.clippath_count - 1)
     @printf(img.out, ".attr(\"clip-path\", \"url(#\" + parent_id + \"_%s)\")", clipid)
+end
+
+
+function apply_property(img::D3, p::Opacity)
+    @printf(img.out, ".attr(\"opacity\", %0.2f)", p.value)
+end
+
+
+function apply_property(img::D3, p::StrokeOpacity)
+    @printf(img.out, ".attr(\"stroke-opacity\", %0.2f)", p.value)
 end
 
 

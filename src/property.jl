@@ -6,7 +6,7 @@ import Base.fill
 export stroke, fill, linewidth, font, fontsize, visible, clip, opacity, svgid,
        svgclass, svglink, onactive, onclick, onfocusin, onfocusout, onload,
        onmousedown, onmousemove, onmouseout, onmouseover, onmouseup, svgmask,
-       svgdefmask, svgembed, svgattribute, d3embed, d3hook
+       svgdefmask, svgembed, svgattribute, d3embed, d3hook, strokeopacity
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
@@ -184,6 +184,14 @@ end
 
 
 opacity(value::Number) = PropertySeq(Opacity(convert(Float64, value)))
+
+
+immutable StrokeOpacity <: PropertyPrimitive
+    value::Float64
+end
+
+
+strokeopacity(value::Number) = PropertySeq(StrokeOpacity(convert(Float64, value)))
 
 
 # Clipping path
