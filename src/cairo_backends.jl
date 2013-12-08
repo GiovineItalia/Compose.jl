@@ -32,6 +32,7 @@ type Image{B <: ImageBackend} <: Backend
     stroke::ColorOrNothing
     fill::ColorOrNothing
     opacity::Float64 # in [0,1]
+    stroke_opacity::Float64 # in [0,1]
     visible::Bool
 
     # Keep track of property
@@ -62,6 +63,7 @@ type Image{B <: ImageBackend} <: Backend
         img.stroke = RGB(0., 0., 0.)
         img.fill   = RGB(0., 0., 0.)
         img.opacity = 1.0
+        img.stroke_opacity = 1.0
         img.visible = true
         img.state_stack = Array(ImagePropertyState, 0)
         img.owns_surface = false
@@ -346,9 +348,9 @@ function fillstroke(img::Image)
         end
     end
 
-    if img.stroke != nothing
+    if img.stroke != nothing && img.stroke_opacity > 0.0
         rgb = convert(RGB, img.stroke)
-        Cairo.set_source_rgb(img.ctx, rgb.r, rgb.g, rgb.b)
+        Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.stroke_opacity)
 
         Cairo.stroke(img.ctx)
     end
@@ -506,6 +508,11 @@ end
 
 function apply_property(img::Image, p::Opacity)
     img.opacity = p.value
+end
+
+
+function apply_property(img::Image, p::StrokeOpacity)
+    img.stroke_opacity = p.value
 end
 
 
