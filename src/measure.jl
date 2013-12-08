@@ -298,6 +298,10 @@ immutable Point
     x::Measure
     y::Measure
 
+    function Point()
+        new(Measure(), Measure())
+    end
+
     function Point(x, y)
         new(x_measure(x), y_measure(y))
     end
@@ -468,7 +472,7 @@ type Rotation
     offset::Point
 
     function Rotation()
-        new(0.0, Point(0., 0.))
+        new(0.0, Point())
     end
 
     function Rotation(theta::Number)
@@ -599,7 +603,6 @@ function absolute_units(point::Point,
                         t::Transform,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
-
     x = absolute_x_position(point.x, t, unit_box, parent_box)
     y = absolute_y_position(point.y, t, unit_box, parent_box)
     xyt = t.M * [x, y, 1.0]
