@@ -212,14 +212,36 @@ end
 
 # Draw
 
-function print_svg_path(out, points::Vector{Point})
-    @printf(out, "M%s,%s L",
-            svg_fmt_float(points[1].x.abs),
-            svg_fmt_float(points[1].y.abs))
-    for point in points[2:]
-        @printf(out, " %s %s",
-                svg_fmt_float(point.x.abs),
-                svg_fmt_float(point.y.abs[]))
+# Generate SVG path data from an array of points.
+#
+# Args:
+#   out: Output stream.
+#   points: points on the path
+#   bridge_gaps: when true, remove non-finite values, rather than forming
+#                separate lines.
+#
+# Returns:
+#   A string containing SVG path data.
+#
+function print_svg_path(out, points::Vector{Point}, bridge_gaps::Bool=false)
+    isfirst = true
+    for point in points
+        x, y = point.x.abs, point.y.abs
+        if !(isfinite(x) && isfinite(y))
+            isfirst = true
+            continue
+        end
+
+        if isfirst
+            isfirst = false
+            @printf(out, "M%s,%s L",
+                    svg_fmt_float(x),
+                    svg_fmt_float(y))
+        else
+            @printf(out, " %s %s",
+                    svg_fmt_float(x),
+                    svg_fmt_float(y))
+        end
     end
 end
 
@@ -280,7 +302,7 @@ function draw(img::SVG, form::Polygon)
 
     indent(img)
     write(img.out, "<path d=\"")
-    print_svg_path(img.out, form.points)
+    print_svg_path(img.out, form.points, true)
     write(img.out, " z\" />\n")
 end
 
@@ -297,6 +319,10 @@ function draw(img::SVG, form::Ellipse)
               (form.y_point.y.abs - cy)^2)
     theta = radians2degrees(atan2(form.x_point.y.abs - cy,
                                   form.x_point.x.abs - cx))
+
+    if !all(isfinite([cx, cy, rx, ry, theta]))
+        return
+    end
 
     indent(img)
     eps = 1e-6

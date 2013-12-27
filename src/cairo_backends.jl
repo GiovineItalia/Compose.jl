@@ -413,6 +413,10 @@ function draw(img::Image, form::Ellipse)
     theta = atan2(form.x_point.y.abs - cy,
                   form.x_point.x.abs - cx)
 
+    if !all(isfinite([cx, cy, rx, ry, theta]))
+        return
+    end
+
     save_state(img)
     translate(img, cx, cy)
     rotate(img, theta)

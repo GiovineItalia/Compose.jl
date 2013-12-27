@@ -288,7 +288,7 @@ function draw(img::D3, form::Polygon)
     write(img.out, "g.append(\"svg:path\")\n")
     indent(img)
     write(img.out, "   .attr(\"d\", \"")
-    print_svg_path(img.out, form.points)
+    print_svg_path(img.out, form.points, true)
     write(img.out, " z\");\n")
 end
 
@@ -315,6 +315,10 @@ function draw(img::D3, form::Ellipse)
               (form.y_point.y.abs - cy)^2)
     theta = radians2degrees(atan2(form.x_point.y.abs - cy,
                                   form.x_point.x.abs - cx))
+
+    if !all(isfinite([cx, cy, rx, ry, theta]))
+        return
+    end
 
     indent(img)
     eps = 1e-6
@@ -483,7 +487,7 @@ function push_property(img::D3, property::Property)
                     .attr("id", parent_id + "_$(clipid)")
                     .append("svg:path")
                       .attr("d", " """)
-        print_svg_path(img.out, clip.points)
+        print_svg_path(img.out, clip.points, true)
         write(img.out, " z\");")
     end
 
