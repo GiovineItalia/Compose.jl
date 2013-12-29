@@ -55,6 +55,11 @@ immutable Measure{S, T}
 end
 
 
+function zero(::Type{Measure})
+    return Measure()
+end
+
+
 function Measure(abs, cx, cy, cw, ch)
     Measure{typeof(cx), typeof(cy)}(abs, cx, cy, cw, ch)
 end
