@@ -6,7 +6,7 @@ import Base.fill
 export stroke, fill, linewidth, font, fontsize, visible, clip, opacity, svgid,
        svgclass, svglink, onactive, onclick, onfocusin, onfocusout, onload,
        onmousedown, onmousemove, onmouseout, onmouseover, onmouseup, svgmask,
-       svgdefmask, svgembed, svgattribute, d3embed, d3hook, strokeopacity
+       svgdefmask, svgembed, svgattribute, d3style, d3embed, d3hook, strokeopacity
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
@@ -315,7 +315,6 @@ end
 
 svgdefmask(id::String) = PropertySeq(SVGDefineMask(id))
 
-
 # A general purpose SVG attribute.
 
 immutable SVGAttribute <: PropertyPrimitive
@@ -341,6 +340,18 @@ end
 
 
 svgembed(markup::String) = PropertySeq(SVGEmbed(markup))
+
+# D3 css styles
+
+immutable D3Style <: PropertyPrimitive
+    attribute::String
+    value::String
+end
+
+
+function d3style(attribute::String, value::String)
+    PropertySeq(D3Style(attribute, value))
+end
 
 
 # Embedding raw js code in D3 output.
