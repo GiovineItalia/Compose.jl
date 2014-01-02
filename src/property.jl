@@ -133,7 +133,7 @@ end
 fill(value) = PropertySeq(Fill(value))
 
 
-# A property primitive controlling the strok color (or lack of color) of a form.
+# A property primitive controlling the stroke color (or lack of color) of a form.
 immutable Stroke <: PropertyPrimitive
     value::ColorOrNothing
 
