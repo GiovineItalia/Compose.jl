@@ -251,7 +251,7 @@ end
 
 # Index of the the given array in the serialized data.
 function data_idx(backend::D3, d::AbstractArray)
-    id = object_id(d)
+    id = uint64(object_id(d))
     if !haskey(backend.data, d)
         backend.data[id] = (d, length(backend.data))
     end
