@@ -168,6 +168,12 @@ function finish(img::D3)
         var draw = function(parent_id) {
             draw_with_data(data, parent_id);
         };
+
+        if ('undefined' !== typeof module) {
+            module.exports = draw;
+        } else if ('undefined' !== typeof window) {
+            window.draw = draw
+        }
         """)
 
     if method_exists(flush, (typeof(img.out),))
@@ -234,8 +240,11 @@ function writemime(io::IO, ::MIME"text/html", img::D3)
     """
     <div id="$(divid)"></div>
     <script>
+    (function (module) {
     $(takebuf_string(img.out))
-    draw("#$(divid)");
+    return module;
+    })({}).exports("#$(divid)");
+    //@ sourceURL=$(divid).js
     </script>
     """)
 end
@@ -443,7 +452,7 @@ function draw(img::D3, form::Text)
     end
 
     indent(img)
-    pango_to_d3(img.out, form.value)
+    pango_to_d3(img.out, form.value, img.indentation)
     print(img.out, ";\n")
     #@printf(img.out, "   .text(\"%s\");\n",
             #escape_string(pango_to_svg(form.value)))
@@ -586,6 +595,10 @@ function apply_property(img::D3, p::SVGClass)
     @printf(img.out, ".attr(\"class\", \"%s\"\)", escape_string(p.value))
 end
 
+
+function apply_property(img::D3, p::D3Style)
+    @printf(img.out, ".style(\"%s\", \"%s\")", p.attribute, p.value)
+end
 
 function apply_property(img::D3, p::SVGAttribute)
     @printf(img.out, ".attr(\"%s\", \"%s\")", p.attribute, p.value)
