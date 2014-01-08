@@ -323,7 +323,7 @@ function draw(img::D3, form::Ellipse)
     ry = sqrt((form.y_point.x.abs - cx)^2 +
               (form.y_point.y.abs - cy)^2)
     theta = rad2deg(atan2(form.x_point.y.abs - cy,
-                                  form.x_point.x.abs - cx))
+                          form.x_point.x.abs - cx))
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
         return
