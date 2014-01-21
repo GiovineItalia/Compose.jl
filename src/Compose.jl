@@ -25,6 +25,14 @@ export pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
 
 import Iterators
 
+
+# Backwards compatibility with julia-0.2 names
+if !isdefined(:rad2deg)
+    const rad2deg = radians2degrees
+    const deg2rad = degrees2radians
+end
+
+
 # Empty combine. This violates the rules a bit, since nothing is not the
 # identity element in any of the monoids, but it's sometimes convenient if it
 # behaves as such.
