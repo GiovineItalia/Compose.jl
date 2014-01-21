@@ -322,7 +322,7 @@ function draw(img::D3, form::Ellipse)
               (form.x_point.y.abs - cy)^2)
     ry = sqrt((form.y_point.x.abs - cx)^2 +
               (form.y_point.y.abs - cy)^2)
-    theta = radians2degrees(atan2(form.x_point.y.abs - cy,
+    theta = rad2deg(atan2(form.x_point.y.abs - cy,
                                   form.x_point.x.abs - cx))
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
@@ -446,7 +446,7 @@ function draw(img::D3, form::Text)
     if !isidentity(form.t)
         indent(img)
         @printf(img.out, "   .attr(\"transform\", \"rotate(%s, %s, %s)\")\n",
-                svg_fmt_float(radians2degrees(atan2(form.t.M[2,1], form.t.M[1,1]))),
+                svg_fmt_float(rad2deg(atan2(form.t.M[2,1], form.t.M[1,1]))),
                 svg_fmt_float(form.pos.x.abs),
                 svg_fmt_float(form.pos.y.abs))
     end
