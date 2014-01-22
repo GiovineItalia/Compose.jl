@@ -508,12 +508,12 @@ end
 
 
 function writemime(io::IO, ::MIME"text/html", canvas::Canvas)
-    draw(SVG(default_graphic_width, default_graphic_height), canvas)
+    draw(SVG(io, default_graphic_width, default_graphic_height), canvas)
 end
 
 
 function writemime(io::IO, ::MIME"text/html", form::Form)
-    draw(SVG(default_graphic_width, default_graphic_height), compose(canvas(), form))
+    draw(SVG(io, default_graphic_width, default_graphic_height), compose(canvas(), form))
 end
 
 end # module Compose
