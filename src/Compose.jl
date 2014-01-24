@@ -516,15 +516,18 @@ end
 
 
 function writemime(io::IO, ::MIME"text/html", canvas::Canvas)
-    draw(SVG(io, default_graphic_width, default_graphic_height), canvas)
+    bb = boundingbox(canvas)
+    width = bb.width.abs > 0.0 ? bb.width : max(bb.width, default_graphic_width)
+    height = bb.height.abs > 0.0 ? bb.height : max(bb.height, default_graphic_height)
+
+    draw(SVG(io, width.abs*mm, height.abs*mm), canvas)
 end
 
 
 function writemime(io::IO, ::MIME"text/html", form::Form)
     bb = boundingbox(form)
-
-    width = isabsolute(bb.width) ? bb.width : max(width, default_graphic_width)
-    height = isabsolute(bb.height) ? bb.height : max(height, default_graphic_height)
+    width = bb.width.abs > 0.0 ? bb.width : max(bb.width, default_graphic_width)
+    height = bb.height.abs > 0.0 ? bb.height : max(bb.height, default_graphic_height)
 
     draw(SVG(io, width.abs*mm, height.abs*mm),
          compose(canvas(-bb.x0, -bb.y0), form))

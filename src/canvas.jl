@@ -116,6 +116,29 @@ const canvas = CanvasTree
 
 copy(c::CanvasTree) = CanvasTree(c)
 
+# Compute a bounding box over a canvas tree
+function boundingbox(canvas::CanvasTree, linewidth::Measure=default_line_width,
+                     font::String=default_font_family,
+                     fontsize::Measure=default_font_size)
+    p = canvas.property
+    while !is(p, empty_property)
+        if isa(p.primitive, LineWidth)
+            linewidth = p.primitive.value
+        elseif isa(p.primitive, FontSize)
+            fontsize = p.primitive.value
+        elseif isa(p.primitive, Font)
+            font = p.primitive.family
+        end
+        p = p.next
+    end
+
+    bb = union(canvas.box, boundingbox(canvas.form, linewidth, font, fontsize))
+    for child in canvas.children
+        bb = union(boundingbox(child, linewidth, font, fontsize), bb)
+    end
+    return bb
+end
+
 
 # Return a new Canvas with unit_box substituted.
 function set_unit_box(c::CanvasTree, unit_box::UnitBox)

@@ -92,7 +92,11 @@ function boundingbox(form::FormTree, linewidth::Measure=default_line_width,
         p = p.next
     end
 
-    bb = boundingbox(form.primitive, linewidth, font, fontsize)
+    if form.primitive == nothing
+        bb = BoundingBox()
+    else
+        bb = boundingbox(form.primitive, linewidth, font, fontsize)
+    end
     for child in form.children
         bb = union(bb, boundingbox(child, linewidth, font, fontsize))
     end
