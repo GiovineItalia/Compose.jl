@@ -14,7 +14,7 @@ using JSON
 import JSON.json
 
 import Base: +, -, *, /, convert, length, ==, <, <=, >=, isempty, start, next,
-             done, copy, isless, max, show, hex, writemime, zero
+             done, copy, isless, max, min, show, hex, writemime, zero, union
 
 export pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
        combine, contents, decompose, text_extents,
@@ -496,7 +496,15 @@ end
 # Emitting graphics.
 
 default_graphic_width = 12cm
-default_graphic_height = 8cm
+default_graphic_height = 12cm
+
+
+# Default property values
+default_font_family = "Helvetic,Arial,sans"
+default_font_size = 11pt
+default_line_width = 0.3mm
+default_stroke_color = nothing
+default_fill_color = color("black")
 
 
 function set_default_graphic_size(width::MeasureOrNumber, height::MeasureOrNumber)
@@ -513,7 +521,13 @@ end
 
 
 function writemime(io::IO, ::MIME"text/html", form::Form)
-    draw(SVG(io, default_graphic_width, default_graphic_height), compose(canvas(), form))
+    bb = boundingbox(form)
+
+    width = isabsolute(bb.width) ? bb.width : max(width, default_graphic_width)
+    height = isabsolute(bb.height) ? bb.height : max(height, default_graphic_height)
+
+    draw(SVG(io, width.abs*mm, height.abs*mm),
+         compose(canvas(-bb.x0, -bb.y0), form))
 end
 
 end # module Compose

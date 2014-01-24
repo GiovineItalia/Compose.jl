@@ -76,6 +76,30 @@ function removable(a::FormTree)
 end
 
 
+# Compute a bounding box for a form tree.
+function boundingbox(form::FormTree, linewidth::Measure=default_line_width,
+                     font::String=default_font_family,
+                     fontsize::Measure=default_font_size)
+    p = form.property
+    while !is(p, empty_property)
+        if isa(p.primitive, LineWidth)
+            linewidth = p.primitive.value
+        elseif isa(p.primitive, FontSize)
+            fontsize = p.primitive.value
+        elseif isa(p.primitive, Font)
+            font = p.primitive.family
+        end
+        p = p.next
+    end
+
+    bb = boundingbox(form.primitive, linewidth, font, fontsize)
+    for child in form.children
+        bb = union(bb, boundingbox(child, linewidth, font, fontsize))
+    end
+    return bb
+end
+
+
 # Conceptually, combining forms is tree joining by introducing a new root.
 #
 #   a      b               c
@@ -164,6 +188,13 @@ function draw(backend::Backend,
 end
 
 
+# Fallback method for computing a form primitives bounding box.
+function boundingbox(form::FormPrimitive, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    return BoundingBox(0, 0, 1, 1)
+end
+
+
 immutable Lines <: FormPrimitive
     points::Vector{Point}
 
@@ -189,6 +220,19 @@ end
 
 function lines(points::XYTupleOrPoint...)
     FormTree(Lines([convert(Point, point) for point in points]))
+end
+
+
+function boundingbox(form::Lines, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    x0 = minimum([p.x for p in form.points])
+    x1 = maximum([p.x for p in form.points])
+    y0 = minimum([p.y for p in form.points])
+    y1 = maximum([p.y for p in form.points])
+    return BoundingBox(x0 - linewidth,
+                       y0 - linewidth,
+                       x1 - x0 + linewidth,
+                       y1 - y0 + linewidth)
 end
 
 
@@ -221,6 +265,19 @@ function curve(anchor0::XYTupleOrPoint, ctrl0::XYTupleOrPoint,
 end
 
 
+function boundingbox(form::Curve, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    x0 = min(anchor.x, ctrl0.x, ctrl1.x, anchor1.x)
+    x1 = max(anchor.x, ctrl0.x, ctrl1.x, anchor1.x)
+    y0 = min(anchor.y, ctrl0.y, ctrl1.y, anchor1.y)
+    y1 = max(anchor.y, ctrl0.y, ctrl1.y, anchor1.y)
+    return BoundingBox(x0 - linewidth,
+                       y0 - linewidth,
+                       x1 - x0 + linewidth,
+                       y1 - y0 + linewidth)
+end
+
+
 function draw(backend::Backend, t::Transform, unit_box::UnitBox,
               box::AbsoluteBoundingBox, form::Curve)
     native_form = Curve(absolute_units(form.anchor0, t, unit_box, box),
@@ -243,6 +300,19 @@ end
 
 function polygon(points::XYTupleOrPoint...)
     FormTree(Polygon([convert(Point, point) for point in points]))
+end
+
+
+function boundingbox(form::Polygon, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    x0 = minimum([p.x for p in form.points])
+    x1 = maximum([p.x for p in form.points])
+    y0 = minimum([p.y for p in form.points])
+    y1 = maximum([p.y for p in form.points])
+    return BoundingBox(x0 - linewidth,
+                       y0 - linewidth,
+                       x1 - x0 + linewidth,
+                       y1 - y0 + linewidth)
 end
 
 
@@ -317,6 +387,19 @@ function circle(x, y, radius)
 end
 
 
+function boundingbox(form::Ellipse, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    x0 = min(form.x_point.x, form.y_point.x)
+    x1 = max(form.x_point.x, form.y_point.x)
+    y0 = min(form.x_point.y, form.y_point.y)
+    y1 = max(form.x_point.y, form.y_point.y)
+    return BoundingBox(x0 - linewidth,
+                       y0 - linewidth,
+                       x1 - x0 + linewidth,
+                       y1 - y0 + linewidth)
+end
+
+
 function draw(backend::Backend, t::Transform, unit_box::UnitBox,
               box::AbsoluteBoundingBox, form::Ellipse)
     native_form = Ellipse(
@@ -365,6 +448,34 @@ end
 
 function text(x, y, value::String)
     text(x, y, value, hleft, vbottom)
+end
+
+
+function boundingbox(form::Text, linewidth::Measure,
+                     font::String, fontsize::Measure)
+
+    width, height = text_extents(form.value, fontsize, form.value)
+
+    if form.halign == hleft
+        x0 = form.pos.x
+    elseif form.halign == hcenter
+        x0 = form.pos.x - width/2
+    elseif form.halign == hright
+        x0 = form.pos.x - width
+    end
+
+    if form.valign == vbottom
+        y0 = form.pos.y - height
+    elseif form.value == vcenter
+        y0 = form.pos.y - height/2
+    elseif form.value == vtop
+        y0 = form.pos.y
+    end
+
+    return BoundingBox(x0 - linewidth,
+                       y0 - linewidth,
+                       width + linewidth,
+                       height + linewidth)
 end
 
 

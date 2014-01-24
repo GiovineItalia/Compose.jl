@@ -15,10 +15,15 @@ zero(::Type{MeasureNil}) = measure_nil
 
 # ambiguity warning
 max(::Function, b::MeasureNil) = measure_nil
+min(::Function, b::MeasureNil) = measure_nil
 
 max(a::MeasureNil, b::MeasureNil) = measure_nil
 max(a::MeasureNil, b)             = b
 max(a, b::MeasureNil)             = a
+
+min(a::MeasureNil, b::MeasureNil) = measure_nil
+min(a::MeasureNil, b)             = measure_nil
+min(a, b::MeasureNil)             = measure_nil
 
 +(a::MeasureNil, b::MeasureNil) = measure_nil
 +(a::MeasureNil, b)             = b
@@ -27,6 +32,7 @@ max(a, b::MeasureNil)             = a
 -(a::MeasureNil, b::MeasureNil) = measure_nil
 -(a::MeasureNil, b)             = -b
 -(a, b::MeasureNil)             =  a
+-(a::MeasureNil)                = measure_nil
 
 *(a::MeasureNil, b::MeasureNil) = error("Two measure_nil objects multiplied")
 *(a::MeasureNil, b)             = measure_nil
@@ -52,6 +58,11 @@ immutable Measure{S, T}
     function Measure(; abs=0.0, cx::S=zero(T), cy::T=zero(T), cw=0.0, ch=0.0)
         new(float64(abs), cx, cy, float64(cw), float64(ch))
     end
+end
+
+
+function -{S,T}(a::Measure{S, T})
+    return Measure{S, T}(-a.abs, -a.cx, -a.cy, -a.cw, -a.ch)
 end
 
 
@@ -225,6 +236,27 @@ function max(measures::Measure...)
 end
 
 
+# Return a measure that at least as small as everything else
+function min(measures::Measure...)
+    # current maximums
+    abs = Inf
+    cx = Inf
+    cy = Inf
+    cw = Inf
+    ch = Inf
+
+    for measure in measures
+        abs = min(abs, measure.abs)
+        cx  = min(cx, measure.cx)
+        cy  = min(cy, measure.cy)
+        cw  = min(cw, measure.cw)
+        ch  = min(ch, measure.ch)
+    end
+
+    Measure(abs, cx, cy, cw, ch)
+end
+
+
 # Versus plain numbers
 
 function *(a::Measure, b::Number)
@@ -379,6 +411,19 @@ end
 
 function copy(box::BoundingBox)
     BoundingBox(box)
+end
+
+
+# Compute the union of two bounding boxes.
+#
+# In other words, given two bounding boxes, return a new bounding box that
+# contains both.
+function union(a::BoundingBox, b::BoundingBox)
+    x0 = min(a.x0, b.x0)
+    y0 = min(a.y0, b.y0)
+    x1 = max(a.x0 + a.width, b.x0 + b.width)
+    y1 = max(a.y0 + a.height, b.y0 + b.height)
+    return BoundingBox(x0, y0, x1 - x0, y1 - y0)
 end
 
 

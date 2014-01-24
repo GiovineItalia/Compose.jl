@@ -246,6 +246,14 @@ end
 
 # Draw without finishing the backend.
 function drawpart(backend::Backend, root_canvas::Canvas)
+    # apply default property states
+    push_property(backend,
+                  combine(stroke(default_stroke_color),
+                          fill(default_fill_color),
+                          linewidth(default_line_width),
+                          font(default_font_family),
+                          fontsize(default_font_size)))
+
     S = {(root_canvas, Transform(), UnitBox(), root_box(backend))}
     while !isempty(S)
         s = pop!(S)
@@ -303,6 +311,12 @@ function drawpart(backend::Backend, root_canvas::Canvas)
             push!(S, (child, t, unit_box, box))
         end
     end
+    pop_property(backend)
 end
 
+
+# Put a form in a default canvas and draw it.
+function draw(backend::Backend, form::Form)
+    draw(backend, compose(canvas(), form))
+end
 
