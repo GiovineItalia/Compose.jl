@@ -377,7 +377,7 @@ function draw(img::Image, form::Lines)
     paths = make_paths(form.points)
     for path in paths
         move_to(img, path[1])
-        for point in path[2:]
+        for point in path[2:end]
             line_to(img, point)
         end
         fillstroke(img)
@@ -395,7 +395,7 @@ function draw(img::Image, form::Polygon)
     if isempty(form.points); return; end
 
     move_to(img, form.points[1])
-    for point in form.points[2:]
+    for point in form.points[2:end]
         line_to(img, point)
     end
     close_path(img)
@@ -559,7 +559,7 @@ end
 function apply_property(img::Image, property::Clip)
     if isempty(property.points); return; end
     move_to(img, property.points[1])
-    for point in property.points[2:]
+    for point in property.points[2:end]
         line_to(img, point)
     end
     close_path(img)
