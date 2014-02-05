@@ -250,14 +250,14 @@ end
 # array is formed by splitting by NaN values
 function make_paths(points::Vector{Point})
     paths = {}
-    nans = find(isnan, [point.y.abs for point in points])
+    nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
+                [(point.x.abs, point.y.abs) for point in points])
 
     if length(nans) == 0
         push!(paths, points)
     else
         nans = [0, nans, length(points) + 1]
         i, n = 1, length(nans)
-
         while i <= n-1
             if nans[i] + 1 < nans[i + 1]
                 push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])

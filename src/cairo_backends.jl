@@ -372,7 +372,7 @@ end
 
 
 function draw(img::Image, form::Lines)
-    if isempty(form.points); return; end
+    if length(form.points) <= 1; return; end
 
     paths = make_paths(form.points)
     for path in paths
@@ -394,12 +394,15 @@ end
 function draw(img::Image, form::Polygon)
     if isempty(form.points); return; end
 
-    move_to(img, form.points[1])
-    for point in form.points[2:end]
-        line_to(img, point)
+    paths = make_paths(form.points)
+    for path in paths
+        move_to(img, path[1])
+        for point in path[2:end]
+            line_to(img, point)
+        end
+        close_path(img)
+        fillstroke(img)
     end
-    close_path(img)
-    fillstroke(img)
 end
 
 
