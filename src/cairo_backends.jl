@@ -18,6 +18,8 @@ abstract PSBackend  <: VectorImageBackend
 type ImagePropertyState
     stroke::ColorOrNothing
     fill::ColorOrNothing
+    opacity::Float64
+    stroke_opacity::Float64
 end
 
 type Image{B <: ImageBackend} <: Backend
@@ -358,7 +360,12 @@ end
 
 
 function save_state(img::Image)
-    push!(img.state_stack, ImagePropertyState(img.stroke, img.fill))
+    push!(img.state_stack,
+        ImagePropertyState(
+            img.stroke,
+            img.fill,
+            img.opacity,
+            img.stroke_opacity))
     Cairo.save(img.ctx)
 end
 
@@ -367,6 +374,8 @@ function restore_state(img::Image)
     state = pop!(img.state_stack)
     img.stroke = state.stroke
     img.fill = state.fill
+    img.opacity = state.opacity
+    img.stroke_opacity = state.stroke_opacity
     Cairo.restore(img.ctx)
 end
 
