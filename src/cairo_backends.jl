@@ -553,7 +553,7 @@ function apply_property(img::Image, property::FontSize)
     end
 
     Cairo.set_font_face(img.ctx,
-        @sprintf("%s %.2f",
+        @sprintf("%s %.2fpx",
             family,
             absolute_native_units(img, property.value.abs)))
 end
