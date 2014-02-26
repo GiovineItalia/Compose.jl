@@ -199,6 +199,12 @@ function boundingbox(form::FormPrimitive, linewidth::Measure,
 end
 
 
+function boundingbox(form::EmptyForm, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    return BoundingBox(0, 0, 1, 1)
+end
+
+
 immutable Lines <: FormPrimitive
     points::Vector{Point}
 
@@ -397,10 +403,12 @@ function boundingbox(form::Ellipse, linewidth::Measure,
     x1 = max(form.x_point.x, form.y_point.x)
     y0 = min(form.x_point.y, form.y_point.y)
     y1 = max(form.x_point.y, form.y_point.y)
-    return BoundingBox(x0 - linewidth,
-                       y0 - linewidth,
-                       x1 - x0 + linewidth,
-                       y1 - y0 + linewidth)
+    xr = x1 - x0
+    yr = y1 - y0
+    return BoundingBox(x0 - linewidth - xr,
+                       y0 - linewidth - yr,
+                       2 * (xr + linewidth),
+                       2 * (yr + linewidth))
 end
 
 
@@ -470,9 +478,9 @@ function boundingbox(form::Text, linewidth::Measure,
 
     if form.valign == vbottom
         y0 = form.pos.y - height
-    elseif form.value == vcenter
+    elseif form.valign == vcenter
         y0 = form.pos.y - height/2
-    elseif form.value == vtop
+    elseif form.valign == vtop
         y0 = form.pos.y
     end
 
