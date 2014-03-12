@@ -17,6 +17,7 @@ primitive{T}(dp::DataProperty{T}) = T
 
 fill(ds::AbstractArray) = DataProperty{Fill}(AbstractArray[ds])
 stroke(ds::AbstractArray) = DataProperty{Stroke}(AbstractArray[ds])
+opacity(ds::AbstractArray) = DataProperty{Opacity}(AbstractArray[ds])
 svgclass(ds::AbstractArray) = DataProperty{SVGClass}(AbstractArray[ds])
 d3embed(code::String) = DataProperty{D3Embed}(AbstractArray[[code]])
 
@@ -282,6 +283,26 @@ function make_d3_data_property_expr(backend::D3,
         end
         rowidx = dataindexes[idx]
         @sprintf(".attr(\"fill\", function(d, i) { return d[%d]; })\n", rowidx)
+    end
+end
+
+
+function make_d3_data_property_expr(backend::D3,
+                                    t::Transform,
+                                    unit_box::UnitBox,
+                                    box::AbsoluteBoundingBox,
+                                    dataindexes::Dict{Int, Int},
+                                    dp::DataProperty{Opacity})
+    opacities = dp.ds[1]
+    if length(opacities) == 1
+        @sprintf(".style(\"opacity\", %01.2f)\n", opacities[1])
+    else
+        idx = data_idx(backend, opacities)
+        if !haskey(dataindexes, idx)
+            dataindexes[idx] = length(dataindexes)
+        end
+        rowidx = dataindexes[idx]
+        @sprintf(".style(\"opacity\", function(d, i) { return d[%d]; })\n", rowidx)
     end
 end
 
