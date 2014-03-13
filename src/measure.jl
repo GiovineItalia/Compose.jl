@@ -12,6 +12,7 @@ end
 const measure_nil = MeasureNil()
 
 zero(::Type{MeasureNil}) = measure_nil
+zero(::MeasureNil) = measure_nil
 
 # ambiguity warning
 max(::Function, b::MeasureNil) = measure_nil
@@ -67,6 +68,11 @@ end
 
 
 function zero(::Type{Measure})
+    return Measure()
+end
+
+
+function zero(::Measure)
     return Measure()
 end
 
