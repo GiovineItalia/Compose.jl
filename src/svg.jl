@@ -99,6 +99,7 @@ type SVG <: Backend
         img.ownedfile = false
         img.filename = nothing
         writeheader(img)
+        img
     end
 
     # Write to a file.

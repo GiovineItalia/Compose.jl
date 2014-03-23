@@ -189,7 +189,7 @@ function finish{B <: ImageBackend}(img::Image{B})
 
     img.finished = true
 
-    if img.emit_on_finish && typeof(img.out) == IOString
+    if img.emit_on_finish && typeof(img.out) == IOBuffer
         display(img)
     end
 
