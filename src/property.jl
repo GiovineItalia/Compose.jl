@@ -6,7 +6,8 @@ import Base.fill
 export stroke, fill, linewidth, font, fontsize, visible, clip, opacity, svgid,
        svgclass, svglink, onactive, onclick, onfocusin, onfocusout, onload,
        onmousedown, onmousemove, onmouseout, onmouseover, onmouseup, svgmask,
-       svgdefmask, svgembed, svgattribute, d3style, d3embed, d3hook, strokeopacity
+       svgdefmask, svgembed, svgattribute, d3style, d3embed, d3hook, strokeopacity,
+       strokedash
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
@@ -144,6 +145,17 @@ end
 
 # Singleton sequence contructor.
 stroke(value) = PropertySeq(Stroke(value))
+
+
+# A property primitive controlling the stroke's dash pattern.
+immutable StrokeDash <: PropertyPrimitive
+    value::Array{Measure,1}
+
+    StrokeDash(values) = new(map(size_measure, values))
+end
+
+# Singleton sequence constructor.
+strokedash(values) = PropertySeq(StrokeDash(values))
 
 
 # A property primitive controlling the widths of lines drawn in stroke

@@ -460,6 +460,11 @@ function apply_property(img::SVG, p::Stroke)
 end
 
 
+function apply_property(img::SVG, p::StrokeDash)
+    @printf(img.out, " stroke-dasharray=\"%s\"", join(map(v -> svg_fmt_float(v.abs), p.value), ","))
+end
+
+
 function apply_property(img::SVG, p::Fill)
     @printf(img.out, " fill=\"%s\"", svg_fmt_color(p.value))
 end
