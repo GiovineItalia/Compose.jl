@@ -547,6 +547,12 @@ function apply_property(img::D3, p::Stroke)
 end
 
 
+function apply_property(img::D3, p::StrokeDash)
+    @printf(img.out, ".attr(\"stroke-dasharray\", \"%s\"",
+            join(map(v -> svg_fmt_float(v.abs), p.value), ","))
+end
+
+
 function apply_property(img::D3, p::Fill)
     @printf(img.out, ".attr(\"fill\", \"%s\")", svg_fmt_color(p.value))
 end
