@@ -3,10 +3,11 @@
 # Draw a sierpinski tiangle.
 
 using Compose
+using Color
 
 function sierpinski(n)
     if n == 0
-        canvas() << polygon((1,1), (0,1), (1/2, 0))
+        compose(canvas(), polygon((1,1), (0,1), (1/2, 0)))
     else
         t = sierpinski(n - 1)
         compose(canvas(),
@@ -16,8 +17,5 @@ function sierpinski(n)
     end
 end
 
-
-#img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
-img = D3("sierpinski.js", 4inch, 4(sqrt(3)/2)inch)
-draw(img, sierpinski(8) << linewidth(0.1mm) << fill(nothing))
-
+img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
+draw(img, compose(sierpinski(8), linewidth(0.1mm), fill(nothing), stroke(color("black"))))
