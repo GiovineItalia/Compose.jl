@@ -20,6 +20,7 @@ type ImagePropertyState
     fill::ColorOrNothing
     opacity::Float64
     stroke_opacity::Float64
+    stroke_dash::Array{Float64,1}
 end
 
 type Image{B <: ImageBackend} <: Backend
@@ -35,6 +36,7 @@ type Image{B <: ImageBackend} <: Backend
     fill::ColorOrNothing
     opacity::Float64 # in [0,1]
     stroke_opacity::Float64 # in [0,1]
+    stroke_dash::Array{Float64,1}
     visible::Bool
 
     # Keep track of property
@@ -65,6 +67,7 @@ type Image{B <: ImageBackend} <: Backend
         img.stroke = RGB(0., 0., 0.)
         img.fill   = RGB(0., 0., 0.)
         img.opacity = 1.0
+        img.stroke_dash = []
         img.stroke_opacity = 1.0
         img.visible = true
         img.state_stack = Array(ImagePropertyState, 0)
@@ -353,6 +356,7 @@ function fillstroke(img::Image)
     if img.stroke != nothing && img.stroke_opacity > 0.0
         rgb = convert(RGB, img.stroke)
         Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.stroke_opacity)
+        Cairo.set_dash(img.ctx, img.stroke_dash)
 
         Cairo.stroke(img.ctx)
     end
@@ -365,7 +369,8 @@ function save_state(img::Image)
             img.stroke,
             img.fill,
             img.opacity,
-            img.stroke_opacity))
+            img.stroke_opacity,
+            img.stroke_dash))
     Cairo.save(img.ctx)
 end
 
@@ -376,6 +381,7 @@ function restore_state(img::Image)
     img.fill = state.fill
     img.opacity = state.opacity
     img.stroke_opacity = state.stroke_opacity
+    img.stroke_dash = state.stroke_dash
     Cairo.restore(img.ctx)
 end
 
@@ -524,6 +530,11 @@ end
 
 function apply_property(img::Image, p::Opacity)
     img.opacity = p.value
+end
+
+
+function apply_property(img::Image, p::StrokeDash)
+    img.stroke_dash = map(v -> v.abs, p.value)
 end
 
 
