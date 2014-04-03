@@ -92,7 +92,10 @@ typealias Composable Union(Form, Property, Canvas,
 compose(x::Composable) = x
 compose(xs::Tuple) = compose(xs...)
 compose(xs::Array) = compose(xs...)
-compose(x, y, zs...) = compose(compose(compose(x), compose(y)), zs...)
+compose(xs::Union(Tuple,Array), ys::Union(Tuple,Array)) = compose(compose(xs), compose(ys))
+compose(x, xs::Union(Tuple,Array)) = compose(x, compose(xs))
+compose(xs::Union(Tuple,Array), x) = compose(compose(xs), x)
+compose(x, y, z, zs...) = compose(compose(x, y), z, zs...)
 
 # Make nothings go away.
 compose(::Nothing, ::Nothing) = nothing
