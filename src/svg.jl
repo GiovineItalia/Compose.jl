@@ -23,6 +23,19 @@ function svg_fmt_float(x::Float64)
     a[1:n]
 end
 
+
+# Format a line-join specifier into the attribute string that SVG expects.
+svg_fmt_linejoin(::LineJoinMiter) = "miter"
+svg_fmt_linejoin(::LineJoinRound) = "round"
+svg_fmt_linejoin(::LineJoinBevel) = "bevel"
+
+
+# Format a line-cap specifier into the attribute string that SVG expects.
+svg_fmt_linecap(::LineCapButt) = "butt"
+svg_fmt_linecap(::LineCapSquare) = "square"
+svg_fmt_linecap(::LineCapRound) = "round"
+
+
 # Format a color for SVG.
 svg_fmt_color(c::ColorValue) = @sprintf("#%s", hex(c))
 svg_fmt_color(c::Nothing) = "none"
@@ -462,6 +475,16 @@ end
 
 function apply_property(img::SVG, p::StrokeDash)
     @printf(img.out, " stroke-dasharray=\"%s\"", join(map(v -> svg_fmt_float(v.abs), p.value), ","))
+end
+
+
+function apply_property(img::SVG, p::StrokeLineCap)
+    @printf(img.out, " stroke-linecap=\"%s\"", svg_fmt_linecap(p.value))
+end
+
+
+function apply_property(img::SVG, p::StrokeLineJoin)
+    @printf(img.out, " stroke-linejoin=\"%s\"", svg_fmt_linejoin(p.value))
 end
 
 
