@@ -56,8 +56,21 @@ try
     dlopen("libpangocairo-1.0")
     dlopen("libpango-1.0")
 
+    pango_cairo_ctx = C_NULL
+
     include("fontconfig.jl")
     include("pango.jl")
+
+    function __init__()
+        global pango_cairo_ctx
+        global pangolayout
+        ccall((:g_type_init, "libgobject-2.0"), Void, ())
+        pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
+                                 Ptr{Void}, ())
+        pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
+                                 Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
+        pangolayout = PangoLayout()
+    end
 catch
     include("fontfallback.jl")
 end
