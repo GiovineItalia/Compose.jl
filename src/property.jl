@@ -7,7 +7,8 @@ export stroke, fill, linewidth, font, fontsize, visible, clip, opacity, svgid,
        svgclass, svglink, onactive, onclick, onfocusin, onfocusout, onload,
        onmousedown, onmousemove, onmouseout, onmouseover, onmouseup, svgmask,
        svgdefmask, svgembed, svgattribute, d3style, d3embed, d3hook, strokeopacity,
-       strokedash
+       strokedash, strokelinecap, strokelinejoin,
+       LineCapButt, LineCapSquare, LineCapRound, LineJoinMiter, LineJoinRound, LineJoinBevel
 
 # A property primitive is something can be directly applied.
 abstract PropertyPrimitive
@@ -18,6 +19,20 @@ abstract PropertyPrimitive
 # thought of as a free monoid). The empty_property constant is the identity
 # element.
 abstract Property
+
+
+# An enumeration, really.  Once (if?) Julia has better support for
+# enums, we should use those
+abstract LineCap
+immutable LineCapButt <: LineCap end
+immutable LineCapSquare <: LineCap end
+immutable LineCapRound <: LineCap end
+
+# This should also be an enum, ideally.
+abstract LineJoin
+immutable LineJoinMiter <: LineJoin end
+immutable LineJoinRound <: LineJoin end
+immutable LineJoinBevel <: LineJoin end
 
 
 # An empty (i.e., nop) property which form the identity element of the Property
@@ -154,8 +169,31 @@ immutable StrokeDash <: PropertyPrimitive
     StrokeDash(values) = new(map(size_measure, values))
 end
 
+
 # Singleton sequence constructor.
 strokedash(values) = PropertySeq(StrokeDash(values))
+
+
+# A property primitive controlling the stroke's linecap.
+immutable StrokeLineCap <: PropertyPrimitive
+    value::LineCap
+
+    StrokeLineCap(value) = new(value)
+end
+
+# Singleton sequence constructor
+strokelinecap(value) = PropertySeq(StrokeLineCap(value))
+
+
+# A property primitive controlling the stroke's linejoin.
+immutable StrokeLineJoin <: PropertyPrimitive
+    value::LineJoin
+
+    StrokeLineJoin(value) = new(value)
+end
+
+# Singleton sequence constructor
+strokelinejoin(value) = PropertySeq(StrokeLineJoin(value))
 
 
 # A property primitive controlling the widths of lines drawn in stroke

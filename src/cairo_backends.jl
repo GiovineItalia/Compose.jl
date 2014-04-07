@@ -21,6 +21,8 @@ type ImagePropertyState
     opacity::Float64
     stroke_opacity::Float64
     stroke_dash::Array{Float64,1}
+    stroke_linecap::LineCap
+    stroke_linejoin::LineJoin
 end
 
 type Image{B <: ImageBackend} <: Backend
@@ -37,6 +39,8 @@ type Image{B <: ImageBackend} <: Backend
     opacity::Float64 # in [0,1]
     stroke_opacity::Float64 # in [0,1]
     stroke_dash::Array{Float64,1}
+    stroke_linecap::LineCap
+    stroke_linejoin::LineJoin
     visible::Bool
 
     # Keep track of property
@@ -69,6 +73,8 @@ type Image{B <: ImageBackend} <: Backend
         img.opacity = 1.0
         img.stroke_dash = []
         img.stroke_opacity = 1.0
+        img.stroke_linecap = LineCapButt()
+        img.stroke_linejoin = LineJoinMiter()
         img.visible = true
         img.state_stack = Array(ImagePropertyState, 0)
         img.owns_surface = false
@@ -341,6 +347,15 @@ function rotate(img::Image, theta::Float64)
 end
 
 
+# Convert native linecap/linejoin enums to the Cairo values.
+cairo_linecap(::LineCapButt) = Cairo.CAIRO_LINE_CAP_BUTT
+cairo_linecap(::LineCapRound) = Cairo.CAIRO_LINE_CAP_ROUND
+cairo_linecap(::LineCapSquare) = Cairo.CAIRO_LINE_CAP_SQUARE
+cairo_linejoin(::LineJoinMiter) = Cairo.CAIRO_LINE_JOIN_MITER
+cairo_linejoin(::LineJoinBevel) = Cairo.CAIRO_LINE_JOIN_BEVEL
+cairo_linejoin(::LineJoinRound) = Cairo.CAIRO_LINE_JOIN_ROUND
+
+
 function fillstroke(img::Image)
     if img.fill != nothing && img.opacity > 0.0 && img.visible
         rgb = convert(RGB, img.fill)
@@ -357,6 +372,8 @@ function fillstroke(img::Image)
         rgb = convert(RGB, img.stroke)
         Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.stroke_opacity)
         Cairo.set_dash(img.ctx, img.stroke_dash)
+        Cairo.set_line_cap(img.ctx, cairo_linecap(img.stroke_linecap))
+        Cairo.set_line_join(img.ctx, cairo_linejoin(img.stroke_linejoin))
 
         Cairo.stroke(img.ctx)
     end
@@ -370,7 +387,9 @@ function save_state(img::Image)
             img.fill,
             img.opacity,
             img.stroke_opacity,
-            img.stroke_dash))
+            img.stroke_dash,
+            img.stroke_linecap,
+            img.stroke_linejoin))
     Cairo.save(img.ctx)
 end
 
@@ -382,6 +401,8 @@ function restore_state(img::Image)
     img.opacity = state.opacity
     img.stroke_opacity = state.stroke_opacity
     img.stroke_dash = state.stroke_dash
+    img.stroke_linecap = state.stroke_linecap
+    img.stroke_linejoin = state.stroke_linejoin
     Cairo.restore(img.ctx)
 end
 
@@ -535,6 +556,16 @@ end
 
 function apply_property(img::Image, p::StrokeDash)
     img.stroke_dash = map(v -> v.abs, p.value)
+end
+
+
+function apply_property(img::Image, p::StrokeLineCap)
+    img.stroke_linecap = p.value
+end
+
+
+function apply_property(img::Image, p::StrokeLineJoin)
+    img.stroke_linejoin = p.value
 end
 
 

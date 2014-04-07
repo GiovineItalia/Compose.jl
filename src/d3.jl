@@ -548,8 +548,18 @@ end
 
 
 function apply_property(img::D3, p::StrokeDash)
-    @printf(img.out, ".attr(\"stroke-dasharray\", \"%s\"",
+    @printf(img.out, ".attr(\"stroke-dasharray\", \"%s\")",
             join(map(v -> svg_fmt_float(v.abs), p.value), ","))
+end
+
+
+function apply_property(img::D3, p::StrokeLineJoin)
+    @printf(img.out, ".attr(\"stroke-linejoin\", \"%s\")", svg_fmt_linejoin(p.value))
+end
+
+
+function apply_property(img::D3, p::StrokeLineCap)
+    @printf(img.out, ".attr(\"stroke-linecap\", \"%s\")", svg_fmt_linecap(p.value))
 end
 
 
