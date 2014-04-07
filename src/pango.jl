@@ -42,15 +42,6 @@ let cached_font_matches = Dict{(String, Float64), Ptr{Void}}()
     end
 end
 
-
-# Backend used to compute text extents.
-ccall((:g_type_init, "libgobject-2.0"), Void, ())
-const pango_cairo_fm = ccall((:pango_cairo_font_map_new, libpangocairo),
-                             Ptr{Void}, ())
-const pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
-                              Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
-
-
 # Thin wrapper for a pango_layout object.
 type PangoLayout
     layout::Ptr{Void}
@@ -63,11 +54,6 @@ type PangoLayout
         new(layout)
     end
 end
-
-
-# We can get away with just one layout.
-const pangolayout = PangoLayout()
-
 
 # Set the layout's font.
 function pango_set_font(pangolayout::PangoLayout, family::String, pts::Number)
@@ -114,11 +100,11 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function text_extents(font_family::String, pts::Float64, texts::String...)
-    pango_set_font(pangolayout, font_family, pts)
+    pango_set_font(pangolayout::PangoLayout, font_family, pts)
     max_width  = 0mm
     max_height = 0mm
     for text in texts
-        (width, height) = pango_text_extents(pangolayout, text)
+        (width, height) = pango_text_extents(pangolayout::PangoLayout, text)
         max_width  = max_width.abs  < width.abs  ? width  : max_width
         max_height = max_height.abs < height.abs ? height : max_height
     end
