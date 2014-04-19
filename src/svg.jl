@@ -1,7 +1,4 @@
 
-# An SVG backend for compose.
-
-export SVG
 
 
 # Format a floating point number into a decimal string of reasonable precision.
@@ -23,22 +20,33 @@ function svg_fmt_float(x::Float64)
     a[1:n]
 end
 
-
-# Format a line-join specifier into the attribute string that SVG expects.
-svg_fmt_linejoin(::LineJoinMiter) = "miter"
-svg_fmt_linejoin(::LineJoinRound) = "round"
-svg_fmt_linejoin(::LineJoinBevel) = "bevel"
-
-
-# Format a line-cap specifier into the attribute string that SVG expects.
-svg_fmt_linecap(::LineCapButt) = "butt"
-svg_fmt_linecap(::LineCapSquare) = "square"
-svg_fmt_linecap(::LineCapRound) = "round"
-
-
 # Format a color for SVG.
 svg_fmt_color(c::ColorValue) = @sprintf("#%s", hex(c))
 svg_fmt_color(c::Nothing) = "none"
+
+
+# When subtree rooted at a context is drawn, it pushes its property children
+# in the form of a property frame.
+type SVGPropertyFrame
+    # Vector properties in this frame.
+    vector_properties::Dict{Type, Property}
+
+    # True if this property frame has scalar properties. Scalar properties are
+    # emitted as a group (<g> tag) that must be closed when the frame is popped.
+    has_scalar_properties::Bool
+
+    # True if this property frame includes a link (<a> tag) that needs
+    # to be closed.
+    has_link::Bool
+
+    # True if the property frame include a mask (<mask> tag) than needs to be
+    # closed.
+    has_mask::Bool
+
+    function SVGPropertyFrame()
+        return new(Dict{Type, Property}(), false, false, false)
+    end
+end
 
 
 type SVG <: Backend
@@ -52,6 +60,14 @@ type SVG <: Backend
     # Current level of indentation.
     indentation::Int
 
+    # Stack of property frames (groups of properties) currently in effect.
+    property_stack::Vector{SVGPropertyFrame}
+
+    # SVG forbids defining the same property twice, so we have to keep track
+    # of which vector property of which type is in effect. If two properties of
+    # the same type are in effect, the one higher on the stack takes precedence.
+    vector_properties::Dict{Type, Union(Nothing, Property)}
+
     # Javascript fragments are placed in a function with a unique name. This is
     # a map of unique function names to javascript code.
     scripts::Dict{String, String}
@@ -59,20 +75,9 @@ type SVG <: Backend
     # Clip-paths that need to be defined at the end of the document.
     clippaths::Vector{Vector{Point}}
 
-    # Miscelaneous embedded objects included immediately before the </svg> tag,
-    # such as extra javascript or css.
+    # Embedded objects included immediately before the </svg> tag, such as extra
+    # javascript or css.
     embobj::Set{String}
-
-    # Keep track of which properties that are push are empty to we can avoid
-    # printiing them.
-    empty_properties::Vector{Bool}
-
-    # Keep track of which properties have links, so we know when to insert
-    # closing </a> tags.
-    linked_properties::Vector{Bool}
-
-    # Keep track of mask objects.
-    mask_properties::Vector{Bool}
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -101,12 +106,11 @@ type SVG <: Backend
         img.height = height.abs
         img.out = out
         img.indentation = 0
+        img.property_stack = Array(SVGPropertyFrame, 0)
+        img.vector_properties = Dict{Type, Union(Nothing, Property)}()
         img.clippaths = Array(Vector{Point}, 0)
         img.scripts = Dict{String, String}()
         img.embobj = Set{String}()
-        img.empty_properties = Array(Bool, 0)
-        img.linked_properties = Array(Bool, 0)
-        img.mask_properties = Array(Bool, 0)
         img.finished = false
         img.emit_on_finish = emit_on_finish
         img.ownedfile = false
@@ -134,10 +138,20 @@ end
 
 
 function writeheader(img::SVG)
-    write(img.out, @sprintf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"%smm\" height=\"%smm\" viewBox=\"0 0 %s %s\" style=\"stroke:black;fill:black\" stroke-width=\"0.5\">\n",
-          svg_fmt_float(img.width), svg_fmt_float(img.height),
-          svg_fmt_float(img.width), svg_fmt_float(img.height)))
-    img
+    widthstr = svg_fmt_float(img.width)
+    heightstr = svg_fmt_float(img.height)
+    write(img.out,
+          """
+          <?xml version="1.0" encoding="UTF-8"?>
+          <svg xmlns="http://www.w3.org/2000/svg"
+               xmlns:xlink="http://www.w3.org/1999/xlink"
+               version="1.1"
+               width="$(widthstr)mm" height="$(heightstr)mm" viewBox="0 0 $(widthstr) $(heightstr)"
+               stroke="$(svg_fmt_color(default_stroke_color))"
+               fill="$(svg_fmt_color(default_fill_color))"
+               stroke-width="$(svg_fmt_float(default_line_width.abs))">
+          """)
+    return img
 end
 
 
@@ -159,6 +173,10 @@ end
 function finish(img::SVG)
     if img.finished
         return
+    end
+
+    while !isempty(img.property_stack)
+        pop_property_frame(img)
     end
 
     for obj in img.embobj
@@ -283,117 +301,150 @@ function make_paths(points::Vector{Point})
 end
 
 
-function draw(img::SVG, form::Lines)
-    n = length(form.points)
-    if n <= 1; return; end
-    indent(img)
-    paths = make_paths(form.points)
-    for path in paths
-        write(img.out, "<path d=\"")
-        print_svg_path(img.out, path)
-        write(img.out, "\" />\n")
+# Property Printing
+# -----------------
+
+
+
+
+function print_property(img::SVG, property::StrokePrimitive)
+	@printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color))
+end
+
+
+function print_property(img::SVG, property::FillPrimitive)
+	@printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color))
+end
+
+
+# Print the property at the given index in each vector property
+function print_vector_properties(img::SVG, idx::Int)
+    for (propertytype, property) in img.vector_properties
+		if idx > length(property.primitives)
+			error("Vector form and vector property differ in length. Can't distribute.")
+		end
+		print_property(img, property.primitives[idx])
     end
 end
 
 
-function draw(img::SVG, form::Curve)
-    indent(img)
-    @printf(img.out, "<path d=\"M%s,%s C%s,%s %s,%s %s,%s\" />\n",
-        svg_fmt_float(form.anchor0.x.abs),
-        svg_fmt_float(form.anchor0.y.abs),
-        svg_fmt_float(form.ctrl0.x.abs),
-        svg_fmt_float(form.ctrl0.y.abs),
-        svg_fmt_float(form.ctrl1.x.abs),
-        svg_fmt_float(form.ctrl1.y.abs),
-        svg_fmt_float(form.anchor1.x.abs),
-        svg_fmt_float(form.anchor1.y.abs))
+# TODO: the rest of these
+
+
+# Form Drawing
+# ------------
+
+
+function draw(img::SVG, form::Form)
+	for (idx, primitive) in enumerate(form.primitives)
+		draw(img, primitive, idx)
+	end
 end
 
 
-function draw(img::SVG, form::Polygon)
-    n = length(form.points)
-    if n <= 1; return; end
-
-    indent(img)
-    write(img.out, "<path d=\"")
-    print_svg_path(img.out, form.points, true)
-    write(img.out, " z\" />\n")
+function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
+	indent(img)
+	@printf(img.out, "<rect x=\"%s\" y=\"%s\" width=\"%s\" height=\"%s\"",
+		    svg_fmt_float(prim.corner.x.abs),
+		    svg_fmt_float(prim.corner.y.abs),
+		    svg_fmt_float(prim.width.abs),
+		    svg_fmt_float(prim.height.abs))
+	print_vector_properties(img, idx)
+	write(img.out, "/>\n")
 end
 
 
-minmax(a, b) = a < b ? (a,b) : (b,a)
+function draw(img::SVG, form::PolygonPrimitive)
+     n = length(form.points)
+     if n <= 1; return; end
+
+     indent(img)
+     write(img.out, "<path d=\"")
+     print_svg_path(img.out, form.points, true)
+     write(img.out, " z\"")
+     print_vector_properties(img, idx)
+     write(img.out, "/>\n")
+end
 
 
-function draw(img::SVG, form::Ellipse)
-    cx = form.center.x.abs
-    cy = form.center.y.abs
-    rx = sqrt((form.x_point.x.abs - cx)^2 +
-              (form.x_point.y.abs - cy)^2)
-    ry = sqrt((form.y_point.x.abs - cx)^2 +
-              (form.y_point.y.abs - cy)^2)
-    theta = rad2deg(atan2(form.x_point.y.abs - cy,
-                          form.x_point.x.abs - cx))
+# TODO: the rest of these
 
-    if !all(isfinite([cx, cy, rx, ry, theta]))
+
+# Applying properties
+# -------------------
+
+# We are going to need to be able to pop batches of properties corresponding to
+# contexts
+
+# So we need to change this interface to push_properties
+
+function push_property_frame(img::SVG, properties::Vector{Property})
+    if isempty(properties)
+        return
+    end
+
+    frame = SVGPropertyFrame()
+    applied_properties = Set{Type}()
+    scalar_properties = Array(Property, 0)
+    for property in properties
+        if isscalar(property) && !(typeof(property) in applied_properties)
+            push!(scalar_properties, property)
+            push!(applied_properties, typeof(property))
+            frame.has_scalar_properties = true
+        else
+            frame.vector_properties[typeof(property)] = property
+            img.vector_properties[typeof(property)] = property
+        end
+
+        # TODO: set frame flags for masks and links
+    end
+    push!(img.property_stack, frame)
+    if isempty(scalar_properties)
         return
     end
 
     indent(img)
-    eps = 1e-6
+    write(img.out, "<g")
+    for property in scalar_properties
+        print_property(img, property.primitives[1])
+    end
+    write(img.out, ">\n");
+    img.indentation += 1
+end
 
-    if abs(rx - ry) < eps
-        @printf(img.out, "<circle cx=\"%s\" cy=\"%s\" r=\"%s\" />\n",
-                svg_fmt_float(cx), svg_fmt_float(cy), svg_fmt_float(rx))
-    else
-        @printf(img.out, "<ellipse cx=\"%s\" cy=\"%s\" rx=\"%s\" ry=\"%s\"",
-                svg_fmt_float(cx), svg_fmt_float(cy),
-                svg_fmt_float(rx), svg_fmt_float(ry))
 
-        if abs(theta) >= eps
-            @printf(img.out, " transform=\"rotate(%s %s %s)\"",
-                    svg_fmt_float(theta),
-                    svg_fmt_float(cx),
-                    svg_fmt_float(cy))
+function pop_property_frame(img::SVG)
+    @assert !isempty(img.property_stack)
+    frame = pop!(img.property_stack)
+
+    if frame.has_scalar_properties
+        img.indentation -= 1
+        indent(img)
+        write(img.out, "</g>")
+        if frame.has_link
+            write(img.out, "</a>")
         end
+        if frame.has_mask
+            write(img.out, "</mask>")
+        end
+        write(img.out, "\n")
+    end
 
-        write(img.out, " />\n")
+    for (propertytype, property) in frame.vector_properties
+        img.vector_properties[propertytype] = nothing
+        for i in length(img.property_stack):-1:1
+            if haskey(img.property_stack[i].vector_properties, propertytype)
+                img.vector_properties[propertytype] =
+                    img.property_stack.vector_properties[i]
+            end
+        end
     end
 end
 
 
-function draw(img::SVG, form::Text)
-    indent(img)
-    @printf(img.out, "<text x=\"%s\" y=\"%s\"",
-            svg_fmt_float(form.pos.x.abs),
-            svg_fmt_float(form.pos.y.abs))
-
-    if is(form.halign, hcenter)
-        print(img.out, " text-anchor=\"middle\"")
-    elseif is(form.halign, hright)
-        print(img.out, " text-anchor=\"end\"")
-    end
-
-    if is(form.valign, vcenter)
-        print(img.out, " style=\"dominant-baseline:central\"")
-    elseif is(form.valign, vtop)
-        print(img.out, " style=\"dominant-baseline:text-before-edge\"")
-    end
-
-    if !isidentity(form.t)
-        @printf(img.out, " transform=\"rotate(%s, %s, %s)\"",
-                svg_fmt_float(rad2deg(atan2(form.t.M[2,1], form.t.M[1,1]))),
-                svg_fmt_float(form.pos.x.abs),
-                svg_fmt_float(form.pos.y.abs))
-    end
-
-    # TODO: escape special characters
-    @printf(img.out, ">%s</text>\n",
-            pango_to_svg(form.value))
-end
-
-
-# Applying properties
-
+# OLD VERSION:
+# It's going to be trickier than this, since we no longer have one "Property"
+# associated with each canvas or form.
 function push_property(img::SVG, property::Property)
     if property === empty_property
         push!(img.empty_properties, true)
@@ -445,132 +496,103 @@ function push_property(img::SVG, property::Property)
 end
 
 
-function pop_property(img::SVG)
-    is_linked = pop!(img.linked_properties)
-    is_mask = pop!(img.mask_properties)
-    if !pop!(img.empty_properties)
-        img.indentation -= 1
-        indent(img)
-        write(img.out, "</g>")
-        if is_linked
-            write(img.out, "</a>")
-        end
-        if is_mask
-            write(img.out, "</mask>")
-        end
-        write(img.out, "\n")
-    end
-end
+# # Nop catchall
+# function apply_property(img::SVG, p::PropertyPrimitive)
+# end
 
 
-# Nop catchall
-function apply_property(img::SVG, p::PropertyPrimitive)
-end
+# function apply_property(img::SVG, p::Stroke)
+#     @printf(img.out, " stroke=\"%s\"", svg_fmt_color(p.value))
+# end
 
 
-function apply_property(img::SVG, p::Stroke)
-    @printf(img.out, " stroke=\"%s\"", svg_fmt_color(p.value))
-end
+# function apply_property(img::SVG, p::StrokeDash)
+#     @printf(img.out, " stroke-dasharray=\"%s\"", join(map(v -> svg_fmt_float(v.abs), p.value), ","))
+# end
 
 
-function apply_property(img::SVG, p::StrokeDash)
-    @printf(img.out, " stroke-dasharray=\"%s\"", join(map(v -> svg_fmt_float(v.abs), p.value), ","))
-end
+# function apply_property(img::SVG, p::Fill)
+#     @printf(img.out, " fill=\"%s\"", svg_fmt_color(p.value))
+# end
 
 
-function apply_property(img::SVG, p::StrokeLineCap)
-    @printf(img.out, " stroke-linecap=\"%s\"", svg_fmt_linecap(p.value))
-end
+# function apply_property(img::SVG, p::LineWidth)
+#     @printf(img.out, " stroke-width=\"%s\"", svg_fmt_float(p.value.abs))
+# end
 
 
-function apply_property(img::SVG, p::StrokeLineJoin)
-    @printf(img.out, " stroke-linejoin=\"%s\"", svg_fmt_linejoin(p.value))
-end
+# function apply_property(img::SVG, p::Visible)
+#     @printf(img.out, " visibility=\"%s\"",
+#             p.value ? "visible" : "hidden")
+# end
 
 
-function apply_property(img::SVG, p::Fill)
-    @printf(img.out, " fill=\"%s\"", svg_fmt_color(p.value))
-end
+# function apply_property(img::SVG, p::Opacity)
+#     @printf(img.out, " opacity=\"%s\"", fmt_float(p.value))
+# end
 
 
-function apply_property(img::SVG, p::LineWidth)
-    @printf(img.out, " stroke-width=\"%s\"", svg_fmt_float(p.value.abs))
-end
-
-
-function apply_property(img::SVG, p::Visible)
-    @printf(img.out, " visibility=\"%s\"",
-            p.value ? "visible" : "hidden")
-end
-
-
-function apply_property(img::SVG, p::Opacity)
-    @printf(img.out, " opacity=\"%s\"", fmt_float(p.value))
-end
-
-
-function apply_property(img::SVG, p::StrokeOpacity)
-    @printf(img.out, " stroke-opacity=\"%s\"", fmt_float(p.value))
-end
+# function apply_property(img::SVG, p::StrokeOpacity)
+#     @printf(img.out, " stroke-opacity=\"%s\"", fmt_float(p.value))
+# end
 
 
 
-function apply_property(img::SVG, p::SVGID)
-    @printf(img.out, " id=\"%s\"", escape_string(p.value))
-end
+# function apply_property(img::SVG, p::SVGID)
+#     @printf(img.out, " id=\"%s\"", escape_string(p.value))
+# end
 
-function apply_property(img::SVG, p::SVGClass)
-    @printf(img.out, " class=\"%s\"", escape_string(p.value))
-end
+# function apply_property(img::SVG, p::SVGClass)
+#     @printf(img.out, " class=\"%s\"", escape_string(p.value))
+# end
 
-function apply_property(img::SVG, p::Font)
-    @printf(img.out, " font-family=\"%s\"", escape_string(p.family))
-end
+# function apply_property(img::SVG, p::Font)
+#     @printf(img.out, " font-family=\"%s\"", escape_string(p.family))
+# end
 
-function apply_property(img::SVG, p::FontSize)
-    @printf(img.out, " font-size=\"%s\"", svg_fmt_float(p.value.abs))
-end
+# function apply_property(img::SVG, p::FontSize)
+#     @printf(img.out, " font-size=\"%s\"", svg_fmt_float(p.value.abs))
+# end
 
-function apply_property(img::SVG, p::Clip)
-    push!(img.clippaths, p.points)
-    i = length(img.clippaths)
-    write(img.out, " clip-path=\"url(#clippath$(i))\"")
-end
+# function apply_property(img::SVG, p::Clip)
+#     push!(img.clippaths, p.points)
+#     i = length(img.clippaths)
+#     write(img.out, " clip-path=\"url(#clippath$(i))\"")
+# end
 
-function apply_property(img::SVG, p::SVGEmbed)
-    add!(img.embobj, p.markup)
-end
-
-
-function apply_property(img::SVG, p::SVGMask)
-    @printf(img.out, " mask=\"url(#%s)\"", p.id)
-end
+# function apply_property(img::SVG, p::SVGEmbed)
+#     add!(img.embobj, p.markup)
+# end
 
 
-function apply_property(img::SVG, p::SVGAttribute)
-    @printf(img.out, " %s=\"%s\"", p.attribute, p.value)
-end
+# function apply_property(img::SVG, p::SVGMask)
+#     @printf(img.out, " mask=\"url(#%s)\"", p.id)
+# end
 
 
-for event in events
-    prop_name = lowercase(string(event))
-    @eval begin
-        function apply_property(img::SVG, p::($event))
-            fn_name = add_script(img, p.value, object_id(p.value))
-            @printf(img.out, " %s=\"%s(evt)\"", ($prop_name), fn_name)
-        end
-    end
-end
+# function apply_property(img::SVG, p::SVGAttribute)
+#     @printf(img.out, " %s=\"%s\"", p.attribute, p.value)
+# end
 
 
-# Add some javascript. Return the unique name generated for the wrapper function
-# containing the given code.
-function add_script(img::SVG, js::String, obj_id::Integer)
-    fn_name = @sprintf("js_chunk_%x", obj_id)
-    if !haskey(img.scripts, fn_name)
-        img.scripts[fn_name] = replace(js, r"^"m, "  ")
-    end
-    fn_name
-end
+# for event in events
+#     prop_name = lowercase(string(event))
+#     @eval begin
+#         function apply_property(img::SVG, p::($event))
+#             fn_name = add_script(img, p.value, object_id(p.value))
+#             @printf(img.out, " %s=\"%s(evt)\"", ($prop_name), fn_name)
+#         end
+#     end
+# end
 
+
+# # Add some javascript. Return the unique name generated for the wrapper function
+# # containing the given code.
+# function add_script(img::SVG, js::String, obj_id::Integer)
+#     fn_name = @sprintf("js_chunk_%x", obj_id)
+#     if !haskey(img.scripts, fn_name)
+#         img.scripts[fn_name] = replace(js, r"^"m, "  ")
+#     end
+#     fn_name
+# end
 
