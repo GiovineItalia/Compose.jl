@@ -31,6 +31,13 @@ type Context <: Container
     # not drawing to the d3 backend.
     d3only::Bool
 
+    # Contexts may be annotated with the minimum size needed to be drawn
+    # correctly, information that can be used by layout containers. Sizes
+    # are absolute (i.e. millimeters).
+    minwidth::Maybe(Float64)
+    minheight::Maybe(Float64)
+
+
     function Context(x0=0.0w,
                      y0=0.0h,
                      width=1.0w,
@@ -40,9 +47,12 @@ type Context <: Container
                      units_inherited=false,
                      order=0,
                      clip=false,
-                     d3only=false)
-        return new(BoundingBox(x0, y0, width, height), units, rotation, children,
-                   order, units_inherited, clip, d3only)
+                     d3only=false,
+                     minwidth=nothing,
+                     minheight=nothing)
+        return new(BoundingBox(x0, y0, width, height), units, rotation,
+                   ListNull{ComposeNode}(), order, units_inherited, clip,
+                   d3only, minwidth, minheight)
     end
 
     function Context(box::BoundingBox,
@@ -52,14 +62,24 @@ type Context <: Container
                      order::Int,
                      units_inherited::Bool,
                      clip::Bool,
-                     d3only::Bool)
+                     d3only::Bool,
+                     minwidth, minheight)
+        if isa(minwidth, Measure)
+            minwidth = minwidth.abs
+        end
+
+        if isa(minheight, Measure)
+            minheight = minheight.abs
+        end
+
         return new(box, units, rotation, children, order, units_inherited,
-                   clip, d3only)
+                   clip, d3only, minwidth, minheight)
     end
 
     function Context(ctx::Context)
         return new(ctx.box, ctx.units, ctx.rot, ctx.children, ctx.order,
-                   ctx.units_inherited, ctx.clip, ctx.d3only)
+                   ctx.units_inherited, ctx.clip, ctx.d3only,
+                   ctx.minwidth, ctx.minheight)
     end
 end
 
@@ -73,10 +93,17 @@ function context(x0=0.0w,
                  units_inherited=false,
                  order=0,
                  clip=false,
-                 d3only=false)
+                 d3only=false,
+                 minwidth=nothing,
+                 minheight=nothing)
     return Context(BoundingBox(x0, y0, width, height), units, rotation,
-                   ListNull{ComposeNode}(), order, units_inherited, clip, d3only)
+                   ListNull{ComposeNode}(), order, units_inherited, clip,
+                   d3only, minwidth, minheight)
 end
+
+
+# Context deserves a short name as it will be used a lot.
+const ctx = context
 
 
 function copy(ctx::Context)
@@ -84,14 +111,24 @@ function copy(ctx::Context)
 end
 
 
-function isd3only(ctx::Context)
+function isd3only(ctx::Container)
     return ctx.d3only
 end
 
 
-# Next thing to consider:
-#   Containers need to have a notion of minimum absolute size for layouts to
-#   work. For Contexts, it shoud be easy enough to compute.
+function order(cont::Container)
+    return cont.order
+end
+
+
+function minwidth(cont::Container)
+    return cont.minwidth
+end
+
+
+function minheight(cont::Container)
+    return cont.minheight
+end
 
 
 # Frequently we can't compute the contents of a container without knowing its
@@ -100,20 +137,56 @@ end
 # until the graphic is actually being rendered.
 abstract ContainerPromise <: Container
 
+
+# This information is passed to a container promise at drawtime.
+immutable ParentDrawContext
+    t::Transform
+    units::UnitBox
+    box::AbsoluteBoundingBox
+end
+
+
+# TODO:
+# Optionl in layouts will typically be expressed with ad hoc container promises,
+# since we can that way avoid realizing layout possibilties that are not used.
+# That means we need to be able to express size constraints on these.
+
+
 type AdhocContainerPromise <: ContainerPromise
     # A function of the form:
-    #   f(box::BoundingBox, transform::Transform, units::UnitBox) → Container
+    #   f(parent::ParentDrawContext) → Container
     f::Function
+
+    # Z-order of this context relative to its siblings.
+    order::Int
 
     # Ignore this context and everything under it if we are
     # not drawing to the d3 backend.
     d3only::Bool
+
+    # Minimum sizes needed to draw the realized subtree correctly.
+    minwidth::Maybe(Float64)
+    minheight::Maybe(Float64)
 end
 
 
-function realize(promise::AdhocContainerPromise, box::BoundingBox,
-                 units::UnitBox)
-    return promise.f(box, units)
+
+function ctxpromise(f::Function; order=0, d3only::Bool=false,
+                    minwidth=nothing, minheight=nothing)
+    if isa(minwidth, Measure)
+        minwidth = minwidth.abs
+    end
+
+    if isa(minheight, Measure)
+        minheight = minwidth.abs
+    end
+
+    return AdhocContainerPromise(f, order, d3only, minwidth, minheight)
+end
+
+
+function realize(promise::AdhocContainerPromise, drawctx::ParentDrawContext)
+    return promise.f(drawctx)
 end
 
 
@@ -173,7 +246,8 @@ function drawpart(backend::Backend, root_container::Container)
         end
 
         if isa(container, ContainerPromise)
-            container = container.f(units, parent_transform, parent_box)
+            container = realize(container,
+                                ParentDrawContext(parent_transform, units, parent_box))
             if !isa(context, Container)
                 error("Error: A container promise function did not evaluate to a container")
             end
@@ -220,7 +294,7 @@ function drawpart(backend::Backend, root_container::Container)
         for child in context.children
             if isa(child, Container)
                 push!(container_children,
-                      (order(child), 1 + length(container_children)))
+                      (order(child), 1 + length(container_children), child))
             end
         end
         sort!(container_children, rev=true)

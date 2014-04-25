@@ -102,3 +102,41 @@ function absolute_units(p::RectanglePrimitive, t::Transform, units::UnitBox,
                               Measure(abs=absolute_units(p.height, t, units, box)))
 end
 
+
+# Circle
+# ------
+
+immutable CirclePrimitive <: FormPrimitive
+    center::Point
+    radius::Measure
+end
+
+
+typealias Circle Form{CirclePrimitive}
+
+
+function circle()
+    return Circle([CirclePrimitive(Point(0.5w, 0.5h), 0.5w)])
+end
+
+
+function circle(x, y, r)
+    return Circle([CirclePrimitive(Point(x, y), x_measure(r))])
+end
+
+
+function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
+    return Circle([CirclePrimitive(Point(x, y), x_measure(r))
+                   for (x, y, r) in cyclezip(xs, ys, rs)])
+end
+
+
+function absolute_units(p::CirclePrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return CirclePrimitive(absolute_units(p.center, t, units, box),
+                           Measure(abs=absolute_units(p.radius, t, units, box)))
+end
+
+
+
+

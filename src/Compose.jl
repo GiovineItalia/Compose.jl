@@ -12,10 +12,11 @@ using Iterators
 using JuMP
 import JSON
 
-import Base: length, start, next, done, isempty
+import Base: length, start, next, done, isempty, getindex, setindex!
 
-export compose,context, polygon, rectangle, stroke, fill,
-       inch, mm, cm, SVG, draw
+export compose, context, ctx, ctxpromise, table,
+       polygon, rectangle, circle, stroke, fill,
+       inch, mm, cm, cx, cy, w, h, SVG, draw
 
 abstract Backend
 

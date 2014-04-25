@@ -367,6 +367,17 @@ function draw(img::SVG, form::PolygonPrimitive)
 end
 
 
+function draw(img::SVG, prim::CirclePrimitive, idx::Int)
+    indent(img)
+    @printf(img.out, "<circle cx=\"%s\" cy=\"%s\" r=\"%s\"",
+            svg_fmt_float(prim.center.x.abs),
+            svg_fmt_float(prim.center.y.abs),
+            svg_fmt_float(prim.radius.abs))
+    print_vector_properties(img, idx)
+    write(img.out, "/>\n")
+end
+
+
 # TODO: the rest of these
 
 
