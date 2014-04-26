@@ -46,12 +46,6 @@ if Pkg.installed("JuMP") != nothing && Pkg.installed("GLPKMathProgInterface") !=
     using JuMP
 
     function realize(tbl::Table, drawctx::ParentDrawContext)
-        # TODO: It may become a huge problem depending on all the stuff
-        # needed to solve mixied integer problems like this. We might think
-        # of a way to make it optional and punt when it's unavailable.
-        # That would be useful also when generating reasonable output when there is
-        # no feasible solution.
-
         model = Model()
 
         m, n = size(tbl.children)

@@ -15,7 +15,8 @@ import JSON
 import Base: length, start, next, done, isempty, getindex, setindex!
 
 export compose, context, ctx, ctxpromise, table,
-       polygon, rectangle, circle, stroke, fill,
+       polygon, lines, rectangle, circle, ellipse, text, curve,
+       stroke, fill,
        inch, mm, cm, cx, cy, w, h, SVG, draw
 
 abstract Backend

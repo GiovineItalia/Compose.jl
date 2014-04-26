@@ -308,22 +308,22 @@ end
 
 
 function print_property(img::SVG, property::StrokePrimitive)
-	@printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color))
+    @printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color))
 end
 
 
 function print_property(img::SVG, property::FillPrimitive)
-	@printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color))
+    @printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color))
 end
 
 
 # Print the property at the given index in each vector property
 function print_vector_properties(img::SVG, idx::Int)
     for (propertytype, property) in img.vector_properties
-		if idx > length(property.primitives)
-			error("Vector form and vector property differ in length. Can't distribute.")
-		end
-		print_property(img, property.primitives[idx])
+        if idx > length(property.primitives)
+            error("Vector form and vector property differ in length. Can't distribute.")
+        end
+        print_property(img, property.primitives[idx])
     end
 end
 
@@ -336,21 +336,21 @@ end
 
 
 function draw(img::SVG, form::Form)
-	for (idx, primitive) in enumerate(form.primitives)
-		draw(img, primitive, idx)
-	end
+    for (idx, primitive) in enumerate(form.primitives)
+        draw(img, primitive, idx)
+    end
 end
 
 
 function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
-	indent(img)
-	@printf(img.out, "<rect x=\"%s\" y=\"%s\" width=\"%s\" height=\"%s\"",
-		    svg_fmt_float(prim.corner.x.abs),
-		    svg_fmt_float(prim.corner.y.abs),
-		    svg_fmt_float(prim.width.abs),
-		    svg_fmt_float(prim.height.abs))
-	print_vector_properties(img, idx)
-	write(img.out, "/>\n")
+    indent(img)
+    @printf(img.out, "<rect x=\"%s\" y=\"%s\" width=\"%s\" height=\"%s\"",
+            svg_fmt_float(prim.corner.x.abs),
+            svg_fmt_float(prim.corner.y.abs),
+            svg_fmt_float(prim.width.abs),
+            svg_fmt_float(prim.height.abs))
+    print_vector_properties(img, idx)
+    write(img.out, "/>\n")
 end
 
 
@@ -378,7 +378,93 @@ function draw(img::SVG, prim::CirclePrimitive, idx::Int)
 end
 
 
-# TODO: the rest of these
+function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
+    cx = form.center.x.abs
+    cy = form.center.y.abs
+    rx = sqrt((form.x_point.x.abs - cx)^2 +
+              (form.x_point.y.abs - cy)^2)
+    ry = sqrt((form.y_point.x.abs - cx)^2 +
+              (form.y_point.y.abs - cy)^2)
+    theta = rad2deg(atan2(form.x_point.y.abs - cy,
+                          form.x_point.x.abs - cx))
+
+    if !all(isfinite([cx, cy, rx, ry, theta]))
+        return
+    end
+
+    indent(img)
+    @printf(img.out, "<ellipse cx=\"%s\" cy=\"%s\" rx=\"%s\" ry=\"%s\"",
+            svg_fmt_float(cx), svg_fmt_float(cy), svg_fmt_float(rx),
+            svg_fmt_float(ry))
+    if abs(theta) > 1e-4
+        @printf(img.out, " transform=\"rotate(%s %s %s)\"",
+                svg_fmt_float(theta), svg_fmt_float(cx), svg_fmt_float(cy))
+    end
+    print_vector_properties(img, idx)
+    write(img.out, "/>\n")
+end
+
+
+function draw(img::SVG, prim::LinesPrimitive, idx::Int)
+     n = length(form.points)
+     if n <= 1; return; end
+
+     indent(img)
+     write(img.out, "<path d=\"")
+     print_svg_path(img.out, form.points, true)
+     write(img.out, "\"")
+     print_vector_properties(img, idx)
+     write(img.out, "/>\n")
+end
+
+
+function draw(img::SVG, prim::TextPrimitive, idx::Int)
+    indent(img)
+    @printf(img.out, "<text x=\"%s\" y=\"%s\"",
+            svg_fmt_float(prim.position.x.abs),
+            svg_fmt_float(prim.position.y.abs))
+
+    if is(prim.halign, hcenter)
+        print(img.out, " text-anchor=\"middle\"")
+    elseif is(prim.halign, hright)
+        print(img.out, " text-anchor=\"end\"")
+    end
+
+    if is(prim.valign, vcenter)
+        print(img.out, " style=\"dominant-baseline:central\"")
+    elseif is(prim.valign, vtop)
+        print(img.out, " style=\"dominant-baseline:text-before-edge\"")
+    end
+
+    if !isidentity(form.t)
+        @printf(img.out, " transform=\"rotate(%s, %s, %s)\"",
+                svg_fmt_float(rad2deg(atan2(form.t.M[2,1], form.t.M[1,1]))),
+                svg_fmt_float(form.pos.x.abs),
+                svg_fmt_float(form.pos.y.abs))
+    end
+    print_vector_properties(img, idx)
+    write(img.out, ">")
+
+    @printf(img.out, ">%s</text>\n",
+            pango_to_svg(form.value))
+end
+
+
+function draw(img::SVG, prim::CurvePrimitive, idx::Int)
+    indent(img)
+    @printf(img.out, "<path d=\"M%s,%s C%s,%s %s,%s %s,%s\"",
+        svg_fmt_float(form.anchor0.x.abs),
+        svg_fmt_float(form.anchor0.y.abs),
+        svg_fmt_float(form.ctrl0.x.abs),
+        svg_fmt_float(form.ctrl0.y.abs),
+        svg_fmt_float(form.ctrl1.x.abs),
+        svg_fmt_float(form.ctrl1.y.abs),
+        svg_fmt_float(form.anchor1.x.abs),
+        svg_fmt_float(form.anchor1.y.abs))
+    print_vector_properties(img, idx)
+    write(img.out, "/>\n")
+end
+
 
 
 # Applying properties
