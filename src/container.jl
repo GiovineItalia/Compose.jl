@@ -268,7 +268,7 @@ function drawpart(backend::Backend, root_container::Container)
 
         for child in context.children
             if isa(child, Property)
-                push!(properties, child)
+                push!(properties, absolute_units(child, parent_transform, units, parent_box))
             end
         end
 

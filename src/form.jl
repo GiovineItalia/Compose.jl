@@ -35,17 +35,24 @@ end
 typealias Polygon Form{PolygonPrimitive}
 
 
+function polygon()
+    return Lines([LinesPrimitive(Point[])])
+end
+
+
 function polygon(points::XYTupleOrPoint...)
-    return Polygon([PolygonPrimitive([convert(Point, point) for point in points])])
+    return Polygon([PolygonPrimitive([convert(Point, point)
+                                      for point in points])])
 end
 
 
 function polygon(point_arrays::AbstractArray...)
-    polys = Array(PolygonPrimitive, 0)
-    for point_array in point_arrays
-        push!(polys, PolygonPrimitive([convert(Point, point) for point in point_array]))
+    polyprims = Array(PolygonPrimitive, length(point_arrays))
+    for (i, point_array) in enumerate(point_arrays)
+        polyprims[i] = PolygonPrimitive([convert(Point, point)
+                                         for point in point_array]))
     end
-    return Polygon(polys)
+    return Polygon(polyprims)
 end
 
 
@@ -223,8 +230,7 @@ end
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom])
     return Text([TextPrimitive(Point(x, y), value, halign, valign, Transform())
-                 for (x, y, value, halign, valign)
-                 in cyclezip(xs, ys, values, halign, valigns)])
+                 for (x, y, value, halign, valign) in cyclezip(xs, ys, values, halign, valigns)])
 end
 
 
@@ -245,15 +251,21 @@ end
 typealias Lines Form{LinesPrimitive}
 
 
+function lines()
+    return Lines([LinesPrimitive(Point[])])
+end
+
+
 function lines(points::XYTupleOrPoint...)
     return Lines([LinesPrimitive([convert(Point, point) for point in points])])
 end
 
 
 function polygon(point_arrays::AbstractArray...)
-    linesprims = Array(LinesPrimitive, 0)
-    for point_array in point_arrays
-        push!(linesprims, LinesPrimitive([convert(Point, point) for point in point_array]))
+    linesprims = Array(LinesPrimitive, length(point_arrays))
+    for (i, point_array) in enumerate(point_arrays)
+        linesprims[i] = LinesPrimitive([convert(Point, point)
+                                        for point in point_array])
     end
     return Lines(polys)
 end
@@ -268,7 +280,6 @@ end
 # Curve
 # -----
 
-# Quadratic Bezier curve
 immutable CurvePrimitive <: FormPrimitive
     anchor0::Point
     ctrl0::Point
@@ -290,8 +301,7 @@ function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
                ctrl1s::AbstractArray, anchor1s::AbstractArray)
     return Curve([CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
                                  convert(Point, ctrl1), convert(Point, anchor1))
-                  for (anchor0, ctrl0, ctrl1, anchor1)
-                  in cyclezip(anchor0s, ctrl0s, ctrl1s, anchor1s)])
+                  for (anchor0, ctrl0, ctrl1, anchor1) in cyclezip(anchor0s, ctrl0s, ctrl1s, anchor1s)])
 end
 
 
