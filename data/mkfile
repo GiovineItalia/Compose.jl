@@ -23,3 +23,13 @@ glyphsize: glyphsize.c
 clean:V:
     rm -f glyphsize
 
+
+# Uglifyjs outputs a bunch of non-ascii characters that cause problems
+# when embedded in an svg file, so use closure-complier.
+snap.svg-min.js: /Users/dcjones/src/Snap.svg-0.2.0/dist/snap.svg.js
+    closure-compiler $prereq > $target
+
+
+
+
+

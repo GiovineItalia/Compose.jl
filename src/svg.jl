@@ -1,19 +1,5 @@
 
-
-#=const snapsvgjs = base64(readall(Pkg.dir("Compose", "data", "snap.svg-min.js")))=#
-#=const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))=#
-const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg.js"))
-
-#=# Include the the d3 javascript library=#
-#=function prepare_display(d::Display)=#
-    #=display(d, "text/html", """<script charset="utf-8">$(snapsvgjs)</script>""")=#
-#=end=#
-
-#=try=#
-    #=display("text/html", """<script charset="utf-8">$(snapsvgjs)</script>""")=#
-#=catch=#
-#=end=#
-
+const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))
 
 # Format a floating point number into a decimal string of reasonable precision.
 function svg_fmt_float(x::Float64)
@@ -39,8 +25,14 @@ svg_fmt_color(c::ColorValue) = @sprintf("#%s", hex(c))
 svg_fmt_color(c::Nothing) = "none"
 
 
+# Javascript in a <script> tag in SVG needs to escape '"' and '<'.
+#=function escape_script(js::String)=#
+    #=return replace(replace(js, "&", "&amp;"), "<", "&lt;")=#
+#=end=#
+
+# Javascript contained to CDATA block needs to avoid ']]'
 function escape_script(js::String)
-    return replace(replace(js, "&", "&amp;"), "<", "&lt;")
+    return replace(js, "]]", "] ]")
 end
 
 
@@ -87,10 +79,6 @@ type SVG <: Backend
     # the same type are in effect, the one higher on the stack takes precedence.
     vector_properties::Dict{Type, Union(Nothing, Property)}
 
-    # Javascript fragments are placed in a function with a unique name. This is
-    # a map of unique function names to javascript code.
-    scripts::Dict{String, String}
-
     # Clip-paths that need to be defined at the end of the document.
     clippaths::Dict{ClipPrimitive, Int}
 
@@ -132,7 +120,6 @@ type SVG <: Backend
         img.property_stack = Array(SVGPropertyFrame, 0)
         img.vector_properties = Dict{Type, Union(Nothing, Property)}()
         img.clippaths = Dict{ClipPrimitive, Int}()
-        img.scripts = Dict{String, String}()
         img.embobj = Set{String}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
@@ -157,6 +144,11 @@ type SVG <: Backend
                  emit_on_finish::Bool=true, withjs::Bool=false)
         return SVG(IOBuffer(), width, height, emit_on_finish, withjs)
     end
+end
+
+
+function iswithjs(img::SVG)
+    return img.withjs
 end
 
 
@@ -228,14 +220,6 @@ function finish(img::SVG)
         write(img.out, "\n")
     end
 
-    if length(img.scripts) > 0
-        write(img.out, "<script type=\"application/ecmascript\"><![CDATA[\n")
-        for (fn_name, js) in img.scripts
-            @printf(img.out, "function %s(evt) {\n%s\n}\n\n", fn_name, js)
-        end
-        write(img.out, "]]></script>\n")
-    end
-
     if length(img.clippaths) > 0
         write(img.out, "<defs>\n")
         for (clippath, i) in img.clippaths
@@ -247,9 +231,9 @@ function finish(img::SVG)
     end
 
     if img.withjs
-
-        # prevent require.js from loading snap.svg, since we want to do so
-        # directly
+        # Prevent require.js from loading snap.svg, since we want to do so by
+        # including it inline in a <script> tag, which doesn't really work with
+        # require.js.
         write(img.out,
         """
         <script>
@@ -262,29 +246,27 @@ function finish(img::SVG)
 
         write(img.out,
             """
-            <script>
-            $(escape_script(snapsvgjs))
-            </script>
-            """)
-
-        write(img.out,
-            """
             <script> <![CDATA[
-            var s = Snap("#composegraphic");
-            s.circle(0, 0, 50);
+            $(escape_script(snapsvgjs))
             ]]> </script>
             """)
 
-        # restore the require.js define function
+        # TODO: Include all user javascript here.
         write(img.out,
-        """
-        <script>
-        if (typeof define_ != "undefined") {
-            define = define_;
-        }
-        </script>
-        """)
+            """
+            <script> <![CDATA[
+            ]]> </script>
+            """)
 
+        # Restore the require.js define function.
+        write(img.out,
+            """
+            <script>
+            if (typeof define_ != "undefined") {
+                define = define_;
+            }
+            </script>
+            """)
     end
 
     write(img.out, "</svg>\n")
