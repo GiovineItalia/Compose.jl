@@ -204,8 +204,8 @@ end
 
 
 function absolute_units(primitive::LineWidthPrimitive, t::Transform,
-                        units::Unitbox, box::AbsoluteBoundingBox)
-    return LineWidthPrimitive(Measure(abs=absolute_units(primitive.value, t, units box)))
+                        units::UnitBox, box::AbsoluteBoundingBox)
+    return LineWidthPrimitive(Measure(abs=absolute_units(primitive.value, t, units, box)))
 end
 
 
@@ -365,7 +365,7 @@ function fontsize(values::AbstractArray)
 end
 
 
-function absolue_units(primitive::Fontsize, t::Transform, units::UnitBox,
+function absolue_units(primitive::FontSize, t::Transform, units::UnitBox,
                        box::AbsoluteBoundingBox)
     return FontSize(Measure(abs=absolute_units(primitive.value, t, units, box)))
 end
@@ -450,8 +450,8 @@ end
 
 function d3embed(codes::AbstractArray,
                  args::AbstractArray{Vector{Measure}}=[Measure[]])
-    return D3Embed([D3EmbedPrimitive(code, arg) for (code, arg) in
-                    for cyclezip(codes, args)])
+    return D3Embed([D3EmbedPrimitive(code, arg)
+                    for (code, arg) in cyclezip(codes, args)])
 end
 
 

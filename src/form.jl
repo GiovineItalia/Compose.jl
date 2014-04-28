@@ -50,7 +50,7 @@ function polygon(point_arrays::AbstractArray...)
     polyprims = Array(PolygonPrimitive, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
         polyprims[i] = PolygonPrimitive([convert(Point, point)
-                                         for point in point_array]))
+                                         for point in point_array])
     end
     return Polygon(polyprims)
 end

@@ -1,5 +1,19 @@
 
 
+#=const snapsvgjs = base64(readall(Pkg.dir("Compose", "data", "snap.svg-min.js")))=#
+#=const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))=#
+const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg.js"))
+
+#=# Include the the d3 javascript library=#
+#=function prepare_display(d::Display)=#
+    #=display(d, "text/html", """<script charset="utf-8">$(snapsvgjs)</script>""")=#
+#=end=#
+
+#=try=#
+    #=display("text/html", """<script charset="utf-8">$(snapsvgjs)</script>""")=#
+#=catch=#
+#=end=#
+
 
 # Format a floating point number into a decimal string of reasonable precision.
 function svg_fmt_float(x::Float64)
@@ -23,6 +37,11 @@ end
 # Format a color for SVG.
 svg_fmt_color(c::ColorValue) = @sprintf("#%s", hex(c))
 svg_fmt_color(c::Nothing) = "none"
+
+
+function escape_script(js::String)
+    return replace(replace(js, "&", "&amp;"), "<", "&lt;")
+end
 
 
 # When subtree rooted at a context is drawn, it pushes its property children
@@ -91,10 +110,14 @@ type SVG <: Backend
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
+    # Use javascript extensions to add interactivity, etc.
+    withjs::Bool
+
     function SVG(out::IO,
                  width,
                  height,
-                 emit_on_finish::Bool=true)
+                 emit_on_finish::Bool=true,
+                 withjs::Bool=false)
         width = size_measure(width)
         height = size_measure(height)
         if !isabsolute(width) || !isabsolute(height)
@@ -113,27 +136,44 @@ type SVG <: Backend
         img.embobj = Set{String}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
+        img.withjs = withjs
         img.ownedfile = false
         img.filename = nothing
         writeheader(img)
-        img
+        return img
     end
 
     # Write to a file.
-    function SVG(filename::String, width, height)
-        f = open(filename, "w")
-        img = SVG(f, width, height)
+    function SVG(filename::String, width, height, withjs::Bool=false)
+        out = open(filename, "w")
+        img = SVG(out, width, height, true, withjs)
         img.ownedfile = true
         img.filename = filename
-        img
+        return img
     end
 
     # Write to buffer.
     function SVG(width::MeasureOrNumber, height::MeasureOrNumber,
-                 emit_on_finish::Bool=true)
-        img = SVG(IOBuffer(), width, height, emit_on_finish)
-        img
+                 emit_on_finish::Bool=true, withjs::Bool=false)
+        return SVG(IOBuffer(), width, height, emit_on_finish, withjs)
     end
+end
+
+
+# Constructors that turn javascript extensions on
+function SVGJS(out::IO, width, height, emit_on_finish::Bool=true)
+    return SVG(out, width, height, emit_on_finish, true)
+end
+
+
+function SVGJS(filename::String, width, height)
+    return SVG(filename, width, height, true)
+end
+
+
+function SVGJS(width::MeasureOrNumber, height::MeasureOrNumber,
+               emit_on_finish::Bool=true)
+    return SVG(width, height, emit_on_finish, true)
 end
 
 
@@ -149,8 +189,12 @@ function writeheader(img::SVG)
                width="$(widthstr)mm" height="$(heightstr)mm" viewBox="0 0 $(widthstr) $(heightstr)"
                stroke="$(svg_fmt_color(default_stroke_color))"
                fill="$(svg_fmt_color(default_fill_color))"
-               stroke-width="$(svg_fmt_float(default_line_width.abs))">
+               stroke-width="$(svg_fmt_float(default_line_width.abs))"
           """)
+    if img.withjs
+        write(img.out, "\n     id=\"composegraphic\"")
+    end
+    write(img.out, ">\n")
     return img
 end
 
@@ -200,6 +244,47 @@ function finish(img::SVG)
             write(img.out, "\" />\n</clipPath\n>")
         end
         write(img.out, "</defs>\n")
+    end
+
+    if img.withjs
+
+        # prevent require.js from loading snap.svg, since we want to do so
+        # directly
+        write(img.out,
+        """
+        <script>
+        if (typeof define != "undefined") {
+            window.define_ = define;
+            define = undefined;
+        }
+        </script>
+        """)
+
+        write(img.out,
+            """
+            <script>
+            $(escape_script(snapsvgjs))
+            </script>
+            """)
+
+        write(img.out,
+            """
+            <script> <![CDATA[
+            var s = Snap("#composegraphic");
+            s.circle(0, 0, 50);
+            ]]> </script>
+            """)
+
+        # restore the require.js define function
+        write(img.out,
+        """
+        <script>
+        if (typeof define_ != "undefined") {
+            define = define_;
+        }
+        </script>
+        """)
+
     end
 
     write(img.out, "</svg>\n")
@@ -358,7 +443,7 @@ function print_property(img::SVG, property::StrokeOpacityPrimitive)
 end
 
 
-function print_property(img::SVG, property::VisiblePrimitivePrimitive)
+function print_property(img::SVG, property::VisiblePrimitive)
     @printf(img.out, " visibility=\"%s\"",
             property.value ? "visible" : "hidden")
 end
@@ -368,7 +453,7 @@ end
 # shouldn't make a new one for each applicaiton. Where should that happen?
 function print_property(img::SVG, property::ClipPrimitive)
     url = clippathurl(img, property)
-    @printf(img.out, " clip-path=\"url(#$(url))\"")
+    @printf(img.out, " clip-path=\"url(#%s)\"", url)
 end
 
 
