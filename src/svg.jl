@@ -73,7 +73,7 @@ type SVG <: Backend
     scripts::Dict{String, String}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Vector{Vector{Point}}
+    clippaths::Dict{ClipPrimitive, Int}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -108,7 +108,7 @@ type SVG <: Backend
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
         img.vector_properties = Dict{Type, Union(Nothing, Property)}()
-        img.clippaths = Array(Vector{Point}, 0)
+        img.clippaths = Dict{ClipPrimitive, Int}()
         img.scripts = Dict{String, String}()
         img.embobj = Set{String}()
         img.finished = false
@@ -194,9 +194,9 @@ function finish(img::SVG)
 
     if length(img.clippaths) > 0
         write(img.out, "<defs>\n")
-        for (i, clippath) in enumerate(img.clippaths)
+        for (clippath, i) in img.clippaths
             write(img.out, "<clipPath id=\"clippath$(i)\">\n  <path d=\"")
-            print_svg_path(img.out, clippath)
+            print_svg_path(img.out, clippath.points)
             write(img.out, "\" />\n</clipPath\n>")
         end
         write(img.out, "</defs>\n")
@@ -305,8 +305,6 @@ end
 # -----------------
 
 
-
-
 function print_property(img::SVG, property::StrokePrimitive)
     @printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color))
 end
@@ -314,6 +312,88 @@ end
 
 function print_property(img::SVG, property::FillPrimitive)
     @printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color))
+end
+
+
+function print_poperty(img::SVG, property::StrokeDashPrimitive)
+    @printf(img.out, " stroke-dasharray=\"%s\"",
+            join(map(v -> svg_fmt_float(v.abs), p.value), ","))
+end
+
+
+# Format a line-cap specifier into the attribute string that SVG expects.
+svg_fmt_linecap(::LineCapButt) = "butt"
+svg_fmt_linecap(::LineCapSquare) = "square"
+svg_fmt_linecap(::LineCapRound) = "round"
+
+
+function print_property(img::SVG, property::StrokeLineCapPrimitive)
+    @printf(img.out, " stroke-linecap=\"%s\"", svg_fmt_linecap(property.value))
+end
+
+
+# Format a line-join specifier into the attribute string that SVG expects.
+svg_fmt_linejoin(::LineJoinMiter) = "miter"
+svg_fmt_linejoin(::LineJoinRound) = "round"
+svg_fmt_linejoin(::LineJoinBevel) = "bevel"
+
+
+function print_property(img::SVG, property::StrokeLineJoinPrimitive)
+    @printf(img.out, " stroke-linejoin=\"%s\"", svg_fmt_linejoin(property.value))
+end
+
+
+function print_property(img::SVG, property::LineWidthPrimitive)
+    @printf(img.out, " stroke-width=\"%s\"", svg_fmt_float(property.value.abs))
+end
+
+
+function print_property(img::SVG, property::FillOpacityPrimitive)
+    @printf(img.out, " opacity=\"%s\"", fmt_float(p.value))
+end
+
+
+function print_property(img::SVG, property::StrokeOpacityPrimitive)
+    @printf(img.out, " stroke-opacity=\"%s\"", fmt_float(p.value))
+end
+
+
+function print_property(img::SVG, property::VisiblePrimitivePrimitive)
+    @printf(img.out, " visibility=\"%s\"",
+            property.value ? "visible" : "hidden")
+end
+
+
+# I may end up applying the same clip path to many forms separately, so I
+# shouldn't make a new one for each applicaiton. Where should that happen?
+function print_property(img::SVG, property::ClipPrimitive)
+    url = clippathurl(img, property)
+    @printf(img.out, " clip-path=\"url(#$(url))\"")
+end
+
+
+function print_property(img::SVG, property::FontPrimitive)
+    @printf(img.out, " font-family=\"%s\"", escape_string(property.family))
+end
+
+
+function print_property(img::SVG, property::FontSizePrimitive)
+    @printf(img.out, " font-size=\"%s\"", svg_fmt_float(property.value.abs))
+end
+
+
+function print_property(img::SVG, property::SVGIDPrimitive)
+    @printf(img.out, " id=\"%s\"", escape_string(property.value))
+end
+
+
+function print_property(img::SVG, property::SVGClassPrimitive)
+    @printf(img.out, " class=\"%s\"", escape_string(p.value))
+end
+
+
+function print_property(img::SVG, property::D3EmbedPrimitive)
+    # Nop for d3 specific properties.
 end
 
 
@@ -326,9 +406,6 @@ function print_vector_properties(img::SVG, idx::Int)
         print_property(img, property.primitives[idx])
     end
 end
-
-
-# TODO: the rest of these
 
 
 # Form Drawing
@@ -466,14 +543,16 @@ function draw(img::SVG, prim::CurvePrimitive, idx::Int)
 end
 
 
-
 # Applying properties
 # -------------------
 
-# We are going to need to be able to pop batches of properties corresponding to
-# contexts
 
-# So we need to change this interface to push_properties
+# Return a URL corresponding to a ClipPrimitive
+function clippathurl(img::SVG, property::ClipPrimitive)
+    idx = get!(() -> length(img.clippaths) + 1, img.clippaths, property)
+    return string("clippath", idx)
+end
+
 
 function push_property_frame(img::SVG, properties::Vector{Property})
     if isempty(properties)
@@ -492,8 +571,6 @@ function push_property_frame(img::SVG, properties::Vector{Property})
             frame.vector_properties[typeof(property)] = property
             img.vector_properties[typeof(property)] = property
         end
-
-        # TODO: set frame flags for masks and links
     end
     push!(img.property_stack, frame)
     if isempty(scalar_properties)
@@ -537,159 +614,4 @@ function pop_property_frame(img::SVG)
         end
     end
 end
-
-
-# OLD VERSION:
-# It's going to be trickier than this, since we no longer have one "Property"
-# associated with each canvas or form.
-function push_property(img::SVG, property::Property)
-    if property === empty_property
-        push!(img.empty_properties, true)
-        push!(img.linked_properties, false)
-        push!(img.mask_properties, false)
-    else
-        push!(img.empty_properties, false)
-        indent(img)
-
-        # There can only be one property of each type. E.g, defining 'fill'
-        # twice in the same element is not valid svg.
-        properties = Dict{Symbol, PropertyPrimitive}()
-        rawproperties = {}
-        p = property
-        while !is(p, empty_property)
-            if typeof(p.primitive) == SVGAttribute
-                push!(rawproperties, p.primitive)
-            else
-                properties[symbol(string(typeof(p.primitive)))] = p.primitive
-            end
-            p = p.next
-        end
-
-        # Special-case for the mask property.
-        if haskey(properties, :SVGDefineMask)
-            write(img.out, @sprintf("<mask id=\"%s\">", properties[:SVGDefineMask].id))
-            push!(img.mask_properties, true)
-        else
-            push!(img.mask_properties, false)
-        end
-
-        # Special-case for links.
-        if haskey(properties, :SVGLink)
-            write(img.out, @sprintf("<a xlink:href=\"%s\">",
-                  properties[:SVGLink].target === nothing ? '#' : properties[:SVGLink].target))
-            push!(img.linked_properties, true)
-        else
-            push!(img.linked_properties, false)
-        end
-
-        write(img.out, "<g")
-        for p in chain(values(properties), rawproperties)
-            apply_property(img, p)
-        end
-        write(img.out, ">\n")
-
-        img.indentation += 1
-    end
-end
-
-
-# # Nop catchall
-# function apply_property(img::SVG, p::PropertyPrimitive)
-# end
-
-
-# function apply_property(img::SVG, p::Stroke)
-#     @printf(img.out, " stroke=\"%s\"", svg_fmt_color(p.value))
-# end
-
-
-# function apply_property(img::SVG, p::StrokeDash)
-#     @printf(img.out, " stroke-dasharray=\"%s\"", join(map(v -> svg_fmt_float(v.abs), p.value), ","))
-# end
-
-
-# function apply_property(img::SVG, p::Fill)
-#     @printf(img.out, " fill=\"%s\"", svg_fmt_color(p.value))
-# end
-
-
-# function apply_property(img::SVG, p::LineWidth)
-#     @printf(img.out, " stroke-width=\"%s\"", svg_fmt_float(p.value.abs))
-# end
-
-
-# function apply_property(img::SVG, p::Visible)
-#     @printf(img.out, " visibility=\"%s\"",
-#             p.value ? "visible" : "hidden")
-# end
-
-
-# function apply_property(img::SVG, p::Opacity)
-#     @printf(img.out, " opacity=\"%s\"", fmt_float(p.value))
-# end
-
-
-# function apply_property(img::SVG, p::StrokeOpacity)
-#     @printf(img.out, " stroke-opacity=\"%s\"", fmt_float(p.value))
-# end
-
-
-
-# function apply_property(img::SVG, p::SVGID)
-#     @printf(img.out, " id=\"%s\"", escape_string(p.value))
-# end
-
-# function apply_property(img::SVG, p::SVGClass)
-#     @printf(img.out, " class=\"%s\"", escape_string(p.value))
-# end
-
-# function apply_property(img::SVG, p::Font)
-#     @printf(img.out, " font-family=\"%s\"", escape_string(p.family))
-# end
-
-# function apply_property(img::SVG, p::FontSize)
-#     @printf(img.out, " font-size=\"%s\"", svg_fmt_float(p.value.abs))
-# end
-
-# function apply_property(img::SVG, p::Clip)
-#     push!(img.clippaths, p.points)
-#     i = length(img.clippaths)
-#     write(img.out, " clip-path=\"url(#clippath$(i))\"")
-# end
-
-# function apply_property(img::SVG, p::SVGEmbed)
-#     add!(img.embobj, p.markup)
-# end
-
-
-# function apply_property(img::SVG, p::SVGMask)
-#     @printf(img.out, " mask=\"url(#%s)\"", p.id)
-# end
-
-
-# function apply_property(img::SVG, p::SVGAttribute)
-#     @printf(img.out, " %s=\"%s\"", p.attribute, p.value)
-# end
-
-
-# for event in events
-#     prop_name = lowercase(string(event))
-#     @eval begin
-#         function apply_property(img::SVG, p::($event))
-#             fn_name = add_script(img, p.value, object_id(p.value))
-#             @printf(img.out, " %s=\"%s(evt)\"", ($prop_name), fn_name)
-#         end
-#     end
-# end
-
-
-# # Add some javascript. Return the unique name generated for the wrapper function
-# # containing the given code.
-# function add_script(img::SVG, js::String, obj_id::Integer)
-#     fn_name = @sprintf("js_chunk_%x", obj_id)
-#     if !haskey(img.scripts, fn_name)
-#         img.scripts[fn_name] = replace(js, r"^"m, "  ")
-#     end
-#     fn_name
-# end
 

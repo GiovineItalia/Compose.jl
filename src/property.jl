@@ -229,6 +229,62 @@ function visible(values::AbstractArray)
 end
 
 
+# FillOpacity
+# -----------
+
+immutable FillOpacityPrimitive <: PropertyPrimitive
+    value::Float64
+
+    function FillOpacityPrimitive(value_::Number)
+        value = float64(value_)
+        if value < 0.0 || value > 1.0
+            error("Opacity must be between 0 and 1.")
+        end
+        return new(value)
+    end
+end
+
+typealias FillOpacity Property{FillOpacityPrimitive}
+
+
+function fillopacity(value::Float64)
+    return FillOpacity([FillOpacityPrimitive(value)])
+end
+
+
+function fillopacity(values::AbstractArray)
+    return FillOpacity([FillOpacityPrimitive(value) for value in values])
+end
+
+
+# StrokeOpacity
+# -------------
+
+immutable StrokeOpacityPrimitive <: PropertyPrimitive
+    value::Float64
+
+    function StrokeOpacityPrimitive(value_::Number)
+        value = float64(value_)
+        if value < 0.0 || value > 1.0
+            error("Opacity must be between 0 and 1.")
+        end
+        return new(value)
+    end
+end
+
+typealias StrokeOpacity Property{StrokeOpacityPrimitive}
+
+
+function fillopacity(value::Float64)
+    return StrokeOpacity([StrokeOpacityPrimitive(value)])
+end
+
+
+function fillopacity(values::AbstractArray)
+    return StrokeOpacity([StrokeOpacityPrimitive(value) for value in values])
+end
+
+
 # Clip
 # ----
 
