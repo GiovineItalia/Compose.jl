@@ -12,11 +12,12 @@ using Iterators
 using JuMP
 import JSON
 
-import Base: length, start, next, done, isempty, getindex, setindex!, writemime
+import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
+             convert
 
 export compose, context, ctx, ctxpromise, table,
-       polygon, lines, rectangle, circle, ellipse, text, curve,
-       stroke, fill, inch, mm, cm, cx, cy, w, h, SVG, SVGJS, draw
+       polygon, lines, rectangle, circle, ellipse, text, curve, bitmap,
+       stroke, fill, inch, mm, cm, cx, cy, w, h, SVG, SVGJS, PNG, PS, PDF, draw
 
 abstract Backend
 
@@ -47,6 +48,20 @@ default_line_width = 0.3mm
 default_stroke_color = nothing
 default_fill_color = color("black")
 
+try
+    require("Cairo")
+catch
+    global PNG
+    global PS
+    global PDF
+    PNG(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PNG backend.")
+    PS(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PS backend.")
+    PDF(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PDF backend.")
+end
+include("cairo_backends.jl")
 
 include("svg.jl")
 

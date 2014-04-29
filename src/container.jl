@@ -31,6 +31,10 @@ type Context <: Container
     # not drawing to the d3 backend.
     withjs::Bool
 
+    # If possible, render this subtree as a bitmap. This requires the Cairo. If
+    # Cairo isn't available, default rendering is used.
+    raster::Bool
+
     # Contexts may be annotated with the minimum size needed to be drawn
     # correctly, information that can be used by layout containers. Sizes
     # are absolute (i.e. millimeters).
@@ -48,11 +52,12 @@ type Context <: Container
                      order=0,
                      clip=false,
                      withjs=false,
+                     raster=false,
                      minwidth=nothing,
                      minheight=nothing)
         return new(BoundingBox(x0, y0, width, height), units, rotation,
                    ListNull{ComposeNode}(), order, units_inherited, clip,
-                   withjs, minwidth, minheight)
+                   withjs, raster, minwidth, minheight)
     end
 
     function Context(box::BoundingBox,
@@ -63,6 +68,7 @@ type Context <: Container
                      units_inherited::Bool,
                      clip::Bool,
                      withjs::Bool,
+                     raster::Bool,
                      minwidth, minheight)
         if isa(minwidth, Measure)
             minwidth = minwidth.abs
@@ -73,12 +79,12 @@ type Context <: Container
         end
 
         return new(box, units, rotation, children, order, units_inherited,
-                   clip, withjs, minwidth, minheight)
+                   clip, withjs, raster, minwidth, minheight)
     end
 
     function Context(ctx::Context)
         return new(ctx.box, ctx.units, ctx.rot, ctx.children, ctx.order,
-                   ctx.units_inherited, ctx.clip, ctx.withjs,
+                   ctx.units_inherited, ctx.clip, ctx.withjs, ctx.raster,
                    ctx.minwidth, ctx.minheight)
     end
 end
@@ -94,11 +100,12 @@ function context(x0=0.0w,
                  order=0,
                  clip=false,
                  withjs=false,
+                 raster=false,
                  minwidth=nothing,
                  minheight=nothing)
     return Context(BoundingBox(x0, y0, width, height), units, rotation,
                    ListNull{ComposeNode}(), order, units_inherited, clip,
-                   withjs, minwidth, minheight)
+                   withjs, raster, minwidth, minheight)
 end
 
 
@@ -261,6 +268,22 @@ function drawpart(backend::Backend, root_container::Container)
         box = absolute_units(context.box, parent_transform, units, parent_box)
         rot = absolute_units(context.rot, parent_transform, units, box)
         transform = combine(rot, parent_transform)
+
+        if context.raster && isdefined(:Cairo) && isa(backend, SVG)
+            bitmapbackend = PNG(box.width, box.height)
+            draw(bitmapbackend, context)
+
+            f = bitmap("image/png", takebuf_array(bitmapbackend.out),
+                       0, 0, 1w, 1h)
+            c = ctx(context.box.x0, context.box.y0,
+                    context.box.width, context.box.height,
+                    units=context.units,
+                    units_inherited=context.units_inherited,
+                    order=context.order,
+                    clip=context.clip)
+            push!(S, (compose(c, f), parent_transform, units, parent_box))
+            continue
+        end
 
         if !context.units_inherited
             units = context.units

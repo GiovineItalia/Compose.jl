@@ -610,6 +610,17 @@ function draw(img::SVG, prim::CurvePrimitive, idx::Int)
 end
 
 
+function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
+    indent(img)
+    @printf(img.out, "<image x=\"%s\" y=\"%s\" width=\"%s\" height=\"%s\"",
+            svg_fmt_float(prim.corner.x.abs), svg_fmt_float(prim.corner.y.abs),
+            svg_fmt_float(prim.width.abs), svg_fmt_float(prim.height.abs))
+    print_vector_properties(img, idx)
+    @printf(img.out, " xlink:href=\"data:%s;base64,%s\"></image>\n",
+            prim.mime, base64(prim.data))
+end
+
+
 # Applying properties
 # -------------------
 

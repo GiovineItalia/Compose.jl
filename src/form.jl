@@ -314,3 +314,42 @@ function absolute_units(p::CurvePrimitive, t::Transform, units::UnitBox,
 end
 
 
+# Bitmap
+# ------
+
+immutable BitmapPrimitive <: FormPrimitive
+    mime::String
+    data::Vector{Uint8}
+    corner::Point
+    width::Measure
+    height::Measure
+end
+
+typealias Bitmap Form{BitmapPrimitive}
+
+
+function bitmap(mime::String, data::Vector{Uint8}, x0, y0, width, height)
+    corner = Point(x0, y0)
+    width = x_measure(width)
+    height = y_measure(height)
+    return Bitmap([BitmapPrimitive(mime, data, corner, width, height)])
+end
+
+
+function bitmap(mimes::AbstractArray, datas::AbstractArray,
+                x0s::AbstractArray, y0s::AbstractArray,
+                widths::AbstractArray, heights::AbstractArray)
+    return Bitmap([BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height))
+                   for (mime, data, x0, y0, width, height) in cyclezip(mimes, datas, x0s, y0s, widths, heights)])
+end
+
+
+function absolute_units(p::BitmapPrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return BitmapPrimitive(p.mime, p.data,
+                           absolute_units(p.corner, t, units, box),
+                           Measure(abs=absolute_units(p.width, t, units, box)),
+                           Measure(abs=absolute_units(p.width, t, units, box)))
+end
+
+
