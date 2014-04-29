@@ -2,7 +2,6 @@
 require("Color")
 require("Iterators")
 require("JSON")
-require("JuMP")
 
 
 module Compose

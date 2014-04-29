@@ -270,7 +270,7 @@ function drawpart(backend::Backend, root_container::Container)
         transform = combine(rot, parent_transform)
 
         if context.raster && isdefined(:Cairo) && isa(backend, SVG)
-            bitmapbackend = PNG(box.width, box.height)
+            bitmapbackend = PNG(box.width, box.height, false)
             draw(bitmapbackend, context)
 
             f = bitmap("image/png", takebuf_array(bitmapbackend.out),
@@ -295,12 +295,11 @@ function drawpart(backend::Backend, root_container::Container)
             end
         end
 
-        # TODO: when the clip property is implemented
-        #=if context.clip=#
-            #=push!(properties,=#
-                  #=clip(Point(0w, 0h), Point(1w, 0h),=#
-                       #=Point(1w, 1h), Point(0w, 1h)))=#
-        #=end=#
+        if context.clip
+            push!(properties,
+                  clip(Point(0w, 0h), Point(1w, 0h),
+                       Point(1w, 1h), Point(0w, 1h)))
+        end
 
         if !isempty(properties)
             push_property_frame(backend, properties)
