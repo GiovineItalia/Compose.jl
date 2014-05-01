@@ -432,8 +432,11 @@ function svgattribute(attributes::AbstractArray, values::AbstractArray)
 end
 
 
+
 # D3Embed
 # -------
+
+# TODO: We're not using d3. Figure out what the right thing to replace this is.
 
 immutable D3EmbedPrimitive <: PropertyPrimitive
     code::String

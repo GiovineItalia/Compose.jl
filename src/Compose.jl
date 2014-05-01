@@ -14,9 +14,12 @@ import JSON
 import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
              convert
 
-export compose, context, ctx, ctxpromise, table,
+export compose, Context, context, ctx, ctxpromise, table,
        polygon, lines, rectangle, circle, ellipse, text, curve, bitmap,
-       stroke, fill, inch, mm, cm, cx, cy, w, h, SVG, SVGJS, PNG, PS, PDF, draw
+       stroke, fill, strokedash, strokelinecap, strokelinejoin, linewidth,
+       visible, fillopacity, strokeopacity, clip, font, fontsize, svgid,
+       svgclass, svgattribute, Measure, inch, mm, cm, pt, cx, cy, w, h,
+       SVG, SVGJS, PNG, PS, PDF, draw
 
 abstract Backend
 

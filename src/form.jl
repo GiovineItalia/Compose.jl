@@ -36,7 +36,7 @@ typealias Polygon Form{PolygonPrimitive}
 
 
 function polygon()
-    return Lines([LinesPrimitive(Point[])])
+    return PolygonPrimitive([PolygonPrimitive(Point[])])
 end
 
 
