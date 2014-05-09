@@ -56,7 +56,7 @@ immutable Measure{S, T}
         new(float64(abs), cx, cy, float64(cw), float64(ch))
     end
 
-    function Measure(; abs=0.0, cx::S=zero(T), cy::T=zero(T), cw=0.0, ch=0.0)
+    function Measure(; abs=0.0, cx::S=zero(S), cy::T=zero(T), cw=0.0, ch=0.0)
         new(float64(abs), cx, cy, float64(cw), float64(ch))
     end
 end
