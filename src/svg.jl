@@ -98,6 +98,19 @@ type SVG <: Backend
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
+    # IDs of the SVG element currently being generated, or nothing if it has
+    # none.
+    current_id::Union(String, Nothing)
+
+    # A counter used to generate unique IDs
+    id_count::Int
+
+    # Javsacript to include before any JSCall code.
+    jsheader::Vector{String}
+
+    # User javascript from JSCall attributes
+    scripts::Vector{String}
+
     # Use javascript extensions to add interactivity, etc.
     withjs::Bool
 
@@ -123,6 +136,10 @@ type SVG <: Backend
         img.embobj = Set{String}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
+        img.current_id = nothing
+        img.id_count = 0
+        img.jsheader = String[]
+        img.scripts = String[]
         img.withjs = withjs
         img.ownedfile = false
         img.filename = nothing
@@ -149,6 +166,13 @@ end
 
 function iswithjs(img::SVG)
     return img.withjs
+end
+
+
+# Return the next unique element ID. Sort of like gensym for SVG elements.
+function genid(img::SVG)
+    img.id_count += 1
+    return @sprintf("id%d", img.id_count)
 end
 
 
@@ -251,13 +275,6 @@ function finish(img::SVG)
             ]]> </script>
             """)
 
-        # TODO: Include all user javascript here.
-        write(img.out,
-            """
-            <script> <![CDATA[
-            ]]> </script>
-            """)
-
         # Restore the require.js define function.
         write(img.out,
             """
@@ -267,6 +284,19 @@ function finish(img::SVG)
             }
             </script>
             """)
+
+        if !isempty(img.scripts) || !isempty(img.jsheader)
+            write(img.out, "<script> <![CDATA[\n")
+            write(img.out, """var fig = Snap("#composegraphic");""")
+            for script in img.jsheader
+                write(img.out, escape_script(script), "\n")
+            end
+            for script in img.scripts
+                write(img.out, escape_script(script), "\n")
+            end
+            write(img.out, "]]> </script>\n")
+        end
+
     end
 
     write(img.out, "</svg>\n")
@@ -384,7 +414,7 @@ end
 
 function print_poperty(img::SVG, property::StrokeDashPrimitive)
     @printf(img.out, " stroke-dasharray=\"%s\"",
-            join(map(v -> svg_fmt_float(v.abs), p.value), ","))
+            join(map(v -> svg_fmt_float(v.abs), property.value), ","))
 end
 
 
@@ -416,12 +446,12 @@ end
 
 
 function print_property(img::SVG, property::FillOpacityPrimitive)
-    @printf(img.out, " opacity=\"%s\"", fmt_float(p.value))
+    @printf(img.out, " opacity=\"%s\"", svg_fmt_float(property.value))
 end
 
 
 function print_property(img::SVG, property::StrokeOpacityPrimitive)
-    @printf(img.out, " stroke-opacity=\"%s\"", fmt_float(p.value))
+    @printf(img.out, " stroke-opacity=\"%s\"", svg_fmt_float(property.value))
 end
 
 
@@ -455,23 +485,41 @@ end
 
 
 function print_property(img::SVG, property::SVGClassPrimitive)
-    @printf(img.out, " class=\"%s\"", escape_string(p.value))
+    @printf(img.out, " class=\"%s\"", escape_string(property.value))
 end
 
 
-function print_property(img::SVG, property::D3EmbedPrimitive)
-    # Nop for d3 specific properties.
+function print_property(img::SVG, property::JSIncludePrimitive)
+    push!(img.jsheader, property.value)
+end
+
+
+function print_property(img::SVG, property::JSCall)
+    push!(img.scripts,
+          @sprintf("fig.select(\"#%s\")\n   .%s;",
+                   img.current_id, property.code))
 end
 
 
 # Print the property at the given index in each vector property
 function print_vector_properties(img::SVG, idx::Int)
+    if haskey(img.vector_properties, JSCall)
+        if haskey(img.vector_properties, SVGID)
+            img.current_id = img.vector_properties[SVGID].primitives[idx].value
+        else
+            img.current_id = genid(img)
+            print_property(img, SVGIDPrimitive(img.current_id))
+        end
+    end
+
     for (propertytype, property) in img.vector_properties
         if idx > length(property.primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
         print_property(img, property.primitives[idx])
     end
+
+    img.current_id = nothing
 end
 
 
@@ -580,31 +628,30 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
         print(img.out, " style=\"dominant-baseline:text-before-edge\"")
     end
 
-    if !isidentity(form.t)
+    if !isidentity(prim.t)
         @printf(img.out, " transform=\"rotate(%s, %s, %s)\"",
-                svg_fmt_float(rad2deg(atan2(form.t.M[2,1], form.t.M[1,1]))),
-                svg_fmt_float(form.pos.x.abs),
-                svg_fmt_float(form.pos.y.abs))
+                svg_fmt_float(rad2deg(atan2(prim.t.M[2,1], prim.t.M[1,1]))),
+                svg_fmt_float(prim.position.x.abs),
+                svg_fmt_float(prim.position.y.abs))
     end
     print_vector_properties(img, idx)
-    write(img.out, ">")
 
     @printf(img.out, ">%s</text>\n",
-            pango_to_svg(form.value))
+            pango_to_svg(prim.value))
 end
 
 
 function draw(img::SVG, prim::CurvePrimitive, idx::Int)
     indent(img)
     @printf(img.out, "<path d=\"M%s,%s C%s,%s %s,%s %s,%s\"",
-        svg_fmt_float(form.anchor0.x.abs),
-        svg_fmt_float(form.anchor0.y.abs),
-        svg_fmt_float(form.ctrl0.x.abs),
-        svg_fmt_float(form.ctrl0.y.abs),
-        svg_fmt_float(form.ctrl1.x.abs),
-        svg_fmt_float(form.ctrl1.y.abs),
-        svg_fmt_float(form.anchor1.x.abs),
-        svg_fmt_float(form.anchor1.y.abs))
+        svg_fmt_float(prim.anchor0.x.abs),
+        svg_fmt_float(prim.anchor0.y.abs),
+        svg_fmt_float(prim.ctrl0.x.abs),
+        svg_fmt_float(prim.ctrl0.y.abs),
+        svg_fmt_float(prim.ctrl1.x.abs),
+        svg_fmt_float(prim.ctrl1.y.abs),
+        svg_fmt_float(prim.anchor1.x.abs),
+        svg_fmt_float(prim.anchor1.y.abs))
     print_vector_properties(img, idx)
     write(img.out, "/>\n")
 end
@@ -655,12 +702,25 @@ function push_property_frame(img::SVG, properties::Vector{Property})
         return
     end
 
+    id_needed = any([isa(property, JSCall) for property in scalar_properties])
+    for property in scalar_properties
+        if isa(property, SVGID)
+            img.current_id = p.primitives[1].value
+        end
+    end
+
+    if img.current_id === nothing
+        img.current_id = genid(img)
+        push!(scalar_properties, svgid(img.current_id))
+    end
+
     indent(img)
     write(img.out, "<g")
     for property in scalar_properties
         print_property(img, property.primitives[1])
     end
     write(img.out, ">\n");
+    img.current_id = nothing
     img.indentation += 1
 end
 

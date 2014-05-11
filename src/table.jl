@@ -15,13 +15,13 @@ type Table <: ContainerPromise
     order::Int
 
     # Ignore this context and everything under it if we are
-    # not drawing to the d3 backend.
-    d3only::Bool
+    # not drawing to the javascript backend.
+    withjs::Bool
 
     function Table(m::Integer, n::Integer, focus::Tuple;
-                   order=0, d3only=false)
+                   order=0, withjs=false)
         tbl = new(Array(Vector{Context}, (m, n)), (int(focus[1]), int(focus[2])),
-                  order, d3only)
+                  order, withjs)
         for i in 1:m, j in 1:n
             tbl.children[i, j] = Array(Context, 0)
         end

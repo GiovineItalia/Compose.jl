@@ -347,7 +347,7 @@ end
 immutable FontSizePrimitive <: PropertyPrimitive
     value::Measure
 
-    function FontSize(value)
+    function FontSizePrimitive(value)
         return new(size_measure(value))
     end
 end
@@ -365,9 +365,9 @@ function fontsize(values::AbstractArray)
 end
 
 
-function absolue_units(primitive::FontSize, t::Transform, units::UnitBox,
-                       box::AbsoluteBoundingBox)
-    return FontSize(Measure(abs=absolute_units(primitive.value, t, units, box)))
+function absolue_units(primitive::FontSizePrimitive, t::Transform,
+                       units::UnitBox, box::AbsoluteBoundingBox)
+    return FontSizePrimitive(Measure(abs=absolute_units(primitive.value, t, units, box)))
 end
 
 
@@ -405,7 +405,7 @@ function svgclass(value::String)
     return SVGClass([SVGClassPrimitive(value)])
 end
 
-function svgclass(values::String)
+function svgclass(values::AbstractArray)
     return SVGClass([SVGClassPrimitive(value) for value in values])
 end
 
@@ -432,33 +432,48 @@ function svgattribute(attributes::AbstractArray, values::AbstractArray)
 end
 
 
+# JSInclude
+# ---------
 
-# D3Embed
-# -------
+immutable JSIncludePrimitive <: PropertyPrimitive
+    value::String
+end
 
-# TODO: We're not using d3. Figure out what the right thing to replace this is.
+typealias JSInclude Property{JSIncludePrimitive}
 
-immutable D3EmbedPrimitive <: PropertyPrimitive
+
+function jsinclude(value::String)
+    return JSInclude([JSIncludePrimitive(value)])
+end
+
+# Don't bother with a vectorized version of this. It wouldn't really make #
+# sense.
+
+
+# JSCall
+# ------
+
+immutable JSCallPrimitive <: PropertyPrimitive
     code::String
     args::Vector{Measure}
 end
 
-typealias D3Embed Property{D3EmbedPrimitive}
+typealias JSCall Property{JSCallPrimitive}
 
 
-function d3embed(code::String, arg::Vector{Measure}=Measure[])
-    return D3Embed([D3EmbedPrimitive(code, arg)])
+function jscall(code::String, arg::Vector{Measure}=Measure[])
+    return JSCall([JSCallPrimitive(code, arg)])
 end
 
 
-function d3embed(codes::AbstractArray,
-                 args::AbstractArray{Vector{Measure}}=[Measure[]])
-    return D3Embed([D3EmbedPrimitive(code, arg)
-                    for (code, arg) in cyclezip(codes, args)])
+function jscall(codes::AbstractArray,
+                args::AbstractArray{Vector{Measure}}=[Measure[]])
+    return JSCall[JSCallPrimitive(code, arg)
+                  for (code, arg) in cyclezip(codes, args)]
 end
 
 
-function absolute_units(primitive::D3EmbedPrimitive, t::Transform,
+function absolute_units(primitive::JSCallPrimitive, t::Transform,
                         units::UnitBox, box::AbsoluteBoundingBox)
     # we are going to build a new string by scanning across "code" and
     # replacing %x with translated x values, %y with translated y values
@@ -468,39 +483,39 @@ function absolute_units(primitive::D3EmbedPrimitive, t::Transform,
     i = 1
     validx = 1
     while true
-        j = search(property.code, '%', i)
+        j = search(primitive.code, '%', i)
 
         if j == 0
-            write(newcode, property.code[i:end])
+            write(newcode, primitive.code[i:end])
             break
         end
 
-        write(newcode, property.code[i:j-1])
-        if j == length(property.code)
+        write(newcode, primitive.code[i:j-1])
+        if j == length(primitive.code)
             write(newcode, '%')
             break
-        elseif property.code[j+1] == '%'
+        elseif primitive.code[j+1] == '%'
             write(newcode, '%')
-        elseif property.code[j+1] == 'x'
-            val = absolute_x_position(property.args[validx], t, unit_box, box)
+        elseif primitive.code[j+1] == 'x'
+            val = absolute_x_position(primitive.args[validx], t, unit_box, box)
             write(newcode, svg_fmt_float(val))
             validx += 1
-        elseif property.code[j+1] == 'y'
-            val = absolute_y_position(property.args[validx], t, unit_box, box)
+        elseif primitive.code[j+1] == 'y'
+            val = absolute_y_position(primitive.args[validx], t, unit_box, box)
             write(newcode, svg_fmt_float(val))
             validx += 1
-        elseif property.code[j+1] == 's'
-            val = absolute_units(property.args[validx], t, unit_box, box)
+        elseif primitive.code[j+1] == 's'
+            val = absolute_units(primitive.args[validx], t, unit_box, box)
             write(newcode, svg_fmt_float(val.abs))
             validx += 1
         else
-            write(newcode, '%', property.code[j+1])
+            write(newcode, '%', primitive.code[j+1])
         end
 
         i = j + 2
     end
 
-    return D3EmbedPrimitive(takebuf_string(newcode), Measure[])
+    return JSCall(takebuf_string(newcode), Measure[])
 end
 
 

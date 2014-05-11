@@ -109,8 +109,11 @@ function context(x0=0.0w,
 end
 
 
-# Context deserves a short name as it will be used a lot.
-const ctx = context
+# Updating context fields
+
+function set_units!(ctx::Context, units::UnitBox)
+    ctx.units = units
+end
 
 
 function copy(ctx::Context)
@@ -206,6 +209,37 @@ end
 function compose(a::Context, b::ComposeNode)
     a = copy(a)
     compose!(a, b)
+    return a
+end
+
+
+# higher-order compositions
+function compose!(a::Context, b, c, ds...)
+    return compose!(compose!(a, b), c, ds...)
+end
+
+
+function compose!(a::Context, bs::AbstractArray)
+    compose!(a, compose!(bs...))
+end
+
+
+function compose!(a::Context)
+    return a
+end
+
+
+function compose(a::Context, b, c, ds...)
+    return compose(compose(a, b), c, ds...)
+end
+
+
+function compose(a::Context, bs::AbstractArray)
+    compose(a, compose(bs...))
+end
+
+
+function compose(a::Context)
     return a
 end
 

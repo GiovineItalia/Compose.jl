@@ -12,14 +12,16 @@ using JuMP
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
-             convert
+             convert, zero
 
-export compose, Context, context, ctx, ctxpromise, table,
-       polygon, lines, rectangle, circle, ellipse, text, curve, bitmap,
-       stroke, fill, strokedash, strokelinecap, strokelinejoin, linewidth,
-       visible, fillopacity, strokeopacity, clip, font, fontsize, svgid,
-       svgclass, svgattribute, Measure, inch, mm, cm, pt, cx, cy, w, h,
-       SVG, SVGJS, PNG, PS, PDF, draw
+export compose, compose!, Context, UnitBox, Rotation, context, ctxpromise, table,
+       set_units!, minwidth, minheight,
+       text_extents, polygon, lines, rectangle, circle, ellipse, text, curve,
+       bitmap, stroke, fill, strokedash, strokelinecap, strokelinejoin,
+       linewidth, visible, fillopacity, strokeopacity, clip, font, fontsize,
+       svgid, svgclass, svgattribute, jsinclude, jscall, Measure,
+       inch, mm, cm, pt, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
+       vbottom, SVG, SVGJS, PNG, PS, PDF, draw
 
 abstract Backend
 
@@ -75,23 +77,25 @@ try
     dlopen("libpangocairo-1.0")
     dlopen("libpango-1.0")
 
+    pango_cairo_ctx = C_NULL
+
     include("fontconfig.jl")
     include("pango.jl")
+
+    function __init__()
+        global pango_cairo_ctx
+        global pangolayout
+        ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
+        pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
+                                 Ptr{Void}, ())
+        pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
+                                 Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
+        pangolayout = PangoLayout()
+    end
 catch
     include("fontfallback.jl")
 end
 
-
-# Compose over heterogenous lists of things
-compose(x::ComposeNode) = x
-compose(xs::Tuple) = compose(xs...)
-compose(xs::Array) = compose(xs...)
-compose(x, y, zs...) = compose(compose(compose(x), compose(y)), zs...)
-
-# Make nothings go away.
-compose(::Nothing, ::Nothing) = nothing
-compose(::Nothing, x::ComposeNode) = x
-compose(x::ComposeNode, ::Nothing) = x
 
 end # module Pos
 
