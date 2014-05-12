@@ -458,11 +458,11 @@ immutable AbsoluteBoundingBox
     height::Float64
 
     function AbsoluteBoundingBox(x0::Number, y0::Number, width::Number, height::Number)
-        new(x0, y0, width, height)
+        return new(x0, y0, width, height)
     end
 
     function AbsoluteBoundingBox()
-        new(0.0, 0.0, 1.0, 1.0)
+        return new(0.0, 0.0, 1.0, 1.0)
     end
 end
 
@@ -479,7 +479,7 @@ immutable UnitBox{S, T, U, V}
     height::V
 
     function UnitBox(x0::S, y0::T, width::U, height::V)
-        new(x0, y0, width, height)
+        return new(x0, y0, width, height)
     end
 end
 
@@ -488,21 +488,30 @@ function UnitBox{S,T}(width::S, height::T)
     x0 = zero(S)
     y0 = zero(T)
 
-    UnitBox{S, T, S, T}(x0, y0, width, height)
+    return UnitBox{S, T, S, T}(x0, y0, width, height)
 end
 
 
 function UnitBox(x0, y0, width, height)
     x0, width  = promote(x0, width)
     y0, height = promote(y0, height)
-    UnitBox{typeof(x0), typeof(y0), typeof(width), typeof(height)}(
-        x0, y0, width, height)
+    return UnitBox{typeof(x0), typeof(y0), typeof(width), typeof(height)}(
+                   x0, y0, width, height)
 end
 
 
 function UnitBox()
-    UnitBox{Float64, Float64, Float64, Float64}(0.0, 0.0, 1.0, 1.0)
+    return UnitBox{Float64, Float64, Float64, Float64}(0.0, 0.0, 1.0, 1.0)
 end
+
+
+function NilUnitBox()
+    return UnitBox{Nothing, Nothing, Nothing, Nothing}(
+                nothing, nothing, nothing, nothing)
+end
+
+
+const nil_unit_box = NilUnitBox()
 
 
 # Canvas Transforms

@@ -21,9 +21,6 @@ type Context <: Container
     # Z-order of this context relative to its siblings.
     order::Int
 
-    # True if this canvas should use its parent's coordinate system.
-    units_inherited::Bool
-
     # True if children of the canvas should be clipped by its bounding box.
     clip::Bool
 
@@ -46,9 +43,8 @@ type Context <: Container
                      y0=0.0h,
                      width=1.0w,
                      height=1.0h;
-                     units=UnitBox(),
+                     units=NilUnitBox(),
                      rotation=Rotation(),
-                     units_inherited=false,
                      order=0,
                      clip=false,
                      withjs=false,
@@ -56,7 +52,7 @@ type Context <: Container
                      minwidth=nothing,
                      minheight=nothing)
         return new(BoundingBox(x0, y0, width, height), units, rotation,
-                   ListNull{ComposeNode}(), order, units_inherited, clip,
+                   ListNull{ComposeNode}(), order, clip,
                    withjs, raster, minwidth, minheight)
     end
 
@@ -65,7 +61,6 @@ type Context <: Container
                      rotation::Rotation,
                      children::List{ComposeNode},
                      order::Int,
-                     units_inherited::Bool,
                      clip::Bool,
                      withjs::Bool,
                      raster::Bool,
@@ -78,13 +73,13 @@ type Context <: Container
             minheight = minheight.abs
         end
 
-        return new(box, units, rotation, children, order, units_inherited,
+        return new(box, units, rotation, children, order,
                    clip, withjs, raster, minwidth, minheight)
     end
 
     function Context(ctx::Context)
         return new(ctx.box, ctx.units, ctx.rot, ctx.children, ctx.order,
-                   ctx.units_inherited, ctx.clip, ctx.withjs, ctx.raster,
+                   ctx.clip, ctx.withjs, ctx.raster,
                    ctx.minwidth, ctx.minheight)
     end
 end
@@ -94,9 +89,8 @@ function context(x0=0.0w,
                  y0=0.0h,
                  width=1.0w,
                  height=1.0h;
-                 units=UnitBox(),
+                 units=NilUnitBox(),
                  rotation=Rotation(),
-                 units_inherited=false,
                  order=0,
                  clip=false,
                  withjs=false,
@@ -104,7 +98,7 @@ function context(x0=0.0w,
                  minwidth=nothing,
                  minheight=nothing)
     return Context(BoundingBox(x0, y0, width, height), units, rotation,
-                   ListNull{ComposeNode}(), order, units_inherited, clip,
+                   ListNull{ComposeNode}(), order, clip,
                    withjs, raster, minwidth, minheight)
 end
 
@@ -312,14 +306,13 @@ function drawpart(backend::Backend, root_container::Container)
             c = ctx(context.box.x0, context.box.y0,
                     context.box.width, context.box.height,
                     units=context.units,
-                    units_inherited=context.units_inherited,
                     order=context.order,
                     clip=context.clip)
             push!(S, (compose(c, f), parent_transform, units, parent_box))
             continue
         end
 
-        if !context.units_inherited
+        if context.units != nil_unit_box
             units = context.units
         end
 

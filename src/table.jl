@@ -21,13 +21,10 @@ type Table <: ContainerPromise
     # not drawing to the javascript backend.
     withjs::Bool
 
-    # Root context should use its parents units
-    units_inherited::Bool
-
     function Table(m::Integer, n::Integer, focus::Tuple;
-                   units=UnitBox(), units_inherited=false, order=0, withjs=false)
+                   units=UnitBox(), order=0, withjs=false)
         tbl = new(Array(Vector{Context}, (m, n)), (int(focus[1]), int(focus[2])),
-                  units, order, withjs, units_inherited)
+                  units, order, withjs)
         for i in 1:m, j in 1:n
             tbl.children[i, j] = Array(Context, 0)
         end
@@ -126,8 +123,7 @@ if Pkg.installed("JuMP") != nothing && Pkg.installed("GLPKMathProgInterface") !=
         end
 
         # Set positions and sizes of children
-        root = context(units=tbl.units, order=tbl.order,
-                       units_inherited=tbl.units_inherited)
+        root = context(units=tbl.units, order=tbl.order)
 
         w_solution = getValue(w)
         h_solution = getValue(h)
@@ -239,8 +235,7 @@ else
         x_solution = cumsum(mincolwidths)
         y_solution = cumsum(minrowheights)
 
-        root = context(units=tbl.units, order=tbl.order,
-                       units_inherited=tbl.units_inherited)
+        root = context(units=tbl.units, order=tbl.order)
 
         for i in 1:m, j in 1:n
             if length(tbl.children[i, j]) == 1
