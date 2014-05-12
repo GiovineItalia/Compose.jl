@@ -12,11 +12,11 @@ using JuMP
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
-             convert, zero
+             convert, zero, isless
 
 export compose, compose!, Context, UnitBox, Rotation, context, ctxpromise, table,
        set_units!, minwidth, minheight,
-       text_extents, polygon, lines, rectangle, circle, ellipse, text, curve,
+       text_extents, max_text_extents, polygon, lines, rectangle, circle, ellipse, text, curve,
        bitmap, stroke, fill, strokedash, strokelinecap, strokelinejoin,
        linewidth, visible, fillopacity, strokeopacity, clip, font, fontsize,
        svgid, svgclass, svgattribute, jsinclude, jscall, Measure,

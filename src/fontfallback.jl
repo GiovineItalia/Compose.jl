@@ -64,8 +64,8 @@ function text_width(widths::Dict, text::String, size::Float64)
 end
 
 
-function text_extents(font_family::String, size::Measure,
-                      texts::String...)
+function max_text_extents(font_family::String, size::Measure,
+                          texts::String...)
     if !isabsolute(size)
         error("text_extents requries font size be in absolute units")
     end
@@ -82,6 +82,22 @@ function text_extents(font_family::String, size::Measure,
     width = maximum([text_width(widths, text, size/pt) for text in texts])
     (text_extents_scale_x * scale * width * mm,
      text_extents_scale_y * scale * height * mm)
+end
+
+
+function text_extents(font_family::String, size::Measure, texts::String...)
+    scale = size / 12pt
+    font_family = match_font(font_family)
+    height = glyphsizes[font_family]["height"]
+    widths = glyphsizes[font_family]["widths"]
+
+    extents = Array((Float64, Float64), length(texts))
+    for (i, text) in enumerate(texts)
+        width = text_width(widths, text, size/pt)
+        extents[i] = (width, match(r"<su(p|b)>", text) == nothing ? height : height * 1.5)
+    end
+
+    return extents
 end
 
 

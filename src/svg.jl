@@ -546,13 +546,13 @@ function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, form::PolygonPrimitive)
-     n = length(form.points)
+function draw(img::SVG, prim::PolygonPrimitive)
+     n = length(prim.points)
      if n <= 1; return; end
 
      indent(img)
      write(img.out, "<path d=\"")
-     print_svg_path(img.out, form.points, true)
+     print_svg_path(img.out, prim.points, true)
      write(img.out, " z\"")
      print_vector_properties(img, idx)
      write(img.out, "/>\n")
@@ -571,14 +571,14 @@ end
 
 
 function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
-    cx = form.center.x.abs
-    cy = form.center.y.abs
-    rx = sqrt((form.x_point.x.abs - cx)^2 +
-              (form.x_point.y.abs - cy)^2)
-    ry = sqrt((form.y_point.x.abs - cx)^2 +
-              (form.y_point.y.abs - cy)^2)
-    theta = rad2deg(atan2(form.x_point.y.abs - cy,
-                          form.x_point.x.abs - cx))
+    cx = prim.center.x.abs
+    cy = prim.center.y.abs
+    rx = sqrt((prim.x_point.x.abs - cx)^2 +
+              (prim.x_point.y.abs - cy)^2)
+    ry = sqrt((prim.y_point.x.abs - cx)^2 +
+              (prim.y_point.y.abs - cy)^2)
+    theta = rad2deg(atan2(prim.x_point.y.abs - cy,
+                          prim.x_point.x.abs - cx))
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
         return
@@ -598,12 +598,12 @@ end
 
 
 function draw(img::SVG, prim::LinesPrimitive, idx::Int)
-     n = length(form.points)
+     n = length(prim.points)
      if n <= 1; return; end
 
      indent(img)
      write(img.out, "<path d=\"")
-     print_svg_path(img.out, form.points, true)
+     print_svg_path(img.out, prim.points, true)
      write(img.out, "\"")
      print_vector_properties(img, idx)
      write(img.out, "/>\n")

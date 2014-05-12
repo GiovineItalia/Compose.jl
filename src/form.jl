@@ -222,15 +222,17 @@ typealias Text Form{TextPrimitive}
 
 
 function text(x, y, value::String,
-              halign::HAlignment=hleft, valign::VAlignment=vbottom)
-    return Text([TextPrimitive(Point(x, y), value, halign, valign, Transform())])
+              halign::HAlignment=hleft, valign::VAlignment=vbottom,
+              transform=Transform())
+    return Text([TextPrimitive(Point(x, y), value, halign, valign, transform)])
 end
 
 
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
-              haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom])
-    return Text([TextPrimitive(Point(x, y), value, halign, valign, Transform())
-                 for (x, y, value, halign, valign) in cyclezip(xs, ys, values, halign, valigns)])
+              haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
+              transforms::AbstractArray=[Transform()])
+    return Text([TextPrimitive(Point(x, y), value, halign, valign, transform)
+                 for (x, y, value, halign, valign, transform) in cyclezip(xs, ys, values, haligns, valigns, transforms)])
 end
 
 
@@ -261,13 +263,13 @@ function lines(points::XYTupleOrPoint...)
 end
 
 
-function polygon(point_arrays::AbstractArray...)
+function lines(point_arrays::AbstractArray...)
     linesprims = Array(LinesPrimitive, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
         linesprims[i] = LinesPrimitive([convert(Point, point)
                                         for point in point_array])
     end
-    return Lines(polys)
+    return Lines(linesprims)
 end
 
 

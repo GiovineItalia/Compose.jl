@@ -99,7 +99,7 @@ end
 # Returns:
 #   A (width, height) tuple in absolute units.
 #
-function text_extents(font_family::String, pts::Float64, texts::String...)
+function max_text_extents(font_family::String, pts::Float64, texts::String...)
     pango_set_font(pangolayout::PangoLayout, font_family, pts)
     max_width  = 0mm
     max_height = 0mm
@@ -108,16 +108,29 @@ function text_extents(font_family::String, pts::Float64, texts::String...)
         max_width  = max_width.abs  < width.abs  ? width  : max_width
         max_height = max_height.abs < height.abs ? height : max_height
     end
-    (max_width, max_height)
+    return (max_width, max_height)
 end
 
-# Same as text_extents but with font_size in arbitrary absolute units.
-function text_extents(font_family::String, size::Measure,
+# Same as max_text_extents but with font_size in arbitrary absolute units.
+function max_text_extents(font_family::String, size::Measure,
                       texts::String...)
     if !isabsolute(size)
         error("text_extents requries font size be in absolute units")
     end
-    text_extents(font_family, size/pt, texts...)
+    return max_text_extents(font_family, size/pt, texts...)
+end
+
+
+# Return an array with the extents of each element
+function text_extents(font_family::String, pts::Float64, texts::String...)
+    pango_set_font(pangolayout::PangoLayout, font_family, pts)
+    return [pango_text_extents(pangolayout::PangoLayout, text)
+            for text in texts]
+end
+
+
+function text_extents(font_family::String, size::Measure, texts::String...)
+    return text_extents(font_family, size/pt, texts...)
 end
 
 

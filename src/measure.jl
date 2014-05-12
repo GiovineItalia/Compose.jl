@@ -26,6 +26,8 @@ min(a::MeasureNil, b::MeasureNil) = measure_nil
 min(a::MeasureNil, b)             = measure_nil
 min(a, b::MeasureNil)             = measure_nil
 
+isless(a::MeasureNil, b::MeasureNil) = false
+
 +(a::MeasureNil, b::MeasureNil) = measure_nil
 +(a::MeasureNil, b)             = b
 +(a, b::MeasureNil)             = a
@@ -104,6 +106,20 @@ typealias MeasureOrNumber Union(Measure, Number)
 
 function zero{S, T}(::Type{Measure{S, T}})
     Measure{S, T}()
+end
+
+
+function isless{T, S}(a::Measure{T, S}, b::Measure{T, S})
+    return (a.abs < b.abs ||
+            a.cx  < b.cx ||
+            a.cy  < b.cy ||
+            a.cw  < b.cw ||
+            a.ch  < b.ch) &&
+           a.abs <= b.abs &
+           a.cx  <= b.cx &&
+           a.cy  <= b.cy &&
+           a.cw  <= b.cw &&
+           a.ch  <= b.ch
 end
 
 
