@@ -47,6 +47,21 @@ include("property.jl")
 include("form.jl")
 include("canvas.jl")
 
+# Use cairo for the PNG, PS, PDF if its installed.
+try
+    require("Cairo")
+    include("cairo_backends.jl")
+catch
+    global PNG
+    global PS
+    global PDF
+    PNG(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PNG backend.")
+    PS(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PS backend.")
+    PDF(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+        error("Cairo must be installed to use the PDF backend.")
+end
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
@@ -73,22 +88,6 @@ try
     end
 catch
     include("fontfallback.jl")
-end
-
-# Use cairo for the PNG, PS, PDF if its installed.
-try
-    require("Cairo")
-    include("cairo_backends.jl")
-catch
-    global PNG
-    global PS
-    global PDF
-    PNG(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
-        error("Cairo must be installed to use the PNG backend.")
-    PS(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
-        error("Cairo must be installed to use the PS backend.")
-    PDF(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
-        error("Cairo must be installed to use the PDF backend.")
 end
 
 include("svg.jl")
