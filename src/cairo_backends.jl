@@ -736,8 +736,8 @@ function draw(img::Image, prim::TextPrimitive)
     Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.opacity)
 
     save_state(img)
-    translate(img, prim.t.M[1,3], prim.t.M[2,3])
-    rotate(img, atan2(prim.t.M[2,1], prim.t.M[1,1]))
+    translate(img, prim.rot.offset.x.abs, prim.rot.offset.y.abs)
+    rotate(img, prim.rot.theta)
 
     move_to(img, pos)
     Cairo.show_layout(img.ctx)

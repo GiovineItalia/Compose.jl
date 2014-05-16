@@ -553,11 +553,11 @@ type Rotation
     offset::Point
 
     function Rotation()
-        new(0.0, Point())
+        new(0.0, Point(0.5w, 0.5h))
     end
 
     function Rotation(theta::Number)
-        Rotation(theta, 0.0, 0.0)
+        Rotation(theta, 0.5w, 0.5h)
     end
 
     function Rotation(theta::Number, offset::XYTupleOrPoint)
@@ -577,6 +577,17 @@ end
 
 
 copy(rot::Rotation) = Rotation(rot)
+
+
+function convert(::Type{Transform}, rot::Rotation)
+    ct = cos(rot.theta)
+    st = sin(rot.theta)
+    x0 = rot.offset.x - (ct * rot.offset.x - st * rot.offset.y)
+    y0 = rot.offset.y - (st * rot.offset.x + ct * rot.offset.y)
+    return Transform([ct  -st  x0.abs
+                      st   ct  y0.abs
+                      0.0 0.0  1.0])
+end
 
 
 # Conversion to absolute units
@@ -604,15 +615,13 @@ function absolute_units(rot::Rotation,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
 
-    off = absolute_units(rot.offset, t, unit_box, parent_box)
-    ct = cos(rot.theta)
-    st = sin(rot.theta)
-    x0 = off.x - (ct * off.x - st * off.y)
-    y0 = off.y - (st * off.x + ct * off.y)
+    absrot = Rotation(rot.theta,
+                      absolute_units(rot.offset, t, unit_box, parent_box))
 
-    Transform([ct  -st  x0.abs
-               st   ct  y0.abs
-               0.0 0.0  1.0])
+    rott = convert(Transform, absrot)
+    t = combine(rott, t)
+    theta = atan2(t.M[2,1], t.M[1,1])
+    return Rotation(theta, absrot.offset)
 end
 
 

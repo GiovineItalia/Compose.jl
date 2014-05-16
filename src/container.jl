@@ -295,7 +295,7 @@ function drawpart(backend::Backend, root_container::Container)
 
         box = absolute_units(context.box, parent_transform, units, parent_box)
         rot = absolute_units(context.rot, parent_transform, units, box)
-        transform = combine(rot, parent_transform)
+        transform = combine(convert(Transform, rot), parent_transform)
 
         if context.raster && isdefined(:Cairo) && isa(backend, SVG)
             bitmapbackend = PNG(box.width, box.height, false)

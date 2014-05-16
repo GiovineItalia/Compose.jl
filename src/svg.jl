@@ -628,11 +628,11 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
         print(img.out, " style=\"dominant-baseline:text-before-edge\"")
     end
 
-    if !isidentity(prim.t)
+    if prim.rot.theta != 0.0
         @printf(img.out, " transform=\"rotate(%s, %s, %s)\"",
-                svg_fmt_float(rad2deg(atan2(prim.t.M[2,1], prim.t.M[1,1]))),
-                svg_fmt_float(prim.position.x.abs),
-                svg_fmt_float(prim.position.y.abs))
+                svg_fmt_float(rad2deg(prim.rot.theta)),
+                svg_fmt_float(prim.rot.offset.x.abs),
+                svg_fmt_float(prim.rot.offset.y.abs))
     end
     print_vector_properties(img, idx)
 

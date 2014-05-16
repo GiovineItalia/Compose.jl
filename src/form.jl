@@ -215,7 +215,7 @@ immutable TextPrimitive <: FormPrimitive
 
     # Text forms need their own rotation field unfortunately, since there is no
     # way to give orientation with just a position point.
-    t::Transform
+    rot::Rotation
 end
 
 typealias Text Form{TextPrimitive}
@@ -223,23 +223,24 @@ typealias Text Form{TextPrimitive}
 
 function text(x, y, value::String,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
-              transform=Transform())
-    return Text([TextPrimitive(Point(x, y), value, halign, valign, transform)])
+              rot=Rotation())
+    return Text([TextPrimitive(Point(x, y), value, halign, valign, rot)])
 end
 
 
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
-              transforms::AbstractArray=[Transform()])
-    return Text([TextPrimitive(Point(x, y), value, halign, valign, transform)
-                 for (x, y, value, halign, valign, transform) in cyclezip(xs, ys, values, haligns, valigns, transforms)])
+              rots::AbstractArray=[Rotation()])
+    return Text([TextPrimitive(Point(x, y), value, halign, valign, rot)
+                 for (x, y, value, halign, valign, rot) in cyclezip(xs, ys, values, haligns, valigns, rots)])
 end
 
 
 function absolute_units(p::TextPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return TextPrimitive(absolute_units(p.position, t, units, box),
-                         p.value, p.halign, p.valign, t)
+                         p.value, p.halign, p.valign,
+                         absolute_units(p.rot, t, units, box))
 end
 
 
