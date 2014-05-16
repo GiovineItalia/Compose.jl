@@ -18,6 +18,12 @@ function isscalar(p::Property)
 end
 
 
+# Some properties can be applied multiple times, most cannot.
+function isrepeatable(p::Property)
+    return false
+end
+
+
 function absolute_units{T}(p::Property{T}, t::Transform, units::UnitBox,
                            box::AbsoluteBoundingBox)
     return Property{T}([absolute_units(primitive, t, units, box)
@@ -515,7 +521,12 @@ function absolute_units(primitive::JSCallPrimitive, t::Transform,
         i = j + 2
     end
 
-    return JSCall(takebuf_string(newcode), Measure[])
+    return JSCallPrimitive(takebuf_string(newcode), Measure[])
+end
+
+
+function isrepeatable(p::JSCall)
+    return true
 end
 
 

@@ -1,5 +1,6 @@
 
-const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))
+#const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))
+const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg.js"))
 
 # Format a floating point number into a decimal string of reasonable precision.
 function svg_fmt_float(x::Float64)
@@ -287,10 +288,10 @@ function finish(img::SVG)
 
         if !isempty(img.scripts) || !isempty(img.jsheader)
             write(img.out, "<script> <![CDATA[\n")
-            write(img.out, """var fig = Snap("#composegraphic");""")
             for script in img.jsheader
                 write(img.out, escape_script(script), "\n")
             end
+            write(img.out, """var fig = Snap("#composegraphic");""")
             for script in img.scripts
                 write(img.out, escape_script(script), "\n")
             end
@@ -494,7 +495,7 @@ function print_property(img::SVG, property::JSIncludePrimitive)
 end
 
 
-function print_property(img::SVG, property::JSCall)
+function print_property(img::SVG, property::JSCallPrimitive)
     push!(img.scripts,
           @sprintf("fig.select(\"#%s\")\n   .%s;",
                    img.current_id, property.code))
@@ -688,7 +689,9 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     applied_properties = Set{Type}()
     scalar_properties = Array(Property, 0)
     for property in properties
-        if isscalar(property) && !(typeof(property) in applied_properties)
+        if !isrepeatable(property) && (typeof(property) in applied_properties)
+            continue
+        elseif isscalar(property)
             push!(scalar_properties, property)
             push!(applied_properties, typeof(property))
             frame.has_scalar_properties = true
