@@ -323,9 +323,14 @@ function drawpart(backend::Backend, root_container::Container)
         end
 
         if context.clip
+            x0 = context.box.x0
+            y0 = context.box.y0
+            x1 = x0 + context.box.width
+            y1 = y0 + context.box.height
             push!(properties,
-                  clip(Point(0w, 0h), Point(1w, 0h),
-                       Point(1w, 1h), Point(0w, 1h)))
+                  absolute_units(clip(Point(x0, y0), Point(x1, y0),
+                                      Point(x1, y1), Point(x0, y1)),
+                                 parent_transform, units, parent_box))
         end
 
         if !isempty(properties)

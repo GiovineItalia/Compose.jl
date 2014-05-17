@@ -323,7 +323,8 @@ end
 
 function absolute_units(primitive::ClipPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return ClipPrimitive([absolute_units(point, t, units, box) for point in points])
+    return ClipPrimitive([absolute_units(point, t, units, box)
+                          for point in primitive.points])
 end
 
 
