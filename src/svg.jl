@@ -1,6 +1,10 @@
 
-#const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))
-const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg.js"))
+const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))
+
+# Packages can insert extra XML namespaces here to be defined in the output
+# SVG.
+const xmlns = Dict()
+
 
 # Format a floating point number into a decimal string of reasonable precision.
 function svg_fmt_float(x::Float64)
@@ -202,6 +206,14 @@ function writeheader(img::SVG)
           <?xml version="1.0" encoding="UTF-8"?>
           <svg xmlns="http://www.w3.org/2000/svg"
                xmlns:xlink="http://www.w3.org/1999/xlink"
+          """)
+
+    for (ns, uri) in xmlns
+        write(img.out, """     xmlns:$(ns)="$(uri)"\n""")
+    end
+
+    write(img.out,
+          """
                version="1.1"
                width="$(widthstr)mm" height="$(heightstr)mm" viewBox="0 0 $(widthstr) $(heightstr)"
                stroke="$(svg_fmt_color(default_stroke_color))"
@@ -490,6 +502,12 @@ function print_property(img::SVG, property::SVGClassPrimitive)
 end
 
 
+function print_property(img::SVG, property::SVGAttributePrimitive)
+    @printf(img.out, " %s=\"%s\"",
+            property.attribute, escape_string(property.value))
+end
+
+
 function print_property(img::SVG, property::JSIncludePrimitive)
     push!(img.jsheader, property.value)
 end
@@ -514,6 +532,9 @@ function print_vector_properties(img::SVG, idx::Int)
     end
 
     for (propertytype, property) in img.vector_properties
+        if property === nothing
+            continue
+        end
         if idx > length(property.primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end

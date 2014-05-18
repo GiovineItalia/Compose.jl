@@ -25,8 +25,11 @@ type Context <: Container
     clip::Bool
 
     # Ignore this context and everything under it if we are
-    # not drawing to the d3 backend.
+    # not drawing to the SVGJS backend.
     withjs::Bool
+
+    # Igonre this context if wer *are* drawing on the SVGJS backend.
+    withoutjs::Bool
 
     # If possible, render this subtree as a bitmap. This requires the Cairo. If
     # Cairo isn't available, default rendering is used.
@@ -48,12 +51,13 @@ type Context <: Container
                      order=0,
                      clip=false,
                      withjs=false,
+                     withoutjs=false,
                      raster=false,
                      minwidth=nothing,
                      minheight=nothing)
         return new(BoundingBox(x0, y0, width, height), units, rotation,
                    ListNull{ComposeNode}(), order, clip,
-                   withjs, raster, minwidth, minheight)
+                   withjs, withoutjs, raster, minwidth, minheight)
     end
 
     function Context(box::BoundingBox,
@@ -63,6 +67,7 @@ type Context <: Container
                      order::Int,
                      clip::Bool,
                      withjs::Bool,
+                     withoutjs::Bool,
                      raster::Bool,
                      minwidth, minheight)
         if isa(minwidth, Measure)
@@ -74,12 +79,12 @@ type Context <: Container
         end
 
         return new(box, units, rotation, children, order,
-                   clip, withjs, raster, minwidth, minheight)
+                   clip, withjs, withoutjs, raster, minwidth, minheight)
     end
 
     function Context(ctx::Context)
         return new(ctx.box, ctx.units, ctx.rot, ctx.children, ctx.order,
-                   ctx.clip, ctx.withjs, ctx.raster,
+                   ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
                    ctx.minwidth, ctx.minheight)
     end
 end
@@ -94,12 +99,13 @@ function context(x0=0.0w,
                  order=0,
                  clip=false,
                  withjs=false,
+                 withoutjs=false,
                  raster=false,
                  minwidth=nothing,
                  minheight=nothing)
     return Context(BoundingBox(x0, y0, width, height), units, rotation,
                    ListNull{ComposeNode}(), order, clip,
-                   withjs, raster, minwidth, minheight)
+                   withjs, withoutjs, raster, minwidth, minheight)
 end
 
 
@@ -117,6 +123,11 @@ end
 
 function iswithjs(ctx::Container)
     return ctx.withjs
+end
+
+
+function iswithoutjs(ctx::Container)
+    return ctx.withoutjs
 end
 
 
@@ -165,8 +176,11 @@ type AdhocContainerPromise <: ContainerPromise
     order::Int
 
     # Ignore this context and everything under it if we are
-    # not drawing to the d3 backend.
+    # not drawing to the SVGJS backend.
     withjs::Bool
+
+    # Ignore this context if we are drawing on SVGJS
+    withoutjs::Bool
 
     # Minimum sizes needed to draw the realized subtree correctly.
     minwidth::Maybe(Float64)
@@ -176,7 +190,7 @@ end
 
 
 function ctxpromise(f::Function; order=0, withjs::Bool=false,
-                    minwidth=nothing, minheight=nothing)
+                    withoutjs::Bool=false, minwidth=nothing, minheight=nothing)
     if isa(minwidth, Measure)
         minwidth = minwidth.abs
     end
@@ -185,7 +199,7 @@ function ctxpromise(f::Function; order=0, withjs::Bool=false,
         minheight = minwidth.abs
     end
 
-    return AdhocContainerPromise(f, order, withjs, minwidth, minheight)
+    return AdhocContainerPromise(f, order, withjs, withoutjs, minwidth, minheight)
 end
 
 
@@ -276,7 +290,8 @@ function drawpart(backend::Backend, root_container::Container)
 
         container, parent_transform, units, parent_box = s
 
-        if iswithjs(container) && !iswithjs(backend)
+        if (iswithjs(container) && !iswithjs(backend)) ||
+           (iswithoutjs(container) && iswithjs(backend))
             continue
         end
 

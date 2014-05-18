@@ -428,13 +428,19 @@ end
 typealias SVGAttribute Property{SVGAttributePrimitive}
 
 
-function svgattribute(attribute::String, value::String)
-    return SVGAttribute([SVGAttributePrimitive(attribute, value)])
+function svgattribute(attribute::String, value)
+    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))])
+end
+
+
+function svgattribute(attribute::String, values::AbstractArray)
+    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
+                         for value in values])
 end
 
 
 function svgattribute(attributes::AbstractArray, values::AbstractArray)
-    return SVGattribute([SVGAttributePrimitive(attribute, value)
+    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
                          for (attribute, value) in cyclezip(attributes, values)])
 end
 

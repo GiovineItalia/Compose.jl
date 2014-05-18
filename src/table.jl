@@ -21,10 +21,14 @@ type Table <: ContainerPromise
     # not drawing to the javascript backend.
     withjs::Bool
 
+    # Igonre this context if we are drawing to the SVGJS backend.
+    withoutjs::Bool
+
+
     function Table(m::Integer, n::Integer, focus::Tuple;
-                   units=UnitBox(), order=0, withjs=false)
+                   units=UnitBox(), order=0, withjs=false, withoutjs=false)
         tbl = new(Array(Vector{Context}, (m, n)), (int(focus[1]), int(focus[2])),
-                  units, order, withjs)
+                  units, order, withjs, withoutjs)
         for i in 1:m, j in 1:n
             tbl.children[i, j] = Array(Context, 0)
         end
@@ -64,8 +68,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     minbadness = Inf
 
     # minimum sizes for each column and row
-    minrowheights = Array(Float64, n)
-    mincolwidths = Array(Float64, m)
+    minrowheights = Array(Float64, m)
+    mincolwidths = Array(Float64, n)
 
     function compute_mincolrow_sizes(choice)
         fill!(minrowheights, Inf)
@@ -81,7 +85,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             if mw != nothing && mw < mincolwidths[j]
                 mincolwidths[j] = mw
             end
-            if mh != nothing && mh < minrowheights[j]
+            if mh != nothing && mh < minrowheights[i]
                 minrowheights[i] = mh
             end
         end
