@@ -14,7 +14,8 @@ using JSON
 import JSON.json
 
 import Base: +, -, *, /, convert, length, ==, <, <=, >=, isempty, start, next,
-             done, copy, isless, max, min, show, hex, writemime, zero, union
+             done, copy, isless, max, min, maximum, minimum, show, hex,
+             writemime, zero, union
 
 export pad, pad_outer, pad_inner, hstack, vstack, gridstack, compose,
        combine, contents, decompose, text_extents,

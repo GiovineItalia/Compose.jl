@@ -222,7 +222,7 @@ end
 
 
 # Return a measure that is at least as large as anything else
-function max(measures::Measure...)
+function maximum(measures::AbstractArray{Measure})
     # current maximums
     abs = 0.0
     cx = measure_nil
@@ -241,9 +241,11 @@ function max(measures::Measure...)
     Measure(abs, cx, cy, cw, ch)
 end
 
+max(a::Measure, b::Measure) = maximum(Measure[a, b])
+
 
 # Return a measure that at least as small as everything else
-function min(measures::Measure...)
+function minimum(measures::AbstractArray{Measure})
     # current maximums
     abs = Inf
     cx = Inf
@@ -261,6 +263,8 @@ function min(measures::Measure...)
 
     Measure(abs, cx, cy, cw, ch)
 end
+
+min(a::Measure, b::Measure) = minimum(Measure[a, b])
 
 
 # Versus plain numbers
