@@ -115,7 +115,7 @@ function isless{T, S}(a::Measure{T, S}, b::Measure{T, S})
             a.cy  < b.cy ||
             a.cw  < b.cw ||
             a.ch  < b.ch) &&
-           a.abs <= b.abs &
+           a.abs <= b.abs &&
            a.cx  <= b.cx &&
            a.cy  <= b.cy &&
            a.cw  <= b.cw &&

@@ -1,5 +1,6 @@
 
-const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))
+#const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))
+const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg.js"))
 
 # Packages can insert extra XML namespaces here to be defined in the output
 # SVG.
@@ -568,7 +569,7 @@ function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::PolygonPrimitive)
+function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
      n = length(prim.points)
      if n <= 1; return; end
 

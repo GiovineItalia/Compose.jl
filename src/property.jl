@@ -281,12 +281,12 @@ end
 typealias StrokeOpacity Property{StrokeOpacityPrimitive}
 
 
-function fillopacity(value::Float64)
+function strokeopacity(value::Float64)
     return StrokeOpacity([StrokeOpacityPrimitive(value)])
 end
 
 
-function fillopacity(values::AbstractArray)
+function strokeopacity(values::AbstractArray)
     return StrokeOpacity([StrokeOpacityPrimitive(value) for value in values])
 end
 
@@ -510,15 +510,15 @@ function absolute_units(primitive::JSCallPrimitive, t::Transform,
         elseif primitive.code[j+1] == '%'
             write(newcode, '%')
         elseif primitive.code[j+1] == 'x'
-            val = absolute_x_position(primitive.args[validx], t, unit_box, box)
+            val = absolute_x_position(primitive.args[validx], t, units, box)
             write(newcode, svg_fmt_float(val))
             validx += 1
         elseif primitive.code[j+1] == 'y'
-            val = absolute_y_position(primitive.args[validx], t, unit_box, box)
+            val = absolute_y_position(primitive.args[validx], t, units, box)
             write(newcode, svg_fmt_float(val))
             validx += 1
         elseif primitive.code[j+1] == 's'
-            val = absolute_units(primitive.args[validx], t, unit_box, box)
+            val = absolute_units(primitive.args[validx], t, units, box)
             write(newcode, svg_fmt_float(val.abs))
             validx += 1
         else

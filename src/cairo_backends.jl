@@ -192,6 +192,16 @@ function height(img::Image)
 end
 
 
+function iswithjs(img::Image)
+    return false
+end
+
+
+function iswithousjs(img::Image)
+    return true
+end
+
+
 finish{B <: ImageBackend}(::Type{B}, img::Image) = nothing
 
 function finish(::Type{PNGBackend}, img::Image)
@@ -439,7 +449,18 @@ end
 
 
 function apply_property(img::Image, property::FontPrimitive)
-    Cairo.set_font_face(img.ctx, property.family)
+    font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
+                      Ptr{Void}, (Ptr{Void},), img.ctx.layout)
+
+    if font_desc == C_NULL
+        size = absolute_native_units(img, default_font_size.abs)
+    else
+        size = ccall((:pango_font_description_get_size, Cairo._jl_libpango),
+                     Cint, (Ptr{Void},), font_desc)
+    end
+
+    Cairo.set_font_face(img.ctx,
+        @sprintf("%s %0.2fpx", property.family, size / PANGO_SCALE))
 end
 
 
@@ -457,8 +478,7 @@ function apply_property(img::Image, property::FontSizePrimitive)
 
     Cairo.set_font_face(img.ctx,
         @sprintf("%s %.2fpx",
-            family,
-            absolute_native_units(img, property.value.abs)))
+            family, absolute_native_units(img, property.value.abs)))
 end
 
 
@@ -471,6 +491,12 @@ function apply_property(img::Image, property::ClipPrimitive)
     close_path(img)
     Cairo.clip(img.ctx)
 end
+
+
+# No-op SVG+JS only properties
+function apply_property(img::Image, property::JSIncludePrimitive) end
+function apply_property(img::Image, property::JSCallPrimitive) end
+function apply_property(img::Image, property::SVGClassPrimitive) end
 
 
 # Cairo Wrappers
@@ -556,6 +582,18 @@ function rotate(img::Image, theta::Float64)
 end
 
 
+function rotate(img::Image, theta::Float64, x::Float64, y::Float64)
+    ct = cos(theta)
+    st = sin(theta)
+
+    x′ = x - (ct * x - st * y)
+    y′ = y - (st * x + ct * y)
+
+    translate(img, x′, y′)
+    rotate(img, theta)
+end
+
+
 # Convert native linecap/linejoin enums to the Cairo values.
 cairo_linecap(::LineCapButt) = Cairo.CAIRO_LINE_CAP_BUTT
 cairo_linecap(::LineCapRound) = Cairo.CAIRO_LINE_CAP_ROUND
@@ -594,7 +632,7 @@ function save_state(img::Image)
         ImagePropertyState(
             img.stroke,
             img.fill,
-            img.opacity,
+            img.fill_opacity,
             img.stroke_opacity,
             img.stroke_dash,
             img.stroke_linecap,
@@ -607,7 +645,7 @@ function restore_state(img::Image)
     state = pop!(img.state_stack)
     img.stroke = state.stroke
     img.fill = state.fill
-    img.opacity = state.opacity
+    img.fill_opacity = state.fill_opacity
     img.stroke_opacity = state.stroke_opacity
     img.stroke_dash = state.stroke_dash
     img.stroke_linecap = state.stroke_linecap
@@ -708,11 +746,12 @@ end
 
 
 function draw(img::Image, prim::TextPrimitive)
-    if !img.visible || img.opacity == 0.0 || img.fill === nothing
+    if !img.visible || ((img.fill_opacity == 0.0 || img.fill === nothing) &&
+            (img.stroke_opacity == 0.0 || img.stroke === nothing))
         return
     end
 
-    pos = copy(prim.pos)
+    pos = copy(prim.position)
     Cairo.set_text(img.ctx, prim.value, true)
     width, height = get_layout_size(img)
     pos = Point(pos.x, Measure(abs=pos.y.abs - height))
@@ -731,17 +770,21 @@ function draw(img::Image, prim::TextPrimitive)
         end
     end
 
-    Cairo.set_text(img.ctx, prim.value, true)
     rgb = convert(RGB, img.fill)
-    Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.opacity)
+    Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.fill_opacity)
 
-    save_state(img)
-    translate(img, prim.rot.offset.x.abs, prim.rot.offset.y.abs)
-    rotate(img, prim.rot.theta)
+    if prim.rot.theta != 0.0
+        save_state(img)
+        rotate(img, prim.rot.theta,
+               prim.rot.offset.x.abs, prim.rot.offset.y.abs)
+    end
 
     move_to(img, pos)
     Cairo.show_layout(img.ctx)
-    restore_state(img)
+
+    if prim.rot.theta != 0.0
+        restore_state(img)
+    end
 end
 
 function draw(img::Image, prim::CurvePrimitive)
