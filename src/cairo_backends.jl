@@ -388,6 +388,9 @@ end
 function push_vector_properties(img::Image, idx::Int)
     save_property_state(img)
     for (propertytype, property) in img.vector_properties
+        if property === nothing
+            continue
+        end
         if idx > length(property.primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
@@ -497,6 +500,7 @@ end
 function apply_property(img::Image, property::JSIncludePrimitive) end
 function apply_property(img::Image, property::JSCallPrimitive) end
 function apply_property(img::Image, property::SVGClassPrimitive) end
+function apply_property(img::Image, property::SVGAttributePrimitive) end
 
 
 # Cairo Wrappers

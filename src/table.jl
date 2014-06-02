@@ -162,8 +162,14 @@ end
 
 
 
-if Pkg.installed("JuMP") != nothing && Pkg.installed("GLPKMathProgInterface") != nothing
+if Pkg.installed("JuMP") != nothing &&
+    (Pkg.installed("GLPKMathProgInterface") != nothing ||
+     Pkg.installed("Cbc") != nothing)
     using JuMP
+
+    function is_approx_integer(x::Float64)
+        return abs(x - round(x)) < 1e-8
+    end
 
     function realize(tbl::Table, drawctx::ParentDrawContext)
         model = Model()
@@ -183,7 +189,7 @@ if Pkg.installed("JuMP") != nothing && Pkg.installed("GLPKMathProgInterface") !=
         end
 
         # 0-1 configuration variables for every cell with multiple configurations
-        @defVar(model, 0 <= c[1:length(c_indexes)] <= 1, Int)
+        @defVar(model, c[1:length(c_indexes)], Bin)
 
         # width for every column
         @defVar(model, 0 <= w[1:n] <= abswidth)
@@ -238,8 +244,10 @@ if Pkg.installed("JuMP") != nothing && Pkg.installed("GLPKMathProgInterface") !=
         h_solution = getValue(h)
         c_solution = getValue(c)
 
-        if status == :Infeasible || !all([isinteger(c_solution[l])
+        if status == :Infeasible || !all([is_approx_integer(c_solution[l])
                                           for l in 1:length(c_indexes)])
+            # TODO: this warning is just for debugging.
+            println(STDERR, "JuMP: Infeasible")
             # The brute force solver is better able to select between various
             # non-feasible solutions. So we let it have a go.
             return realize_brute_force(tbl, drawctx)
@@ -264,7 +272,7 @@ if Pkg.installed("JuMP") != nothing && Pkg.installed("GLPKMathProgInterface") !=
         end
 
         for (l, (i, j, k)) in enumerate(c_indexes)
-            if c_solution[l] == 1
+            if round(c_solution[l]) == 1
                 ctx = copy(tbl.children[i, j][k])
                 ctx.box = BoundingBox(
                     (x_solution[j] - w_solution[j])*mm,

@@ -15,6 +15,26 @@ const CAIRO_FONT_TYPE_USER = 4
 const PANGO_SCALE = 1024.0
 
 
+function pango_fmt_float(x::Float64)
+    if x < 0.1
+        a = @sprintf("%0.18f", x)
+    else
+        a = @sprintf("%f", x)
+    end
+
+    n = length(a)
+    while a[n] == '0'
+        n -= 1
+    end
+
+    if a[n] == '.'
+        n -= 1
+    end
+
+    a[1:n]
+end
+
+
 # Use the freetype/fontconfig backend to find the best match to a font
 # description.
 #
@@ -391,12 +411,12 @@ function pango_to_svg(text::String)
 
             if !(attr.rise === nothing)
                 @printf(io, " dy=\"%s\"",
-                        fmt_float(-((attr.rise / PANGO_SCALE)pt).abs))
+                        pango_fmt_float(-((attr.rise / PANGO_SCALE)pt).abs))
             end
 
             if !(attr.scale === nothing)
                 @printf(io, " font-size=\"%s%%\"",
-                        fmt_float(100.0 * attr.scale))
+                        pango_fmt_float(100.0 * attr.scale))
             end
 
             if !(attr.style === nothing)

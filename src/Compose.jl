@@ -21,7 +21,7 @@ export compose, compose!, Context, UnitBox, Rotation, context, ctxpromise, table
        linewidth, visible, fillopacity, strokeopacity, clip, font, fontsize,
        svgid, svgclass, svgattribute, jsinclude, jscall, Measure,
        inch, mm, cm, pt, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
-       vbottom, SVG, SVGJS, PNG, PS, PDF, draw
+       vbottom, SVG, SVGJS, PNG, PS, PDF, draw, pad
 
 abstract Backend
 
@@ -97,6 +97,20 @@ catch
 end
 
 
-end # module Pos
+function pad_outer(c::Context, padding::MeasureOrNumber)
+    padding = size_measure(padding)
+    root = context(c.box.x0, c.box.y0,
+                   c.box.width + 2padding,
+                   c.box.height + 2padding)
+    c = copy(c)
+    c.box = BoundingBox(padding, padding, 1w - 2padding, 1h - 2padding)
+    return compose!(root, c)
+end
+
+
+const pad = pad_outer
+
+
+end # module Compose
 
 
