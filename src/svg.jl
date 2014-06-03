@@ -645,10 +645,15 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
         print(img.out, " text-anchor=\"end\"")
     end
 
+    # NOTE: "dominant-baseline" is the correct way to vertically center text
+    # in SVG, but implementations are pretty inconsistent (chrome in particular
+    # does a really bad job). We fake it by shifting by some reasonable amount.
     if is(prim.valign, vcenter)
-        print(img.out, " style=\"dominant-baseline:central\"")
+        print(img.out, " dy=\"0.4em\"")
+        #print(img.out, " style=\"dominant-baseline:central\"")
     elseif is(prim.valign, vtop)
-        print(img.out, " style=\"dominant-baseline:text-before-edge\"")
+        print(img.out, " dy=\"0.6em\"")
+        #print(img.out, " style=\"dominant-baseline:text-before-edge\"")
     end
 
     if prim.rot.theta != 0.0
