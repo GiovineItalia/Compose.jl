@@ -622,7 +622,6 @@ function fillstroke(img::Image)
     if img.stroke != nothing && img.stroke_opacity > 0.0
         rgb = convert(RGB, img.stroke)
         Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.stroke_opacity)
-        @show img.stroke_dash
         Cairo.set_dash(img.ctx, img.stroke_dash)
         Cairo.set_line_cap(img.ctx, cairo_linecap(img.stroke_linecap))
         Cairo.set_line_join(img.ctx, cairo_linejoin(img.stroke_linejoin))

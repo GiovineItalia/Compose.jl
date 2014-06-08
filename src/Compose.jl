@@ -21,7 +21,7 @@ export compose, compose!, Context, UnitBox, Rotation, context, ctxpromise, table
        linewidth, visible, fillopacity, strokeopacity, clip, font, fontsize,
        svgid, svgclass, svgattribute, jsinclude, jscall, Measure,
        inch, mm, cm, pt, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
-       vbottom, SVG, SVGJS, PNG, PS, PDF, draw, pad
+       vbottom, SVG, SVGJS, PNG, PS, PDF, draw, pad, hstack, vstack
 
 abstract Backend
 
@@ -40,6 +40,7 @@ include("form.jl")
 include("property.jl")
 include("container.jl")
 include("table.jl")
+include("stack.jl")
 
 # How large to draw graphics when not explicitly drawing to a backend
 default_graphic_width = 12cm
