@@ -608,7 +608,6 @@ function absolute_units(u::Measure,
 end
 
 
-
 # Convert a Rotation to a Transform
 function absolute_units(rot::Rotation,
                         t::Transform,

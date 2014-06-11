@@ -99,9 +99,17 @@ end
 
 function absolute_units(p::RectanglePrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return RectanglePrimitive(absolute_units(p.corner, t, units, box),
-                              Measure(abs=absolute_units(p.width, t, units, box)),
-                              Measure(abs=absolute_units(p.height, t, units, box)))
+    # SVG doesn't support negative width/height to indicate flipped axis,
+    # so we have to adjust manually.
+    corner = absolute_units(p.corner, t, units, box)
+    width = absolute_units(p.width, t, units, box)
+    height = absolute_units(p.height, t, units, box)
+
+    return RectanglePrimitive(
+        Point(Measure(abs=width < 0 ? corner.x.abs + width : corner.x.abs),
+              Measure(abs=height < 0 ? corner.y.abs + height : corner.y.abs)),
+        Measure(abs=abs(width)),
+        Measure(abs=abs(height)))
 end
 
 
