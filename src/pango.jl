@@ -1,6 +1,8 @@
 
 # Estimation of text extents using pango.
 
+using Fontconfig
+
 const libpangocairo = symbol("libpangocairo-1.0")
 const libpango = symbol("libpango-1.0")
 
@@ -33,7 +35,7 @@ let cached_font_matches = Dict{(String, Float64), Ptr{Void}}()
             return cached_font_matches[(family, size)]
         end
 
-        family = fontconfig_match(family)
+        family = format(match(Fontconfig.Pattern(family=family)), "%{family}")
         desc = @sprintf("%s %f", family, size)
         fd = ccall((:pango_font_description_from_string, libpango),
                    Ptr{Void}, (Ptr{Uint8},), bytestring(desc))

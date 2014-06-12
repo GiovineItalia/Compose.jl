@@ -69,15 +69,6 @@ function cat{T}(a::List{T}, b::List{T})
 end
 
 
-function list{T}(xs::AbstractArray{T})
-    l = ListNil{T}
-    for x in xs
-        l = cons(x, l)
-    end
-    l
-end
-
-
 function show{T}(io::IO, a::List{T})
     print(io, "List([")
     while typeof(a) != ListNil{T}

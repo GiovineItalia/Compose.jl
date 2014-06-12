@@ -68,13 +68,10 @@ end
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 try
     # Trigger an exception if unavailable.
-    dlopen("libfontconfig")
-    dlopen("libpangocairo-1.0")
-    dlopen("libpango-1.0")
+    require("Fontconfig")
 
     pango_cairo_ctx = C_NULL
 
-    include("fontconfig.jl")
     include("pango.jl")
 
     function __init__()
