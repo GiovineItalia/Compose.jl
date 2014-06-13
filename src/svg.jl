@@ -781,7 +781,7 @@ function pop_property_frame(img::SVG)
         for i in length(img.property_stack):-1:1
             if haskey(img.property_stack[i].vector_properties, propertytype)
                 img.vector_properties[propertytype] =
-                    img.property_stack.vector_properties[i]
+                    img.property_stack[i].vector_properties[propertytype]
             end
         end
     end
