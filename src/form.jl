@@ -458,10 +458,12 @@ function text(x, y, value::String,
 end
 
 
-function text(x, y, value::String)
+function text(x, y, value)
     text(x, y, value, hleft, vbottom)
 end
 
+# Allow converting to string
+text(x, y, v, halign, valign) = text(x, y, string(v), halign, valign)
 
 function boundingbox(form::Text, linewidth::Measure,
                      font::String, fontsize::Measure)

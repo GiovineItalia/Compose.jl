@@ -122,6 +122,8 @@ function text_extents(font_family::String, size::Measure,
     text_extents(font_family, size/pt, texts...)
 end
 
+# Allow non-string arguments to texts
+text_extents(font_family, size, texts...) = text_extents(font_family, size, [string(t) for t in texts]...)
 
 const pango_attrs = [
     (:PANGO_ATTR_LANGUAGE,        :PangoAttrLanguage),
