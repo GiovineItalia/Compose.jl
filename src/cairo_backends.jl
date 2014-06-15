@@ -726,7 +726,7 @@ function draw(img::Image, prim::EllipsePrimitive)
 end
 
 
-function draw(img::Image, prim::LinesPrimitive)
+function draw(img::Image, prim::LinePrimitive)
     if length(prim.points) <= 1; return; end
 
     paths = make_paths(prim.points)

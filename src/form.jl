@@ -40,13 +40,13 @@ function polygon()
 end
 
 
-function polygon(points::XYTupleOrPoint...)
+function polygon{T <: XYTupleOrPoint}(points::AbstractArray{T})
     return Polygon([PolygonPrimitive([convert(Point, point)
                                       for point in points])])
 end
 
 
-function polygon(point_arrays::AbstractArray...)
+function polygon(point_arrays::AbstractArray)
     polyprims = Array(PolygonPrimitive, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
         polyprims[i] = PolygonPrimitive([convert(Point, point)
@@ -252,39 +252,39 @@ function absolute_units(p::TextPrimitive, t::Transform, units::UnitBox,
 end
 
 
-# Lines
-# -----
+# Line
+# ----
 
-immutable LinesPrimitive <: FormPrimitive
+immutable LinePrimitive <: FormPrimitive
     points::Vector{Point}
 end
 
-typealias Lines Form{LinesPrimitive}
+typealias Line Form{LinePrimitive}
 
 
-function lines()
-    return Lines([LinesPrimitive(Point[])])
+function line()
+    return Line([LinePrimitive(Point[])])
 end
 
 
-function lines(points::XYTupleOrPoint...)
-    return Lines([LinesPrimitive([convert(Point, point) for point in points])])
+function line{T <: XYTupleOrPoint}(points::AbstractArray{T})
+    return Line([LinePrimitive([convert(Point, point) for point in points])])
 end
 
 
-function lines(point_arrays::AbstractArray...)
-    linesprims = Array(LinesPrimitive, length(point_arrays))
+function line(point_arrays::AbstractArray)
+    lineprims = Array(LinePrimitive, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
-        linesprims[i] = LinesPrimitive([convert(Point, point)
-                                        for point in point_array])
+        lineprims[i] = LinePrimitive([convert(Point, point)
+                                      for point in point_array])
     end
-    return Lines(linesprims)
+    return Line(lineprims)
 end
 
 
-function absolute_units(p::LinesPrimitive, t::Transform, units::UnitBox,
+function absolute_units(p::LinePrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return LinesPrimitive([absolute_units(point, t, units, box) for point in p.points])
+    return LinePrimitive([absolute_units(point, t, units, box) for point in p.points])
 end
 
 

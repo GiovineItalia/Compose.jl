@@ -624,7 +624,7 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::LinesPrimitive, idx::Int)
+function draw(img::SVG, prim::LinePrimitive, idx::Int)
      n = length(prim.points)
      if n <= 1; return; end
 

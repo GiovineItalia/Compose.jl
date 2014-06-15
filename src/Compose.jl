@@ -14,13 +14,13 @@ import JSON
 import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
              convert, zero, isless, max, fill
 
-export compose, compose!, Context, UnitBox, Rotation, context, ctxpromise, table,
-       set_units!, minwidth, minheight,
-       text_extents, max_text_extents, polygon, lines, rectangle, circle, ellipse, text, curve,
-       bitmap, stroke, fill, strokedash, strokelinecap, strokelinejoin,
-       linewidth, visible, fillopacity, strokeopacity, clip, font, fontsize,
-       svgid, svgclass, svgattribute, jsinclude, jscall, Measure,
-       inch, mm, cm, pt, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
+export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, ParentDrawContext,
+       context, ctxpromise, table, set_units!, minwidth, minheight,
+       text_extents, max_text_extents, polygon, line, rectangle, circle,
+       ellipse, text, curve, bitmap, stroke, fill, strokedash, strokelinecap,
+       strokelinejoin, linewidth, visible, fillopacity, strokeopacity, clip,
+       font, fontsize, svgid, svgclass, svgattribute, jsinclude, jscall, Measure,
+       inch, mm, cm, pt, px, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
        vbottom, SVG, SVGJS, PNG, PS, PDF, draw, pad, hstack, vstack
 
 abstract Backend

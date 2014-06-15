@@ -252,6 +252,11 @@ function compose(a::Context)
 end
 
 
+function compose(a, b::Nothing)
+    return a
+end
+
+
 function draw(backend::Backend, root_canvas::Context)
     drawpart(backend, root_canvas)
     finish(backend)
