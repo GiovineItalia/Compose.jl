@@ -7,9 +7,15 @@ type Table <: ContainerPromise
     children::Matrix{Vector{Context}}
 
     # In the formulation of the table layout problem used here, we are trying
-    # find a feasible solution in which the width + height of a particular cell
-    # in the table is maximized.
-    focused_cell::(Int, Int)
+    # find a feasible solution in which the width + height of a particular
+    # group of cells in the table is maximized.
+    x_focus::Range1{Int}
+    y_focus::Range1{Int}
+
+    # If non-nothing, constrain the focused cells to have a proportional
+    # relationship.
+    x_prop::Union(Nothing, Vector{Float64})
+    y_prop::Union(Nothing, Vector{Float64})
 
     # Coordinate system used for children
     units::UnitBox
@@ -25,9 +31,25 @@ type Table <: ContainerPromise
     withoutjs::Bool
 
 
-    function Table(m::Integer, n::Integer, focus::Tuple;
+    function Table(m::Integer, n::Integer,
+                   x_focus::Range1{Int}, y_focus::Range1{Int};
+                   x_prop=nothing, y_prop=nothing,
                    units=UnitBox(), order=0, withjs=false, withoutjs=false)
-        tbl = new(Array(Vector{Context}, (m, n)), (int(focus[1]), int(focus[2])),
+
+        if x_prop != nothing
+            @assert length(x_prop) == length(x_focus)
+            x_prop ./= sum(x_prop)
+        end
+
+
+        if y_prop != nothing
+            @assert length(y_prop) == length(y_focus)
+            y_prop ./= sum(y_prop)
+        end
+
+        tbl = new(Array(Vector{Context}, (m, n)),
+                  x_focus, y_focus,
+                  x_prop, y_prop,
                   units, order, withjs, withoutjs)
         for i in 1:m, j in 1:n
             tbl.children[i, j] = Array(Context, 0)
@@ -67,11 +89,54 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     # which is basically "size needed" - "size available".
     minbadness = Inf
 
+    focused_col_widths = Array(Float64, length(tbl.x_focus))
+    focused_row_heights = Array(Float64, length(tbl.y_focus))
+
     # minimum sizes for each column and row
     minrowheights = Array(Float64, m)
     mincolwidths = Array(Float64, n)
 
-    function compute_mincolrow_sizes(choice)
+    # compute the optimal column widths/row heights for fixed choice and
+    # pre-computed minrowheight/mincolwidths.
+    function update_focused_col_widths!(focused_col_widths)
+        minwidth = sum(mincolwidths)
+        total_focus_width =
+            drawctx.box.width - minwidth + sum(mincolwidths[tbl.x_focus])
+
+        if tbl.x_prop != nothing
+            for k in 1:length(tbl.x_focus)
+                focused_col_widths[k] = tbl.x_prop[k] * total_focus_width
+            end
+        else
+            extra_width = total_focus_width - sum(mincolwidths[tbl.x_focus])
+            for k in 1:length(tbl.x_focus)
+                focused_col_widths[k] =
+                    mincolwidths[tbl.x_focus[k]] + extra_width / length(tbl.x_focus)
+            end
+        end
+    end
+
+    function update_focused_row_heights!(focused_row_heights)
+        minheight = sum(minrowheights)
+        total_focus_height =
+            drawctx.box.height - minheight + sum(minrowheights[tbl.y_focus])
+
+        if tbl.y_prop != nothing
+            for k in 1:length(tbl.y_focus)
+                focused_row_heights[k] = tbl.y_prop[k] * total_focus_height
+            end
+        else
+            extra_height = total_focus_height - sum(minrowheights[tbl.y_focus])
+            for k in 1:length(tbl.y_focus)
+                focused_row_heights[k] =
+                    minrowheights[tbl.y_focus[k]] + extra_height / length(tbl.y_focus)
+            end
+        end
+    end
+
+    # fora given configuration, compute the minimum width for every column and
+    # minimum height for every row.
+    function update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
         fill!(minrowheights, Inf)
         fill!(mincolwidths, Inf)
         for i in 1:m, j in 1:n
@@ -95,17 +160,20 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     end
 
     for choice in product(choices...)
-        compute_mincolrow_sizes(choice)
+        update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
 
         minheight = sum(minrowheights)
         minwidth = sum(mincolwidths)
 
-        maxfocusedwidth = drawctx.box.width - minwidth + mincolwidths[tbl.focused_cell[2]]
-        maxfocusedheight = drawctx.box.height - minheight + minrowheights[tbl.focused_cell[1]]
-        objective = maxfocusedwidth + maxfocusedheight
+        update_focused_col_widths!(focused_col_widths)
+        update_focused_row_heights!(focused_row_heights)
+
+        objective = sum(focused_col_widths) + sum(focused_row_heights)
 
         # feasible?
-        if minwidth < drawctx.box.width && minheight < drawctx.box.height
+        if minwidth < drawctx.box.width && minheight < drawctx.box.height &&
+           all(focused_col_widths .>= mincolwidths[tbl.x_focus]) &&
+           all(focused_row_heights .>= minrowheights[tbl.y_focus])
             if objective > maxobjective || !feasible
                 maxobjective = objective
                 minbadness = 0.0
@@ -126,15 +194,20 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         warn("Graphic cannot be correctly drawn at the given size.")
     end
 
-    compute_mincolrow_sizes(optimal_choice)
-
-    mincolwidths[tbl.focused_cell[2]] =
-        drawctx.box.width - sum(mincolwidths) + mincolwidths[tbl.focused_cell[2]]
-    minrowheights[tbl.focused_cell[1]] =
-        drawctx.box.height - sum(minrowheights) + minrowheights[tbl.focused_cell[1]]
+    update_mincolrow_sizes!(optimal_choice, minrowheights, mincolwidths)
+    update_focused_col_widths!(focused_col_widths)
+    update_focused_row_heights!(focused_row_heights)
 
     w_solution = mincolwidths
     h_solution = minrowheights
+
+    for k in 1:length(tbl.x_focus)
+        w_solution[tbl.x_focus[k]] = focused_col_widths[k]
+    end
+
+    for k in 1:length(tbl.y_focus)
+        h_solution[tbl.y_focus[k]] = focused_row_heights[k]
+    end
 
     x_solution = cumsum(mincolwidths)
     y_solution = cumsum(minrowheights)
@@ -197,9 +270,27 @@ if Pkg.installed("JuMP") != nothing &&
         # height for every row
         @defVar(model, 0 <= h[1:m] <= absheight)
 
-        # maximize the "size" of the focused cell
-        i_obj, j_obj = tbl.focused_cell
-        @setObjective(model, Max, w[j_obj] + h[i_obj])
+        # maximize the "size" of the focused cells
+        @setObjective(model, Max, sum{w[j], j=tbl.x_focus} +
+                                  sum{h[i], i=tbl.y_focus})
+
+        # optional proportionality contraints
+        if tbl.x_prop != nothing
+            # TODO: there's probably a less barbaric way of doing this
+            for k in 2:length(tbl.x_focus)
+                j1 = tbl.x_focus[1]
+                jk = tbl.x_focus[k]
+                @addConstraint(model, w[j1] / tbl.x_prop[1] ==  w[jk] / tbl.x_prop[k])
+            end
+        end
+
+        if tbl.y_prop != nothing
+            for k in 2:length(tbl.y_focus)
+                i1 = tbl.y_focus[1]
+                ik = tbl.y_focus[k]
+                @addConstraint(model, h[i1] / tbl.y_prop[1] ==  h[ik] / tbl.y_prop[k])
+            end
+        end
 
         # configurations are mutually exclusive
         for cgroup in groupby(1:length(c_indexes),
