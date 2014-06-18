@@ -17,6 +17,9 @@ type Table <: ContainerPromise
     x_prop::Union(Nothing, Vector{Float64})
     y_prop::Union(Nothing, Vector{Float64})
 
+    # fixed configuration
+    fixed_configs::Vector
+
     # Coordinate system used for children
     units::UnitBox
 
@@ -32,9 +35,10 @@ type Table <: ContainerPromise
 
 
     function Table(m::Integer, n::Integer,
-                   x_focus::Range1{Int}, y_focus::Range1{Int};
-                   x_prop=nothing, y_prop=nothing,
-                   units=UnitBox(), order=0, withjs=false, withoutjs=false)
+                   y_focus::Range1{Int}, x_focus::Range1{Int};
+                   y_prop=nothing, x_prop=nothing,
+                   units=UnitBox(), order=0, withjs=false, withoutjs=false,
+                   fixed_configs={})
 
         if x_prop != nothing
             @assert length(x_prop) == length(x_focus)
@@ -50,6 +54,7 @@ type Table <: ContainerPromise
         tbl = new(Array(Vector{Context}, (m, n)),
                   x_focus, y_focus,
                   x_prop, y_prop,
+                  fixed_configs,
                   units, order, withjs, withoutjs)
         for i in 1:m, j in 1:n
             tbl.children[i, j] = Array(Context, 0)
@@ -71,10 +76,19 @@ function setindex!(t::Table, child, i::Integer, j::Integer)
 end
 
 
+function size(t::Table, i::Integer)
+    return size(t.children, i)
+end
+
+
+function size(t::Table)
+    return size(t.children)
+end
+
+
 # Solve the table layout using a brute force approach, when a MILP isn't
 # available.
 function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
-
     # Iterate through every combination of children.
     choices = [length(child) > 1 ? (1:length(child)) : [0]
                for child in tbl.children]
@@ -95,6 +109,12 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     # minimum sizes for each column and row
     minrowheights = Array(Float64, m)
     mincolwidths = Array(Float64, n)
+
+    # convert tbl.fixed_configs to linear indexing
+    fixed_configs = {
+        [(j-1)*m + i for (i, j) in fixed_config]
+        for fixed_config in tbl.fixed_configs
+    }
 
     # compute the optimal column widths/row heights for fixed choice and
     # pre-computed minrowheight/mincolwidths.
@@ -134,11 +154,11 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         end
     end
 
-    # fora given configuration, compute the minimum width for every column and
+    # for a given configuration, compute the minimum width for every column and
     # minimum height for every row.
     function update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
-        fill!(minrowheights, Inf)
-        fill!(mincolwidths, Inf)
+        fill!(minrowheights, -Inf)
+        fill!(mincolwidths, -Inf)
         for i in 1:m, j in 1:n
             if isempty(tbl.children[i, j])
                 continue
@@ -147,10 +167,10 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             choice_ij = choice[(j-1)*m + i]
             child = tbl.children[i, j][(choice_ij == 0 ? 1 : choice_ij)]
             mw, mh = minwidth(child), minheight(child)
-            if mw != nothing && mw < mincolwidths[j]
+            if mw != nothing && mw > mincolwidths[j]
                 mincolwidths[j] = mw
             end
-            if mh != nothing && mh < minrowheights[i]
+            if mh != nothing && mh > minrowheights[i]
                 minrowheights[i] = mh
             end
         end
@@ -160,6 +180,24 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     end
 
     for choice in product(choices...)
+        # TODO: this is all wrong. A fixed config needs to be
+        # an ij pair.
+        violates_fixed_config = false
+        for fixed_config in fixed_configs
+            if isempty(fixed_config)
+                continue
+            end
+
+            if !all(collect(choice[fixed_config]) .== choice[fixed_config[1]])
+                violates_fixed_config = true
+                break
+            end
+        end
+
+        if violates_fixed_config
+            continue
+        end
+
         update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
 
         minheight = sum(minrowheights)
@@ -197,6 +235,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     update_mincolrow_sizes!(optimal_choice, minrowheights, mincolwidths)
     update_focused_col_widths!(focused_col_widths)
     update_focused_row_heights!(focused_row_heights)
+
 
     w_solution = mincolwidths
     h_solution = minrowheights
@@ -253,10 +292,17 @@ if Pkg.installed("JuMP") != nothing &&
         absheight = drawctx.box.height
 
         c_indexes = {}
+        idx_cs = Dict()
         for i in 1:m, j in 1:n
             if length(tbl.children[i, j]) > 1
                 for k in 1:length(tbl.children[i, j])
                     push!(c_indexes, (i, j, k))
+
+                    if haskey(idx_cs, (i, j))
+                        push!(idx_cs[(i,j)], length(c_indexes))
+                    else
+                        idx_cs[(i,j)] = [length(c_indexes)]
+                    end
                 end
             end
         end
@@ -289,6 +335,27 @@ if Pkg.installed("JuMP") != nothing &&
                 i1 = tbl.y_focus[1]
                 ik = tbl.y_focus[k]
                 @addConstraint(model, h[i1] / tbl.y_prop[1] ==  h[ik] / tbl.y_prop[k])
+            end
+        end
+
+        # fixed configuration constraints: constrain a set of cells
+        # to have tho same configuration.
+        for fixed_config in tbl.fixed_configs
+            if isempty(fixed_config)
+                continue
+            end
+
+            (i0, j0) = fixed_config[1]
+            config_count = length(tbl.children[i0, j0])
+            for (i, j) in fixed_config[2:end]
+                for k in 1:config_count
+                    if !haskey(idx_cs, (i0, j0)) && !haskey(idx_cs, (i, j))
+                        continue
+                    end
+                    idx_a = idx_cs[i0, j0][k]
+                    idx_b = idx_cs[(i,j)][k]
+                    @addConstraint(model, c[idx_a] == c[idx_b])
+                end
             end
         end
 

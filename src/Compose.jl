@@ -12,7 +12,7 @@ using JuMP
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
-             convert, zero, isless, max, fill
+             convert, zero, isless, max, fill, size
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, ParentDrawContext,
        context, ctxpromise, table, set_units!, minwidth, minheight,
