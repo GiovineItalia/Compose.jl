@@ -1,6 +1,5 @@
 
-#const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg-min.js"))
-const snapsvgjs = readall(Pkg.dir("Compose", "data", "snap.svg.js"))
+const snapsvgjs = Pkg.dir("Compose", "data", "snap.svg-min.js")
 
 # Packages can insert extra XML namespaces here to be defined in the output
 # SVG.
@@ -111,7 +110,7 @@ type SVG <: Backend
     # A counter used to generate unique IDs
     id_count::Int
 
-    # Javsacript to include before any JSCall code.
+    # Filenames of javsacript to include before any JSCall code.
     jsheader::Vector{String}
 
     # User javascript from JSCall attributes
@@ -120,11 +119,20 @@ type SVG <: Backend
     # Use javascript extensions to add interactivity, etc.
     withjs::Bool
 
+    # What to do with javascript. One of:
+    #    none: generate a static SVG without any javascript
+    #    exclude: exclude external javascript libraries
+    #    embed: embed external libraries
+    #    linkabs: link to external libraries (absolute path)
+    #    linkrel: link to external librariel (relative path)
+    #
+    jsmode::Symbol
+
     function SVG(out::IO,
                  width,
                  height,
                  emit_on_finish::Bool=true,
-                 withjs::Bool=false)
+                 jsmode::Symbol=:none)
         width = size_measure(width)
         height = size_measure(height)
         if !isabsolute(width) || !isabsolute(height)
@@ -146,7 +154,8 @@ type SVG <: Backend
         img.id_count = 0
         img.jsheader = String[]
         img.scripts = String[]
-        img.withjs = withjs
+        img.withjs = jsmode != :none
+        img.jsmode = jsmode
         img.ownedfile = false
         img.filename = nothing
         writeheader(img)
@@ -154,9 +163,9 @@ type SVG <: Backend
     end
 
     # Write to a file.
-    function SVG(filename::String, width, height, withjs::Bool=false)
+    function SVG(filename::String, width, height, jsmode::Symbol=:none)
         out = open(filename, "w")
-        img = SVG(out, width, height, true, withjs)
+        img = SVG(out, width, height, true, jsmode)
         img.ownedfile = true
         img.filename = filename
         return img
@@ -164,8 +173,8 @@ type SVG <: Backend
 
     # Write to buffer.
     function SVG(width::MeasureOrNumber, height::MeasureOrNumber,
-                 emit_on_finish::Bool=true, withjs::Bool=false)
-        return SVG(IOBuffer(), width, height, emit_on_finish, withjs)
+                 emit_on_finish::Bool=true, jsmode::Symbol=:none)
+        return SVG(IOBuffer(), width, height, emit_on_finish, jsmode)
     end
 end
 
@@ -183,19 +192,20 @@ end
 
 
 # Constructors that turn javascript extensions on
-function SVGJS(out::IO, width, height, emit_on_finish::Bool=true)
-    return SVG(out, width, height, emit_on_finish, true)
+function SVGJS(out::IO, width, height, emit_on_finish::Bool=true;
+               jsmode::Symbol=:embed)
+    return SVG(out, width, height, emit_on_finish, jsmode)
 end
 
 
-function SVGJS(filename::String, width, height)
-    return SVG(filename, width, height, true)
+function SVGJS(filename::String, width, height; jsmode::Symbol=:embed)
+    return SVG(filename, width, height, jsmode)
 end
 
 
 function SVGJS(width::MeasureOrNumber, height::MeasureOrNumber,
-               emit_on_finish::Bool=true)
-    return SVG(width, height, emit_on_finish, true)
+               emit_on_finish::Bool=true, jsmode::Symbol=:embed)
+    return SVG(width, height, emit_on_finish, jsmode)
 end
 
 
@@ -282,12 +292,26 @@ function finish(img::SVG)
         </script>
         """)
 
-        write(img.out,
-            """
-            <script> <![CDATA[
-            $(escape_script(snapsvgjs))
-            ]]> </script>
-            """)
+        if img.jsmode == :embed
+            write(img.out,
+                """
+                <script> <![CDATA[
+                $(escape_script(readall(snapsvgjs)))
+                ]]> </script>
+                """)
+        elseif img.jsmode == :linkabs
+            write(img.out,
+                """
+                <script xlink:href="$(snapsvgjs)"></script>
+                """)
+        elseif img.jsmode == :linkrel
+            write(img.out,
+                """
+                <script xlink:href="$(basename(snapsvgjs))"></script>
+                """)
+        end
+
+
 
         # Restore the require.js define function.
         write(img.out,
@@ -300,11 +324,30 @@ function finish(img::SVG)
             """)
 
         if !isempty(img.scripts) || !isempty(img.jsheader)
-            write(img.out, "<script> <![CDATA[\n")
-            for script in img.jsheader
-                write(img.out, escape_script(script), "\n")
+            if img.jsmode == :embed
+                write(img.out, "<script> <![CDATA[\n")
+                for script in img.jsheader
+                    write(img.out, escape_script(readall(script)), "\n")
+                end
+            elseif img.jsmode == :linkabs
+                for script in img.jsheader
+                    write(img.out,
+                        """
+                        <script xlink:href="$(script)"></script>
+                        """)
+                end
+                write(img.out, "<script> <![CDATA[\n")
+            elseif img.jsmode == :linkrel
+                for script in img.jsheader
+                    write(img.out,
+                        """
+                        <script xlink:href="$(basename(script))"></script>
+                        """)
+                end
+                write(img.out, "<script> <![CDATA[\n")
             end
-            write(img.out, """var fig = Snap("#composegraphic");""")
+
+            write(img.out, "var fig = Snap(\"#composegraphic\");")
             for script in img.scripts
                 write(img.out, escape_script(script), "\n")
             end
