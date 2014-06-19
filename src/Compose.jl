@@ -12,7 +12,7 @@ using JuMP
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
-             convert, zero, isless, max, fill, size
+             convert, zero, isless, max, fill, size, copy
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, ParentDrawContext,
        context, ctxpromise, table, set_units!, minwidth, minheight,
@@ -98,19 +98,39 @@ catch
 end
 
 
-function pad_outer(c::Context, padding::MeasureOrNumber)
-    padding = size_measure(padding)
+function pad_outer(c::Context,
+                   xpadding::MeasureOrNumber,
+                   ypadding::MeasureOrNumber)
+    xpadding = size_measure(xpadding)
+    ypadding = size_measure(ypadding)
     root = context(c.box.x0, c.box.y0,
-                   c.box.width + 2padding,
-                   c.box.height + 2padding)
+                   c.box.width + 2xpadding,
+                   c.box.height + 2ypadding,
+                   minwidth=c.minwidth,
+                   minheight=c.minheight)
     c = copy(c)
-    c.box = BoundingBox(padding, padding, 1w - 2padding, 1h - 2padding)
+    c.box = BoundingBox(xpadding, ypadding, 1w - 2xpadding, 1h - 2ypadding)
     return compose!(root, c)
 end
 
 
-const pad = pad_outer
+function pad_outer(c::Context, padding::MeasureOrNumber)
+    return pad_outer(c, padding, padding)
+end
 
+
+function pad_outer(cs::Vector{Context}, xpadding::MeasureOrNumber,
+                   ypadding::MeasureOrNumber)
+    return map(c -> pad_outer(c, xpadding, ypadding), cs)
+end
+
+
+function pad_outer(cs::Vector{Context}, padding::MeasureOrNumber)
+    return pad_outer(cs, padding, padding)
+end
+
+
+const pad = pad_outer
 
 end # module Compose
 

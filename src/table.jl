@@ -89,10 +89,6 @@ end
 # Solve the table layout using a brute force approach, when a MILP isn't
 # available.
 function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
-    # Iterate through every combination of children.
-    choices = [length(child) > 1 ? (1:length(child)) : [0]
-               for child in tbl.children]
-
     m, n = size(tbl.children)
 
     maxobjective = 0.0
@@ -112,9 +108,29 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
 
     # convert tbl.fixed_configs to linear indexing
     fixed_configs = {
-        [(j-1)*m + i for (i, j) in fixed_config]
+        Set([(j-1)*m + i for (i, j) in fixed_config])
         for fixed_config in tbl.fixed_configs
     }
+
+    # build equilavence classes of configurations basen on fixed_configs
+    constrained_cells = Set()
+    num_choices = [length(child) for child in tbl.children]
+    num_group_choices = {}
+    for fixed_config in fixed_configs
+        push!(num_group_choices, num_choices[first(fixed_config)])
+        for idx in fixed_config
+            push!(constrained_cells, idx)
+        end
+    end
+
+    for (idx, child) in enumerate(tbl.children)
+        if length(child) > 1
+            if !in(idx, constrained_cells)
+                push!(num_group_choices, 1)
+                push!(fixed_configs, Set([idx]))
+            end
+        end
+    end
 
     # compute the optimal column widths/row heights for fixed choice and
     # pre-computed minrowheight/mincolwidths.
@@ -179,23 +195,15 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         mincolwidths[!isfinite(mincolwidths)] = 0.0
     end
 
-    for choice in product(choices...)
-        # TODO: this is all wrong. A fixed config needs to be
-        # an ij pair.
-        violates_fixed_config = false
-        for fixed_config in fixed_configs
-            if isempty(fixed_config)
-                continue
+    it_count = 0
+    group_choices = [l == 0 ? (0:0) : (1:l) for l in num_group_choices]
+    choice = zeros(Int, m * n)
+    optimal_choice = nothing
+    for group_choice in product(group_choices...)
+        for (l, k) in enumerate(group_choice)
+            for p in fixed_configs[l]
+                choice[p] = k
             end
-
-            if !all(collect(choice[fixed_config]) .== choice[fixed_config[1]])
-                violates_fixed_config = true
-                break
-            end
-        end
-
-        if violates_fixed_config
-            continue
         end
 
         update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
@@ -215,7 +223,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             if objective > maxobjective || !feasible
                 maxobjective = objective
                 minbadness = 0.0
-                optimal_choice = choice
+                optimal_choice = copy(choice)
             end
             feasible = true
         else
@@ -223,8 +231,12 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
                       max(minheight - drawctx.box.height, 0.0)
             if badness < minbadness && !feasible
                 minbadness = badness
-                optimal_choice = choice
+                optimal_choice = copy(choice)
             end
+        end
+
+        if optimal_choice === nothing
+            optimal_choice = copy(choice)
         end
     end
 
@@ -235,7 +247,6 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     update_mincolrow_sizes!(optimal_choice, minrowheights, mincolwidths)
     update_focused_col_widths!(focused_col_widths)
     update_focused_row_heights!(focused_row_heights)
-
 
     w_solution = mincolwidths
     h_solution = minrowheights
