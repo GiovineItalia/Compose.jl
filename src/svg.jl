@@ -73,6 +73,9 @@ type SVG <: Backend
     # Output stream.
     out::IO
 
+    # Unique ID for the figure.
+    id::String
+
     # Current level of indentation.
     indentation::Int
 
@@ -140,6 +143,7 @@ type SVG <: Backend
         end
 
         img = new()
+        img.id = string("fig-", replace(string(Base.Random.uuid4()), "-", ""))
         img.width  = width.abs
         img.height = height.abs
         img.out = out
@@ -187,7 +191,7 @@ end
 # Return the next unique element ID. Sort of like gensym for SVG elements.
 function genid(img::SVG)
     img.id_count += 1
-    return @sprintf("id%d", img.id_count)
+    return @sprintf("%s-element-%d", img.id, img.id_count)
 end
 
 
@@ -232,7 +236,7 @@ function writeheader(img::SVG)
                stroke-width="$(svg_fmt_float(default_line_width.abs))"
           """)
     if img.withjs
-        write(img.out, "\n     id=\"composegraphic\"")
+        write(img.out, "\n     id=\"$(img.id)\"")
     end
     write(img.out, ">\n")
     return img
@@ -311,8 +315,6 @@ function finish(img::SVG)
                 """)
         end
 
-
-
         # Restore the require.js define function.
         write(img.out,
             """
@@ -347,7 +349,7 @@ function finish(img::SVG)
                 write(img.out, "<script> <![CDATA[\n")
             end
 
-            write(img.out, "var fig = Snap(\"#composegraphic\");")
+            write(img.out, "var fig = Snap(\"#$(img.id)\");")
             for script in img.scripts
                 write(img.out, escape_script(script), "\n")
             end
