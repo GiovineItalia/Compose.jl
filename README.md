@@ -1,48 +1,91 @@
-# ~~Compose!~~ Propose!
+# Compose!
 
-Compose is a (experimental, work-in-progress) vector graphics library for Julia.
-It is forming the basis for the statistical graphics system
+Compose is a vector graphics library for Julia.
+It forms the basis for the statistical graphics system
 [Gadfly](https://github.com/dcjones/Gadfly.jl).
 
-This branch is an experimental rewrite of Compose aimed at building a more
-efficient, elegant, and consistent system while granting it superpowers. It's
-not yet ready for general use, but will hopefull get merged in the future.
 
+## Synopsis
 
-This rewrite has three major goals:
+Unilke most vector graphics libraries, compose is thoroughly declarative. Rather
+than issue a sequence of drawing commands, graphics are formed by sticking
+various things together and then letting the library figure out how to draw it.
+The "things" in this case fall one of three types: Property, Form, and Canvas.
+"Sticking together" is primary achieved with the `compose` function.
 
-  1. Compose has no way of deciding between multiple possible layouts. Compose will
-     use integer linear programming to solve table layout problems while leaving
-     room to add other sorts of layout optimization algorithms (e.g. TeX-style
-     paragraphing).
+The semantics of composition are fairly simple, and once grasped provide a
+consistent and powerful means of building vector graphics.
 
-     This will open the door to adding a more sophisticated notion of layout to
-     Gadfly: keys can be split into multiple columns, axis labels can be
-     rotated or split into multiple lines, plots can warn the user when
-     they need more room to be drawn correctly. And all of this will be done
-     automatically and without a significant hit to performance (table layout is
-     NP-complete in general, but Gadfly only needs to solve relatively small
-     instances).
+## Example
 
-  1. Compose was written with little regard to peformance. This shows when one
-     tries to plot thousands of points in Gadfly. In this branch, geometry like
-     circles, rectangles, and lines will be vectorized to avoid the overhead of
-     building a tree with thousands of nodes and computing coordinate
-     transforms one the nodes one-by-one.
+The easiest way to get a sense of how Compose works is with an example. So,
+here's how to draw a sierpinski triangle.
 
-     This change has the added benifit of making this branch a closer fit to
-     d3.js than Compose. D3 support was tacked onto Compose, and as a result is
-     ugly and generates suboptimal javascript in some cases. Not only should
-     plotting be faster with Pose, the generated javascript should be faster as
-     well.
+![Sierpinski](http://dcjones.github.com/Compose.jl/sierpinski.svg)
 
-     Furthermore, along with the ubiquitous `compose` function, a more efficient
-     `compose!` function will be added to do efficient destructive updates.
+```julia
+using Compose
 
-   1. Miscellaneous refactoring. Since this is in no way backwards compatible,
-      stuff will get renamed and rearranged whenever I feel like
-      it (E.g. `canvas` is now called `context`, because `canvas` is a terrible
-      name).
+function sierpinski(n)
+    if n == 0
+        compose(context(), polygon([(1,1), (0,1), (1/2, 0)]))
+    else
+        t = sierpinski(n - 1)
+        compose(context(),
+                (context(1/4,   0, 1/2, 1/2), t),
+                (context(  0, 1/2, 1/2, 1/2), t),
+                (context(1/2, 1/2, 1/2, 1/2), t))
+    end
+end
 
+img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
+draw(img, compose(sierpinski(8), linewidth(0.1mm), fill(nothing), stroke("black")))
+```
 
+A graphic in Compose is a tree of `Context` objects, each specifying a coordinate
+system relative to its parent canvas. One context is made a child of another with
+a call to `compose(a::Context, b::Context)`.
+
+Contexts may also have children of type `Form` and `` which are rectangles, ellipses,
+text, etc, and `Property` which are line width, fill color, etc. `Form` and
+`Property` nodes are always leaf nodes.
+
+## Fancier compositions
+
+There are fancier forms of the compose function. In particular, variadic
+compose, which is roughly defined as:
+
+```julia
+compose(a, b, cs...) = compose(compose(a, b), cs...)
+```
+
+Compose over tuples or arrays:
+```julia
+compose((as...)) = compose(as...)
+```
+
+In effect, this lets one write a complex series of compose operations as an
+S-expression. For example:
+
+```julia
+compose(a, b, ((c, d), (e, f), g))
+```
+
+Since all we are doing is building trees, this syntax tends to be pretty
+convenient.
+
+## Coordinates
+
+Besides coordinate transformations, Compose also handles mixtures of relative
+and absolute coordinates. For example, `1w - 10mm` is a well formed expression,
+giving the width of the parent canvas minus ten millimeters.
+
+## Influences
+
+Compose is intended as a futuristic version of the R library
+[grid](http://www.stat.auckland.ac.nz/~paul/grid/grid.html), and so takes a few
+ideas from grid. The Compose canvas is roughly equivalent to a viewport in grid,
+for example. The Haskell library
+[Diagrams](http://projects.haskell.org/diagrams/) was another starting point
+with many admirable notions I hope to steal.
 

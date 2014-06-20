@@ -232,6 +232,11 @@ function compose!(a::Context, bs::AbstractArray)
 end
 
 
+function compose!(a::Context, bs::Tuple)
+    compose!(a, compose!(bs...))
+end
+
+
 function compose!(a::Context)
     return a
 end
@@ -243,6 +248,11 @@ end
 
 
 function compose(a::Context, bs::AbstractArray)
+    compose(a, compose(bs...))
+end
+
+
+function compose(a::Context, bs::Tuple)
     compose(a, compose(bs...))
 end
 
