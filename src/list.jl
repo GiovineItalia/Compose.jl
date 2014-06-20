@@ -3,10 +3,10 @@
 
 abstract List{T}
 
-immutable ListNil{T} <: List{T} end
+immutable ListNull{T} <: List{T} end
 
 
-copy{T}(l::ListNil{T}) = l
+copy{T}(l::ListNull{T}) = l
 
 
 immutable ListNode{T} <: List{T}
@@ -34,7 +34,7 @@ end
 
 
 function done(::List, l::List)
-    typeof(l) <: ListNil
+    typeof(l) <: ListNull
 end
 
 
@@ -45,7 +45,7 @@ end
 
 function length{T}(l::List{T})
     n = 0
-    while typeof(l) != ListNil{T}
+    while typeof(l) != ListNull{T}
         n += 1
         l = l.tail
     end
@@ -71,9 +71,9 @@ end
 
 function show{T}(io::IO, a::List{T})
     print(io, "List([")
-    while typeof(a) != ListNil{T}
+    while typeof(a) != ListNull{T}
         print(io, a.head)
-        if typeof(a.tail) != ListNil{T}
+        if typeof(a.tail) != ListNull{T}
             print(io, ", ")
         end
         a = a.tail

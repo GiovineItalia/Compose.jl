@@ -1,481 +1,539 @@
 
-# Property: a thing that changes how other things are drawn.
 
-import Base.fill
-
-export stroke, fill, linewidth, font, fontsize, visible, clip, opacity, svgid,
-       svgclass, svglink, onactive, onclick, onfocusin, onfocusout, onload,
-       onmousedown, onmousemove, onmouseout, onmouseover, onmouseup, svgmask,
-       svgdefmask, svgembed, svgattribute, d3style, d3embed, d3hook, strokeopacity,
-       strokedash, strokelinecap, strokelinejoin,
-       LineCapButt, LineCapSquare, LineCapRound, LineJoinMiter, LineJoinRound, LineJoinBevel
-
-# A property primitive is something can be directly applied.
 abstract PropertyPrimitive
 
 
-# A property is a (possibly empty) sequence of property primitives. The set of
-# Properties with the combine operator forms a monoid (specifically, it can be
-# thought of as a free monoid). The empty_property constant is the identity
-# element.
-abstract Property
+immutable Property{P <: PropertyPrimitive} <: ComposeNode
+	primitives::Vector{P}
+end
 
 
-# An enumeration, really.  Once (if?) Julia has better support for
-# enums, we should use those
+function isempty(p::Property)
+    return isempty(p.primitives)
+end
+
+
+function isscalar(p::Property)
+    return length(p.primitives) == 1
+end
+
+
+# Some properties can be applied multiple times, most cannot.
+function isrepeatable(p::Property)
+    return false
+end
+
+
+function absolute_units{T}(p::Property{T}, t::Transform, units::UnitBox,
+                           box::AbsoluteBoundingBox)
+    return Property{T}([absolute_units(primitive, t, units, box)
+                        for primitive in p.primitives])
+end
+
+
+# Property primitive catchall: most properties don't need measure transforms
+function absolute_units{T <: PropertyPrimitive}(primitive::T, t::Transform,
+                                                units::UnitBox,
+                                                box::AbsoluteBoundingBox)
+    return primitive
+end
+
+
+# Stroke
+# ------
+
+immutable StrokePrimitive <: PropertyPrimitive
+	color::Maybe(ColorValue)
+end
+
+typealias Stroke Property{StrokePrimitive}
+
+
+function stroke(c::Nothing)
+    return Stroke([StrokePrimitive(c)])
+end
+
+
+function stroke(c::Union(ColorValue, String))
+	return Stroke([StrokePrimitive(color(c))])
+end
+
+
+function stroke(cs::AbstractArray)
+	return Stroke([StrokePrimitive(c == nothing ? c : color(c)) for c in cs])
+end
+
+
+# Fill
+# ----
+
+immutable FillPrimitive <: PropertyPrimitive
+	color::Union(ColorValue, Nothing)
+end
+
+typealias Fill Property{FillPrimitive}
+
+
+function fill(c::Nothing)
+    return Fill([FillPrimitive(c)])
+end
+
+
+function fill(c::Union(ColorValue, String))
+	return Fill([FillPrimitive(color(c))])
+end
+
+
+function fill(cs::AbstractArray)
+	return Fill([FillPrimitive(c == nothing ? c : color(c)) for c in cs])
+end
+
+
+
+# StrokeDash
+# ----------
+
+immutable StrokeDashPrimitive <: PropertyPrimitive
+    value::Vector{Measure}
+end
+
+typealias StrokeDash Property{StrokeDashPrimitive}
+
+
+function strokedash(values::AbstractArray)
+    return StrokeDash([StrokeDashPrimitive(values)])
+end
+
+
+function strokedash(values::AbstractArray{AbstractArray})
+    return StrokeDash([StrokeDashPrimitive(value) for value in values])
+end
+
+
+function absolute_units(primitive::StrokeDashPrimitive, t::Transform,
+                        units::UnitBox, box::AbsoluteBoundingBox)
+    return StrokeDashPrimitive([Measure(abs=absolute_units(v, t, units, box))
+                                for v in primitive.value])
+end
+
+# StrokeLineCap
+# -------------
+
+
 abstract LineCap
 immutable LineCapButt <: LineCap end
 immutable LineCapSquare <: LineCap end
 immutable LineCapRound <: LineCap end
 
-# This should also be an enum, ideally.
+
+immutable StrokeLineCapPrimitive <: PropertyPrimitive
+    value::LineCap
+
+    function StrokeLineCapPrimitive(value::LineCap)
+        return new(value)
+    end
+
+    function StrokeLineCapPrimitive(value::Type{LineCap})
+        return new(value())
+    end
+end
+
+typealias StrokeLineCap Property{StrokeLineCapPrimitive}
+
+
+function strokelinecap(value::Union(LineCap, Type{LineCap}))
+    return StrokeLineCap([StrokeLineCapPrimitive(value)])
+end
+
+
+function strokelinecap(values::AbstractArray)
+    return StrokeLineCap([StrokeLineCapPrimitive(value) for value in values])
+end
+
+
+# StrokeLineJoin
+# --------------
+
 abstract LineJoin
 immutable LineJoinMiter <: LineJoin end
 immutable LineJoinRound <: LineJoin end
 immutable LineJoinBevel <: LineJoin end
 
 
-# An empty (i.e., nop) property which form the identity element of the Property
-# monoid.
-immutable EmptyProperty <: Property end
-const empty_property = EmptyProperty()
-
-
-copy(p::EmptyProperty) = p
-
-
-# A non-empty sequence of property primitives.
-type PropertySeq <: Property
-    primitive::PropertyPrimitive
-    next::Property
-
-    function PropertySeq(primitive::PropertyPrimitive,
-                         next::Property)
-        new(primitive, next)
-    end
-
-    function PropertySeq(primitive::PropertyPrimitive)
-        new(primitive, empty_property)
-    end
-
-    # shallow copy constructor
-    function PropertySeq(ps::PropertySeq)
-        new(ps.primitive, ps.next)
-    end
-end
-
-
-copy(ps::PropertySeq) = PropertySeq(ps)
-
-
-function length(p::Property)
-    n = 0
-    while !is(p, empty_property)
-        n += 1
-        p = p.next
-    end
-    n
-end
-
-
-# Combination of properties, which is simply list concatenation.
-function combine(head::Property, rest::Property...)
-    a = b = head === empty_property ? head : copy(head)
-    for p in rest
-        if p === empty_property
-            continue
-        elseif a === empty_property
-            a = b = copy(p)
-        else
-            while !is(b.next, empty_property)
-                b.next = copy(b.next)
-                b = b.next
-            end
-            b.next = p
-        end
-    end
-    a
-end
-
-
-combine(head::Property, ::Nothing) = head
-
-
-# Unit conversion functions.
-
-function absolute_units(property::EmptyProperty,
-                        t::Transform,
-                        unit_box::UnitBox,
-                        box::AbsoluteBoundingBox)
-    property
-end
-
-
-# Convert a sequence of properties to a sequence of properties in native
-# coordinates.
-function absolute_units(property::PropertySeq,
-                        t::Transform,
-                        unit_box::UnitBox,
-                        box::AbsoluteBoundingBox)
-    p = property = copy(property)
-    while !is(p, empty_property)
-        p.primitive = absolute_units(p.primitive, t, unit_box, box)
-        p.next = copy(p.next)
-        p = p.next
-    end
-    property
-end
-
-
-# Catchall for properties that don't require unit conversion.
-function absolute_units(property::PropertyPrimitive,
-                        t::Transform,
-                        unit_box::UnitBox,
-                        box::AbsoluteBoundingBox)
-    property
-end
-
-
-# A property primitive controlling the fill color (or lack of color) of a form.
-immutable Fill <: PropertyPrimitive
-    value::ColorOrNothing
-
-    Fill(value::ColorOrNothing) = new(value)
-    Fill(value::String) = new(color(value))
-end
-
-
-# Singleton sequence contructor.
-fill(value) = PropertySeq(Fill(value))
-
-
-# A property primitive controlling the stroke color (or lack of color) of a form.
-immutable Stroke <: PropertyPrimitive
-    value::ColorOrNothing
-
-    Stroke(value::ColorOrNothing) = new(value)
-    Stroke(value::String) = new(color(value))
-end
-
-
-# Singleton sequence contructor.
-stroke(value) = PropertySeq(Stroke(value))
-
-
-# A property primitive controlling the stroke's dash pattern.
-immutable StrokeDash <: PropertyPrimitive
-    value::Array{Measure,1}
-
-    StrokeDash(values) = new(map(size_measure, values))
-end
-
-
-# Singleton sequence constructor.
-strokedash(values) = PropertySeq(StrokeDash(values))
-
-
-# A property primitive controlling the stroke's linecap.
-immutable StrokeLineCap <: PropertyPrimitive
-    value::LineCap
-
-    StrokeLineCap(value) = new(value)
-end
-
-# Singleton sequence constructor
-strokelinecap(value) = PropertySeq(StrokeLineCap(value))
-
-
-# A property primitive controlling the stroke's linejoin.
-immutable StrokeLineJoin <: PropertyPrimitive
+immutable StrokeLineJoinPrimitive <: PropertyPrimitive
     value::LineJoin
 
-    StrokeLineJoin(value) = new(value)
+    function StrokeLineJoinPrimitive(value::LineJoin)
+        return new(value)
+    end
+
+    function StrokeLineCapPrimitive(value::Type{LineJoin})
+        return new(value())
+    end
 end
 
-# Singleton sequence constructor
-strokelinejoin(value) = PropertySeq(StrokeLineJoin(value))
+typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
 
 
-# A property primitive controlling the widths of lines drawn in stroke
-# operations.
-immutable LineWidth <: PropertyPrimitive
+function strokelinejoin(value::Union(LineJoin, Type{LineJoin}))
+    return StrokeLineJoin([StrokeLineJoinPrimitive(value)])
+end
+
+
+function strokelinejoin(values::AbstractArray)
+    return StrokeLineJoin([StrokeLineJoinPrimitive(value) for value in values])
+end
+
+
+# LineWidth
+# ---------
+
+immutable LineWidthPrimitive <: PropertyPrimitive
     value::Measure
 
-    LineWidth(value) = new(size_measure(value))
+    function LineWidthPrimitive(value)
+        return new(size_measure(value))
+    end
+end
+
+typealias LineWidth Property{LineWidthPrimitive}
+
+
+function linewidth(value::Union(Measure, Number))
+    return LineWidth([LineWidthPrimitive(value)])
 end
 
 
-# Singleton sequence contructor.
-linewidth(value) = PropertySeq(LineWidth(value))
-
-
-# Unit conversion
-function absolute_units(property::LineWidth,
-                        t::Transform,
-                        unit_box::UnitBox,
-                        box::AbsoluteBoundingBox)
-    LineWidth(absolute_units(property.value, t, unit_box, box))
+function linewidth(values::AbstractArray)
+    return LineWidth([LineWidthPrimitive(value) for value in values])
 end
 
 
-# Set the visible attribute in SVG output, or just skip rendering in raster
-# graphics.
-immutable Visible <: PropertyPrimitive
+function absolute_units(primitive::LineWidthPrimitive, t::Transform,
+                        units::UnitBox, box::AbsoluteBoundingBox)
+    return LineWidthPrimitive(Measure(abs=absolute_units(primitive.value, t, units, box)))
+end
+
+
+# Visible
+# -------
+
+immutable VisiblePrimitive <: PropertyPrimitive
     value::Bool
 end
 
+typealias Visible Property{VisiblePrimitive}
 
-visible(value::Bool) = PropertySeq(Visible(value))
 
-
-immutable Opacity <: PropertyPrimitive
-    value::Float64
+function visible(value::Bool)
+    return Visible([VisiblePrimitive(value)])
 end
 
 
-opacity(value::Number) = PropertySeq(Opacity(convert(Float64, value)))
-
-
-immutable StrokeOpacity <: PropertyPrimitive
-    value::Float64
+function visible(values::AbstractArray)
+    return Visible([VisiblePrimitive(value) for value in values])
 end
 
 
-strokeopacity(value::Number) = PropertySeq(StrokeOpacity(convert(Float64, value)))
+# FillOpacity
+# -----------
+
+immutable FillOpacityPrimitive <: PropertyPrimitive
+    value::Float64
+
+    function FillOpacityPrimitive(value_::Number)
+        value = float64(value_)
+        if value < 0.0 || value > 1.0
+            error("Opacity must be between 0 and 1.")
+        end
+        return new(value)
+    end
+end
+
+typealias FillOpacity Property{FillOpacityPrimitive}
 
 
-# Clipping path
-immutable Clip <: PropertyPrimitive
+function fillopacity(value::Float64)
+    return FillOpacity([FillOpacityPrimitive(value)])
+end
+
+
+function fillopacity(values::AbstractArray)
+    return FillOpacity([FillOpacityPrimitive(value) for value in values])
+end
+
+
+# StrokeOpacity
+# -------------
+
+immutable StrokeOpacityPrimitive <: PropertyPrimitive
+    value::Float64
+
+    function StrokeOpacityPrimitive(value_::Number)
+        value = float64(value_)
+        if value < 0.0 || value > 1.0
+            error("Opacity must be between 0 and 1.")
+        end
+        return new(value)
+    end
+end
+
+typealias StrokeOpacity Property{StrokeOpacityPrimitive}
+
+
+function strokeopacity(value::Float64)
+    return StrokeOpacity([StrokeOpacityPrimitive(value)])
+end
+
+
+function strokeopacity(values::AbstractArray)
+    return StrokeOpacity([StrokeOpacityPrimitive(value) for value in values])
+end
+
+
+# Clip
+# ----
+
+immutable ClipPrimitive <: PropertyPrimitive
     points::Vector{Point}
+end
+
+typealias Clip Property{ClipPrimitive}
+
+
+function clip()
+    return Clip([ClipPrimitive(Array(Point, 0))])
 end
 
 
 function clip(points::XYTupleOrPoint...)
-    PropertySeq(Clip([convert(Point, point) for point in points]))
+    return Clip([ClipPrimitive([convert(Point, point) for point in points])])
 end
 
 
-function absolute_units(property::Clip,
-                        t::Transform,
-                        unit_box::UnitBox,
+function clip(point_arrays::AbstractArray...)
+    clipprims = Array(ClipPrimitive, length(point_arrays))
+    for (i, point_array) in enumerate(point_arrays)
+        clipprims[i] = ClipPrimitive([convert(Point, point)
+                                      for point in point_array])
+    end
+    return Clip(clipprims)
+end
+
+
+function absolute_units(primitive::ClipPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    Clip([absolute_units(point, t, unit_box, box)
-          for point in property.points])
+    return ClipPrimitive([absolute_units(point, t, units, box)
+                          for point in primitive.points])
 end
 
 
-# A property primitive assigning an ID, in particular in SVG, to enable
-# manipulation of portions of the graphic.
-immutable SVGID <: PropertyPrimitive
-    value::String
-end
+# Font
+# ----
 
-
-# Singleton sequence contructor.
-svgid(value::String) = PropertySeq(SVGID(html_escape_string(value)))
-
-
-# A property setting the class field in a form's group element.
-immutable SVGClass <: PropertyPrimitive
-    value::String
-end
-
-
-# Singleton sequence contructor.
-svgclass(value::String) = PropertySeq(SVGClass(html_escape_string(value)))
-
-
-# A SVG <a> tag.
-immutable SVGLink <: PropertyPrimitive
-    target::String
-end
-
-
-# Singleton sequence contructor.
-svglink(target::String) = PropertySeq(SVGLink(target))
-
-
-# The font property primitive.
-immutable Font <: PropertyPrimitive
+immutable FontPrimitive <: PropertyPrimitive
     family::String
 end
 
-
-# Singletone sequence constructor.
-font(family::String) = PropertySeq(Font(family))
+typealias Font Property{FontPrimitive}
 
 
-# The font size property.
-immutable FontSize <: PropertyPrimitive
+function font(family::String)
+    return Font([FontPrimitive(family)])
+end
+
+
+function font(families::AbstractArray)
+    return Font([FontPrimitive(family) for family in families])
+end
+
+
+# FontSize
+# --------
+
+immutable FontSizePrimitive <: PropertyPrimitive
     value::Measure
 
-    FontSize(value) = new(size_measure(value))
-end
-
-
-# Singletone sequence constructor.
-fontsize(value) = PropertySeq(FontSize(value))
-
-
-# Native unit conversion.
-function absolute_units(property::FontSize,
-                        t::Transform,
-                        unit_box::UnitBox,
-                        box::AbsoluteBoundingBox)
-    FontSize(absolute_units(property.value, t, unit_box, box))
-end
-
-
-# Events:
-# These correspond to DOM events, and associate some javascript blurb that gets
-# executed when the event is triggered.
-
-const events = (:OnActivate, :OnClick, :OnFocusIn, :OnFocusOut,
-                :OnLoad, :OnMouseDown, :OnMouseMove, :OnMouseOut,
-                :OnMouseOver, :OnMouseUp)
-
-for event in events
-    event_lc  = symbol(lowercase(string(event)))
-    @eval begin
-        immutable ($event) <: PropertyPrimitive
-            value::String
-        end
-
-        function ($event_lc)(value::String)
-            PropertySeq(($event)(value))
-        end
+    function FontSizePrimitive(value)
+        return new(size_measure(value))
     end
 end
 
+typealias FontSize Property{FontSizePrimitive}
 
-# SVG Mask objects
 
-immutable SVGMask <: PropertyPrimitive
-    id::String
+function fontsize(value::Union(Number, Measure))
+    return FontSize([FontSizePrimitive(value)])
 end
 
 
-svgmask(id::String) = PropertySeq(SVGMask(id))
-
-
-immutable SVGDefineMask <: PropertyPrimitive
-    id::String
+function fontsize(values::AbstractArray)
+    return FontSize([FontSizePrimitive(value) for value in values])
 end
 
 
-svgdefmask(id::String) = PropertySeq(SVGDefineMask(id))
+function absolue_units(primitive::FontSizePrimitive, t::Transform,
+                       units::UnitBox, box::AbsoluteBoundingBox)
+    return FontSizePrimitive(Measure(abs=absolute_units(primitive.value, t, units, box)))
+end
 
-# A general purpose SVG attribute.
 
-immutable SVGAttribute <: PropertyPrimitive
+# SVGID
+# -----
+
+immutable SVGIDPrimitive <: PropertyPrimitive
+    value::String
+end
+
+typealias SVGID Property{SVGIDPrimitive}
+
+
+function svgid(value::String)
+    return SVGID([SVGIDPrimitive(value)])
+end
+
+
+function svgid(values::AbstractArray)
+    return SVGID([SVGIDPrimitive(value) for value in values])
+end
+
+
+# SVGClass
+# --------
+
+immutable SVGClassPrimitive <: PropertyPrimitive
+    value::String
+end
+
+typealias SVGClass Property{SVGClassPrimitive}
+
+
+function svgclass(value::String)
+    return SVGClass([SVGClassPrimitive(value)])
+end
+
+function svgclass(values::AbstractArray)
+    return SVGClass([SVGClassPrimitive(value) for value in values])
+end
+
+
+# SVGAttribute
+# ------------
+
+immutable SVGAttributePrimitive <: PropertyPrimitive
     attribute::String
     value::String
 end
 
+typealias SVGAttribute Property{SVGAttributePrimitive}
 
-function svgattribute(attribute::String, value::String)
-    PropertySeq(SVGAttribute(attribute, value))
+
+function svgattribute(attribute::String, value)
+    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))])
 end
 
 
-# Embedding raw markup in SVG files.
-
-# This is a property that when processed will be saved and then appended to the
-# end of the SVG file, but ignored by default on other backends. This allows us
-# to use some of SVGs more obsure features without exposing all of SVG.
-
-immutable SVGEmbed <: PropertyPrimitive
-    markup::String
+function svgattribute(attribute::String, values::AbstractArray)
+    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
+                         for value in values])
 end
 
 
-svgembed(markup::String) = PropertySeq(SVGEmbed(markup))
+function svgattribute(attributes::AbstractArray, values::AbstractArray)
+    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
+                         for (attribute, value) in cyclezip(attributes, values)])
+end
 
-# D3 css styles
 
-immutable D3Style <: PropertyPrimitive
-    attribute::String
+# JSInclude
+# ---------
+
+immutable JSIncludePrimitive <: PropertyPrimitive
     value::String
 end
 
+typealias JSInclude Property{JSIncludePrimitive}
 
-function d3style(attribute::String, value::String)
-    PropertySeq(D3Style(attribute, value))
+
+function jsinclude(value::String)
+    return JSInclude([JSIncludePrimitive(value)])
 end
 
+# Don't bother with a vectorized version of this. It wouldn't really make #
+# sense.
 
-# Embedding raw js code in D3 output.
 
-immutable D3Embed <: PropertyPrimitive
+# JSCall
+# ------
+
+immutable JSCallPrimitive <: PropertyPrimitive
     code::String
     args::Vector{Measure}
+end
 
-    function D3Embed(code::String, args::Measure...)
-        property = new(code, Array(Measure, length(args)))
-        for (i, arg) in enumerate(args)
-            property.args[i] = arg
-        end
-        property
-    end
+typealias JSCall Property{JSCallPrimitive}
+
+
+function jscall(code::String, arg::Vector{Measure}=Measure[])
+    return JSCall([JSCallPrimitive(code, arg)])
 end
 
 
-function d3embed(code::String, args::Measure...)
-    PropertySeq(D3Embed(code, args...))
+function jscall(codes::AbstractArray,
+                args::AbstractArray{Vector{Measure}}=[Measure[]])
+    return JSCall[JSCallPrimitive(code, arg)
+                  for (code, arg) in cyclezip(codes, args)]
 end
 
 
-function absolute_units(property::D3Embed,
-                        t::Transform,
-                        unit_box::UnitBox,
-                        box::AbsoluteBoundingBox)
+function absolute_units(primitive::JSCallPrimitive, t::Transform,
+                        units::UnitBox, box::AbsoluteBoundingBox)
     # we are going to build a new string by scanning across "code" and
     # replacing %x with translated x values, %y with translated y values
-    # and %s with translated size values. Blah blah blah.
+    # and %s with translated size values.
     newcode = IOBuffer()
 
     i = 1
     validx = 1
     while true
-        j = search(property.code, '%', i)
+        j = search(primitive.code, '%', i)
 
         if j == 0
-            write(newcode, property.code[i:end])
+            write(newcode, primitive.code[i:end])
             break
         end
 
-        write(newcode, property.code[i:j-1])
-        if j == length(property.code)
+        write(newcode, primitive.code[i:j-1])
+        if j == length(primitive.code)
             write(newcode, '%')
             break
-        elseif property.code[j+1] == '%'
+        elseif primitive.code[j+1] == '%'
             write(newcode, '%')
-        elseif property.code[j+1] == 'x'
-            val = absolute_x_position(property.args[validx], t, unit_box, box)
+        elseif primitive.code[j+1] == 'x'
+            val = absolute_x_position(primitive.args[validx], t, units, box)
             write(newcode, svg_fmt_float(val))
             validx += 1
-        elseif property.code[j+1] == 'y'
-            val = absolute_y_position(property.args[validx], t, unit_box, box)
+        elseif primitive.code[j+1] == 'y'
+            val = absolute_y_position(primitive.args[validx], t, units, box)
             write(newcode, svg_fmt_float(val))
             validx += 1
-        elseif property.code[j+1] == 's'
-            val = absolute_units(property.args[validx], t, unit_box, box)
+        elseif primitive.code[j+1] == 's'
+            val = absolute_units(primitive.args[validx], t, units, box)
             write(newcode, svg_fmt_float(val.abs))
             validx += 1
         else
-            write(newcode, '%', property.code[j+1])
+            write(newcode, '%', primitive.code[j+1])
         end
 
         i = j + 2
     end
 
-    D3Embed(takebuf_string(newcode))
+    return JSCallPrimitive(takebuf_string(newcode), Measure[])
 end
 
 
-immutable D3Hook <: PropertyPrimitive
-    code::String
+function isrepeatable(p::JSCall)
+    return true
 end
 
-d3hook(code::String) = PropertySeq(D3Hook(code))
 

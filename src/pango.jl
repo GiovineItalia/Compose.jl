@@ -3,8 +3,8 @@
 
 using Fontconfig
 
-const libpangocairo = symbol("libpangocairo-1.0")
-const libpango = symbol("libpango-1.0")
+const libpangocairo = Cairo._jl_libpangocairo
+const libpango = Cairo._jl_libpango
 
 # Cairo text backend
 const CAIRO_FONT_TYPE_TOY = 0
@@ -15,6 +15,26 @@ const CAIRO_FONT_TYPE_USER = 4
 
 # Mirroring a #define in the pango header.
 const PANGO_SCALE = 1024.0
+
+
+function pango_fmt_float(x::Float64)
+    if x < 0.1
+        a = @sprintf("%0.18f", x)
+    else
+        a = @sprintf("%f", x)
+    end
+
+    n = length(a)
+    while a[n] == '0'
+        n -= 1
+    end
+
+    if a[n] == '.'
+        n -= 1
+    end
+
+    a[1:n]
+end
 
 
 # Use the freetype/fontconfig backend to find the best match to a font
@@ -101,7 +121,7 @@ end
 # Returns:
 #   A (width, height) tuple in absolute units.
 #
-function text_extents(font_family::String, pts::Float64, texts::String...)
+function max_text_extents(font_family::String, pts::Float64, texts::String...)
     pango_set_font(pangolayout::PangoLayout, font_family, pts)
     max_width  = 0mm
     max_height = 0mm
@@ -110,16 +130,29 @@ function text_extents(font_family::String, pts::Float64, texts::String...)
         max_width  = max_width.abs  < width.abs  ? width  : max_width
         max_height = max_height.abs < height.abs ? height : max_height
     end
-    (max_width, max_height)
+    return (max_width, max_height)
 end
 
-# Same as text_extents but with font_size in arbitrary absolute units.
-function text_extents(font_family::String, size::Measure,
+# Same as max_text_extents but with font_size in arbitrary absolute units.
+function max_text_extents(font_family::String, size::Measure,
                       texts::String...)
     if !isabsolute(size)
         error("text_extents requries font size be in absolute units")
     end
-    text_extents(font_family, size/pt, texts...)
+    return max_text_extents(font_family, size/pt, texts...)
+end
+
+
+# Return an array with the extents of each element
+function text_extents(font_family::String, pts::Float64, texts::String...)
+    pango_set_font(pangolayout::PangoLayout, font_family, pts)
+    return [pango_text_extents(pangolayout::PangoLayout, text)
+            for text in texts]
+end
+
+
+function text_extents(font_family::String, size::Measure, texts::String...)
+    return text_extents(font_family, size/pt, texts...)
 end
 
 
@@ -380,12 +413,12 @@ function pango_to_svg(text::String)
 
             if !(attr.rise === nothing)
                 @printf(io, " dy=\"%s\"",
-                        fmt_float(-((attr.rise / PANGO_SCALE)pt).abs))
+                        pango_fmt_float(-((attr.rise / PANGO_SCALE)pt).abs))
             end
 
             if !(attr.scale === nothing)
                 @printf(io, " font-size=\"%s%%\"",
-                        fmt_float(100.0 * attr.scale))
+                        pango_fmt_float(100.0 * attr.scale))
             end
 
             if !(attr.style === nothing)

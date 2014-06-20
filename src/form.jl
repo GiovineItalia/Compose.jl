@@ -1,426 +1,200 @@
-# Form: a thing that is visible once drawn.
 
-export polygon, rectangle, lines, curve, arc, circle, ellipse, text,
-       hcenter, hleft, hright, vcenter, vtop, vbottom, empty_form
+# A form is something that ends up as geometry in the graphic.
 
-# A primitive form: typcially a shape or sequence of drawing operations.
 abstract FormPrimitive
 
-
-# Form is a (possibly empty) binary tree. Each node is a form primitive
-# with an associated property. When the form is rendered, the graph is
-# traversed from the root. The property at a node is applied to all downstream
-# nodes (children, grandchildren, etc).
-abstract Form
-
-
-# The empty form, which forms the identity element of the Form monoid.
-type EmptyForm <: Form end
-const empty_form = EmptyForm()
-
-contents(io, f::EmptyForm, n::Int, indent) = nothing
-length(f::EmptyForm) = 0
-
-
-# A non-empty sequence of form primitives each with an associated (possibly
-# empty) property.
-type FormTree <: Form
-    primitive::Union(Nothing, FormPrimitive)
-    property::Property
-    children::List{Form}
-
-    function FormTree(primitive::Union(Nothing, FormPrimitive),
-                      property::Property,
-                      children::List{Form})
-        new(primitive, property, convert(List{Form}, children))
-    end
-
-    function FormTree(primitive::Union(Nothing, FormPrimitive),
-                      property::Property)
-        new(primitive, property, ListNil{Form}())
-    end
-
-    function FormTree(primitive::FormPrimitive)
-        new(primitive, empty_property, ListNil{Form}())
-    end
-
-    # shallow copy constructor
-    function FormTree(a::FormTree)
-        new(a.primitive, a.property, a.children)
-    end
-end
-length(f::FormTree) = length(f.children)
-
-function contents(io, f::FormTree, n::Int, indent)
-    if !(f.primitive === nothing)
-        contents(io, f.primitive, 1, indent)
-    end
-    i = 1
-    for fc in f.children
-        contents(io, fc, n - 1, string(indent, "  "))
-        if i > 10
-            println(io, indent, "  ...")
-            break
-        end
-        i += 1
-    end
-end
-
-copy(a::FormTree) = FormTree(a)
-
-children(a::FormTree) = a.children
-
-
-function removable(a::FormTree)
-    a.primitive === nothing && a.property === empty_property
+immutable Form{P <: FormPrimitive} <: ComposeNode
+    primitives::Vector{P}
 end
 
 
-# Compute a bounding box for a form tree.
-function boundingbox(form::FormTree, linewidth::Measure=default_line_width,
-                     font::String=default_font_family,
-                     fontsize::Measure=default_font_size)
-    p = form.property
-    while !is(p, empty_property)
-        if isa(p.primitive, LineWidth)
-            linewidth = p.primitive.value
-        elseif isa(p.primitive, FontSize)
-            fontsize = p.primitive.value
-        elseif isa(p.primitive, Font)
-            font = p.primitive.family
-        end
-        p = p.next
-    end
-
-    if form.primitive == nothing
-        bb = BoundingBox()
-    else
-        bb = boundingbox(form.primitive, linewidth, font, fontsize)
-    end
-    for child in form.children
-        bb = union(bb, boundingbox(child, linewidth, font, fontsize))
-    end
-    return bb
+function isempty(f::Form)
+    return isempty(f.primitives)
 end
 
 
-# Conceptually, combining forms is tree joining by introducing a new root.
-#
-#   a      b               c
-#  / \    / \    --->     / \
-# X   Y  U   V           a   b
-#                       / \ / \
-#                      X  Y U  V
-#
-# There is a trick here to avoid an exceess of nop or "removable" nodes.
-#
-function combine(forms::Form...)
-    children = ListNil{Form}()
-    for form in forms
-        if form === empty_form
-            continue
-        end
-        if removable(form)
-            for child in form.children
-                children = cons(child, children)
-            end
-        else
-            children = cons(form, children)
-        end
-    end
-
-    FormTree(nothing, empty_property, children)
+function isscalar(f::Form)
+    return length(f.primitives) == 1
 end
 
 
-# Composition of properties into forms
-function compose(a::FormTree, b::Property)
-    FormTree(a.primitive, combine(a.property, b), a.children)
+function draw{P}(backend::Backend, t::Transform, units::UnitBox,
+                 box::AbsoluteBoundingBox, form::Form{P})
+    draw(backend, Form(P[absolute_units(primitive, t, units, box)
+                         for primitive in form.primitives]))
 end
 
 
-function compose(a::EmptyForm, b::Property)
-    a
-end
+# Polygon
+# -------
 
-
-# Nop drawing of empty forms.
-function draw(backend::Backend,
-              t::Transform,
-              unit_box::UnitBox,
-              box::AbsoluteBoundingBox,
-              root_form::EmptyForm)
-end
-
-
-# Does a property in a node apply to it's siblings? No!
-function draw(backend::Backend,
-              t::Transform,
-              unit_box::UnitBox,
-              box::AbsoluteBoundingBox,
-              root_form::FormTree)
-
-    S = {root_form}
-
-    while !isempty(S)
-        form = pop!(S)
-
-        if form === :POP_PROPERTY
-            pop_property(backend)
-        elseif form === empty_form
-            continue
-        else
-            if !is(form.property, empty_property)
-                push!(S, :POP_PROPERTY)
-                push_property(backend,
-                              absolute_units(form.property, t, unit_box, box))
-            end
-
-            for child in children(form)
-                push!(S, child)
-            end
-
-            if typeof(form) === FormTree
-                if !(form.primitive === nothing)
-                    draw(backend, t, unit_box, box, form.primitive)
-                end
-            else
-                draw(backend, t, unit_box, box, form)
-            end
-        end
-    end
-end
-
-
-# Fallback method for computing a form primitives bounding box.
-function boundingbox(form::FormPrimitive, linewidth::Measure,
-                     font::String, fontsize::Measure)
-    return BoundingBox(0, 0, 1, 1)
-end
-
-
-function boundingbox(form::EmptyForm, linewidth::Measure,
-                     font::String, fontsize::Measure)
-    return BoundingBox(0, 0, 1, 1)
-end
-
-
-immutable Lines <: FormPrimitive
-    points::Vector{Point}
-
-    function Lines(points::Vector{Point})
-        new(points)
-    end
-
-    function Lines(points::Point...)
-        new(Point[point for point in points])
-    end
-end
-
-
-function contents(io, f::Lines, n::Int, indent)
-    println(io, indent, "Line with ", length(f.points), " points")
-end
-
-
-function lines()
-    empty_form
-end
-
-
-function lines(points::XYTupleOrPoint...)
-    FormTree(Lines([convert(Point, point) for point in points]))
-end
-
-
-function boundingbox(form::Lines, linewidth::Measure,
-                     font::String, fontsize::Measure)
-    x0 = minimum([p.x for p in form.points])
-    x1 = maximum([p.x for p in form.points])
-    y0 = minimum([p.y for p in form.points])
-    y1 = maximum([p.y for p in form.points])
-    return BoundingBox(x0 - linewidth,
-                       y0 - linewidth,
-                       x1 - x0 + linewidth,
-                       y1 - y0 + linewidth)
-end
-
-
-function draw(backend::Backend, t::Transform, unit_box::UnitBox,
-              box::AbsoluteBoundingBox, form::Lines)
-    native_form = Lines([absolute_units(point, t, unit_box, box)
-                         for point in form.points])
-    draw(backend, native_form)
-end
-
-
-immutable Curve <: FormPrimitive
-    anchor0::Point
-    ctrl0::Point
-    ctrl1::Point
-    anchor1::Point
-end
-
-
-function contents(io, f::Curve, n::Int, indent)
-    println(io, indent, "Curve between ", f.anchor0, " and ", f.anchor1)
-end
-
-
-function curve(anchor0::XYTupleOrPoint, ctrl0::XYTupleOrPoint,
-               ctrl1::XYTupleOrPoint, anchor1::XYTupleOrPoint)
-    FormTree(Curve(convert(Point, anchor0), convert(Point, ctrl0),
-                   convert(Point, ctrl1), convert(Point, anchor1)),
-             fill(nothing))
-end
-
-
-function boundingbox(form::Curve, linewidth::Measure,
-                     font::String, fontsize::Measure)
-    x0 = min(anchor.x, ctrl0.x, ctrl1.x, anchor1.x)
-    x1 = max(anchor.x, ctrl0.x, ctrl1.x, anchor1.x)
-    y0 = min(anchor.y, ctrl0.y, ctrl1.y, anchor1.y)
-    y1 = max(anchor.y, ctrl0.y, ctrl1.y, anchor1.y)
-    return BoundingBox(x0 - linewidth,
-                       y0 - linewidth,
-                       x1 - x0 + linewidth,
-                       y1 - y0 + linewidth)
-end
-
-
-function draw(backend::Backend, t::Transform, unit_box::UnitBox,
-              box::AbsoluteBoundingBox, form::Curve)
-    native_form = Curve(absolute_units(form.anchor0, t, unit_box, box),
-                        absolute_units(form.ctrl0, t, unit_box, box),
-                        absolute_units(form.ctrl1, t, unit_box, box),
-                        absolute_units(form.anchor1, t, unit_box, box))
-    draw(backend, native_form)
-end
-
-
-immutable Polygon <: FormPrimitive
+immutable PolygonPrimitive <: FormPrimitive
     points::Vector{Point}
 end
 
+typealias Polygon Form{PolygonPrimitive}
 
-function contents(io, f::Polygon, n::Int, indent)
-    println(io, indent, "Polygon with ", length(f.points), " points")
+
+function polygon()
+    return PolygonPrimitive([PolygonPrimitive(Point[])])
 end
 
 
-function polygon(points::XYTupleOrPoint...)
-    FormTree(Polygon([convert(Point, point) for point in points]))
+function polygon{T <: XYTupleOrPoint}(points::AbstractArray{T})
+    return Polygon([PolygonPrimitive([convert(Point, point)
+                                      for point in points])])
 end
 
 
-function boundingbox(form::Polygon, linewidth::Measure,
-                     font::String, fontsize::Measure)
-    x0 = minimum([p.x for p in form.points])
-    x1 = maximum([p.x for p in form.points])
-    y0 = minimum([p.y for p in form.points])
-    y1 = maximum([p.y for p in form.points])
-    return BoundingBox(x0 - linewidth,
-                       y0 - linewidth,
-                       x1 - x0 + linewidth,
-                       y1 - y0 + linewidth)
+function polygon(point_arrays::AbstractArray)
+    polyprims = Array(PolygonPrimitive, length(point_arrays))
+    for (i, point_array) in enumerate(point_arrays)
+        polyprims[i] = PolygonPrimitive([convert(Point, point)
+                                         for point in point_array])
+    end
+    return Polygon(polyprims)
 end
 
 
-function draw(backend::Backend, t::Transform, unit_box::UnitBox,
-              box::AbsoluteBoundingBox, form::Polygon)
-    native_form = Polygon([absolute_units(point, t, unit_box, box)
-                           for point in form.points])
-    draw(backend, native_form)
+function absolute_units(p::PolygonPrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return PolygonPrimitive(Point[absolute_units(point, t, units, box)
+                                  for point in p.points])
+end
+
+
+# Rectangle
+# ---------
+
+immutable RectanglePrimitive <: FormPrimitive
+    corner::Point
+    width::Measure
+    height::Measure
+end
+
+typealias Rectangle Form{RectanglePrimitive}
+
+
+function rectangle()
+    return Rectangle([RectanglePrimitive(Point(0.0w, 0.0h), 1.0w, 1.0h)])
 end
 
 
 function rectangle(x0, y0, width, height)
-    x0 = x_measure(x0)
-    y0 = y_measure(y0)
+    corner = Point(x0, y0)
     width = x_measure(width)
     height = y_measure(height)
-    xy0 = Point(x0, y0)
-    xy1 = Point(x0 + width, y0 + height)
-    polygon(xy0, Point(xy1.x, xy0.y), xy1, Point(xy0.x, xy1.y))
+    return Rectangle([RectanglePrimitive(corner, width, height)])
 end
 
 
-function rectangle()
-    rectangle(0.0w, 0.0h, 1.0w, 1.0h)
+function rectangle(x0s::AbstractArray, y0s::AbstractArray,
+                   widths::AbstractArray, heights::AbstractArray)
+    return Rectangle([RectanglePrimitive(
+                         Point(x0, y0),
+                         x_measure(width), y_measure(height))
+                      for (x0, y0, width, height) in cyclezip(x0s, y0s, widths, heights)])
 end
 
 
-immutable Ellipse <: FormPrimitive
+function absolute_units(p::RectanglePrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    # SVG doesn't support negative width/height to indicate flipped axis,
+    # so we have to adjust manually.
+    corner = absolute_units(p.corner, t, units, box)
+    width = absolute_units(p.width, t, units, box)
+    height = absolute_units(p.height, t, units, box)
+
+    return RectanglePrimitive(
+        Point(Measure(abs=width < 0 ? corner.x.abs + width : corner.x.abs),
+              Measure(abs=height < 0 ? corner.y.abs + height : corner.y.abs)),
+        Measure(abs=abs(width)),
+        Measure(abs=abs(height)))
+end
+
+
+# Circle
+# ------
+
+immutable CirclePrimitive <: FormPrimitive
+    center::Point
+    radius::Measure
+end
+
+
+typealias Circle Form{CirclePrimitive}
+
+
+function circle()
+    return Circle([CirclePrimitive(Point(0.5w, 0.5h), 0.5w)])
+end
+
+
+function circle(x, y, r)
+    return Circle([CirclePrimitive(Point(x, y), x_measure(r))])
+end
+
+
+function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
+    return Circle([CirclePrimitive(Point(x, y), x_measure(r))
+                   for (x, y, r) in cyclezip(xs, ys, rs)])
+end
+
+
+function absolute_units(p::CirclePrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return CirclePrimitive(absolute_units(p.center, t, units, box),
+                           Measure(abs=absolute_units(p.radius, t, units, box)))
+end
+
+
+# Ellipse
+# -------
+
+
+immutable EllipsePrimitive <: FormPrimitive
     center::Point
     x_point::Point
     y_point::Point
-
-    function Ellipse(center::Point, x_point::Point, y_point::Point)
-        new(center, x_point, y_point)
-    end
-
-    function Ellipse(x, y, rx, ry)
-        x = x_measure(x)
-        y = y_measure(y)
-        new(Point(x, y),
-            Point(x + x_measure(rx), y),
-            Point(x, y + y_measure(ry)))
-    end
 end
 
+typealias Ellipse Form{EllipsePrimitive}
 
-function contents(io, f::Ellipse, n::Int, indent)
-    println(io, indent, "Ellipse centered at ", f.center)
+
+function ellipse()
+    return Ellipse([EllipsePrimitive(Point(0.5w, 0.5h),
+                                     Point(1.0w, 0.5h),
+                                     Point(0.5w, 1.0h))])
 end
 
 
 function ellipse(x, y, x_radius, y_radius)
-    x = x_measure(x)
-    y = y_measure(y)
-    FormTree(Ellipse(Point(x, y),
-                     Point(x + x_measure(x_radius), y),
-                     Point(x, y + y_measure(y_radius))))
+    return Ellipse([EllipsePrimitive(Point(x, y),
+                                     Point(x + x_measure(x_radius), y),
+                                     Point(x, y + y_measure(y_radius)))])
 end
 
 
-function ellipse()
-    ellipse(0.5w, 0.5h, 0.5w, 0.5h)
+function ellipse(xs::AbstractArray, ys::AbstractArray,
+                 x_radiuses::AbstractArray, y_radiuses::AbstractArray)
+    return Ellipse[EllipsePrimitive(Point(x, y),
+                                    Point(x_measure(x) + x_measure(x_radius), y),
+                                    Point(x, y_measure(y) + y_measure(y_radius)))
+                   for (x, y, x_radius, y_radius) in cyclezip(xs, ys, x_radiuses, y_radiuses)]
 end
 
 
-# Despite the innacuracy, this is convenient is a few places.
-typealias Circle Ellipse
-
-
-function circle(x, y, radius)
-    ellipse(x, y, radius, radius)
+function absolute_units(p::EllipsePrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return EllipsePrimitive(absolute_units(p.center, t, units, box),
+                            absolute_units(p.x_point, t, units, box),
+                            absolute_units(p.y_point, t, units, box))
 end
 
 
-function boundingbox(form::Ellipse, linewidth::Measure,
-                     font::String, fontsize::Measure)
-    x0 = min(form.x_point.x, form.y_point.x)
-    x1 = max(form.x_point.x, form.y_point.x)
-    y0 = min(form.x_point.y, form.y_point.y)
-    y1 = max(form.x_point.y, form.y_point.y)
-    xr = x1 - x0
-    yr = y1 - y0
-    return BoundingBox(x0 - linewidth - xr,
-                       y0 - linewidth - yr,
-                       2 * (xr + linewidth),
-                       2 * (yr + linewidth))
-end
 
-
-function draw(backend::Backend, t::Transform, unit_box::UnitBox,
-              box::AbsoluteBoundingBox, form::Ellipse)
-    native_form = Ellipse(
-        absolute_units(form.center, t, unit_box, box),
-        absolute_units(form.x_point, t, unit_box, box),
-        absolute_units(form.y_point, t, unit_box, box))
-    draw(backend, native_form)
-end
-
+# Text
+# ----
 
 abstract HAlignment
 immutable HLeft   <: HAlignment end
@@ -440,66 +214,153 @@ const vtop    = VTop()
 const vcenter = VCenter()
 const vbottom = VBottom()
 
-immutable Text <: FormPrimitive
-    pos::Point
+
+immutable TextPrimitive <: FormPrimitive
+    position::Point
     value::String
     halign::HAlignment
     valign::VAlignment
 
     # Text forms need their own rotation field unfortunately, since there is no
     # way to give orientation with just a position point.
-    t::Transform
+    rot::Rotation
 end
+
+typealias Text Form{TextPrimitive}
+
 
 function text(x, y, value::String,
-              halign::HAlignment, valign::VAlignment)
-    FormTree(Text(Point(x_measure(x), y_measure(y)),
-                  value, halign, valign, Transform()))
+              halign::HAlignment=hleft, valign::VAlignment=vbottom,
+              rot=Rotation())
+    return Text([TextPrimitive(Point(x, y), value, halign, valign, rot)])
 end
 
 
-function text(x, y, value::String)
-    text(x, y, value, hleft, vbottom)
+function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
+              haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
+              rots::AbstractArray=[Rotation()])
+    return Text([TextPrimitive(Point(x, y), value, halign, valign, rot)
+                 for (x, y, value, halign, valign, rot) in cyclezip(xs, ys, values, haligns, valigns, rots)])
 end
 
 
-function boundingbox(form::Text, linewidth::Measure,
-                     font::String, fontsize::Measure)
+function absolute_units(p::TextPrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return TextPrimitive(absolute_units(p.position, t, units, box),
+                         p.value, p.halign, p.valign,
+                         absolute_units(p.rot, t, units, box))
+end
 
-    width, height = text_extents(form.value, fontsize, form.value)
 
-    if form.halign == hleft
-        x0 = form.pos.x
-    elseif form.halign == hcenter
-        x0 = form.pos.x - width/2
-    elseif form.halign == hright
-        x0 = form.pos.x - width
+# Line
+# ----
+
+immutable LinePrimitive <: FormPrimitive
+    points::Vector{Point}
+end
+
+typealias Line Form{LinePrimitive}
+
+
+function line()
+    return Line([LinePrimitive(Point[])])
+end
+
+
+function line{T <: XYTupleOrPoint}(points::AbstractArray{T})
+    return Line([LinePrimitive([convert(Point, point) for point in points])])
+end
+
+
+function line(point_arrays::AbstractArray)
+    lineprims = Array(LinePrimitive, length(point_arrays))
+    for (i, point_array) in enumerate(point_arrays)
+        lineprims[i] = LinePrimitive([convert(Point, point)
+                                      for point in point_array])
     end
-
-    if form.valign == vbottom
-        y0 = form.pos.y - height
-    elseif form.valign == vcenter
-        y0 = form.pos.y - height/2
-    elseif form.valign == vtop
-        y0 = form.pos.y
-    end
-
-    return BoundingBox(x0 - linewidth,
-                       y0 - linewidth,
-                       width + linewidth,
-                       height + linewidth)
+    return Line(lineprims)
 end
 
 
-function draw(backend::Backend, t::Transform, unit_box::UnitBox,
-              box::AbsoluteBoundingBox, form::Text)
-    form = Text(absolute_units(form.pos, t, unit_box, box),
-                form.value, form.halign, form.valign, t)
-
-    draw(backend, form)
+function absolute_units(p::LinePrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return LinePrimitive([absolute_units(point, t, units, box) for point in p.points])
 end
 
-function contents(io, f::Text, n::Int, indent)
-    println(io, indent, "Text: ", f.value)
+
+# Curve
+# -----
+
+immutable CurvePrimitive <: FormPrimitive
+    anchor0::Point
+    ctrl0::Point
+    ctrl1::Point
+    anchor1::Point
 end
+
+typealias Curve Form{CurvePrimitive}
+
+
+function curve(anchor0::XYTupleOrPoint, ctrl0::XYTupleOrPoint,
+               ctrl1::XYTupleOrPoint, anchor1::XYTupleOrPoint)
+    return Curve([CurvePrimitive(convert(Point, ancho0), convert(Point, ctrl0),
+                                 convert(Point, ctrl1), convert(Point, anchor1))])
+end
+
+
+function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
+               ctrl1s::AbstractArray, anchor1s::AbstractArray)
+    return Curve([CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
+                                 convert(Point, ctrl1), convert(Point, anchor1))
+                  for (anchor0, ctrl0, ctrl1, anchor1) in cyclezip(anchor0s, ctrl0s, ctrl1s, anchor1s)])
+end
+
+
+function absolute_units(p::CurvePrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return CurvePrimitive(absolute_units(p.anchor0, t, units, box),
+                          absolute_units(p.ctrl0, t, units, box),
+                          absolute_units(p.ctrl1, t, units, box),
+                          absolute_units(p.anchor1, t, units, box))
+end
+
+
+# Bitmap
+# ------
+
+immutable BitmapPrimitive <: FormPrimitive
+    mime::String
+    data::Vector{Uint8}
+    corner::Point
+    width::Measure
+    height::Measure
+end
+
+typealias Bitmap Form{BitmapPrimitive}
+
+
+function bitmap(mime::String, data::Vector{Uint8}, x0, y0, width, height)
+    corner = Point(x0, y0)
+    width = x_measure(width)
+    height = y_measure(height)
+    return Bitmap([BitmapPrimitive(mime, data, corner, width, height)])
+end
+
+
+function bitmap(mimes::AbstractArray, datas::AbstractArray,
+                x0s::AbstractArray, y0s::AbstractArray,
+                widths::AbstractArray, heights::AbstractArray)
+    return Bitmap([BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height))
+                   for (mime, data, x0, y0, width, height) in cyclezip(mimes, datas, x0s, y0s, widths, heights)])
+end
+
+
+function absolute_units(p::BitmapPrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return BitmapPrimitive(p.mime, p.data,
+                           absolute_units(p.corner, t, units, box),
+                           Measure(abs=absolute_units(p.width, t, units, box)),
+                           Measure(abs=absolute_units(p.width, t, units, box)))
+end
+
 

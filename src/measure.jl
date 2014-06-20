@@ -26,6 +26,8 @@ min(a::MeasureNil, b::MeasureNil) = measure_nil
 min(a::MeasureNil, b)             = measure_nil
 min(a, b::MeasureNil)             = measure_nil
 
+isless(a::MeasureNil, b::MeasureNil) = false
+
 +(a::MeasureNil, b::MeasureNil) = measure_nil
 +(a::MeasureNil, b)             = b
 +(a, b::MeasureNil)             = a
@@ -104,6 +106,20 @@ typealias MeasureOrNumber Union(Measure, Number)
 
 function zero{S, T}(::Type{Measure{S, T}})
     Measure{S, T}()
+end
+
+
+function isless{T, S}(a::Measure{T, S}, b::Measure{T, S})
+    return (a.abs < b.abs ||
+            a.cx  < b.cx ||
+            a.cy  < b.cy ||
+            a.cw  < b.cw ||
+            a.ch  < b.ch) &&
+           a.abs <= b.abs &&
+           a.cx  <= b.cx &&
+           a.cy  <= b.cy &&
+           a.cw  <= b.cw &&
+           a.ch  <= b.ch
 end
 
 
@@ -222,7 +238,7 @@ end
 
 
 # Return a measure that is at least as large as anything else
-function maximum(measures::AbstractArray{Measure})
+function max(measures::Measure...)
     # current maximums
     abs = 0.0
     cx = measure_nil
@@ -241,11 +257,9 @@ function maximum(measures::AbstractArray{Measure})
     Measure(abs, cx, cy, cw, ch)
 end
 
-max(a::Measure, b::Measure) = maximum(Measure[a, b])
-
 
 # Return a measure that at least as small as everything else
-function minimum(measures::AbstractArray{Measure})
+function min(measures::Measure...)
     # current maximums
     abs = Inf
     cx = Inf
@@ -263,8 +277,6 @@ function minimum(measures::AbstractArray{Measure})
 
     Measure(abs, cx, cy, cw, ch)
 end
-
-min(a::Measure, b::Measure) = minimum(Measure[a, b])
 
 
 # Versus plain numbers
@@ -446,11 +458,11 @@ immutable AbsoluteBoundingBox
     height::Float64
 
     function AbsoluteBoundingBox(x0::Number, y0::Number, width::Number, height::Number)
-        new(x0, y0, width, height)
+        return new(x0, y0, width, height)
     end
 
     function AbsoluteBoundingBox()
-        new(0.0, 0.0, 1.0, 1.0)
+        return new(0.0, 0.0, 1.0, 1.0)
     end
 end
 
@@ -467,7 +479,7 @@ immutable UnitBox{S, T, U, V}
     height::V
 
     function UnitBox(x0::S, y0::T, width::U, height::V)
-        new(x0, y0, width, height)
+        return new(x0, y0, width, height)
     end
 end
 
@@ -476,21 +488,30 @@ function UnitBox{S,T}(width::S, height::T)
     x0 = zero(S)
     y0 = zero(T)
 
-    UnitBox{S, T, S, T}(x0, y0, width, height)
+    return UnitBox{S, T, S, T}(x0, y0, width, height)
 end
 
 
 function UnitBox(x0, y0, width, height)
     x0, width  = promote(x0, width)
     y0, height = promote(y0, height)
-    UnitBox{typeof(x0), typeof(y0), typeof(width), typeof(height)}(
-        x0, y0, width, height)
+    return UnitBox{typeof(x0), typeof(y0), typeof(width), typeof(height)}(
+                   x0, y0, width, height)
 end
 
 
 function UnitBox()
-    UnitBox{Float64, Float64, Float64, Float64}(0.0, 0.0, 1.0, 1.0)
+    return UnitBox{Float64, Float64, Float64, Float64}(0.0, 0.0, 1.0, 1.0)
 end
+
+
+function NilUnitBox()
+    return UnitBox{Nothing, Nothing, Nothing, Nothing}(
+                nothing, nothing, nothing, nothing)
+end
+
+
+const nil_unit_box = NilUnitBox()
 
 
 # Canvas Transforms
@@ -532,11 +553,11 @@ type Rotation
     offset::Point
 
     function Rotation()
-        new(0.0, Point())
+        new(0.0, Point(0.5w, 0.5h))
     end
 
     function Rotation(theta::Number)
-        Rotation(theta, 0.0, 0.0)
+        Rotation(theta, 0.5w, 0.5h)
     end
 
     function Rotation(theta::Number, offset::XYTupleOrPoint)
@@ -558,6 +579,17 @@ end
 copy(rot::Rotation) = Rotation(rot)
 
 
+function convert(::Type{Transform}, rot::Rotation)
+    ct = cos(rot.theta)
+    st = sin(rot.theta)
+    x0 = rot.offset.x - (ct * rot.offset.x - st * rot.offset.y)
+    y0 = rot.offset.y - (st * rot.offset.x + ct * rot.offset.y)
+    return Transform([ct  -st  x0.abs
+                      st   ct  y0.abs
+                      0.0 0.0  1.0])
+end
+
+
 # Conversion to absolute units
 # ----------------------------
 
@@ -576,22 +608,19 @@ function absolute_units(u::Measure,
 end
 
 
-
 # Convert a Rotation to a Transform
 function absolute_units(rot::Rotation,
                         t::Transform,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
 
-    off = absolute_units(rot.offset, t, unit_box, parent_box)
-    ct = cos(rot.theta)
-    st = sin(rot.theta)
-    x0 = off.x - (ct * off.x - st * off.y)
-    y0 = off.y - (st * off.x + ct * off.y)
+    absrot = Rotation(rot.theta,
+                      absolute_units(rot.offset, t, unit_box, parent_box))
 
-    Transform([ct  -st  x0.abs
-               st   ct  y0.abs
-               0.0 0.0  1.0])
+    rott = convert(Transform, absrot)
+    t = combine(rott, t)
+    theta = atan2(t.M[2,1], t.M[1,1])
+    return Rotation(theta, absrot.offset)
 end
 
 
