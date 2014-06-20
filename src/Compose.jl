@@ -56,11 +56,11 @@ catch
     global PNG
     global PS
     global PDF
-    PNG(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+    PNG(::Union(IO,String), ::MeasureOrNumber, ::MeasureOrNumber) =
         error("Cairo must be installed to use the PNG backend.")
-    PS(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+    PS(::Union(IO,String), ::MeasureOrNumber, ::MeasureOrNumber) =
         error("Cairo must be installed to use the PS backend.")
-    PDF(::String, ::MeasureOrNumber, ::MeasureOrNumber) =
+    PDF(::Union(IO,String), ::MeasureOrNumber, ::MeasureOrNumber) =
         error("Cairo must be installed to use the PDF backend.")
 end
 
