@@ -73,6 +73,9 @@ type SVG <: Backend
     # Output stream.
     out::IO
 
+    # Save output from IOBuffrs to allow multiple calls to writemime
+    cached_out::Union(String, Nothing)
+
     # Unique ID for the figure.
     id::String
 
@@ -88,7 +91,7 @@ type SVG <: Backend
     vector_properties::Dict{Type, Union(Nothing, Property)}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, Int}
+    clippaths::Dict{ClipPrimitive, String}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -147,6 +150,7 @@ type SVG <: Backend
         img.width  = width.abs
         img.height = height.abs
         img.out = out
+        img.cached_out = nothing
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
         img.vector_properties = Dict{Type, Union(Nothing, Property)}()
@@ -274,8 +278,8 @@ function finish(img::SVG)
 
     if length(img.clippaths) > 0
         write(img.out, "<defs>\n")
-        for (clippath, i) in img.clippaths
-            write(img.out, "<clipPath id=\"clippath$(i)\">\n  <path d=\"")
+        for (clippath, id) in img.clippaths
+            write(img.out, "<clipPath id=\"$(id)\">\n  <path d=\"")
             print_svg_path(img.out, clippath.points)
             write(img.out, "\" />\n</clipPath\n>")
         end
@@ -378,8 +382,19 @@ function isfinished(img::SVG)
 end
 
 
+function writemime(io::IO, ::MIME"text/html", img::SVG)
+    if img.cached_out === nothing
+        img.cached_out = takebuf_string(img.out)
+    end
+    write(io, img.cached_out)
+end
+
+
 function writemime(io::IO, ::MIME"image/svg+xml", img::SVG)
-    write(io, takebuf_string(img.out))
+    if img.cached_out === nothing
+        img.cached_out = takebuf_string(img.out)
+    end
+    write(io, img.cached_out)
 end
 
 
@@ -748,8 +763,7 @@ end
 
 # Return a URL corresponding to a ClipPrimitive
 function clippathurl(img::SVG, property::ClipPrimitive)
-    idx = get!(() -> length(img.clippaths) + 1, img.clippaths, property)
-    return string("clippath", idx)
+    return get!(() -> genid(img), img.clippaths, property)
 end
 
 
