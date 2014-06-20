@@ -229,7 +229,7 @@ function writeheader(img::SVG)
 
     write(img.out,
           """
-               version="1.1"
+               version="1.2"
                width="$(widthstr)mm" height="$(heightstr)mm" viewBox="0 0 $(widthstr) $(heightstr)"
                stroke="$(svg_fmt_color(default_stroke_color))"
                fill="$(svg_fmt_color(default_fill_color))"
@@ -283,19 +283,6 @@ function finish(img::SVG)
     end
 
     if img.withjs
-        # Prevent require.js from loading snap.svg, since we want to do so by
-        # including it inline in a <script> tag, which doesn't really work with
-        # require.js.
-        write(img.out,
-        """
-        <script>
-        if (typeof define != "undefined") {
-            window.define_ = define;
-            define = undefined;
-        }
-        </script>
-        """)
-
         if img.jsmode == :embed
             write(img.out,
                 """
@@ -314,16 +301,6 @@ function finish(img::SVG)
                 <script xlink:href="$(basename(snapsvgjs))"></script>
                 """)
         end
-
-        # Restore the require.js define function.
-        write(img.out,
-            """
-            <script>
-            if (typeof define_ != "undefined") {
-                define = define_;
-            }
-            </script>
-            """)
 
         if !isempty(img.scripts) || !isempty(img.jsheader)
             if img.jsmode == :embed
@@ -349,10 +326,30 @@ function finish(img::SVG)
                 write(img.out, "<script> <![CDATA[\n")
             end
 
-            write(img.out, "var fig = Snap(\"#$(img.id)\");")
+            write(img.out,
+                """
+                (function (glob, factory) {
+                    // AMD support
+                    if (typeof require === "function") {
+                        require(["Snap.svg", "Gadfly"], function (Snap, Gadfly) {
+                            factory(Snap, Gadfly);
+                        });
+                    } else {
+                        factory(glob.Snap, glob.Gadfly);
+                    }
+                })(window, function (Snap, Gadfly) {
+                    var fig = Snap(\"#$(img.id)\");
+                """)
+
             for script in img.scripts
                 write(img.out, escape_script(script), "\n")
             end
+
+            write(img.out,
+                """
+                    });
+                """)
+
             write(img.out, "]]> </script>\n")
         end
 
