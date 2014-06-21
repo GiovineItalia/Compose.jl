@@ -8,7 +8,6 @@ module Compose
 
 using Color
 using Iterators
-using JuMP
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
