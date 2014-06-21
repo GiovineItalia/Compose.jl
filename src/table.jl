@@ -37,7 +37,7 @@ type Table <: ContainerPromise
     function Table(m::Integer, n::Integer,
                    y_focus::Range1{Int}, x_focus::Range1{Int};
                    y_prop=nothing, x_prop=nothing,
-                   units=UnitBox(), order=0, withjs=false, withoutjs=false,
+                   units=NilUnitBox(), order=0, withjs=false, withoutjs=false,
                    fixed_configs={})
 
         if x_prop != nothing
