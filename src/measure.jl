@@ -95,18 +95,12 @@ const zero_measure = Measure()
 # copy with substitutions
 function Measure{S, T}(u::Measure{S, T};
                        abs=nothing, cx=nothing, cy=nothing,
-                       cw=nothing, ch=nothing,
-                       padleft=nothing, padright=nothing,
-                       padtop=nothing, patbottom=nothing)
-    Measure(abs === nothing ? u.abs : abs,
-            cx  === nothing ? u.cx  : cx,
-            cy  === nothing ? u.cy  : cy,
-            cw  === nothing ? u.cw  : cw,
-            ch  === nothing ? u.ch  : ch,
-            padleft   = padleft   === nothing ? u.padleft : padleft,
-            padright  = padright  === nothing ? u.padright : padright,
-            padtop    = padtop    === nothing ? u.padtop : padtop,
-            padbottom = padbottom === nothing ? u.padbottom : padbottom)
+                       cw=nothing, ch=nothing)
+    return Measure(abs === nothing ? u.abs : abs,
+                   cx  === nothing ? u.cx  : cx,
+                   cy  === nothing ? u.cy  : cy,
+                   cw  === nothing ? u.cw  : cw,
+                   ch  === nothing ? u.ch  : ch)
 end
 
 
@@ -535,10 +529,28 @@ function UnitBox()
 end
 
 
+# copy with substitution
+function UnitBox(units::UnitBox;
+                 x0=nothing, y0=nothing, width=nothing, height=nothing,
+                 leftpad=nothing, rightpad=nothing, toppad=nothing,
+                 bottompad=nothing)
+    return UnitBox(x0 === nothing ? units.x0 : x0,
+                   y0 === nothing ? units.y0 : y0,
+                   width === nothing ? units.width : width,
+                   height === nothing ? units.height : height,
+                   leftpad   = leftpad   === nothing ? units.leftpad : leftpad,
+                   rightpad  = rightpad  === nothing ? units.rightpad : rightpad,
+                   toppad    = toppad    === nothing ? units.toppad : toppad,
+                   bottompad = bottompad === nothing ? units.bottompad : bottompad)
+end
+
+
 function NilUnitBox()
     return UnitBox{Nothing, Nothing, Nothing, Nothing}(
                 nothing, nothing, nothing, nothing)
 end
+
+
 
 
 const nil_unit_box = NilUnitBox()
