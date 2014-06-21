@@ -154,7 +154,7 @@ type SVG <: Backend
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
         img.vector_properties = Dict{Type, Union(Nothing, Property)}()
-        img.clippaths = Dict{ClipPrimitive, Int}()
+        img.clippaths = Dict{ClipPrimitive, String}()
         img.embobj = Set{String}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
@@ -661,8 +661,15 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
               (prim.x_point.y.abs - cy)^2)
     ry = sqrt((prim.y_point.x.abs - cx)^2 +
               (prim.y_point.y.abs - cy)^2)
-    theta = rad2deg(atan2(prim.x_point.y.abs - cy,
-                          prim.x_point.x.abs - cx))
+
+    if isdefined(:rad2deg)
+        theta = rad2deg(atan2(prim.x_point.y.abs - cy,
+                              prim.x_point.x.abs - cx))
+    else
+        theta = radians2degrees(atan2(prim.x_point.y.abs - cy,
+                                      prim.x_point.x.abs - cx))
+    end
+
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
         return
@@ -719,7 +726,9 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
 
     if prim.rot.theta != 0.0
         @printf(img.out, " transform=\"rotate(%s, %s, %s)\"",
-                svg_fmt_float(rad2deg(prim.rot.theta)),
+                isdefined(:rad2deg) ?
+                    svg_fmt_float(rad2deg(prim.rot.theta)) :
+                    svg_fmt_float(radians2degrees(prim.rot.theta)),
                 svg_fmt_float(prim.rot.offset.x.abs),
                 svg_fmt_float(prim.rot.offset.y.abs))
     end
@@ -763,7 +772,16 @@ end
 
 # Return a URL corresponding to a ClipPrimitive
 function clippathurl(img::SVG, property::ClipPrimitive)
-    return get!(() -> genid(img), img.clippaths, property)
+    # TODO: remove once 0.2 support is dropped
+    if applicable(get!, () -> genid(img), img.clippaths, property)
+        return get!(() -> genid(img), img.clippaths, property)
+    else
+        if haskey(img.clippaths, property)
+            return img.clippaths[property]
+        else
+            return img.clippaths[property] = genid(img)
+        end
+    end
 end
 
 

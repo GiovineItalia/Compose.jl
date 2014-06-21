@@ -106,9 +106,19 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     minrowheights = Array(Float64, m)
     mincolwidths = Array(Float64, n)
 
+    # TODO: use the normal set constructor when we drop 0.2 support
+    function set(T::Type, itr)
+        S = Set{T}()
+        union!(S, itr)
+    end
+
+    function set(itr)
+        set(Any, itr)
+    end
+
     # convert tbl.fixed_configs to linear indexing
     fixed_configs = {
-        Set([(j-1)*m + i for (i, j) in fixed_config])
+        set([(j-1)*m + i for (i, j) in fixed_config])
         for fixed_config in tbl.fixed_configs
     }
 
@@ -126,7 +136,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     for (idx, child) in enumerate(tbl.children)
         if length(child) > 1
             if !in(idx, constrained_cells)
-                push!(num_group_choices, 1)
+                push!(num_group_choices, length(child))
                 push!(fixed_configs, Set([idx]))
             end
         end

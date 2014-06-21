@@ -497,10 +497,17 @@ end
 
 
 # No-op SVG+JS only properties
-function apply_property(img::Image, property::JSIncludePrimitive) end
-function apply_property(img::Image, property::JSCallPrimitive) end
-function apply_property(img::Image, property::SVGClassPrimitive) end
-function apply_property(img::Image, property::SVGAttributePrimitive) end
+function apply_property(img::Image, property::JSIncludePrimitive)
+end
+
+function apply_property(img::Image, property::JSCallPrimitive)
+end
+
+function apply_property(img::Image, property::SVGClassPrimitive)
+end
+
+function apply_property(img::Image, property::SVGAttributePrimitive)
+end
 
 
 # Cairo Wrappers

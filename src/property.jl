@@ -101,12 +101,12 @@ typealias StrokeDash Property{StrokeDashPrimitive}
 
 
 function strokedash(values::AbstractArray)
-    return StrokeDash([StrokeDashPrimitive(values)])
+    return StrokeDash([StrokeDashPrimitive(collect(Measure, values))])
 end
 
 
 function strokedash(values::AbstractArray{AbstractArray})
-    return StrokeDash([StrokeDashPrimitive(value) for value in values])
+    return StrokeDash([StrokeDashPrimitive(collect(Measure, value)) for value in values])
 end
 
 
