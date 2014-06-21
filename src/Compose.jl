@@ -73,21 +73,32 @@ include("svg.jl")
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
+
 try
     # Trigger an exception if unavailable.
     require("Fontconfig")
 
     pango_cairo_ctx = C_NULL
-
     include("pango.jl")
 
-    function __init__()
+    if VERSION > v"0.2.1"
+        function __init__()
+            global pango_cairo_ctx
+            global pangolayout
+            ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
+            pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
+                                     Ptr{Void}, ())
+            pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
+                                     Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
+            pangolayout = PangoLayout()
+        end
+    else
         global pango_cairo_ctx
         global pangolayout
         ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
-        pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
+        pango_cairo_fm  = ccall((:pango_cairo_font_map_new, Cairo._jl_libpangocairo),
                                  Ptr{Void}, ())
-        pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
+        pango_cairo_ctx = ccall((:pango_font_map_create_context, Cairo._jl_libpango),
                                  Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
         pangolayout = PangoLayout()
     end

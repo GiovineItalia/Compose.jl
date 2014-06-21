@@ -12,7 +12,7 @@ const glyphsizes = JSON.parse(
 # It's better to overestimate text extents than to underestimes, since the later
 # leads to overlaping where the former just results in some extra space. So, we
 # scale estimated text extends by this number.
-const text_extents_scale_x = 1.2
+const text_extents_scale_x = 1.0
 const text_extents_scale_y = 1.2
 
 
