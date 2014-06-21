@@ -343,7 +343,7 @@ function drawpart(backend::Backend, root_container::Container)
         end
 
         if context.units != nil_unit_box
-            units = context.units
+            units = absolute_units(context.units, transform, units, box)
         end
 
         for child in context.children

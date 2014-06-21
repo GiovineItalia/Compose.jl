@@ -89,15 +89,24 @@ function Measure(; abs=0.0, cx=measure_nil, cy=measure_nil, cw=0.0, ch=0.0)
 end
 
 
-# copy wiile substituting
+const zero_measure = Measure()
+
+
+# copy with substitutions
 function Measure{S, T}(u::Measure{S, T};
-                    abs=nothing, cx=nothing, cy=nothing,
-                    cw=nothing, ch=nothing)
+                       abs=nothing, cx=nothing, cy=nothing,
+                       cw=nothing, ch=nothing,
+                       padleft=nothing, padright=nothing,
+                       padtop=nothing, patbottom=nothing)
     Measure(abs === nothing ? u.abs : abs,
             cx  === nothing ? u.cx  : cx,
             cy  === nothing ? u.cy  : cy,
             cw  === nothing ? u.cw  : cw,
-            ch  === nothing ? u.ch  : ch)
+            ch  === nothing ? u.ch  : ch,
+            padleft   = padleft   === nothing ? u.padleft : padleft,
+            padright  = padright  === nothing ? u.padright : padright,
+            padtop    = padtop    === nothing ? u.padtop : padtop,
+            padbottom = padbottom === nothing ? u.padbottom : padbottom)
 end
 
 
@@ -478,25 +487,46 @@ immutable UnitBox{S, T, U, V}
     width::U
     height::V
 
-    function UnitBox(x0::S, y0::T, width::U, height::V)
-        return new(x0, y0, width, height)
+    leftpad::Measure
+    rightpad::Measure
+    toppad::Measure
+    bottompad::Measure
+
+    function UnitBox(x0::S, y0::T, width::U, height::V;
+                     leftpad::Measure=Measure(),
+                     rightpad::Measure=Measure(),
+                     toppad::Measure=Measure(),
+                     bottompad::Measure=Measure())
+        return new(x0, y0, width, height, leftpad, rightpad, toppad, bottompad)
     end
 end
 
 
-function UnitBox{S,T}(width::S, height::T)
+function UnitBox{S,T}(width::S, height::T;
+                      leftpad::Measure=Measure(),
+                      rightpad::Measure=Measure(),
+                      toppad::Measure=Measure(),
+                      bottompad::Measure=Measure())
     x0 = zero(S)
     y0 = zero(T)
 
-    return UnitBox{S, T, S, T}(x0, y0, width, height)
+    return UnitBox{S, T, S, T}(x0, y0, width, height,
+                               leftpad=leftpad, rightpad=rightpad,
+                               toppad=toppad, bottompad=bottompad)
 end
 
 
-function UnitBox(x0, y0, width, height)
+function UnitBox(x0, y0, width, height;
+                 leftpad::Measure=Measure(),
+                 rightpad::Measure=Measure(),
+                 toppad::Measure=Measure(),
+                 bottompad::Measure=Measure())
     x0, width  = promote(x0, width)
     y0, height = promote(y0, height)
     return UnitBox{typeof(x0), typeof(y0), typeof(width), typeof(height)}(
-                   x0, y0, width, height)
+                   x0, y0, width, height,
+                   leftpad=leftpad, rightpad=rightpad,
+                   toppad=toppad, bottompad=bottompad)
 end
 
 
@@ -512,6 +542,13 @@ end
 
 
 const nil_unit_box = NilUnitBox()
+
+
+function isabsolute(units::UnitBox)
+    return units.leftpad == zero_measure && units.rightpad == zero_measure &&
+           units.toppad == zero_measure && units.bottompad == zero_measure
+end
+
 
 
 # Canvas Transforms
@@ -605,6 +642,32 @@ function absolute_units(u::Measure,
       (u.cy / unit_box.height) * parent_box.height +
       u.cw * parent_box.width +
       u.ch * parent_box.height
+end
+
+
+function absolute_units(units::UnitBox, t::Transform, parent_units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    if isabsolute(units)
+        return units
+    else
+        leftpad   = absolute_units(units.leftpad, t, parent_units, box)
+        rightpad  = absolute_units(units.rightpad, t, parent_units, box)
+        toppad    = absolute_units(units.toppad, t, parent_units, box)
+        bottompad = absolute_units(units.bottompad, t, parent_units, box)
+
+        # just give up trying to pad the units if it's impossible
+        if leftpad + rightpad >= box.width ||
+           toppad + bottompad >= box.height
+            return UnitBox(units.x0, units.y0, units.width, units.height)
+       end
+
+        width = units.width * (box.width / (box.width - leftpad - rightpad))
+        height = units.height * (box.height / (box.height - toppad - bottompad))
+        x0 = units.x0 - width * (leftpad / box.width)
+        y0 = units.y0 - height * (toppad / box.height)
+
+        return UnitBox(x0, y0, width, height)
+    end
 end
 
 
