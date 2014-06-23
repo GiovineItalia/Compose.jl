@@ -20,7 +20,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Paren
        strokelinejoin, linewidth, visible, fillopacity, strokeopacity, clip,
        font, fontsize, svgid, svgclass, svgattribute, jsinclude, jscall, Measure,
        inch, mm, cm, pt, px, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
-       vbottom, SVG, SVGJS, PNG, PS, PDF, draw, pad, hstack, vstack
+       vbottom, SVG, SVGJS, PNG, PS, PDF, draw, pad, hstack, vstack, gridstack
 
 abstract Backend
 
@@ -136,6 +136,16 @@ end
 
 function pad_outer(cs::Vector{Context}, padding::MeasureOrNumber)
     return pad_outer(cs, padding, padding)
+end
+
+
+function gridstack(cs::Matrix{Context})
+    m, n = size(cs)
+    t = Table(m, n, 1:m, 1:n, x_prop=ones(n), y_prop=ones(m))
+    for i in 1:m, j in 1:n
+        t[i, j] = [cs[i, j]]
+    end
+    return compose!(context(), t)
 end
 
 
