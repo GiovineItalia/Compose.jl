@@ -334,13 +334,13 @@ function finish(img::SVG)
                 """
                 (function (glob, factory) {
                     // AMD support
-                    if (typeof require === "function") {
+                      if (typeof require === "function" && typeof define === "function" && define.amd) {
                         require(["Snap.svg", "Gadfly"], function (Snap, Gadfly) {
                             factory(Snap, Gadfly);
                         });
-                    } else {
-                        factory(glob.Snap, glob.Gadfly);
-                    }
+                      } else {
+                          factory(glob.Snap, glob.Gadfly);
+                      }
                 })(window, function (Snap, Gadfly) {
                     var fig = Snap(\"#$(img.id)\");
                 """)
