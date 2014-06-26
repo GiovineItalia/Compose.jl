@@ -254,6 +254,10 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         warn("Graphic cannot be correctly drawn at the given size.")
     end
 
+    if optimal_choice === nothing
+        optimal_choice = zeros(Int, m * n)
+    end
+
     update_mincolrow_sizes!(optimal_choice, minrowheights, mincolwidths)
     update_focused_col_widths!(focused_col_widths)
     update_focused_row_heights!(focused_row_heights)
