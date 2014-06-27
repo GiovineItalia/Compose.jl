@@ -46,8 +46,8 @@ A graphic in Compose is a tree of `Context` objects, each specifying a coordinat
 system relative to its parent canvas. One context is made a child of another with
 a call to `compose(a::Context, b::Context)`.
 
-Contexts may also have children of type `Form` and `` which are rectangles, ellipses,
-text, etc, and `Property` which are line width, fill color, etc. `Form` and
+Contexts may also have children of type `Form`, which are rectangles, ellipses,
+text, etc, and `Property`, which are line width, fill color, etc. `Form` and
 `Property` nodes are always leaf nodes.
 
 ## Fancier compositions
