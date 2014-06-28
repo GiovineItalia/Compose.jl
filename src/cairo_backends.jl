@@ -321,7 +321,7 @@ function push_property_frame(img::Image, properties::Vector{Property})
             push!(scalar_properties, property)
             push!(applied_properties, typeof(property))
             frame.has_scalar_properties = true
-        else
+        elseif !isscalar(property)
             frame.vector_properties[typeof(property)] = property
             img.vector_properties[typeof(property)] = property
         end
