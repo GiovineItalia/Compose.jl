@@ -20,7 +20,8 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Paren
        strokelinejoin, linewidth, visible, fillopacity, strokeopacity, clip,
        font, fontsize, svgid, svgclass, svgattribute, jsinclude, jscall, Measure,
        inch, mm, cm, pt, px, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
-       vbottom, SVG, SVGJS, PNG, PS, PDF, draw, pad, hstack, vstack, gridstack
+       vbottom, SVG, SVGJS, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
+       hstack, vstack, gridstack
 
 abstract Backend
 
@@ -118,6 +119,22 @@ function pad_outer(c::Context,
                    minwidth=c.minwidth,
                    minheight=c.minheight)
     c = copy(c)
+    c.box = BoundingBox(xpadding, ypadding, 1w - 2*xpadding, 1h - 2*ypadding)
+    return compose!(root, c)
+end
+
+
+function pad_inner(c::Context,
+                   xpadding::MeasureOrNumber,
+                   ypadding::MeasureOrNumber)
+    xpadding = size_measure(xpadding)
+    ypadding = size_measure(ypadding)
+    root = context(c.box.x0, c.box.y0,
+                   c.box.width,
+                   c.box.height,
+                   minwidth=c.minwidth,
+                   minheight=c.minheight)
+    c = copy(c)
     c.box = BoundingBox(xpadding, ypadding, 1w - 2xpadding, 1h - 2ypadding)
     return compose!(root, c)
 end
@@ -136,6 +153,11 @@ end
 
 function pad_outer(cs::Vector{Context}, padding::MeasureOrNumber)
     return pad_outer(cs, padding, padding)
+end
+
+
+function pad_inner(c::Context, padding::MeasureOrNumber)
+    return pad_inner(c, padding, padding)
 end
 
 
