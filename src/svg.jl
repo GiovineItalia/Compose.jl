@@ -620,11 +620,17 @@ end
 
 function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
     indent(img)
+
+    # SVG will hide rectangles with zero height or width. We'd prefer to have
+    # zero width/height rectangles stroked, so this is a work-around.
+    width = max(prim.width.abs, 0.01)
+    height = max(prim.height.abs, 0.01)
+
     @printf(img.out, "<rect x=\"%s\" y=\"%s\" width=\"%s\" height=\"%s\"",
             svg_fmt_float(prim.corner.x.abs),
             svg_fmt_float(prim.corner.y.abs),
-            svg_fmt_float(prim.width.abs),
-            svg_fmt_float(prim.height.abs))
+            svg_fmt_float(width),
+            svg_fmt_float(height))
     print_vector_properties(img, idx)
     write(img.out, "/>\n")
 end
