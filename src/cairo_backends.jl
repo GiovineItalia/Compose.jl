@@ -770,7 +770,7 @@ function draw(img::Image, prim::TextPrimitive)
     width, height = get_layout_size(img)
     pos = Point(pos.x, Measure(abs=pos.y.abs - height))
 
-    if prim.halign != hleft || prim.valign != vtop
+    if prim.halign != hleft || prim.valign != vbottom
         if prim.halign == hcenter
             pos = Point(Measure(abs=pos.x.abs - width/2), pos.y)
         elseif prim.halign == hright
