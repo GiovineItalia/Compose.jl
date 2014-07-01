@@ -236,10 +236,25 @@ function text(x, y, value::String,
 end
 
 
-function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
+function text(x, y, value,
+              halign::HAlignment=hleft, valign::VAlignment=vbottom,
+              rot=Rotation())
+    return Text([TextPrimitive(Point(x, y), string(value), halign, valign, rot)])
+end
+
+
+function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{String},
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
               rots::AbstractArray=[Rotation()])
     return Text([TextPrimitive(Point(x, y), value, halign, valign, rot)
+                 for (x, y, value, halign, valign, rot) in cyclezip(xs, ys, values, haligns, valigns, rots)])
+end
+
+
+function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
+              haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
+              rots::AbstractArray=[Rotation()])
+    return Text([TextPrimitive(Point(x, y), string(value), halign, valign, rot)
                  for (x, y, value, halign, valign, rot) in cyclezip(xs, ys, values, haligns, valigns, rots)])
 end
 
