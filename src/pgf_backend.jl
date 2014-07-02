@@ -1,3 +1,16 @@
+type PGFPropertyFrame
+    # Vector properties in this frame.
+    vector_properties::Dict{Type, Property}
+
+    # True if this property frame has scalar properties. Scalar properties are
+    # emitted as a group {scope} that must be closed when the frame is popped.
+    has_scalar_properties::Bool
+
+    function PGFPropertyFrame()
+        return new(Dict{Type, Property}(), false)
+    end
+end
+
 type PGF <: Backend
     # Image size in millimeters.
     width::Float64
@@ -6,15 +19,28 @@ type PGF <: Backend
     # Output stream.
     out::IO
 
-    # Unique ID for the figure.
-    id::String
+    fill::Union(Nothing, ColorValue)
+    fill_opacity::Float64
+    stroke::Union(Nothing, ColorValue)
+    stroke_opacity::Float64
+
+    # Current level of indentation.
+    indentation::Int
+
+    # Output buffer.  We want the ability to add to the beginning of
+    buf::IOBuffer
+
+    # Skip drawing if visible is false
+    visible::Bool
 
     # Have not found an easy way to define color as
-    # a draw parameter.  Must be defined ahead of time
-    color_stack::Vector{ColorValue}
+    # a draw parameter.  Whenever we encouter a color, we add it to the
+    # color_set set.  That way, we can write out all the color 
+    # definitions at the same time.
+    color_set::Set{ColorValue}
 
     # Stack of property frames (groups of properties) currently in effect.
-    property_stack::Vector{SVGPropertyFrame}
+    property_stack::Vector{PGFPropertyFrame}
 
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
@@ -22,7 +48,8 @@ type PGF <: Backend
     vector_properties::Dict{Type, Union(Nothing, Property)}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, String}
+    # Not quite sure how to deal with clip paths yet
+    # clippaths::Dict{ClipPrimitive, String}
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -47,19 +74,25 @@ type PGF <: Backend
         end
 
         img = new()
-        img.id = string("fig-", replace(string(Base.Random.uuid4()), "-", ""))
+        img.buf = IOBuffer()
+        img.fill = default_fill_color
+        img.stroke = default_stroke_color
+        img.fill_opacity = 1.0
+        img.stroke_opacity = 1.0
         img.width  = width.abs
         img.height = height.abs
+        img.indentation = 0
         img.out = out
-        img.color_stack = Array(ColorValue,0)
-        img.property_stack = Array(SVGPropertyFrame, 0)
+        img.color_set = Set{ColorValue}({color("black")})
+        img.property_stack = Array(PGFPropertyFrame, 0)
         img.vector_properties = Dict{Type, Union(Nothing, Property)}()
-        img.clippaths = Dict{ClipPrimitive, String}()
+        # img.clippaths = Dict{ClipPrimitive, String}()
+        img.visible = true
         img.finished = false
         img.emit_on_finish = emit_on_finish
         img.ownedfile = false
         img.filename = nothing
-        writeheader(img)
+        # writeheader(img)
         return img
     end
 
@@ -75,7 +108,7 @@ type PGF <: Backend
     # Write to buffer.
     function PGF(width::MeasureOrNumber, height::MeasureOrNumber,
                  emit_on_finish::Bool=true)
-        return SVG(IOBuffer(), width, height, emit_on_finish)
+        return PGF(IOBuffer(), width, height, emit_on_finish)
     end
 end
 
@@ -89,14 +122,17 @@ function finish(img::PGF)
     end
 
 
-    if length(img.clippaths) > 0
-        for (clippath, id) in img.clippaths
-            write(img.out, "\\clip")
-            print_svg_path(img.out, clippath.points)
-            write(img.out, ";\n")
-        end
-    end
+    # if length(img.clippaths) > 0
+    #     for (clippath, id) in img.clippaths
+    #         write(img.out, "\\clip")
+    #         print_svg_path(img.out, clippath.points)
+    #         write(img.out, ";\n")
+    #     end
+    # end
 
+    writeheader(img)
+    write_colors(img)
+    write(img.out, takebuf_array(img.buf))
     write(img.out,
         """
         \\end{tikzpicture}
@@ -107,6 +143,7 @@ function finish(img::PGF)
     if method_exists(flush, (typeof(img.out),))
         flush(img.out)
     end
+    close(img.buf)
 
     if img.ownedfile
         close(img.out)
@@ -125,66 +162,6 @@ function isfinished(img::PGF)
     img.finished
 end
 
-function push_property_frame(img::PGF, properties::Vector{Property})
-    if isempty(properties)
-        return
-    end
-
-    frame = SVGPropertyFrame()
-    applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
-    for property in properties
-        if !isrepeatable(property) && (typeof(property) in applied_properties)
-            continue
-        elseif isscalar(property)
-            push!(scalar_properties, property)
-            push!(applied_properties, typeof(property))
-            frame.has_scalar_properties = true
-        else
-            frame.vector_properties[typeof(property)] = property
-            img.vector_properties[typeof(property)] = property
-        end
-    end
-    push!(img.property_stack, frame)
-    if isempty(scalar_properties)
-        return
-    end
-
-    prop_str = String[]
-    for property in scalar_properties
-        push_property!(prop_str, img, property.primitives[1])
-    end
-
-    while length(img.color_stack) > 0
-        c = convert(RGB, pop!(img.color_stack))
-        @printf(img.out, "\\definecolor{mycolor%s}{RGB}{%i,%i,%i}\n",
-            hex(c), int(255*c.r), int(255*c.g), int(255*c.b))
-    end
-    write(img.out, "\\begin{scope}")
-    if length(prop_str) > 0
-        @printf(img.out, "[%s]\n", join(prop_str, ","))
-    end
-end
-
-function pop_property_frame(img::PGF)
-    @assert !isempty(img.property_stack)
-    frame = pop!(img.property_stack)
-
-    if frame.has_scalar_properties
-        write(img.out, "\\end{scope}\n")
-    end
-
-    for (propertytype, property) in frame.vector_properties
-        img.vector_properties[propertytype] = nothing
-        for i in length(img.property_stack):-1:1
-            if haskey(img.property_stack[i].vector_properties, propertytype)
-                img.vector_properties[propertytype] =
-                    img.property_stack[i].vector_properties[propertytype]
-            end
-        end
-    end
-end
-
 function root_box(img::PGF)
     AbsoluteBoundingBox(0.0, 0.0, img.width, img.height)
 end
@@ -200,6 +177,17 @@ function writeheader(img::PGF)
         \\begin{tikzpicture}[x=1mm,y=-1mm]
         """)
     return img
+end
+
+function write_colors(img::PGF)
+    for color in img.color_set
+        @printf(img.out, "\\definecolor{mycolor%s}{rgb}{%s,%s,%s}\n",
+            hex(color),
+            svg_fmt_float(color.r),
+            svg_fmt_float(color.g),
+            svg_fmt_float(color.b)
+            )
+    end
 end
 
 function print_pgf_path(out, points::Vector{Point}, bridge_gaps::Bool=false)
@@ -225,8 +213,8 @@ function print_pgf_path(out, points::Vector{Point}, bridge_gaps::Bool=false)
 end
 
 function get_vector_properties(img::PGF)
-    isfirst = true
-    props_str = []
+    props_str = ASCIIString[]
+    modifiers = ASCIIString[]
     for (propertytype, property) in img.vector_properties
         if property === nothing
             continue
@@ -237,17 +225,21 @@ function get_vector_properties(img::PGF)
         push_property!(props_str, img, property.primitives[idx])
     end
 
-    while length(img.color_stack) > 0
-        c = pop!(img.color_stack)
-        @printf(img.out, "\\definecolor{mycolor%s}{RGB}{%i,%i,%i}\n",
-            hex(c), int(255*c.r), int(255*c.g), int(255*c.b))
+    if img.fill != nothing
+        push!(props_str, string("fill=mycolor",hex(img.fill)))
+        if img.fill_opacity < 1.0
+            push!(props_str, string("fill opacity=",svg_fmt_float(img.fill_opacity)))
+        end
     end
 
-    if length(props_str) > 0
-        return string("[", join(props_str, ", "), "]")
-    else
-        return ""
+    if img.stroke != nothing
+        push!(props_str, string("draw=mycolor",hex(img.stroke)))
+        if img.stroke_opacity < 1.0
+            push!(props_str, string("draw opacity=",svg_fmt_float(img.stroke_opacity)))
+        end
     end
+
+    return modifiers, props_str
 end
 
 function push_property!(props_str, img::PGF, property::StrokeDashPrimitive)
@@ -255,22 +247,49 @@ function push_property!(props_str, img::PGF, property::StrokeDashPrimitive)
         return
     else
         push!(props_str, string("dash pattern=", join(map(v -> join(v, " "),zip(cycle(["on", "off"]),map(v -> string(svg_fmt_float(v.abs), "mm"), property.value)))," ")))
-        # return
     end
 end
 
 function push_property!(props_str, img::PGF, property::StrokePrimitive)
-    push!(props_str, string("color=mycolor", hex(property.color)))
-    push!(img.color_stack, property.color)
+    img.stroke = property.color
+    if img.stroke != nothing
+        push!(img.color_set, convert(RGB, property.color))
+    end
 end
 
 function push_property!(props_str, img::PGF, property::FillPrimitive)
-    push!(props_str, string("draw/.style={fill=mycolor", hex(property.color), "}"))
-    push!(img.color_stack, property.color)
+    img.fill = property.color
+    if img.fill != nothing
+        push!(img.color_set, convert(RGB, property.color))
+    end
+end
+
+function push_property!(props_str, img::PGF, property::VisiblePrimitive)
+    img.visible = property.value
 end
 
 function push_property!(props_str, img::PGF, property::LineWidthPrimitive)
     push!(props_str, string("line width=", svg_fmt_float(property.value.abs), "mm"))
+end
+
+pgf_fmt_linecap(::LineCapButt) = "butt"
+pgf_fmt_linecap(::LineCapSquare) = "rect"
+pgf_fmt_linecap(::LineCapRound) = "round"
+
+function push_property!(props_str, img::PGF, property::StrokeLineCapPrimitive)
+    push!(props_str, string("line cap=", pgf_fmt_linecap(property.value)))
+end
+
+function push_property!(props_str, img::PGF, property::StrokeLineJoinPrimitive)
+    push!(props_str, string("line join=", svg_fmt_linejoin(property.value)))
+end
+
+function push_property!(props_str, img::PGF, property::FillOpacityPrimitive)
+    img.fill_opacity = property.value
+end
+
+function push_property!(props_str, img::PGF, property::StrokeOpacityPrimitive)
+    img.stroke_opacity = property.value
 end
 
 function draw(img::PGF, form::Form)
@@ -279,22 +298,178 @@ function draw(img::PGF, form::Form)
     end
 end
 
-function draw(img::PGF, prim::PolygonPrimitive)
-     n = length(prim.points)
-     if n <= 1; return; end
-
-     props = get_vector_properties(img)
-     @printf(img.out, "\\draw %s", props)
-     print_pgf_path(img.out, prim.points, true)
-     write(img.out, " -- cycle;\n")
-end
-
 function draw(img::PGF, prim::LinePrimitive)
-     n = length(prim.points)
-     if n <= 1; return; end
 
-     props = get_vector_properties(img)
-     @printf(img.out, "\\draw %s", props)
-     print_pgf_path(img.out, prim.points, true)
-     write(img.out, ";\n")
+    n = length(prim.points)
+    if n <= 1; return; end
+
+    modifiers, props = get_vector_properties(img)
+    if !img.visible; return; end
+
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\path [%s] ", join(props, ","));
+    print_pgf_path(img.buf, prim.points, true)
+    write(img.buf, ";\n")
 end
+
+function draw(img::PGF, prim::RectanglePrimitive)
+    width = max(prim.width.abs, 0.01)
+    height = max(prim.height.abs, 0.01)
+
+    modifiers, props = get_vector_properties(img)
+    if !img.visible; return; end
+
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\path [%s] ", join(props, ","));
+    @printf(img.buf, "(%s,%s) rectangle (%s,%s);\n",
+            svg_fmt_float(prim.corner.x.abs),
+            svg_fmt_float(prim.corner.y.abs),
+            svg_fmt_float(width + prim.corner.x.abs),
+            svg_fmt_float(height + prim.corner.y.abs))
+end
+
+function draw(img::PGF, prim::PolygonPrimitive)
+    n = length(prim.points)
+    if n <= 1; return; end
+
+    modifiers, props = get_vector_properties(img)
+    if !img.visible; return; end
+
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\path [%s] ", join(props, ","))
+    print_pgf_path(img.buf, prim.points, true)
+    write(img.buf, " -- cycle;\n")
+end
+
+function draw(img::PGF, prim::CirclePrimitive)
+    modifiers, props = get_vector_properties(img)
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\path [%s] ", join(props, ","))
+    @printf(img.buf, "(%s,%s) circle [radius=%s];\n",
+        svg_fmt_float(prim.center.x.abs),
+        svg_fmt_float(prim.center.y.abs),
+        svg_fmt_float(prim.radius.abs))
+end
+
+function draw(img::PGF, prim::EllipsePrimitive)
+
+    modifiers, props = get_vector_properties(img)
+    if !img.visible; return; end
+
+    cx = prim.center.x.abs
+    cy = prim.center.y.abs
+    rx = sqrt((prim.x_point.x.abs - cx)^2 +
+              (prim.x_point.y.abs - cy)^2)
+    ry = sqrt((prim.y_point.x.abs - cx)^2 +
+              (prim.y_point.y.abs - cy)^2)
+
+    if isdefined(:rad2deg)
+        theta = rad2deg(atan2(prim.x_point.y.abs - cy,
+                              prim.x_point.x.abs - cx))
+    else
+        theta = radians2degrees(atan2(prim.x_point.y.abs - cy,
+                                      prim.x_point.x.abs - cx))
+    end
+
+
+    if !all(isfinite([cx, cy, rx, ry, theta]))
+        return
+    end
+
+    modifiers, props = get_vector_properties(img)
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\path [%s] ", join(props, ","))
+    @printf(img.buf, "(%s,%s) circle [x radius=%s, y radius=%s",
+        svg_fmt_float(cx), 
+        svg_fmt_float(cy), 
+        svg_fmt_float(rx),
+        svg_fmt_float(ry))
+    if abs(theta) > 1e-4
+        @printf(img.buf, " rotate=%s", svg_fmt_float(theta))
+    end
+    write(img.buf, "];\n")
+end
+
+function draw(img::PGF, prim::CurvePrimitive, idx::Int)
+    modifiers, props = get_vector_properties(img)
+    if !img.visible; return; end
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\path [%s] ", join(props, ","))
+    @printf(img.buf, "(%s,%s) .. controls (%s,%s) and (%s,%s) .. (%s,%s);\n",
+        svg_fmt_float(prim.anchor0.x.abs),
+        svg_fmt_float(prim.anchor0.y.abs),
+        svg_fmt_float(prim.ctrl0.x.abs),
+        svg_fmt_float(prim.ctrl0.y.abs),
+        svg_fmt_float(prim.ctrl1.x.abs),
+        svg_fmt_float(prim.ctrl1.y.abs),
+        svg_fmt_float(prim.anchor1.x.abs),
+        svg_fmt_float(prim.anchor1.y.abs)) 
+end
+
+
+function indent(img::PGF)
+    for i in 1:img.indentation
+        write(img.buf, "  ")
+    end
+end
+
+
+function push_property_frame(img::PGF, properties::Vector{Property})
+    if isempty(properties)
+        return
+    end
+
+    frame = PGFPropertyFrame()
+    applied_properties = Set{Type}()
+    scalar_properties = Array(Property, 0)
+    for property in properties
+        if !isrepeatable(property) && (typeof(property) in applied_properties)
+            continue
+        elseif isscalar(property)
+            push!(scalar_properties, property)
+            push!(applied_properties, typeof(property))
+            frame.has_scalar_properties = true
+        else
+            frame.vector_properties[typeof(property)] = property
+            img.vector_properties[typeof(property)] = property
+        end
+    end
+    push!(img.property_stack, frame)
+    if isempty(scalar_properties)
+        return
+    end
+
+    write(img.buf, "\\begin{scope}")
+    prop_str = String[]
+    for property in scalar_properties
+        push_property!(prop_str, img, property.primitives[1])
+    end
+    if length(prop_str) > 0
+        @printf(img.buf, "[%s]\n", join(prop_str, ","))
+    end
+end
+
+
+function pop_property_frame(img::PGF)
+    @assert !isempty(img.property_stack)
+    frame = pop!(img.property_stack)
+
+    if frame.has_scalar_properties
+        write(img.buf, "\\end{scope}\n")
+        img.fill = default_fill_color
+        img.stroke = default_stroke_color
+        img.fill_opacity = 1.0
+        img.stroke_opacity = 1.0
+    end
+
+    for (propertytype, property) in frame.vector_properties
+        img.vector_properties[propertytype] = nothing
+        for i in length(img.property_stack):-1:1
+            if haskey(img.property_stack[i].vector_properties, propertytype)
+                img.vector_properties[propertytype] =
+                    img.property_stack[i].vector_properties[propertytype]
+            end
+        end
+    end
+end
+
