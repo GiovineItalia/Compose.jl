@@ -96,7 +96,6 @@ type PGF <: Backend
         img.emit_on_finish = emit_on_finish
         img.ownedfile = false
         img.filename = nothing
-        # writeheader(img)
         return img
     end
 
@@ -216,7 +215,7 @@ function print_pgf_path(out, points::Vector{Point}, bridge_gaps::Bool=false)
     end
 end
 
-function get_vector_properties(img::PGF)
+function get_vector_properties(img::PGF, idx::Int)
     props_str = ASCIIString[]
     modifiers = ASCIIString[]
     for (propertytype, property) in img.vector_properties
@@ -319,16 +318,16 @@ end
 
 function draw(img::PGF, form::Form)
     for (idx, primitive) in enumerate(form.primitives)
-        draw(img, primitive)
+        draw(img, primitive, idx)
     end
 end
 
-function draw(img::PGF, prim::LinePrimitive)
+function draw(img::PGF, prim::LinePrimitive, idx::Int)
 
     n = length(prim.points)
     if n <= 1; return; end
 
-    modifiers, props = get_vector_properties(img)
+    modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
 
     write(img.buf, join(modifiers))
@@ -337,11 +336,11 @@ function draw(img::PGF, prim::LinePrimitive)
     write(img.buf, ";\n")
 end
 
-function draw(img::PGF, prim::RectanglePrimitive)
+function draw(img::PGF, prim::RectanglePrimitive, idx::Int)
     width = max(prim.width.abs, 0.01)
     height = max(prim.height.abs, 0.01)
 
-    modifiers, props = get_vector_properties(img)
+    modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
 
     write(img.buf, join(modifiers))
@@ -353,11 +352,11 @@ function draw(img::PGF, prim::RectanglePrimitive)
             svg_fmt_float(height + prim.corner.y.abs))
 end
 
-function draw(img::PGF, prim::PolygonPrimitive)
+function draw(img::PGF, prim::PolygonPrimitive, idx::Int)
     n = length(prim.points)
     if n <= 1; return; end
 
-    modifiers, props = get_vector_properties(img)
+    modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
 
     write(img.buf, join(modifiers))
@@ -366,8 +365,8 @@ function draw(img::PGF, prim::PolygonPrimitive)
     write(img.buf, " -- cycle;\n")
 end
 
-function draw(img::PGF, prim::CirclePrimitive)
-    modifiers, props = get_vector_properties(img)
+function draw(img::PGF, prim::CirclePrimitive, idx::Int)
+    modifiers, props = get_vector_properties(img, idx)
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","))
     @printf(img.buf, "(%s,%s) circle [radius=%s];\n",
@@ -376,9 +375,9 @@ function draw(img::PGF, prim::CirclePrimitive)
         svg_fmt_float(prim.radius.abs))
 end
 
-function draw(img::PGF, prim::EllipsePrimitive)
+function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
 
-    modifiers, props = get_vector_properties(img)
+    modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
 
     cx = prim.center.x.abs
@@ -401,7 +400,7 @@ function draw(img::PGF, prim::EllipsePrimitive)
         return
     end
 
-    modifiers, props = get_vector_properties(img)
+    modifiers, props = get_vector_properties(img, idx)
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","))
     @printf(img.buf, "(%s,%s) circle [x radius=%s, y radius=%s",
@@ -416,7 +415,7 @@ function draw(img::PGF, prim::EllipsePrimitive)
 end
 
 function draw(img::PGF, prim::CurvePrimitive, idx::Int)
-    modifiers, props = get_vector_properties(img)
+    modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","))
