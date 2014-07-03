@@ -74,6 +74,19 @@ compose(a, b, ((c, d), (e, f), g))
 Since all we are doing is building trees, this syntax tends to be pretty
 convenient.
 
+## Forms
+
+These are basic constructors for the in-built forms - see `src/form.jl` for more constructors.
+
+* `polygon(points)`
+* `rectangle(x0, y0, width, height)`
+* `circle(x, y, r)`
+* `ellipse(x, y, x_radius, y_radius)`
+* `text(x, y, value)`
+* `line(points)`
+* `curve(anchor0, ctrl0, ctrl1, anchor1)`
+* `bitmap(mime, data, x0, y0, width, height)`
+
 ## Coordinates
 
 Besides coordinate transformations, Compose also handles mixtures of relative
