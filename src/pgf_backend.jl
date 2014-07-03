@@ -19,8 +19,12 @@ type PGF <: Backend
     # Output stream.
     out::IO
 
+    # Fill properties cannot be "cleanly" applied to 
+    # multiple form primatives.  It must be applied 
+    # each time an object is drawn
     fill::Union(Nothing, ColorValue)
     fill_opacity::Float64
+
     stroke::Union(Nothing, ColorValue)
     stroke_opacity::Float64
 
@@ -131,7 +135,7 @@ function finish(img::PGF)
     # end
 
     writeheader(img)
-    write_colors(img)
+    writecolors(img)
     write(img.out, takebuf_array(img.buf))
     write(img.out,
         """
@@ -179,7 +183,7 @@ function writeheader(img::PGF)
     return img
 end
 
-function write_colors(img::PGF)
+function writecolors(img::PGF)
     for color in img.color_set
         @printf(img.out, "\\definecolor{mycolor%s}{rgb}{%s,%s,%s}\n",
             hex(color),
@@ -290,6 +294,27 @@ end
 
 function push_property!(props_str, img::PGF, property::StrokeOpacityPrimitive)
     img.stroke_opacity = property.value
+end
+
+# Stubs for SVG and JS specific properties
+function push_property!(props_str, img::PGF, property::JSIncludePrimitive)
+end
+
+function push_property!(props_str, img::PGF, property::JSCallPrimitive)
+end
+
+function push_property!(props_str, img::PGF, property::SVGClassPrimitive)
+end
+
+function push_property!(props_str, img::PGF, property::SVGAttributePrimitive)
+end
+
+function iswithjs(img::PGF)
+    return false
+end
+
+function iswithousjs(img::PGF)
+    return true
 end
 
 function draw(img::PGF, form::Form)
@@ -412,6 +437,7 @@ function indent(img::PGF)
         write(img.buf, "  ")
     end
 end
+
 
 
 function push_property_frame(img::PGF, properties::Vector{Property})
