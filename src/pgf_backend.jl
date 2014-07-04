@@ -28,6 +28,9 @@ type PGF <: Backend
     stroke::Union(Nothing, ColorValue)
     stroke_opacity::Float64
 
+    fontfamily::Union(Nothing,String)
+    fontsize::Float64
+
     # Current level of indentation.
     indentation::Int
 
@@ -85,6 +88,8 @@ type PGF <: Backend
         img.stroke_opacity = 1.0
         img.width  = width.abs
         img.height = height.abs
+        img.fontfamily = nothing
+        img.fontsize = 12.0
         img.indentation = 0
         img.out = out
         img.color_set = Set{ColorValue}({color("black")})
@@ -174,6 +179,7 @@ function writeheader(img::PGF)
         """
         \\documentclass{minimal}
         \\usepackage{pgfplots}
+        \\usepackage{fontspec}
         \\usepackage[active,tightpage]{preview}
         \\PreviewEnvironment{tikzpicture}
         \\begin{document}
@@ -242,6 +248,8 @@ function get_vector_properties(img::PGF, idx::Int)
         end
     end
 
+
+
     return modifiers, props_str
 end
 
@@ -295,6 +303,21 @@ function push_property!(props_str, img::PGF, property::StrokeOpacityPrimitive)
     img.stroke_opacity = property.value
 end
 
+function push_property!(props_str, img::PGF, property::FontPrimitive)
+    # Can only only work with one font family for now
+
+    img.fontfamily = strip(split(escape_string(property.family),',')[1],'\'')
+end
+
+function push_property!(props_str, img::PGF, property::FontSizePrimitive)
+    img.fontsize = property.value.abs
+    # @printf(img.out, " font-size=\"%s\"", svg_fmt_float(property.value.abs))
+end
+
+function push_property!(props_str, img::PGF, property::ClipPrimitive)
+    # Not quite sure how to handle clipping yet, stub for now
+end
+
 # Stubs for SVG and JS specific properties
 function push_property!(props_str, img::PGF, property::JSIncludePrimitive)
 end
@@ -345,11 +368,11 @@ function draw(img::PGF, prim::RectanglePrimitive, idx::Int)
 
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","));
-    @printf(img.buf, "(%s,%s) rectangle (%s,%s);\n",
+    @printf(img.buf, "(%s,%s) rectangle +(%s,%s);\n",
             svg_fmt_float(prim.corner.x.abs),
             svg_fmt_float(prim.corner.y.abs),
-            svg_fmt_float(width + prim.corner.x.abs),
-            svg_fmt_float(height + prim.corner.y.abs))
+            svg_fmt_float(width),
+            svg_fmt_float(height))
 end
 
 function draw(img::PGF, prim::PolygonPrimitive, idx::Int)
@@ -430,6 +453,74 @@ function draw(img::PGF, prim::CurvePrimitive, idx::Int)
         svg_fmt_float(prim.anchor1.y.abs)) 
 end
 
+function draw(img::PGF, prim::TextPrimitive, idx::Int)
+
+    # Rotation direction is reversed!
+    modifiers, props = get_vector_properties(img, idx)
+    push!(props, string(
+        "rotate around={",
+        isdefined(:rad2deg) ?
+            svg_fmt_float(-rad2deg(prim.rot.theta)) :
+            svg_fmt_float(-radians2degrees(prim.rot.theta)),
+            ": (",
+            svg_fmt_float(prim.rot.offset.x.abs - prim.position.x.abs),
+            ",",
+            svg_fmt_float(prim.rot.offset.y.abs - prim.position.y.abs),
+            ")}"))
+    if is(prim.halign, hcenter)
+        push!(props, "inner sep=0.0")
+    elseif is(prim.halign, hright)
+        push!(props, "left,inner sep=0.0")
+    else
+        push!(props, "right,inner sep=0.0")
+    end
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\draw (%s,%s) node [%s]{\\fontsize{%s}{%s}\\selectfont %s};\n",
+        svg_fmt_float(prim.position.x.abs),
+        svg_fmt_float(prim.position.y.abs),
+        replace(join(props, ","), "fill", "text"),
+        svg_fmt_float(img.fontsize),
+        svg_fmt_float(1.2*img.fontsize),
+        prim.value
+    )
+    # if ()
+    # write(img.buf, "\\draw (%s,%s) node {\")
+    # @printf()
+    # @printf(img.out, "<text x=\"%s\" y=\"%s\"",
+    #         svg_fmt_float(prim.position.x.abs),
+    #         svg_fmt_float(prim.position.y.abs))
+
+    # if is(prim.halign, hcenter)
+    #     print(img.out, " text-anchor=\"middle\"")
+    # elseif is(prim.halign, hright)
+    #     print(img.out, " text-anchor=\"end\"")
+    # end
+
+    # # NOTE: "dominant-baseline" is the correct way to vertically center text
+    # # in SVG, but implementations are pretty inconsistent (chrome in particular
+    # # does a really bad job). We fake it by shifting by some reasonable amount.
+    # if is(prim.valign, vcenter)
+    #     print(img.out, " dy=\"0.35em\"")
+    #     #print(img.out, " style=\"dominant-baseline:central\"")
+    # elseif is(prim.valign, vtop)
+    #     print(img.out, " dy=\"0.6em\"")
+    #     #print(img.out, " style=\"dominant-baseline:text-before-edge\"")
+    # end
+
+    # if prim.rot.theta != 0.0
+    #     @printf(img.out, " transform=\"rotate(%s, %s, %s)\"",
+    #             isdefined(:rad2deg) ?
+    #                 svg_fmt_float(rad2deg(prim.rot.theta)) :
+    #                 svg_fmt_float(radians2degrees(prim.rot.theta)),
+    #             svg_fmt_float(prim.rot.offset.x.abs),
+    #             svg_fmt_float(prim.rot.offset.y.abs))
+    # end
+    # print_vector_properties(img, idx)
+
+    # @printf(img.out, ">%s</text>\n",
+    #         pango_to_svg(prim.value))
+end
+
 
 function indent(img::PGF)
     for i in 1:img.indentation
@@ -464,13 +555,16 @@ function push_property_frame(img::PGF, properties::Vector{Property})
         return
     end
 
-    write(img.buf, "\\begin{scope}")
+    write(img.buf, "\\begin{scope}\n")
     prop_str = String[]
     for property in scalar_properties
         push_property!(prop_str, img, property.primitives[1])
     end
     if length(prop_str) > 0
         @printf(img.buf, "[%s]\n", join(prop_str, ","))
+    end
+   if img.fontfamily != nothing
+       @printf(img.buf, "\\fontspec{%s}\n", img.fontfamily) 
     end
 end
 
@@ -485,6 +579,7 @@ function pop_property_frame(img::PGF)
         img.stroke = default_stroke_color
         img.fill_opacity = 1.0
         img.stroke_opacity = 1.0
+        img.fontfamily = nothing
     end
 
     for (propertytype, property) in frame.vector_properties
