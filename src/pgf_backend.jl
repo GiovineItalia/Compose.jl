@@ -56,6 +56,7 @@ type PGF <: Backend
 
     # Clip-paths that need to be defined at the end of the document.
     # Not quite sure how to deal with clip paths yet
+    clippath::Union(Nothing,ClipPrimitive)
     # clippaths::Dict{ClipPrimitive, String}
 
     # True when finish has been called and no more drawing should occur
@@ -89,6 +90,7 @@ type PGF <: Backend
         img.width  = width.abs
         img.height = height.abs
         img.fontfamily = nothing
+        img.clippath = nothing
         img.fontsize = 12.0
         img.indentation = 0
         img.out = out
@@ -315,6 +317,7 @@ function push_property!(props_str, img::PGF, property::FontSizePrimitive)
 end
 
 function push_property!(props_str, img::PGF, property::ClipPrimitive)
+    img.clippath = property
     # Not quite sure how to handle clipping yet, stub for now
 end
 
@@ -485,42 +488,6 @@ function draw(img::PGF, prim::TextPrimitive, idx::Int)
         svg_fmt_float(1.2*img.fontsize),
         prim.value
     )
-    # if ()
-    # write(img.buf, "\\draw (%s,%s) node {\")
-    # @printf()
-    # @printf(img.out, "<text x=\"%s\" y=\"%s\"",
-    #         svg_fmt_float(prim.position.x.abs),
-    #         svg_fmt_float(prim.position.y.abs))
-
-    # if is(prim.halign, hcenter)
-    #     print(img.out, " text-anchor=\"middle\"")
-    # elseif is(prim.halign, hright)
-    #     print(img.out, " text-anchor=\"end\"")
-    # end
-
-    # # NOTE: "dominant-baseline" is the correct way to vertically center text
-    # # in SVG, but implementations are pretty inconsistent (chrome in particular
-    # # does a really bad job). We fake it by shifting by some reasonable amount.
-    # if is(prim.valign, vcenter)
-    #     print(img.out, " dy=\"0.35em\"")
-    #     #print(img.out, " style=\"dominant-baseline:central\"")
-    # elseif is(prim.valign, vtop)
-    #     print(img.out, " dy=\"0.6em\"")
-    #     #print(img.out, " style=\"dominant-baseline:text-before-edge\"")
-    # end
-
-    # if prim.rot.theta != 0.0
-    #     @printf(img.out, " transform=\"rotate(%s, %s, %s)\"",
-    #             isdefined(:rad2deg) ?
-    #                 svg_fmt_float(rad2deg(prim.rot.theta)) :
-    #                 svg_fmt_float(radians2degrees(prim.rot.theta)),
-    #             svg_fmt_float(prim.rot.offset.x.abs),
-    #             svg_fmt_float(prim.rot.offset.y.abs))
-    # end
-    # print_vector_properties(img, idx)
-
-    # @printf(img.out, ">%s</text>\n",
-    #         pango_to_svg(prim.value))
 end
 
 
@@ -565,6 +532,11 @@ function push_property_frame(img::PGF, properties::Vector{Property})
     if length(prop_str) > 0
         @printf(img.buf, "[%s]\n", join(prop_str, ","))
     end
+    if img.clippath != nothing
+        write(img.buf, "\\clip ")        
+        print_pgf_path(img.buf, img.clippath.points)
+        write(img.buf, ";\n")
+    end
    if img.fontfamily != nothing
        @printf(img.buf, "\\fontspec{%s}\n", img.fontfamily) 
     end
@@ -577,11 +549,15 @@ function pop_property_frame(img::PGF)
 
     if frame.has_scalar_properties
         write(img.buf, "\\end{scope}\n")
+        # There should be a better way to to this:
+        # Maybe put the applied properties on a stack then
+        # pop them out here?
         img.fill = default_fill_color
         img.stroke = default_stroke_color
         img.fill_opacity = 1.0
         img.stroke_opacity = 1.0
         img.fontfamily = nothing
+        img.clippath = nothing
         img.visible = true
     end
 
