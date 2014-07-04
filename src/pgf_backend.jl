@@ -390,6 +390,7 @@ end
 
 function draw(img::PGF, prim::CirclePrimitive, idx::Int)
     modifiers, props = get_vector_properties(img, idx)
+    if !img.visible; return; end
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","))
     @printf(img.buf, "(%s,%s) circle [radius=%s];\n",
@@ -457,6 +458,7 @@ function draw(img::PGF, prim::TextPrimitive, idx::Int)
 
     # Rotation direction is reversed!
     modifiers, props = get_vector_properties(img, idx)
+    if !img.visible; return; end
     push!(props, string(
         "rotate around={",
         isdefined(:rad2deg) ?
@@ -475,7 +477,7 @@ function draw(img::PGF, prim::TextPrimitive, idx::Int)
         push!(props, "right,inner sep=0.0")
     end
     write(img.buf, join(modifiers))
-    @printf(img.buf, "\\draw (%s,%s) node [%s]{\\fontsize{%s}{%s}\\selectfont %s};\n",
+    @printf(img.buf, "\\draw (%s,%s) node [%s]{\\fontsize{%smm}{%smm}\\selectfont %s};\n",
         svg_fmt_float(prim.position.x.abs),
         svg_fmt_float(prim.position.y.abs),
         replace(join(props, ","), "fill", "text"),
@@ -580,6 +582,7 @@ function pop_property_frame(img::PGF)
         img.fill_opacity = 1.0
         img.stroke_opacity = 1.0
         img.fontfamily = nothing
+        img.visible = true
     end
 
     for (propertytype, property) in frame.vector_properties
