@@ -19,8 +19,8 @@ type PGF <: Backend
     # Output stream.
     out::IO
 
-    # Fill properties cannot be "cleanly" applied to 
-    # multiple form primatives.  It must be applied 
+    # Fill properties cannot be "cleanly" applied to
+    # multiple form primatives.  It must be applied
     # each time an object is drawn
     fill::Union(Nothing, ColorValue)
     fill_opacity::Float64
@@ -42,7 +42,7 @@ type PGF <: Backend
 
     # Have not found an easy way to define color as
     # a draw parameter.  Whenever we encouter a color, we add it to the
-    # color_set set.  That way, we can write out all the color 
+    # color_set set.  That way, we can write out all the color
     # definitions at the same time.
     color_set::Set{ColorValue}
 
@@ -432,8 +432,8 @@ function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","))
     @printf(img.buf, "(%s,%s) circle [x radius=%s, y radius=%s",
-        svg_fmt_float(cx), 
-        svg_fmt_float(cy), 
+        svg_fmt_float(cx),
+        svg_fmt_float(cy),
         svg_fmt_float(rx),
         svg_fmt_float(ry))
     if abs(theta) > 1e-4
@@ -455,7 +455,7 @@ function draw(img::PGF, prim::CurvePrimitive, idx::Int)
         svg_fmt_float(prim.ctrl1.x.abs),
         svg_fmt_float(prim.ctrl1.y.abs),
         svg_fmt_float(prim.anchor1.x.abs),
-        svg_fmt_float(prim.anchor1.y.abs)) 
+        svg_fmt_float(prim.anchor1.y.abs))
 end
 
 function draw(img::PGF, prim::TextPrimitive, idx::Int)
@@ -534,12 +534,12 @@ function push_property_frame(img::PGF, properties::Vector{Property})
         @printf(img.buf, "[%s]\n", join(prop_str, ","))
     end
     if img.clippath != nothing
-        write(img.buf, "\\clip ")        
+        write(img.buf, "\\clip ")
         print_pgf_path(img.buf, img.clippath.points)
         write(img.buf, ";\n")
     end
    if img.fontfamily != nothing
-       @printf(img.buf, "\\fontspec{%s}\n", img.fontfamily) 
+       @printf(img.buf, "\\fontspec{%s}\n", img.fontfamily)
     end
 end
 
@@ -574,7 +574,7 @@ function pop_property_frame(img::PGF)
     end
 end
 
-# Horrible abuse of Latex inline math mode just to 
+# Horrible abuse of Latex inline math mode just to
 # get something working first.
 # FIX ME!
 function pango_to_pgf(text::String)
