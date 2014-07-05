@@ -20,7 +20,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Paren
        strokelinejoin, linewidth, visible, fillopacity, strokeopacity, clip,
        font, fontsize, svgid, svgclass, svgattribute, jsinclude, jscall, Measure,
        inch, mm, cm, pt, px, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
-       vbottom, SVG, SVGJS, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
+       vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound
 
 abstract Backend
@@ -70,6 +70,7 @@ catch
         error("Cairo must be installed to use the PDF backend.")
 end
 include("svg.jl")
+include("pgf_backend.jl")
 
 
 # If available, pango and fontconfig are used to compute text extents and match

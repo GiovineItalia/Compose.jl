@@ -443,6 +443,3 @@ function pango_to_svg(text::String)
 
     tagged_text
 end
-
-
-
