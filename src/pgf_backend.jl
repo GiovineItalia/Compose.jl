@@ -182,6 +182,7 @@ function writeheader(img::PGF)
         \\documentclass{minimal}
         \\usepackage{pgfplots}
         \\usepackage{fontspec}
+        \\usepackage{amsmath}
         \\usepackage[active,tightpage]{preview}
         \\PreviewEnvironment{tikzpicture}
         \\begin{document}
@@ -480,13 +481,13 @@ function draw(img::PGF, prim::TextPrimitive, idx::Int)
         push!(props, "right,inner sep=0.0")
     end
     write(img.buf, join(modifiers))
-    @printf(img.buf, "\\draw (%s,%s) node [%s]{\\fontsize{%smm}{%smm}\\selectfont %s};\n",
+    @printf(img.buf, "\\draw (%s,%s) node [%s]{\\fontsize{%smm}{%smm}\\selectfont \$%s\$};\n",
         svg_fmt_float(prim.position.x.abs),
         svg_fmt_float(prim.position.y.abs),
         replace(join(props, ","), "fill", "text"),
         svg_fmt_float(img.fontsize),
         svg_fmt_float(1.2*img.fontsize),
-        prim.value
+        pango_to_pgf(prim.value)
     )
 end
 
@@ -552,6 +553,7 @@ function pop_property_frame(img::PGF)
         # There should be a better way to to this:
         # Maybe put the applied properties on a stack then
         # pop them out here?
+        # FIX ME!
         img.fill = default_fill_color
         img.stroke = default_stroke_color
         img.fill_opacity = 1.0

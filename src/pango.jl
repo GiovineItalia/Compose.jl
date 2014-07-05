@@ -444,5 +444,52 @@ function pango_to_svg(text::String)
     tagged_text
 end
 
+# Horrible abuse of Latex inline math mode just to 
+# get something working first.
+# FIX ME!
+function pango_to_pgf(text::String)
+    pat = r"<(/?)\s*([^>]*)\s*>"
+    input = convert(Array{Uint8}, text)
+    output = IOBuffer()
+    lastpos = 1
+    for mat in eachmatch(pat, text)
+        write(output, "\\text{")
+        write(output, input[lastpos:mat.offset-1])
+        write(output, "}")
 
+        if mat.captures[2] == "sup"
+            if mat.captures[1] == "/"
+                write(output, "}")
+            else
+                write(output, "^{")
+            end
+        elseif mat.captures[2] == "sub"
+            if mat.captures[1] == "/"
+                write(output, "}")
+            else
+                write(output, "_{")
+            end
+        elseif mat.captures[2] == "i"
+            if mat.captures[1] == "/"
+                write(output, "}")
+            else
+                write(output, "\\textit{")
+            end
+        elseif mat.captures[2] == "b"
+            if mat.captures[1] == "/"
+                write(output, "}")
+            else
+                write(output, "\\textbf{")
+            end
+        end
+        lastpos = mat.offset + length(mat.match)
+    end
+    write(output, "\\text{")
+    write(output, input[lastpos:end])
+    write(output, "}")
+
+    # Cleanup characters
+    str_out = bytestring(output)
+    replace(str_out, "%", "\\%")
+end
 
