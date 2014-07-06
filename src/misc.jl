@@ -16,7 +16,7 @@ function cyclezip(xs::AbstractArray...)
         return {}
     end
     n = maximum([length(x) for x in xs])
-    return take(zip([cycle(x) for x in xs]...), n)
+    return takestrict(zip([cycle(x) for x in xs]...), n)
 end
 
 
