@@ -25,6 +25,64 @@ function svg_fmt_float(x::Float64)
     a[1:n]
 end
 
+# A much faster version of svg_fmt_float. This does not allocate any
+# temporary buffers, because it writes directly to the output.
+function svg_fmt_float(io::IO, x::Float64)
+    const ndig = 2
+    const eps = 1.0/10^ndig
+    if isfinite(x)
+        if x < 0
+            write(io, '-')
+            x = abs(x)
+        end
+        x = round(x/eps)*eps
+        xt = itrunc(Uint, x)
+        dx = x - convert(Float64, xt)
+        if !(0 <= dx < 1)
+            error("Formatting overflow")
+        end
+        svg_fmt_uint(io, xt, 1)  # width=1 prints 0.2 instead of .2
+        dxi = iround(Uint, dx/eps)
+        if dxi != uint(0)
+            write(io, '.')
+            svg_fmt_uint(io, dxi, ndig, true)
+        end
+    elseif isnan(x)
+        write(io, "NaN")
+    elseif x == Inf
+        write(io, "Inf")
+    elseif x == -Inf
+        write(io, "-Inf")
+    end
+end
+
+let a = Array(Uint8, 20)
+global svg_fmt_uint
+function svg_fmt_uint(io::IO, x::Unsigned, width = 0, drop = false)
+    n = length(a)
+    while x > 0 && n > 0
+        x, r = divrem(x, 10)
+        a[n] = r
+        n -= 1
+    end
+    if n == 0
+        error("Formatting overflow")
+    end
+    for i = 1:width-(length(a)-n)
+        write(io, '0')
+    end
+    last = length(a)
+    if drop
+        while last > n && a[last] == 0
+            last -= 1
+        end
+    end
+    for i = n+1:last
+        write(io, '0'+a[i])
+    end
+end
+end
+
 # Format a color for SVG.
 svg_fmt_color(c::ColorValue) = @sprintf("#%s", hex(c))
 svg_fmt_color(c::Nothing) = "none"
@@ -434,13 +492,16 @@ function print_svg_path(out, points::Vector{Point}, bridge_gaps::Bool=false)
 
         if isfirst
             isfirst = false
-            @printf(out, "M%s,%s L",
-                    svg_fmt_float(x),
-                    svg_fmt_float(y))
+            write(out, 'M')
+            svg_fmt_float(out, x)
+            write(out, ',')
+            svg_fmt_float(out, y)
+            write(out, " L")
         else
-            @printf(out, " %s %s",
-                    svg_fmt_float(x),
-                    svg_fmt_float(y))
+            write(out, ' ')
+            svg_fmt_float(out, x)
+            write(out, ' ')
+            svg_fmt_float(out, y)
         end
     end
 end
@@ -651,10 +712,13 @@ end
 
 function draw(img::SVG, prim::CirclePrimitive, idx::Int)
     indent(img)
-    @printf(img.out, "<circle cx=\"%s\" cy=\"%s\" r=\"%s\"",
-            svg_fmt_float(prim.center.x.abs),
-            svg_fmt_float(prim.center.y.abs),
-            svg_fmt_float(prim.radius.abs))
+    write(img.out, "<circle cx=\"")
+    svg_fmt_float(img.out, prim.center.x.abs)
+    write(img.out, "\" cy=\"")
+    svg_fmt_float(img.out, prim.center.y.abs)
+    write(img.out, "\" r=\"")
+    svg_fmt_float(img.out, prim.radius.abs)
+    write(img.out, "\"")
     print_vector_properties(img, idx)
     write(img.out, "/>\n")
 end
