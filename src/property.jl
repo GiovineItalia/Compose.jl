@@ -480,9 +480,9 @@ end
 
 
 function jscall(codes::AbstractArray,
-                args::AbstractArray{Vector{Measure}}=[Measure[]])
-    return JSCall[JSCallPrimitive(code, arg)
-                  for (code, arg) in cyclezip(codes, args)]
+                args::AbstractArray{Vector{Measure}}=Vector{Measure}[Measure[]])
+    return JSCall([JSCallPrimitive(code, arg)
+                   for (code, arg) in cyclezip(codes, args)])
 end
 
 
