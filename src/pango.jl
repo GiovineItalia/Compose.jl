@@ -48,21 +48,32 @@ end
 # Returns:
 #   A pointer to a PangoFontDescription with the closest match.
 #
-let cached_font_matches = Dict{(String, Float64), Ptr{Void}}()
-    global match_font
-    function match_font(family::String, size::Float64)
-        if haskey(cached_font_matches, (family, size))
-            return cached_font_matches[(family, size)]
-        end
+let available_font_families = Set{String}()
+    for font_pattern in Fontconfig.list()
+        push!(available_font_families, lowercase(format(font_pattern, "%{family}")))
+    end
 
+    const meta_families = Set(["serif", "sans", "sans-serif", "monospace",
+                               "cursive", "fantasy"])
+
+    global match_font
+    function match_font(families::String, size::Float64)
+        matched_family = "sans-serif"
+        for family in [lowercase(strip(family, [' ', '"', '\''])) for family in split(families, ',')]
+            if family in available_font_families || family in meta_families
+                matched_family = family
+                break
+            end
+        end
+        @show matched_family
         family = format(match(Fontconfig.Pattern(family=family)), "%{family}")
         desc = @sprintf("%s %f", family, size)
         fd = ccall((:pango_font_description_from_string, libpango),
                    Ptr{Void}, (Ptr{Uint8},), bytestring(desc))
-        cached_font_matches[(family, size)] = fd
-        fd
+        return fd
     end
 end
+
 
 # Thin wrapper for a pango_layout object.
 type PangoLayout
@@ -103,7 +114,7 @@ function pango_text_extents(pangolayout::PangoLayout, text::String)
     extents = Array(Int32, 4)
     ccall((:pango_layout_get_extents, libpango),
           Void, (Ptr{Void}, Ptr{Int32}, Ptr{Int32}),
-          pangolayout.layout, C_NULL, extents)
+          pangolayout.layout, extents, C_NULL)
 
     width, height = (extents[3] / PANGO_SCALE)pt, (extents[4] / PANGO_SCALE)pt
 end
@@ -405,7 +416,7 @@ function pango_to_svg(text::String)
 
             write(io, "<tspan style=\"dominant-baseline:inherit\"")
 
-            # "baseline-shift" is not currentl supported Firefox or IE.
+            # "baseline-shift" is not currently supported Firefox or IE.
             # if !(attr.rise === nothing)
             #     @printf(io, " baseline-shift=\"%s\"",
             #             fmt_float(((attr.rise / PANGO_SCALE)pt).abs))

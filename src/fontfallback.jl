@@ -11,8 +11,9 @@ const glyphsizes = JSON.parse(
 
 # It's better to overestimate text extents than to underestimes, since the later
 # leads to overlaping where the former just results in some extra space. So, we
-# scale estimated text extends by this number.
-const text_extents_scale_x = 1.0
+# scale estimated text extends by this number. Width on the other hand tends be
+# overestimated since it doesn't take kerning into account.
+const text_extents_scale_x = 0.9
 const text_extents_scale_y = 1.2
 
 
@@ -40,10 +41,20 @@ end
 
 
 # Find the nearst typeface from the glyph size table.
-function match_font(font_family::String)
-    ds = [(levenshtein(font_family, k), k) for k in keys(glyphsizes)]
-    sort!(ds)
-    ds[1][2]
+function match_font(families::String)
+    smallest_dist = Inf
+    best_match = "Helvetica"
+    for family in [lowercase(strip(family, [' ', '"', '\''])) for family in split(families, ',')]
+        for available_family in keys(glyphsizes)
+            d = levenshtein(family, available_family)
+            if d < smallest_dist
+                smallest_dist = d
+                best_match = available_family
+            end
+        end
+    end
+
+    return best_match
 end
 
 
@@ -97,8 +108,10 @@ function text_extents(font_family::String, size::Measure, texts::String...)
     extents = Array((Measure, Measure), length(texts))
     for (i, text) in enumerate(texts)
         width = text_width(widths, text, size/pt)*mm
-        extents[i] = (width, match(r"<su(p|b)>", text) == nothing ?
-                      height * mm : height * 1.5 * mm)
+        extents[i] = (text_extents_scale_x * scale * width,
+                      text_extents_scale_y * scale *
+                      (match(r"<su(p|b)>", text) == nothing ?
+                          height * mm : height * 1.5 * mm))
     end
 
     return extents
@@ -119,14 +132,14 @@ function pango_to_svg(text::String)
                 write(output, "</tspan>")
             else
                 # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"super\">")
-                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"-1ex\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"0.35em\">")
             end
         elseif mat.captures[2] == "sub"
             if mat.captures[1] == "/"
                 write(output, "</tspan>")
             else
                 # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"sub\">")
-                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"1ex\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"0.6em\">")
             end
         elseif mat.captures[2] == "i"
             if mat.captures[1] == "/"
