@@ -21,6 +21,7 @@ type ImagePropertyState
     stroke_dash::Array{Float64,1}
     stroke_linecap::LineCap
     stroke_linejoin::LineJoin
+    visible::Bool
 end
 
 type ImagePropertyFrame
@@ -367,7 +368,8 @@ function save_property_state(img::Image)
             img.stroke_opacity,
             img.stroke_dash,
             img.stroke_linecap,
-            img.stroke_linejoin))
+            img.stroke_linejoin,
+            img.visible))
     Cairo.save(img.ctx)
 end
 
@@ -381,6 +383,7 @@ function restore_property_state(img::Image)
     img.stroke_dash = state.stroke_dash
     img.stroke_linecap = state.stroke_linecap
     img.stroke_linejoin = state.stroke_linejoin
+    img.visible = state.visible
     Cairo.restore(img.ctx)
 end
 
@@ -651,32 +654,6 @@ function fillstroke(img::Image)
 end
 
 
-function save_state(img::Image)
-    push!(img.state_stack,
-        ImagePropertyState(
-            img.stroke,
-            img.fill,
-            img.fill_opacity,
-            img.stroke_opacity,
-            img.stroke_dash,
-            img.stroke_linecap,
-            img.stroke_linejoin))
-    Cairo.save(img.ctx)
-end
-
-
-function restore_state(img::Image)
-    state = pop!(img.state_stack)
-    img.stroke = state.stroke
-    img.fill = state.fill
-    img.fill_opacity = state.fill_opacity
-    img.stroke_opacity = state.stroke_opacity
-    img.stroke_dash = state.stroke_dash
-    img.stroke_linecap = state.stroke_linecap
-    img.stroke_linejoin = state.stroke_linejoin
-    Cairo.restore(img.ctx)
-end
-
 
 # Form Drawing
 # ------------
@@ -732,13 +709,13 @@ function draw(img::Image, prim::EllipsePrimitive)
         return
     end
 
-    save_state(img)
+    save_property_state(img)
     translate(img, cx, cy)
     rotate(img, theta)
     translate(img, -rx, -ry)
     scale(img, 2rx, 2ry)
     arc(img, 0.5, 0.5, 0.5, 0.0, 2pi)
-    restore_state(img)
+    restore_property_state(img)
     fillstroke(img)
 end
 
@@ -798,7 +775,7 @@ function draw(img::Image, prim::TextPrimitive)
     Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.fill_opacity)
 
     if prim.rot.theta != 0.0
-        save_state(img)
+        save_property_state(img)
         rotate(img, prim.rot.theta,
                prim.rot.offset.x.abs, prim.rot.offset.y.abs)
     end
@@ -807,7 +784,7 @@ function draw(img::Image, prim::TextPrimitive)
     Cairo.show_layout(img.ctx)
 
     if prim.rot.theta != 0.0
-        restore_state(img)
+        restore_property_state(img)
     end
 end
 
