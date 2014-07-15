@@ -8,7 +8,7 @@ all:V: glyphsize.json
 
 FONTS=/System/Library/Fonts/HelveticaNeue.dfont \
       /System/Library/Fonts/Helvetica.dfont \
-      /Library/Fonts/Arial.ttf \
+      /Library/Fonts/Microsoft/Arial.ttf \
       /Library/Fonts/PTSans.ttc \
       /Users/dcjones/Library/Fonts/SourceSansPro-Regular.otf
 

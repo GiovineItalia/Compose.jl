@@ -54,8 +54,8 @@ void dumpfont(FT_Library library, const char* fn)
                 exit(1);
             }
 
-            if (face->glyph->metrics.vertAdvance > max_height) {
-                max_height = face->glyph->metrics.vertAdvance;
+            if (face->glyph->metrics.height > max_height) {
+                max_height = face->glyph->metrics.height;
             }
 
             printf("  \"");

@@ -13,8 +13,8 @@ const glyphsizes = JSON.parse(
 # leads to overlaping where the former just results in some extra space. So, we
 # scale estimated text extends by this number. Width on the other hand tends be
 # overestimated since it doesn't take kerning into account.
-const text_extents_scale_x = 0.9
-const text_extents_scale_y = 1.2
+const text_extents_scale_x = 1.0
+const text_extents_scale_y = 1.0
 
 
 # Normalized Levenshtein distance between two strings.
@@ -72,7 +72,7 @@ function text_width(widths::Dict, text::String, size::Float64)
     stripped_text = replace(text, r"<[^>]*>", "")
     width = 0
     for c in stripped_text
-        width += get(widths, c, widths["w"])
+        width += get(widths, string(c), widths["w"])
     end
     width
 end
