@@ -42,7 +42,7 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     @setObjective(model, Max, sum{w[j], j=tbl.x_focus} +
                               sum{h[i], i=tbl.y_focus})
 
-    # optional proportionality contraints
+    # optional proportionality constraints
     if tbl.x_prop != nothing
         # TODO: there's probably a less barbaric way of doing this
         for k in 2:length(tbl.x_focus)
@@ -87,7 +87,7 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
         @addConstraint(model, sum{c[l], l=cgroup} == 1)
     end
 
-    # minimum cell size contraints for cells with multiple configurations
+    # minimum cell size constraints for cells with multiple configurations
     for (l, (i, j, k)) in enumerate(c_indexes)
         minw = minwidth(tbl.children[i, j][k])
         minh = minheight(tbl.children[i, j][k])
@@ -120,8 +120,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
 
     status = solve(model)
 
-    w_solution = getValue(w)
-    h_solution = getValue(h)
+    w_solution = Float64[w_i for w_i in getValue(w)]
+    h_solution = Float64[h_i for h_i in getValue(h)]
     c_solution = getValue(c)
 
     if status == :Infeasible || !all([is_approx_integer(c_solution[l])
@@ -135,16 +135,23 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     # Set positions and sizes of children
     root = context(units=tbl.units, order=tbl.order)
 
-    x_solution = cumsum([w_solution[j] for j in 1:n])
-    y_solution = cumsum([h_solution[i] for i in 1:m])
+    x_solution = cumsum([w_solution[j] for j in 1:n]) .- w_solution
+    y_solution = cumsum([h_solution[i] for i in 1:m]) .- h_solution
+
+    if tbl.aspect_ratio != nothing
+        force_aspect_ratio!(tbl, x_solution, y_solution,
+                            w_solution, h_solution)
+    end
 
     # set child positions according to layout solution
+    feasible_eps = 1e-4
+    feasible = true
     for i in 1:m, j in 1:n
         if length(tbl.children[i, j]) == 1
             ctx = copy(tbl.children[i, j][1])
+            feasible == feasible && issatisfied(ctx, w_solution[j], h_solution[i])
             ctx.box = BoundingBox(
-                (x_solution[j] - w_solution[j])*mm,
-                (y_solution[i] - h_solution[i])*mm,
+                x_solution[j]*mm, y_solution[i]*mm,
                 w_solution[j]*mm, h_solution[i]*mm)
             compose!(root, ctx)
         end
@@ -153,12 +160,16 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     for (l, (i, j, k)) in enumerate(c_indexes)
         if round(c_solution[l]) == 1
             ctx = copy(tbl.children[i, j][k])
+            feasible == feasible && issatisfied(ctx, w_solution[j], h_solution[i])
             ctx.box = BoundingBox(
-                (x_solution[j] - w_solution[j])*mm,
-                (y_solution[i] - h_solution[i])*mm,
+                x_solution[j]*mm, y_solution[i]*mm,
                 w_solution[j]*mm, h_solution[i]*mm)
             compose!(root, ctx)
         end
+    end
+
+    if !feasible
+        warn("Graphic may not be drawn correctly at the given size.")
     end
 
     return root

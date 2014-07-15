@@ -17,6 +17,9 @@ type Table <: ContainerPromise
     x_prop::Union(Nothing, Vector{Float64})
     y_prop::Union(Nothing, Vector{Float64})
 
+    # If non-nothing, constrain the focused cells to have a fixed aspect ratio.
+    aspect_ratio::Union(Nothing, Float64)
+
     # fixed configuration
     fixed_configs::Vector
 
@@ -37,6 +40,7 @@ type Table <: ContainerPromise
     function Table(m::Integer, n::Integer,
                    y_focus::Range1{Int}, x_focus::Range1{Int};
                    y_prop=nothing, x_prop=nothing,
+                   aspect_ratio=nothing,
                    units=NilUnitBox(), order=0, withjs=false, withoutjs=false,
                    fixed_configs={})
 
@@ -54,6 +58,7 @@ type Table <: ContainerPromise
         tbl = new(Array(Vector{Context}, (m, n)),
                   x_focus, y_focus,
                   x_prop, y_prop,
+                  aspect_ratio,
                   fixed_configs,
                   units, order, withjs, withoutjs)
         for i in 1:m, j in 1:n
@@ -83,6 +88,48 @@ end
 
 function size(t::Table)
     return size(t.children)
+end
+
+
+# Adjust a table solution so that the aspect ratio matches tbl.aspect_ratio
+#
+# Returns:
+#   true if the solution is feasibly, false if not
+#
+# Modifies:
+#   x_solution, y_solution, w_solution, h_solution
+#
+function force_aspect_ratio!(tbl::Table,
+                             x_solution::Vector, y_solution::Vector,
+                             w_solution::Vector, h_solution::Vector)
+
+    w0 = sum(w_solution[tbl.x_focus])
+    h0 = sum(h_solution[tbl.y_focus])
+    adj = (w0 / h0) / tbl.aspect_ratio
+
+    # we can't expand either dimension (since it's presumably of maximum size)
+    # so shrink one or the other.
+    if adj > 1.0
+        w = w0 / adj
+        delta = w0 - w
+        x_solution[1:end] += delta/2
+        w_solution[tbl.x_focus] /= adj
+    else
+        w = w0
+        h = h0 * adj
+        delta = h0 - h
+        y_solution[1:end] += delta/2
+        h_solution[tbl.y_focus] *= adj
+    end
+end
+
+
+# Return true if the minwidth and minheight constraints on ctx are satisfied
+# by the given width/height
+function issatisfied(ctx::Context, width, height)
+    eps = 1e-4
+    return (minwidth(ctx) == nothing || width + eps >= minwidth(ctx)) &&
+           (minheight(ctx) == nothing || height + eps >= minheight(ctx))
 end
 
 
@@ -210,6 +257,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     choice = zeros(Int, m * n)
     optimal_choice = nothing
     for group_choice in product(group_choices...)
+        it_count += 1
         for (l, k) in enumerate(group_choice)
             for p in fixed_configs[l]
                 choice[p] = k
@@ -250,10 +298,6 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         end
     end
 
-    if !feasible
-        warn("Graphic cannot be correctly drawn at the given size.")
-    end
-
     if optimal_choice === nothing
         optimal_choice = zeros(Int, m * n)
     end
@@ -273,11 +317,16 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         h_solution[tbl.y_focus[k]] = focused_row_heights[k]
     end
 
-    x_solution = cumsum(mincolwidths)
-    y_solution = cumsum(minrowheights)
+    x_solution = cumsum(mincolwidths) .- w_solution
+    y_solution = cumsum(minrowheights) .- h_solution
+
+    if tbl.aspect_ratio != nothing
+        force_aspect_ratio!(tbl, x_solution, y_solution, w_solution, h_solution)
+    end
 
     root = context(units=tbl.units, order=tbl.order)
 
+    feasible = true
     for i in 1:m, j in 1:n
         if isempty(tbl.children[i, j])
             continue
@@ -287,11 +336,15 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             idx = optimal_choice[(j-1)*m + i]
             ctx = copy(tbl.children[i, j][idx])
         end
+        feasible == feasible && issatisfied(ctx, w_solution[j], h_solution[i])
         ctx.box = BoundingBox(
-            (x_solution[j] - w_solution[j])*mm,
-            (y_solution[i] - h_solution[i])*mm,
+            x_solution[j]*mm, y_solution[i]*mm,
             w_solution[j]*mm, h_solution[i]*mm)
         compose!(root, ctx)
+    end
+
+    if !feasible
+        warn("Graphic may not be drawn correctly at the given size.")
     end
 
     return root

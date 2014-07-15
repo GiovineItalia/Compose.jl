@@ -41,7 +41,6 @@ type Context <: Container
     minwidth::Maybe(Float64)
     minheight::Maybe(Float64)
 
-
     function Context(x0=0.0w,
                      y0=0.0h,
                      width=1.0w,
