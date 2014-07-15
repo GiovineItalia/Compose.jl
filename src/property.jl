@@ -68,7 +68,7 @@ end
 # ----
 
 immutable FillPrimitive <: PropertyPrimitive
-	color::Union(ColorValue, Nothing)
+	color::Union(ColorValue, AlphaColorValue, Nothing)
 end
 
 typealias Fill Property{FillPrimitive}
@@ -79,7 +79,7 @@ function fill(c::Nothing)
 end
 
 
-function fill(c::Union(ColorValue, String))
+function fill(c::Union(ColorValue, AlphaColorValue, String))
 	return Fill([FillPrimitive(color(c))])
 end
 

@@ -405,12 +405,22 @@ end
 
 
 function apply_property(img::Image, p::StrokePrimitive)
-    img.stroke = p.color
+    if isa(p.color, AlphaColorValue)
+        img.stroke = p.color.c
+        img.stroke_opacity = p.color.alpha
+    else
+        img.stroke = p.color
+    end
 end
 
 
 function apply_property(img::Image, p::FillPrimitive)
-    img.fill = p.color
+    if isa(p.color, AlphaColorValue)
+        img.fill = p.color.c
+        img.fill_opacity = p.color.alpha
+    else
+        img.fill = p.color
+    end
 end
 
 

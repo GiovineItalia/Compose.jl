@@ -65,7 +65,6 @@ let available_font_families = Set{String}()
                 break
             end
         end
-        @show matched_family
         family = format(match(Fontconfig.Pattern(family=family)), "%{family}")
         desc = @sprintf("%s %f", family, size)
         fd = ccall((:pango_font_description_from_string, libpango),

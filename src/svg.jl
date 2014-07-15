@@ -474,12 +474,22 @@ end
 
 
 function print_property(img::SVG, property::StrokePrimitive)
-    @printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color))
+    if isa(property.color, AlphaColorValue)
+        @printf(img.out, " stroke=\"%s\" stroke-opacity=\"%0.3f\"",
+                svg_fmt_color(property.color.c), property.color.alpha)
+    else
+        @printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color))
+    end
 end
 
 
 function print_property(img::SVG, property::FillPrimitive)
-    @printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color))
+    if isa(property.color, AlphaColorValue)
+        @printf(img.out, " fill=\"%s\" fill-opacity=\"%0.3f\"",
+                svg_fmt_color(property.color.c), property.color.alpha)
+    else
+        @printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color))
+    end
 end
 
 

@@ -265,14 +265,26 @@ function push_property!(props_str, img::PGF, property::StrokeDashPrimitive)
 end
 
 function push_property!(props_str, img::PGF, property::StrokePrimitive)
-    img.stroke = property.color
+    if isa(property.color, AlphaColorValue)
+        img.stroke = property.color.c
+        img.stroke_opacity = property.color.alpha
+    else
+        img.stroke = property.color
+    end
+
     if img.stroke != nothing
         push!(img.color_set, convert(RGB, property.color))
     end
 end
 
 function push_property!(props_str, img::PGF, property::FillPrimitive)
-    img.fill = property.color
+    if isa(property.color, AlphaColorValue)
+        img.fill = property.color.c
+        img.fill_opacity = property.color.alpha
+    else
+        img.fill = property.color
+    end
+
     if img.fill != nothing
         push!(img.color_set, convert(RGB, property.color))
     end
