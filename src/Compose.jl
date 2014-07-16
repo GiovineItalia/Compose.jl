@@ -109,6 +109,23 @@ catch
 end
 
 
+function writemime(io::IO, m::MIME"text/html", ctx::Context)
+    draw(SVGJS(io, default_graphic_width, default_graphic_height, false), ctx)
+end
+
+
+function writemime(io::IO, m::MIME"image/svg+xml", ctx::Context)
+    draw(SVG(io, default_graphic_width, default_graphic_height, false), ctx)
+end
+
+try
+    getfield(Compose, :Cairo) # throws if Cairo isn't being used
+    function writemime(io::IO, ::MIME"image/png", ctx::Context)
+        draw(PNG(io, default_graphic_width, default_graphic_height), ctx)
+    end
+end
+
+
 function pad_outer(c::Context,
                    xpadding::MeasureOrNumber,
                    ypadding::MeasureOrNumber)
