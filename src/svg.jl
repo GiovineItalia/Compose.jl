@@ -27,7 +27,7 @@ end
 
 # A much faster version of svg_fmt_float. This does not allocate any
 # temporary buffers, because it writes directly to the output.
-function svg_fmt_float(io::IO, x::Float64)
+function svg_print_float(io::IO, x::Float64)
     const ndig = 2
     const eps = 1.0/10^ndig
     if isfinite(x)
@@ -41,11 +41,11 @@ function svg_fmt_float(io::IO, x::Float64)
         if !(0 <= dx < 1)
             error("Formatting overflow")
         end
-        svg_fmt_uint(io, xt, 1)  # width=1 prints 0.2 instead of .2
+        svg_print_uint(io, xt, 1)  # width=1 prints 0.2 instead of .2
         dxi = iround(Uint, dx/eps)
         if dxi != uint(0)
             write(io, '.')
-            svg_fmt_uint(io, dxi, ndig, true)
+            svg_print_uint(io, dxi, ndig, true)
         end
     elseif isnan(x)
         write(io, "NaN")
@@ -57,8 +57,8 @@ function svg_fmt_float(io::IO, x::Float64)
 end
 
 let a = Array(Uint8, 20)
-global svg_fmt_uint
-function svg_fmt_uint(io::IO, x::Unsigned, width = 0, drop = false)
+global svg_print_uint
+function svg_print_uint(io::IO, x::Unsigned, width = 0, drop = false)
     n = length(a)
     while x > 0 && n > 0
         x, r = divrem(x, 10)
@@ -493,15 +493,15 @@ function print_svg_path(out, points::Vector{Point}, bridge_gaps::Bool=false)
         if isfirst
             isfirst = false
             write(out, 'M')
-            svg_fmt_float(out, x)
+            svg_print_float(out, x)
             write(out, ',')
-            svg_fmt_float(out, y)
+            svg_print_float(out, y)
             write(out, " L")
         else
             write(out, ' ')
-            svg_fmt_float(out, x)
+            svg_print_float(out, x)
             write(out, ' ')
-            svg_fmt_float(out, y)
+            svg_print_float(out, y)
         end
     end
 end
@@ -558,8 +558,13 @@ function print_property(img::SVG, property::StrokeDashPrimitive)
     if isempty(property.value)
         print(img.out, " stroke-dasharray=\"none\"")
     else
-        @printf(img.out, " stroke-dasharray=\"%s\"",
-                join(map(v -> svg_fmt_float(v.abs), property.value), ","))
+        print(img.out, " stroke-dasharray=\"")
+        svg_print_float(img.out, property.value[1].abs)
+        for i in 2:length(property.value)
+            print(img.out, ',')
+            svg_print_float(img.out, property.value[i].abs)
+        end
+        print(img.out, '"')
     end
 end
 
@@ -587,17 +592,23 @@ end
 
 
 function print_property(img::SVG, property::LineWidthPrimitive)
-    @printf(img.out, " stroke-width=\"%s\"", svg_fmt_float(property.value.abs))
+    print(img.out, " stroke-width=\"")
+    svg_print_float(img.out, property.value.abs)
+    print(img.out, '"')
 end
 
 
 function print_property(img::SVG, property::FillOpacityPrimitive)
-    @printf(img.out, " opacity=\"%s\"", svg_fmt_float(property.value))
+    print(img.out, " opacity=\"")
+    svg_print_float(img.out, property.value)
+    print(img.out, '"')
 end
 
 
 function print_property(img::SVG, property::StrokeOpacityPrimitive)
-    @printf(img.out, " stroke-opacity=\"%s\"", svg_fmt_float(property.value))
+    print(img.out, " stroke-opacity=\"")
+    svg_print_float(img.out, property.value)
+    print(img.out, '"')
 end
 
 
@@ -621,7 +632,9 @@ end
 
 
 function print_property(img::SVG, property::FontSizePrimitive)
-    @printf(img.out, " font-size=\"%s\"", svg_fmt_float(property.value.abs))
+    print(img.out, " font-size=\"")
+    svg_print_float(img.out, property.value.abs)
+    print(img.out, '"')
 end
 
 
@@ -697,13 +710,17 @@ function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
     width = max(prim.width.abs, 0.01)
     height = max(prim.height.abs, 0.01)
 
-    @printf(img.out, "<rect x=\"%s\" y=\"%s\" width=\"%s\" height=\"%s\"",
-            svg_fmt_float(prim.corner.x.abs),
-            svg_fmt_float(prim.corner.y.abs),
-            svg_fmt_float(width),
-            svg_fmt_float(height))
+    print(img.out, "<rect x=\"")
+    svg_print_float(img.out, prim.corner.x.abs)
+    print(img.out, "\" y=\"")
+    svg_print_float(img.out, prim.corner.y.abs)
+    print(img.out, "\" width=\"")
+    svg_print_float(img.out, width)
+    print(img.out, "\" height=\"")
+    svg_print_float(img.out, height)
+    print(img.out, '"')
     print_vector_properties(img, idx)
-    write(img.out, "/>\n")
+    print(img.out, "/>\n")
 end
 
 
@@ -722,15 +739,15 @@ end
 
 function draw(img::SVG, prim::CirclePrimitive, idx::Int)
     indent(img)
-    write(img.out, "<circle cx=\"")
-    svg_fmt_float(img.out, prim.center.x.abs)
-    write(img.out, "\" cy=\"")
-    svg_fmt_float(img.out, prim.center.y.abs)
-    write(img.out, "\" r=\"")
-    svg_fmt_float(img.out, prim.radius.abs)
-    write(img.out, "\"")
+    print(img.out, "<circle cx=\"")
+    svg_print_float(img.out, prim.center.x.abs)
+    print(img.out, "\" cy=\"")
+    svg_print_float(img.out, prim.center.y.abs)
+    print(img.out, "\" r=\"")
+    svg_print_float(img.out, prim.radius.abs)
+    print(img.out, "\"")
     print_vector_properties(img, idx)
-    write(img.out, "/>\n")
+    print(img.out, "/>\n")
 end
 
 
@@ -756,15 +773,26 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
     end
 
     indent(img)
-    @printf(img.out, "<ellipse cx=\"%s\" cy=\"%s\" rx=\"%s\" ry=\"%s\"",
-            svg_fmt_float(cx), svg_fmt_float(cy), svg_fmt_float(rx),
-            svg_fmt_float(ry))
+    print(img.out, "<ellipse cx=\"")
+    svg_print_float(cx)
+    print(img.out, "\" cy=\"")
+    svg_print_float(cy)
+    print(img.out, "\" rx=\"")
+    svg_print_float(rx)
+    print(img.out, "\" ry=\"")
+    svg_print_float(ry)
+    print(img.out, '"')
     if abs(theta) > 1e-4
-        @printf(img.out, " transform=\"rotate(%s %s %s)\"",
-                svg_fmt_float(theta), svg_fmt_float(cx), svg_fmt_float(cy))
+        print(img.out, " transform=\"rotate(")
+        svg_print_float(theta)
+        print(img.out, ' ')
+        svg_print_float(cx)
+        print(img.out, ' ')
+        svg_print_float(cy)
+        print(img.out, ")\"")
+
     end
-    print_vector_properties(img, idx)
-    write(img.out, "/>\n")
+    print(img.out, "/>\n")
 end
 
 
@@ -773,19 +801,21 @@ function draw(img::SVG, prim::LinePrimitive, idx::Int)
      if n <= 1; return; end
 
      indent(img)
-     write(img.out, "<path d=\"")
+     print(img.out, "<path d=\"")
      print_svg_path(img.out, prim.points, true)
-     write(img.out, "\"")
+     print(img.out, "\"")
      print_vector_properties(img, idx)
-     write(img.out, "/>\n")
+     print(img.out, "/>\n")
 end
 
 
 function draw(img::SVG, prim::TextPrimitive, idx::Int)
     indent(img)
-    @printf(img.out, "<text x=\"%s\" y=\"%s\"",
-            svg_fmt_float(prim.position.x.abs),
-            svg_fmt_float(prim.position.y.abs))
+    print(img.out, "<text x=\"")
+    svg_print_float(img.out, prim.position.x.abs)
+    print(img.out, "\" y=\"")
+    svg_print_float(img.out, prim.position.y.abs)
+    print(img.out, '"')
 
     if is(prim.halign, hcenter)
         print(img.out, " text-anchor=\"middle\"")
@@ -804,13 +834,21 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
         #print(img.out, " style=\"dominant-baseline:text-before-edge\"")
     end
 
-    if prim.rot.theta != 0.0
-        @printf(img.out, " transform=\"rotate(%s, %s, %s)\"",
-                isdefined(:rad2deg) ?
-                    svg_fmt_float(rad2deg(prim.rot.theta)) :
-                    svg_fmt_float(radians2degrees(prim.rot.theta)),
-                svg_fmt_float(prim.rot.offset.x.abs),
-                svg_fmt_float(prim.rot.offset.y.abs))
+    if abs(prim.rot.theta) > 1e-4
+        print(img.out, " transform=\"rotate(")
+
+        # TODO: remove when 0.2 support is dropped
+        if isdefined(:rad2deg)
+            svg_print_float(img.out, rad2deg(prim.rot.theta))
+        else
+            svg_print_float(img.out, radians2degrees(prim.rot.theta))
+        end
+
+        print(img.out, ", ")
+        svg_print_float(img.out, prim.rot.offset.x.abs)
+        print(img.out, ", ")
+        svg_print_float(img.out, prim.rot.offset.y.abs)
+        print(img.out, ")\"")
     end
     print_vector_properties(img, idx)
 
@@ -821,28 +859,47 @@ end
 
 function draw(img::SVG, prim::CurvePrimitive, idx::Int)
     indent(img)
-    @printf(img.out, "<path d=\"M%s,%s C%s,%s %s,%s %s,%s\"",
-        svg_fmt_float(prim.anchor0.x.abs),
-        svg_fmt_float(prim.anchor0.y.abs),
-        svg_fmt_float(prim.ctrl0.x.abs),
-        svg_fmt_float(prim.ctrl0.y.abs),
-        svg_fmt_float(prim.ctrl1.x.abs),
-        svg_fmt_float(prim.ctrl1.y.abs),
-        svg_fmt_float(prim.anchor1.x.abs),
-        svg_fmt_float(prim.anchor1.y.abs))
+    print(img.out, "<path d=\"M")
+    svg_print_float(img.out, prim.anchor0.x.abs)
+    print(img.out, ',')
+    svg_print_float(img.out, prim.anchor0.y.abs)
+    print(img.out, " C")
+    svg_print_float(img.out, prim.ctrl0.x.abs)
+    print(img.out, ',')
+    svg_print_float(img.out, prim.ctrl0.y.abs)
+    print(img.out, ' ')
+    svg_print_float(img.out, prim.ctrl1.x.abs)
+    print(img.out, ',')
+    svg_print_float(img.out, prim.ctrl1.y.abs)
+    print(img.out, ' ')
+    svg_print_float(img.out, prim.anchor1.x.abs)
+    print(img.out, ',')
+    svg_print_float(img.out, prim.anchor1.y.abs)
+    print(img.out, ' ')
+    print(img.out, '"')
     print_vector_properties(img, idx)
-    write(img.out, "/>\n")
+    print(img.out, "/>\n")
 end
 
 
 function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
     indent(img)
-    @printf(img.out, "<image x=\"%s\" y=\"%s\" width=\"%s\" height=\"%s\"",
-            svg_fmt_float(prim.corner.x.abs), svg_fmt_float(prim.corner.y.abs),
-            svg_fmt_float(prim.width.abs), svg_fmt_float(prim.height.abs))
+    print(img.out, "<image x=\"")
+    svg_print_float(img.out, prim.corner.x.abs)
+    print(img.out, "\" y=\"")
+    svg_print_float(img.out, prim.corner.y.abs)
+    print(img.out, "\" width=\"")
+    svg_print_float(img.out, prim.width.abs)
+    print(img.out, "\" height=\"")
+    svg_print_float(img.out, prim.height.abs)
+    print(img.out, '"')
     print_vector_properties(img, idx)
-    @printf(img.out, " xlink:href=\"data:%s;base64,%s\"></image>\n",
-            prim.mime, base64(prim.data))
+
+    print(img.out, " xlink:href=\"data:", prim.mime, ";base64,")
+    b64pipe = Base64Pipe(img.out)
+    write(b64pipe, prim.data)
+    close(b64pipe)
+    print(img.out, "\"></image>\n")
 end
 
 
