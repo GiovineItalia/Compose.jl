@@ -120,8 +120,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
 
     status = solve(model)
 
-    w_solution = Float64[w_i for w_i in getValue(w)]
-    h_solution = Float64[h_i for h_i in getValue(h)]
+    w_solution = Float64[w_i for w_i in getValue(w)[:]]
+    h_solution = Float64[h_i for h_i in getValue(h)[:]]
     c_solution = getValue(c)
 
     if status == :Infeasible || !all([is_approx_integer(c_solution[l])
