@@ -12,6 +12,7 @@ abstract VectorImageBackend <: ImageBackend
 abstract SVGBackend <: VectorImageBackend
 abstract PDFBackend <: VectorImageBackend
 abstract PSBackend  <: VectorImageBackend
+abstract CairoBackend <: VectorImageBackend
 
 type ImagePropertyState
     stroke::Maybe(ColorValue)
@@ -147,11 +148,17 @@ type Image{B <: ImageBackend} <: Backend
         img = Image{B}(IOBuffer(), width, height, emit_on_finish)
         img
     end
+
+    function Image(c::CairoSurface)
+        img = Image{B}(c,CairoContext(c))
+        img
+    end
 end
 
 typealias PNG Image{PNGBackend}
 typealias PDF Image{PDFBackend}
 typealias PS  Image{PSBackend}
+typealias CAIROSURFACE  Image{CairoBackend}
 
 
 # convert compose absolute units (millimeters) to the absolute units used by the
@@ -248,6 +255,8 @@ function newsurface{B}(::Type{B}, out, width, height)
             surface = CairoPDFSurface(out, width, height)
         elseif B == PSBackend
             surface = CairoEPSSurface(out, width, height)
+        elseif B == CairoBackend
+            surface = out
         else
             error("Unkown Cairo backend.")
         end
