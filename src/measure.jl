@@ -470,8 +470,6 @@ immutable AbsoluteBoundingBox
 end
 
 
-
-
 # The same type-signature is used for a box used to assign
 # a custom coordinate system to a canvas.
 # TODO: There should not be one fixed type for every parameter
