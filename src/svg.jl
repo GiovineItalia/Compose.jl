@@ -903,6 +903,183 @@ function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
 end
 
 
+function svg_print_path_op(io::IO, op::MoveAbsPathOp)
+    print(io, 'M')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::MoveRelPathOp)
+    print(io, 'm')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::ClosePathOp)
+    print(io, 'z')
+end
+
+
+function svg_print_path_op(io::IO, op::LineAbsPathOp)
+    print(io, 'L')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::LineRelPathOp)
+    print(io, 'l')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::HorLineRelPathOp)
+    print(io, 'H')
+    svg_print_float(io, op.x.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::HorLineRelPathOp)
+    print(io, 'h')
+    svg_print_float(io, op.Δx.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::VertLineAbsPathOp)
+    print(io, 'V')
+    svg_print_float(io, op.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::VertLineRelPathOp)
+    print(io, 'v')
+    svg_print_float(io, op.Δy.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::CubicCurveAbsPathOp)
+    print(io, 'C')
+    svg_print_float(io, op.ctrl1.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl1.y.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2.y.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::CubicCurveRelPathOp)
+    print(io, 'c')
+    svg_print_float(io, op.ctrl1.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl1.y.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2.y.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
+    print(io, 'Q')
+    svg_print_float(io, op.ctrl1.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl1.y.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::QuadCurveRelPathOp)
+    print(io, 'q')
+    svg_print_float(io, op.ctrl1.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl1.y.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
+    print(io, 'T')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::QuadCurveRelPathOp)
+    print(io, 't')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::ArcAbsPathOp)
+    print(io, 'A')
+    svg_print_float(io, op.rx.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ry.abs)
+    print(io, ' ')
+    svg_print_float(io, op.rotation)
+    print(io, ' ',
+          op.largearc ? 1 : 0, ' ',
+          op.sweep ? 1 : 0, ' ')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::ArcRelPathOp)
+    print(io, 'A')
+    svg_print_float(io, op.rx.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ry.abs)
+    print(io, ' ')
+    svg_print_float(io, op.rotation)
+    print(io, ' ',
+          op.largearc ? 1 : 0, ' ',
+          op.sweep ? 1 : 0, ' ')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function draw(img::SVG, prim::PathPrimitive, idx::Int)
+    indent(img)
+    print(img.out, "<path d=\"")
+    for op in prim.ops
+        svg_print_path_op(img.out, op)
+    end
+    print(img.out, '"')
+    print_vector_properties(img, idx)
+    print(img.out, "/>\n")
+end
+
+
 # Applying properties
 # -------------------
 
