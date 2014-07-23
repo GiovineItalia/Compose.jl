@@ -403,6 +403,10 @@ function parsepathop(::Type{MoveAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
+function absolute_units(p::MoveAbsPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return MoveAbsPathOp(absolute_units(p.to, t, units, box))
+end
 
 immutable MoveRelPathOp <: PathOp
     to::Point
@@ -414,12 +418,23 @@ function parsepathop(::Type{MoveRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
+function absolute_units(p::MoveRelPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return MoveAbsPathOp(Point(absolute_units(p.to.x, t, units, box),
+                               absolute_units(p.to.y, t, units, box)))
+end
+
 
 immutable ClosePathOp <: PathOp
 end
 
 function parsepathop(::Type{ClosePathOp}, tokens::AbstractArray, i)
     return (ClosePathOp(), i)
+end
+
+function absolute_units(p::ClosePathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return p
 end
 
 
@@ -433,6 +448,11 @@ function parsepathop(::Type{LineAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
+function absolute_units(p::LineAbsPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return MoveAbsPathOp(absolute_units(p.to, t, units, box))
+end
+
 
 immutable LineRelPathOp <: PathOp
     to::Point
@@ -442,6 +462,12 @@ function parsepathop(::Type{LineRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(LineRelPathOp, tokens, i, 2)
     op = LineRelPathOp(Point(tokens[i], tokens[i + 1]))
     return (op, i + 2)
+end
+
+function absolute_units(p::LineRelPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return MoveAbsPathOp(Point(absolute_units(p.to.x, t, units, box),
+                               absolute_units(p.to.y, t, units, box)))
 end
 
 
@@ -455,6 +481,11 @@ function parsepathop(::Type{HorLineAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 1)
 end
 
+function absolute_units(p::HorLineAbsPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return HorLineAbsPathOp(absolute_x_position(p.x, t, units, box))
+end
+
 
 immutable HorLineRelPathOp <: PathOp
     Δx::Measure
@@ -464,6 +495,11 @@ function parsepathop(::Type{HorLineRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(HorLineRelPathOp, tokens, i, 1)
     op = HorLineRelPathOp(x_measure(tokens[i]))
     return (op, i + 1)
+end
+
+function absolute_units(p::HorLineRelPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return HorLineRelPathOp(absolute_units(p.Δx, t, units, box))
 end
 
 
@@ -477,6 +513,11 @@ function parsepathop(::Type{VertLineAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 1)
 end
 
+function absolute_units(p::VertLineAbsPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return VertLineAbsPathOp(absolute_y_position(p.x, t, units, box))
+end
+
 
 immutable VertLineRelPathOp <: PathOp
     Δy::Measure
@@ -486,6 +527,11 @@ function parsepathop(::Type{VertLineRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(VertLineRelPathOp, tokens, i, 1)
     op = VertLineRelPathOp(y_measure(tokens[i]))
     return (op, i + 1)
+end
+
+function absolute_units(p::VertLineRelPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return VertLineRelPathOp(absolute_units(p.Δy, t, units, box))
 end
 
 
@@ -503,6 +549,14 @@ function parsepathop(::Type{CubicCurveAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 6)
 end
 
+function absolute_units(p::CubicCurveAbsPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return CubicCurveAbsPathOp(
+            absolute_units(p.ctrl1, t, units, box),
+            absolute_units(p.ctrl2, t, units, box),
+            absolute_units(p.to, t, units, box))
+end
+
 
 immutable CubicCurveRelPathOp <: PathOp
     ctrl1::Point
@@ -518,6 +572,17 @@ function parsepathop(::Type{CubicCurveRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 6)
 end
 
+function absolute_units(p::CubicCurveRelPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return CubicCurveRelPathOp(
+            Point(absolute_units(p.ctrl1.x, t, units, box),
+                  absolute_units(p.ctrl1.y, t, units, box)),
+            Point(absolute_units(p.ctrl2.x, t, units, box),
+                  absolute_units(p.ctrl2.y, t, units, box)),
+            Point(absolute_units(p.to.x, t, units, box),
+                  absolute_units(p.to.y, t, units, box)))
+end
+
 
 immutable QuadCurveAbsPathOp <: PathOp
     ctrl1::Point
@@ -529,6 +594,13 @@ function parsepathop(::Type{QuadCurveAbsPathOp}, tokens::AbstractArray, i)
     op = QuadCurveAbsPathOp(Point(tokens[i],     tokens[i + 1]),
                             Point(tokens[i + 2], tokens[i + 3]))
     return (op, i + 4)
+end
+
+function absolute_units(p::QuadCurveAbsPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return QuadCurveAbsPathOp(
+            absolute_units(p.ctrl1, t, units, box),
+            absolute_units(p.to, t, units, box))
 end
 
 
@@ -544,6 +616,15 @@ function parsepathop(::Type{QuadCurveRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 4)
 end
 
+function absolute_units(p::QuadCurveRelPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return QuadCurveRelPathOp(
+            Point(absolute_units(p.ctrl1.x, t, units, box),
+                  absolute_units(p.ctrl1.y, t, units, box)),
+            Point(absolute_units(p.to.x, t, units, box),
+                  absolute_units(p.to.y, t, units, box)))
+end
+
 
 immutable QuadCurveShortAbsPathOp <: PathOp
     to::Point
@@ -553,6 +634,12 @@ function parsepathop(::Type{QuadCurveShortAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(QuadCurveShortAbsPathOp, tokens, i, 2)
     op = QuadCurveShortAbsPathOp(Point(tokens[i], tokens[i + 1]))
     return (op, i + 2)
+end
+
+function absolute_units(p::QuadCurveShortAbsPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return QuadCurveShortAbsPathOp(
+            absolute_units(p.to, t, units, box))
 end
 
 
@@ -566,6 +653,13 @@ function parsepathop(::Type{QuadCurveShortRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
+function absolute_units(p::QuadCurveRelPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return QuadCurveRelPathOp(
+            Point(absolute_units(p.to.x, t, units, box),
+                  absolute_units(p.to.y, t, units, box)))
+end
+
 
 immutable ArcAbsPathOp <: PathOp
     rx::Measure
@@ -575,6 +669,18 @@ immutable ArcAbsPathOp <: PathOp
     sweep::Bool
     to::Point
 end
+
+function absolute_units(p::ArcAbsPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return ArcAbsPathOp(
+        absolute_units(p.rx, t, units, box),
+        absolute_units(p.ry, t, units, box),
+        p.rotation,
+        p.largearc,
+        p.sweep,
+        absolute_units(to, t, units, box))
+end
+
 
 immutable ArcRelPathOp <: PathOp
     rx::Measure
@@ -621,6 +727,17 @@ function parsepathop{T <: Union(ArcAbsPathOp, ArcRelPathOp)}(::Type{T}, tokens::
     return (op, i + 7)
 end
 
+function absolute_units(p::ArcRelPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return ArcRelPathOp(
+        absolute_units(p.rx, t, units, box),
+        absolute_units(p.ry, t, units, box),
+        p.rotation,
+        p.largearc,
+        p.sweep,
+        Point(absolute_units(to.x, t, units, box),
+              absolute_units(to.y, t, units, box)))
+end
 
 const path_ops = [
      :M => MoveAbsPathOp,
@@ -672,14 +789,27 @@ function parsepath(tokens::AbstractArray)
 end
 
 
-
-
 immutable PathPrimitive <: FormPrimitive
+    ops::PathOp
+end
 
+typealias Path Form{PathPrimitive}
+
+
+function path(tokens::AbstractArray)
+    return PathPrimitive(parsepath(tokens))
 end
 
 
+function path{T <: AbstractArray}(tokens::AbstractArray{T})
+    return Path([path(ts) for ts in tokens])
+end
 
+
+function absolute_units(p::PathPrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return PathPrimitive([absolute_units(op, t, units, box) for op in p.ops])
+end
 
 
 
