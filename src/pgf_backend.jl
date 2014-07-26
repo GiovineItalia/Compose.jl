@@ -426,14 +426,8 @@ function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
               (prim.x_point.y.abs - cy)^2)
     ry = sqrt((prim.y_point.x.abs - cx)^2 +
               (prim.y_point.y.abs - cy)^2)
-
-    if isdefined(:rad2deg)
-        theta = rad2deg(atan2(prim.x_point.y.abs - cy,
-                              prim.x_point.x.abs - cx))
-    else
-        theta = radians2degrees(atan2(prim.x_point.y.abs - cy,
-                                      prim.x_point.x.abs - cx))
-    end
+    theta = rad2deg(atan2(prim.x_point.y.abs - cy,
+                          prim.x_point.x.abs - cx))
 
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
@@ -477,9 +471,7 @@ function draw(img::PGF, prim::TextPrimitive, idx::Int)
     if !img.visible; return; end
     push!(props, string(
         "rotate around={",
-        isdefined(:rad2deg) ?
-            svg_fmt_float(-rad2deg(prim.rot.theta)) :
-            svg_fmt_float(-radians2degrees(prim.rot.theta)),
+            svg_fmt_float(-rad2deg(prim.rot.theta)),
             ": (",
             svg_fmt_float(prim.rot.offset.x.abs - prim.position.x.abs),
             ",",
