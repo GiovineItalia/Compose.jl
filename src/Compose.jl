@@ -8,6 +8,7 @@ module Compose
 
 using Color
 using Iterators
+using DataStructures
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
@@ -21,7 +22,8 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Paren
        font, fontsize, svgid, svgclass, svgattribute, jsinclude, jscall, Measure,
        inch, mm, cm, pt, px, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
        vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
-       hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound
+       hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
+       introspect
 
 abstract Backend
 

@@ -390,3 +390,90 @@ function drawpart(backend::Backend, root_container::Container)
 end
 
 
+# Produce a tree diagram representing the tree structure of a graphic.
+#
+# Args:
+#   root: graphic to represent
+#
+# Returns:
+#   A Context giving a tree diagram.
+#
+function introspect(root::Context)
+    positions = Dict{ComposeNode, (Float64, Float64)}()
+    level_count = Int[]
+    max_level = 0
+
+    # TODO: It would be nice if we can try to do a better job of positioning
+    # nodes within their levels
+
+    q = Queue((ComposeNode, Int))
+    enqueue!(q, (root, 1))
+    figs = compose!(context(), stroke("#333"), linewidth(0.5mm))
+    figsize = 6mm
+    while !isempty(q)
+        node, level = dequeue!(q)
+
+        if level > length(level_count)
+            push!(level_count, 1)
+        else
+            level_count[level] += 1
+        end
+        max_level = max(max_level, level)
+
+        # draw shit
+        fig = context(level_count[level] - 1, level - 1)
+        if isa(node, Context)
+            compose!(fig, circle(0.5, 0.5, figsize/2), fill(LCHab(92, 10, 77)))
+            for child in node.children
+                enqueue!(q, (child, level + 1))
+            end
+        elseif isa(node, Container)
+            # TODO: should be slightly different than Context...
+            compose!(fig, circle(0.5, 0.5, figsize/2), fill(LCHab(92, 10, 77)))
+        elseif isa(node, Form)
+            compose!(fig,
+                rectangle(0.5cx - figsize/2, 0.5cy - figsize/2, figsize, figsize),
+                fill(LCHab(68, 74, 192)))
+        elseif isa(node, Property)
+            # TODO: what should the third color be?
+            compose!(fig,
+                polygon([(0.5cx - figsize/2, 0.5cy - figsize/2),
+                         (0.5cx + figsize/2, 0.5cy - figsize/2),
+                         (0.5, 0.5cy + figsize/2)]),
+                fill(LCHab(68, 74, 29)))
+        else
+            error("Unknown node type $(typeof(node))")
+        end
+        compose!(figs, fig)
+
+        positions[node] = (level_count[level] - 0.5, level - 0.5)
+    end
+
+    # make a second traversal of the tree to draw lines between parents and
+    # children
+    lines_ctx = compose!(context(order=-1), stroke(LCHab(92, 10, 77)))
+    enqueue!(q, (root, 1))
+    while !isempty(q)
+        node, level = dequeue!(q)
+        if !isa(node, Context)
+            continue
+        end
+        pos = positions[node]
+
+        for child in node.children
+            childpos = positions[child]
+            compose!(lines_ctx,
+                     line([(pos[1], pos[2]), (childpos[1], childpos[2])]))
+            enqueue!(q, (child, level + 1))
+        end
+    end
+
+    return compose!(context(units=UnitBox(0, 0, maximum(level_count), max_level)),
+                    (context(order=-2), rectangle(), fill("#333")),
+                    lines_ctx, figs)
+end
+
+
+
+
+
