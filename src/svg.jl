@@ -758,15 +758,8 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
               (prim.x_point.y.abs - cy)^2)
     ry = sqrt((prim.y_point.x.abs - cx)^2 +
               (prim.y_point.y.abs - cy)^2)
-
-    if isdefined(:rad2deg)
-        theta = rad2deg(atan2(prim.x_point.y.abs - cy,
-                              prim.x_point.x.abs - cx))
-    else
-        theta = radians2degrees(atan2(prim.x_point.y.abs - cy,
-                                      prim.x_point.x.abs - cx))
-    end
-
+    theta = rad2deg(atan2(prim.x_point.y.abs - cy,
+                          prim.x_point.x.abs - cx))
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
         return
@@ -836,14 +829,7 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
 
     if abs(prim.rot.theta) > 1e-4
         print(img.out, " transform=\"rotate(")
-
-        # TODO: remove when 0.2 support is dropped
-        if isdefined(:rad2deg)
-            svg_print_float(img.out, rad2deg(prim.rot.theta))
-        else
-            svg_print_float(img.out, radians2degrees(prim.rot.theta))
-        end
-
+        svg_print_float(img.out, rad2deg(prim.rot.theta))
         print(img.out, ", ")
         svg_print_float(img.out, prim.rot.offset.x.abs)
         print(img.out, ", ")
@@ -1086,16 +1072,7 @@ end
 
 # Return a URL corresponding to a ClipPrimitive
 function clippathurl(img::SVG, property::ClipPrimitive)
-    # TODO: remove once 0.2 support is dropped
-    if applicable(get!, () -> genid(img), img.clippaths, property)
-        return get!(() -> genid(img), img.clippaths, property)
-    else
-        if haskey(img.clippaths, property)
-            return img.clippaths[property]
-        else
-            return img.clippaths[property] = genid(img)
-        end
-    end
+    return get!(() -> genid(img), img.clippaths, property)
 end
 
 

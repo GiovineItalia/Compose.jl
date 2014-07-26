@@ -155,19 +155,9 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     minrowheights = Array(Float64, m)
     mincolwidths = Array(Float64, n)
 
-    # TODO: use the normal set constructor when we drop 0.2 support
-    function set(T::Type, itr)
-        S = Set{T}()
-        union!(S, itr)
-    end
-
-    function set(itr)
-        set(Any, itr)
-    end
-
     # convert tbl.fixed_configs to linear indexing
     fixed_configs = {
-        set([(j-1)*m + i for (i, j) in fixed_config])
+        Set([(j-1)*m + i for (i, j) in fixed_config])
         for fixed_config in tbl.fixed_configs
     }
 

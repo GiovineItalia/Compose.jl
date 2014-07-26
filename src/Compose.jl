@@ -23,7 +23,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Paren
        inch, mm, cm, pt, px, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
        vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
-       CAIROSURFACE, introspect
+       CAIROSURFACE, introspect, set_default_graphic_size
 
 abstract Backend
 
@@ -47,6 +47,15 @@ include("stack.jl")
 # How large to draw graphics when not explicitly drawing to a backend
 default_graphic_width = 12cm
 default_graphic_height = 12cm
+
+
+function set_default_graphic_size(width::MeasureOrNumber,
+                                  height::MeasureOrNumber)
+    global default_graphic_width
+    global default_graphic_height
+    default_graphic_width = x_measure(width)
+    default_graphic_height = y_measure(height)
+end
 
 # Default property values
 default_font_family = "Helvetic,Arial,sans"
