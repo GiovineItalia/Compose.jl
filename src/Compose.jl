@@ -11,8 +11,9 @@ using Iterators
 using DataStructures
 import JSON
 
-import Base: length, start, next, done, isempty, getindex, setindex!, writemime,
-             convert, zero, isless, max, fill, size, copy, min, max, +, -, *, /
+import Base: length, start, next, done, isempty, getindex, setindex!,
+             display, writemime, convert, zero, isless, max, fill, size, copy,
+             min, max, +, -, *, /
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, ParentDrawContext,
        context, ctxpromise, table, set_units!, minwidth, minheight,
@@ -48,14 +49,46 @@ include("stack.jl")
 default_graphic_width = 12cm
 default_graphic_height = 12cm
 
-
 function set_default_graphic_size(width::MeasureOrNumber,
                                   height::MeasureOrNumber)
     global default_graphic_width
     global default_graphic_height
     default_graphic_width = x_measure(width)
     default_graphic_height = y_measure(height)
+    nothing
 end
+
+
+default_graphic_format = :html
+
+function set_default_graphic_format(fmt::Symbol)
+    if !(fmt in [:html, :png, :svg, :pdf, :ps, :pgf])
+        error("$(fmt) is not a supported plot format")
+    end
+    global default_graphic_format
+    default_graphic_format = fmt
+    nothing
+end
+
+
+function default_mime()
+    if default_graphic_format == :png
+        "image/png"
+    elseif default_graphic_format == :svg
+        "image/svg+xml"
+    elseif default_graphic_format == :html
+        "text/html"
+    elseif default_graphic_format == :ps
+        "application/postscript"
+    elseif default_graphic_format == :pdf
+        "application/pdf"
+    elseif default_graphic_format == :pgf
+        "application/x-tex"
+    else
+        ""
+    end
+end
+
 
 # Default property values
 default_font_family = "Helvetic,Arial,sans"
@@ -134,6 +167,24 @@ try
     function writemime(io::IO, ::MIME"image/png", ctx::Context)
         draw(PNG(io, default_graphic_width, default_graphic_height), ctx)
     end
+end
+
+
+import Base.Multimedia: @try_display, xdisplayable
+
+function display(p::Context)
+    displays = Base.Multimedia.displays
+    for i = length(displays):-1:1
+        m = default_mime()
+        if xdisplayable(displays[i], m, p)
+             @try_display return display(displays[i], m, p)
+        end
+
+        if xdisplayable(displays[i], p)
+            @try_display return display(displays[i], p)
+        end
+    end
+    invoke(display,(Any,),p)
 end
 
 
