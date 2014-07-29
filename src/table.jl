@@ -3,7 +3,9 @@
 # A special kind of container promise that performs table layout optimization.
 
 type Table <: ContainerPromise
-    # Direct children must be Contexts, and not just Containers.
+    # Direct children must be Contexts, and not just Containers. If
+    # children[i,j] has a vector with multiple children it indicates multiple
+    # possible layouts for that cell in the table.
     children::Matrix{Vector{Context}}
 
     # In the formulation of the table layout problem used here, we are trying
@@ -220,10 +222,11 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     end
 
     # for a given configuration, compute the minimum width for every column and
-    # minimum height for every row.
+    # minimum height for every row. Return the penalty for choice.
     function update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
         fill!(minrowheights, -Inf)
         fill!(mincolwidths, -Inf)
+        penalty = 0.0
         for i in 1:m, j in 1:n
             if isempty(tbl.children[i, j])
                 continue
@@ -231,6 +234,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
 
             choice_ij = choice[(j-1)*m + i]
             child = tbl.children[i, j][(choice_ij == 0 ? 1 : choice_ij)]
+            penalty += child.penalty
             mw, mh = minwidth(child), minheight(child)
             if mw != nothing && mw > mincolwidths[j]
                 mincolwidths[j] = mw
@@ -242,6 +246,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
 
         minrowheights[!isfinite(minrowheights)] = 0.0
         mincolwidths[!isfinite(mincolwidths)] = 0.0
+
+        return penalty
     end
 
     it_count = 0
@@ -256,7 +262,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             end
         end
 
-        update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
+        penalty = update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
 
         minheight = sum(minrowheights)
         minwidth = sum(mincolwidths)
@@ -264,7 +270,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         update_focused_col_widths!(focused_col_widths)
         update_focused_row_heights!(focused_row_heights)
 
-        objective = sum(focused_col_widths) + sum(focused_row_heights)
+        objective = sum(focused_col_widths) + sum(focused_row_heights) - penalty
 
         # feasible?
         if minwidth < drawctx.box.width && minheight < drawctx.box.height &&

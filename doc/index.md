@@ -183,7 +183,9 @@ compose(context(), fill("tomato"),
 The context's box (i.e. `(x0, y0, width, height)`) is given in terms of its
 parent's coordinate system and defaults to `(0, 0, 1, 1)`.
 
-This is an easy mechanism to translate the coordinates of 
+This is an easy mechanism to translate the coordinates of a subtree in the
+graphic, but coordinates can be scaled and shifted as well using the `units`
+attribute k
 
 
 

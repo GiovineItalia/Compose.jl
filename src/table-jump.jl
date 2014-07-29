@@ -29,6 +29,11 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
         end
     end
 
+    penalties = Array(Float64, length(c_indexes))
+    for (l, (i, j, k)) in enumerate(c_indexes)
+        penalties[l] = tbl.children[i, j][k].penalty
+    end
+
     # 0-1 configuration variables for every cell with multiple configurations
     @defVar(model, c[1:length(c_indexes)], Bin)
 
@@ -40,7 +45,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
 
     # maximize the "size" of the focused cells
     @setObjective(model, Max, sum{w[j], j=tbl.x_focus} +
-                              sum{h[i], i=tbl.y_focus})
+                              sum{h[i], i=tbl.y_focus} -
+                              sum{penalties[i] * c[i], i=1:length(c_indexes)})
 
     # optional proportionality constraints
     if tbl.x_prop != nothing
@@ -120,8 +126,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
 
     status = solve(model)
 
-    w_solution = Float64[w_i for w_i in getValue(w)[:]]
-    h_solution = Float64[h_i for h_i in getValue(h)[:]]
+    w_solution = getValue(w)[:]
+    h_solution = getValue(h)[:]
     c_solution = getValue(c)
 
     if status == :Infeasible || !all([is_approx_integer(c_solution[l])

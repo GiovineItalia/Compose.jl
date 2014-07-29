@@ -41,6 +41,10 @@ type Context <: Container
     minwidth::Maybe(Float64)
     minheight::Maybe(Float64)
 
+    # A field that can be used by layouts to indicate that one configuration
+    # is preferable to another.
+    penalty::Float64
+
     function Context(x0=0.0w,
                      y0=0.0h,
                      width=1.0w,
@@ -53,10 +57,11 @@ type Context <: Container
                      withoutjs=false,
                      raster=false,
                      minwidth=nothing,
-                     minheight=nothing)
+                     minheight=nothing,
+                     penalty=0.0)
         return new(BoundingBox(x0, y0, width, height), units, rotation,
                    ListNull{ComposeNode}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight)
+                   withjs, withoutjs, raster, minwidth, minheight, penalty)
     end
 
     function Context(box::BoundingBox,
@@ -68,7 +73,8 @@ type Context <: Container
                      withjs::Bool,
                      withoutjs::Bool,
                      raster::Bool,
-                     minwidth, minheight)
+                     minwidth, minheight,
+                     penalty)
         if isa(minwidth, Measure)
             minwidth = minwidth.abs
         end
@@ -78,13 +84,14 @@ type Context <: Container
         end
 
         return new(box, units, rotation, children, order,
-                   clip, withjs, withoutjs, raster, minwidth, minheight)
+                   clip, withjs, withoutjs, raster, minwidth, minheight,
+                   penalty)
     end
 
     function Context(ctx::Context)
         return new(ctx.box, ctx.units, ctx.rot, ctx.children, ctx.order,
                    ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
-                   ctx.minwidth, ctx.minheight)
+                   ctx.minwidth, ctx.minheight, ctx.penalty)
     end
 end
 
@@ -101,10 +108,11 @@ function context(x0=0.0w,
                  withoutjs=false,
                  raster=false,
                  minwidth=nothing,
-                 minheight=nothing)
+                 minheight=nothing,
+                 penalty=0.0)
     return Context(BoundingBox(x0, y0, width, height), units, rotation,
                    ListNull{ComposeNode}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight)
+                   withjs, withoutjs, raster, minwidth, minheight, penalty)
 end
 
 
