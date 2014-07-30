@@ -18,7 +18,7 @@ consistent and powerful means of building vector graphics.
 
 ## Documentation
 
-(Work in progress) documentation is available at: [composejl.org](composejl.org)
+(Work in progress) documentation is available at: [composejl.org](http://composejl.org)
 
 ## Example
 
