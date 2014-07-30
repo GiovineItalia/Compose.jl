@@ -188,7 +188,7 @@ type SVG <: Backend
     #    exclude: exclude external javascript libraries
     #    embed: embed external libraries
     #    linkabs: link to external libraries (absolute path)
-    #    linkrel: link to external librariel (relative path)
+    #    linkrel: link to external libraries (relative path)
     #
     jsmode::Symbol
 

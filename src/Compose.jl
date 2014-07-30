@@ -24,7 +24,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Paren
        inch, mm, cm, pt, px, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
        vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
-       CAIROSURFACE, introspect, set_default_graphic_size
+       CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode
 
 abstract Backend
 
@@ -71,6 +71,20 @@ function set_default_graphic_format(fmt::Symbol)
 end
 
 
+# Default means to include javascript dependencies in the SVGJS backend.
+default_jsmode = :embed
+
+function set_default_jsmode(mode::Symbol)
+    global default_jsmode
+    if mode in [:none, :exclude, :embed, :linkabs, :linkrel]
+        default_jsmode = mode
+    else
+        error("$(mode) is not a valid jsmode")
+    end
+    nothing
+end
+
+
 function default_mime()
     if default_graphic_format == :png
         "image/png"
@@ -91,7 +105,7 @@ end
 
 
 # Default property values
-default_font_family = "Helvetic,Arial,sans"
+default_font_family = "Helvetica Neue,Helvetica,Arial,sans"
 default_font_size = 11pt
 default_line_width = 0.3mm
 default_stroke_color = nothing
@@ -127,24 +141,13 @@ try
     pango_cairo_ctx = C_NULL
     include("pango.jl")
 
-    if VERSION > v"0.2.1"
-        function __init__()
-            global pango_cairo_ctx
-            global pangolayout
-            ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
-            pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
-                                     Ptr{Void}, ())
-            pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
-                                     Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
-            pangolayout = PangoLayout()
-        end
-    else
+    function __init__()
         global pango_cairo_ctx
         global pangolayout
         ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
-        pango_cairo_fm  = ccall((:pango_cairo_font_map_new, Cairo._jl_libpangocairo),
+        pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
                                  Ptr{Void}, ())
-        pango_cairo_ctx = ccall((:pango_font_map_create_context, Cairo._jl_libpango),
+        pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
                                  Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
         pangolayout = PangoLayout()
     end
@@ -154,7 +157,8 @@ end
 
 
 function writemime(io::IO, m::MIME"text/html", ctx::Context)
-    draw(SVGJS(io, default_graphic_width, default_graphic_height, false), ctx)
+    draw(SVGJS(io, default_graphic_width, default_graphic_height, false,
+               jsmode=default_jsmode), ctx)
 end
 
 

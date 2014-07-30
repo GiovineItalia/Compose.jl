@@ -16,6 +16,10 @@ The "things" in this case fall one of three types: Property, Form, and Canvas.
 The semantics of composition are fairly simple, and once grasped provide a
 consistent and powerful means of building vector graphics.
 
+## Documentation
+
+(Work in progress) documentation is available at: [composejl.org](composejl.org)
+
 ## Example
 
 The easiest way to get a sense of how Compose works is with an example. So,

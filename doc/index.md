@@ -1,6 +1,7 @@
 ---
 title: Compose
 author: Daniel C. Jones
+order: 1
 ...
 
 
@@ -54,7 +55,7 @@ draw(SVG(3inch, 3inch), drawlogo())
 ```
 
 Compose is a declarative vector graphics system written in Julia. It's designed
-to simplify the creation of complex graphics and serves as the the basis of the
+to simplify the creation of complex graphics and serves as the basis of the
 [Gadfly](https://github.com/dcjones/Gadfly.jl) data visualization package.
 
 Compose is declarative
@@ -62,7 +63,7 @@ Compose is declarative
 
 In a declarative graphics system, a figure is built without specifying the
 precise sequence of drawing commands but by arranging shapes and attaching
-properties. This makes it easy to break a complex graphic into managable parts
+properties. This makes it easy to break a complex graphic into manageable parts
 and then figure out how to combine the parts.
 
 Everything is a tree
@@ -85,6 +86,7 @@ That's enough to start drawing some simple shapes.
 
 ```{.julia hide="true"}
 set_default_graphic_size(4cm, 4cm)
+set_default_jsmode(:exclude)
 ```
 
 ```julia
@@ -97,7 +99,7 @@ The compose function accepts S-expressions
 ------------------------------------------
 
 In the first example, we had to call `compose` twice just to draw a lousy red
-square. Fortunately `compose` has a few tricks up its sleave. As everyone from
+square. Fortunately `compose` has a few tricks up its sleeve. As everyone from
 lisp hackers and [phylogeneticists](http://en.wikipedia.org/wiki/Newick_format)
 knows, trees can be defined most tersely using S-expressions. We can rewrite our
 first example like:
@@ -107,8 +109,8 @@ first example like:
 compose(context(), rectangle(), fill("tomato"))
 ```
 
-Furthermore, more complex trees can be formed by grouping subtrees into
-parethesis or brackets.
+Furthermore, more complex trees can be formed by grouping subtrees with
+parenthesis or brackets.
 
 
 ```julia
@@ -167,8 +169,9 @@ Contexts specify a coordinate system for their children
 --------------------------------------------------------
 
 In addition to forming internal nodes to group `Form` and `Property` children, a
-`Context` defines a coordinate system using the `context(x0, y0, width, height)`
-form.
+`Context` can define a coordinate system using the `context(x0, y0, width, height)`
+form. Here we'll reposition some circles by composing them with contexts using
+different coordinate systems.
 
 ```{.julia hide="true"}
 set_default_graphic_size(4cm, 4cm)
@@ -181,31 +184,126 @@ compose(context(), fill("tomato"),
 ```
 
 The context's box (i.e. `(x0, y0, width, height)`) is given in terms of its
-parent's coordinate system and defaults to `(0, 0, 1, 1)`.
+parent's coordinate system and defaults to `(0, 0, 1, 1)`. All the children of a
+context will use coordinates relative to that box.
 
 This is an easy mechanism to translate the coordinates of a subtree in the
-graphic, but coordinates can be scaled and shifted as well using the `units`
-attribute k
+graphic, but coordinates can be scaled and shifted as well by passing a
+`UnitBox` to the `units` attribute.
 
-
+```julia
+compose(context(),
+        (context(units=UnitBox(0, 0, 1000, 1000)),
+         polygon([(0, 1000), (500, 1000), (500, 0)]),
+         fill("tomato")),
+        (context(),
+         polygon([(1, 1), (0.5, 1), (0.5, 0)]),
+         fill("bisque")))
+```
 
 
 Measures can be a combination of absolute and relative units
 ------------------------------------------------------------
 
 Complex visualizations often are defined using a combination of relative and
-absolute units. Compose makes these easy.
+absolute units. Compose makes these easy. In fact there are three sorts of units
+used in Compose:
 
+  * **Context units**: If no unit is explicitly attached to a number, it is
+    assumed to be in “context units”, which are relative to the parent Context's
+    box and coordinate system. (Constants: `cx`, `cy`)
+  * **Width/Height units**: Sometimes you'll want place geometry in relative
+    coordinates, but bypassing the parent context's coordinate system.
+    Width/height work so that `(0w, 0h)` is always the top-left corner of the
+    contxt, and `(1w, 1h)` is always the bottom-right. (Constants: `w`, `h`)
+  * **Absolute units**: Absolute units are inches, centimeters, points, etc.
+    (Constants: `inch`, `cm`, `mm`, `pt`)
 
-
-Contexts can impose a coordinate system on their children
----------------------------------------------------------
-
-
+Any linear combination of these types of units is allowed. For example: `0.5w +
+2cm - 5cx` is a valid measure that can be used anywhere.
 
 
 Forms and Properties can be vectorized
 --------------------------------------
+
+Often one needs to produce many copies of a similar shape. Most of the forms an
+properties have a scalar and vector forms to simplify this sort of mass
+production.
+
+We'll use `circle` as an example, which has two constructors:
+
+```{.julia execute="false"}
+circle(x=0.5w, y=0.5h, r=0.5w)
+circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
+```
+
+The first of these creates only circle centered at `(x, y)` with radius `r`. The
+second form can succinctly create many circles:
+
+```julia
+compose(context(),
+        circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1, 0.1, 0.1]),
+        fill(LCHab(92, 10, 77)))
+```
+
+The arrays in passed to `xs`, `ys`, and `rs` need not be the same length.
+Shorter arrays will be cycled. This let's us shorten this last example by only
+specifying the radius just once.
+
+```julia
+compose(context(),
+        circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1]),
+        fill(LCHab(92, 10, 77)))
+```
+
+The `fill` is a property can also be vectorized here to quickly assign different
+colors to each circle.
+
+
+```julia
+compose(context(),
+        circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1]),
+        fill([LCHab(92, 10, 77), LCHab(68, 74, 192), LCHab(78, 84, 29)]))
+```
+
+If vector properties are used with vector forms, they must be of equal length.
+
+
+Compose can produce arbitrary directed graphs
+---------------------------------------------
+
+Though we've so far explained `compose` as producing trees, there's nothing
+stopping one from producing an arbitrary directed graph. This can be quite
+useful in some cases.
+
+In this example, only one triangle object is ever initialized, despite many
+triangles being drawn, which is possible because the graph produced by
+`siepinski` is not a tree. The triangle polygon has many parent nodes than
+“re-contextualize” that triangle by repositioning it.
+
+```{.julia hide="true"}
+set_default_graphic_size(8cm, 8*(sqrt(3)/2)*cm)
+```
+
+```julia
+function sierpinski(n)
+    if n == 0
+        compose(context(), polygon([(1,1), (0,1), (1/2, 0)]))
+    else
+        t = sierpinski(n - 1)
+        compose(context(),
+                (context(1/4,   0, 1/2, 1/2), t),
+                (context(  0, 1/2, 1/2, 1/2), t),
+                (context(1/2, 1/2, 1/2, 1/2), t))
+    end
+end
+
+compose(sierpinski(6), fill(LCHab(92, 10, 77)))
+```
+
+There are no safeguards to check for cycles. You can produce a graph with a
+cycle and Compose will run in an infinite loop trying to draw it. In most
+applications, this isn't a concern.
 
 
 
