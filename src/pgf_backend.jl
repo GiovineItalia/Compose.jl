@@ -71,10 +71,14 @@ type PGF <: Backend
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
+    # Emit only the tikzpicture environment 
+    only_tikz :: Bool
+
     function PGF(out::IO,
                  width,
                  height,
-                 emit_on_finish::Bool=true)
+                 emit_on_finish::Bool=true,
+                 only_tikz = false)
         width = size_measure(width)
         height = size_measure(height)
         if !isabsolute(width) || !isabsolute(height)
@@ -103,13 +107,14 @@ type PGF <: Backend
         img.emit_on_finish = emit_on_finish
         img.ownedfile = false
         img.filename = nothing
+        img.only_tikz = only_tikz
         return img
     end
 
     # Write to a file.
-    function PGF(filename::String, width, height)
+    function PGF(filename::String, width, height, only_tikz = false)
         out = open(filename, "w")
-        img = PGF(out, width, height, true)
+        img = PGF(out, width, height, true, only_tikz)
         img.ownedfile = true
         img.filename = filename
         return img
@@ -117,8 +122,8 @@ type PGF <: Backend
 
     # Write to buffer.
     function PGF(width::MeasureOrNumber, height::MeasureOrNumber,
-                 emit_on_finish::Bool=true)
-        return PGF(IOBuffer(), width, height, emit_on_finish)
+                 emit_on_finish::Bool=true, only_tikz = false)
+        return PGF(IOBuffer(), width, height, emit_on_finish, only_tikz)
     end
 end
 
@@ -146,9 +151,13 @@ function finish(img::PGF)
     write(img.out,
         """
         \\end{tikzpicture}
-        \\end{document}
         """
         )
+    !img.only_tikz &&  write(img.out,
+        """
+        \\end{document}
+        """
+        )   
 
     if method_exists(flush, (typeof(img.out),))
         flush(img.out)
@@ -177,7 +186,7 @@ function root_box(img::PGF)
 end
 
 function writeheader(img::PGF)
-    write(img.out,
+    !img.only_tikz && write(img.out,
         """
         \\documentclass{minimal}
         \\usepackage{pgfplots}
@@ -186,6 +195,8 @@ function writeheader(img::PGF)
         \\usepackage[active,tightpage]{preview}
         \\PreviewEnvironment{tikzpicture}
         \\begin{document}
+        """)
+    write(img.out, """
         \\begin{tikzpicture}[x=1mm,y=-1mm]
         """)
     return img
