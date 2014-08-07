@@ -193,55 +193,88 @@ end
 
 
 function pad_outer(c::Context,
-                   xpadding::MeasureOrNumber,
-                   ypadding::MeasureOrNumber)
-    xpadding = size_measure(xpadding)
-    ypadding = size_measure(ypadding)
+                   left_padding::MeasureOrNumber,
+                   right_padding::MeasureOrNumber,
+                   top_padding::MeasureOrNumber,
+                   bottom_padding::MeasureOrNumber)
+
+    left_padding   = size_measure(left_padding)
+    right_padding  = size_measure(right_padding)
+    top_padding    = size_measure(top_padding)
+    bottom_padding = size_measure(bottom_padding)
+
     root = context(c.box.x0, c.box.y0,
-                   c.box.width + 2xpadding,
-                   c.box.height + 2ypadding,
+                   c.box.width + left_padding + right_padding,
+                   c.box.height + top_padding + bottom_padding,
                    minwidth=c.minwidth,
                    minheight=c.minheight)
     c = copy(c)
-    c.box = BoundingBox(xpadding, ypadding, 1w - 2*xpadding, 1h - 2*ypadding)
+    c.box = BoundingBox(left_padding, top_padding,
+                        1w - left_padding - right_padding,
+                        1h - top_padding - right_padding)
     return compose!(root, c)
 end
 
 
+function pad_outer(c::Context, padding::MeasureOrNumber)
+    return pad_outer(c, padding, padding, padding, padding)
+end
+
+
+function pad_outer(cs::Vector{Context},
+                   left_padding::MeasureOrNumber,
+                   right_padding::MeasureOrNumber,
+                   top_padding::MeasureOrNumber,
+                   bottom_padding::MeasureOrNumber)
+    return map(c -> pad_outer(c, left_padding, right_padding,
+                              top_padding, bottom_padding), cs)
+end
+
+
+function pad_outer(cs::Vector{Context}, padding::MeasureOrNumber)
+    return pad_outer(cs, padding, padding, padding, padding)
+end
+
+
 function pad_inner(c::Context,
-                   xpadding::MeasureOrNumber,
-                   ypadding::MeasureOrNumber)
-    xpadding = size_measure(xpadding)
-    ypadding = size_measure(ypadding)
+                   left_padding::MeasureOrNumber,
+                   right_padding::MeasureOrNumber,
+                   top_padding::MeasureOrNumber,
+                   bottom_padding::MeasureOrNumber)
+    left_padding   = size_measure(left_padding)
+    right_padding  = size_measure(right_padding)
+    top_padding    = size_measure(top_padding)
+    bottom_padding = size_measure(bottom_padding)
+
     root = context(c.box.x0, c.box.y0,
                    c.box.width,
                    c.box.height,
                    minwidth=c.minwidth,
                    minheight=c.minheight)
     c = copy(c)
-    c.box = BoundingBox(xpadding, ypadding, 1w - 2xpadding, 1h - 2ypadding)
+    c.box = BoundingBox(left_padding, top_padding,
+                        1w - left_padding - right_padding,
+                        1h - top_padding - bottom_padding)
     return compose!(root, c)
 end
 
 
-function pad_outer(c::Context, padding::MeasureOrNumber)
-    return pad_outer(c, padding, padding)
-end
-
-
-function pad_outer(cs::Vector{Context}, xpadding::MeasureOrNumber,
-                   ypadding::MeasureOrNumber)
-    return map(c -> pad_outer(c, xpadding, ypadding), cs)
-end
-
-
-function pad_outer(cs::Vector{Context}, padding::MeasureOrNumber)
-    return pad_outer(cs, padding, padding)
-end
-
-
 function pad_inner(c::Context, padding::MeasureOrNumber)
-    return pad_inner(c, padding, padding)
+    return pad_inner(c, padding, padding, padding, padding)
+end
+
+
+function pad_inner(cs::Vector{Context}, left_padding::MeasureOrNumber,
+                   right_padding::MeasureOrNumber,
+                   top_padding::MeasureOrNumber,
+                   bottom_padding::MeasureOrNumber)
+    return map(c -> pad_inner(c, left_padding, right_padding,
+                              top_padding, bottom_padding), cs)
+end
+
+
+function pad_inner(cs::Vector{Context}, padding::MeasureOrNumber)
+    return pad_inner(cs, padding, padding, padding, padding)
 end
 
 
