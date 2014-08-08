@@ -132,14 +132,14 @@ function pango_to_svg(text::String)
                 write(output, "</tspan>")
             else
                 # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"super\">")
-                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"0.35em\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"-0.6em\" font-size=\"83.333333%\">")
             end
         elseif mat.captures[2] == "sub"
             if mat.captures[1] == "/"
                 write(output, "</tspan>")
             else
                 # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"sub\">")
-                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"0.6em\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"0.6em\" font-size=\"83.333333%\">")
             end
         elseif mat.captures[2] == "i"
             if mat.captures[1] == "/"
