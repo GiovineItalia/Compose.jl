@@ -11,7 +11,7 @@
     background-color: #303030;
     position: relative;
     color: #fffaea;
-    font-family: "Libertad";
+    font-family: "Quire Sans", "Source Sans", sans-serif;
     font-weight: normal;
 }
 
@@ -50,7 +50,7 @@ pre {
     color: #fffaea;
     margin: 20px;
     font-family: "Source Code Pro", "monospace";
-    font-weight: lighter;
+    font-weight: light;
     font-size: 10pt;
     margin-bottom: 1em;
     padding-bottom: 1em;
@@ -93,8 +93,10 @@ h4 {
 
 h1, h2, h3, h4, h5 {
     margin-top: 1.5em;
-    margin-bottom: 2.0pt;
+    margin-bottom: 8.0pt;
     color: #333;
+    font-weight: bold;
+    font-family: "PMN Caecilia", serif;
 }
 
 h1 a, h2 a, h3 a, h4 a, h5 a {
@@ -103,10 +105,10 @@ h1 a, h2 a, h3 a, h4 a, h5 a {
 
 body {
     text-rendering: optimizeLegibility;
-    font-family: "Libertad Book", "Source Sans Pro", "sans-serif";
-    font-size: 11.0pt;
+    font-family: "Quire Sans", "Source Sans Pro", sans-serif;
+    font-size: 11.5pt;
     color: #333;
-    background-color: #fff;
+    background-color: #fafafa;
     position: relative;
 }
 
@@ -115,7 +117,7 @@ a:hover {
 }
 
 a {
-    font-weight: bolder;
+    font-weight: bold;
     color: #444;
 }
 
@@ -126,7 +128,6 @@ a {
 
 #body-content {
     margin-top: 1em;
-    background-color: #fff;
 }
 
 #table-of-contents {
@@ -135,11 +136,11 @@ a {
     width: 100%;
     height: 100%;
     top: 0;
-    border-left: 1px solid #f0f0f0;
+    /*border-left: 1px solid #f0f0f0;*/
     overflow-y: scroll;
     overflow-x: hidden;
     z-index: 2;
-    font-style: italic;
+    /*font-style: italic;*/
 }
 
 #table-of-contents-content {
@@ -165,10 +166,15 @@ a {
     font-weight: normal;
 }
 
+#table-of-contents input {
+    font-style: normal;
+}
+
 #table-of-contents ul {
   list-style: none;
   padding: 0;
   padding-left: 1em;
+  line-height: 110%;
 }
 
 #table-of-contents > li {
@@ -197,7 +203,8 @@ ul.nav > li > a.toc-item {
 }
 
 .toc-current-doc a {
-    font-weight: bolder;
+    font-family: "Quire Sans", "Source Sans Pro", sans-serif;
+    font-weight: bold;
     display: block;
     color: #435C71;
 }

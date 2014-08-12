@@ -11,40 +11,6 @@ end
 
 const measure_nil = MeasureNil()
 
-zero(::Type{MeasureNil}) = measure_nil
-zero(::MeasureNil) = measure_nil
-
-# ambiguity warning
-max(::Function, b::MeasureNil) = measure_nil
-min(::Function, b::MeasureNil) = measure_nil
-
-max(a::MeasureNil, b::MeasureNil) = measure_nil
-max(a::MeasureNil, b)             = b
-max(a, b::MeasureNil)             = a
-
-min(a::MeasureNil, b::MeasureNil) = measure_nil
-min(a::MeasureNil, b)             = measure_nil
-min(a, b::MeasureNil)             = measure_nil
-
-isless(a::MeasureNil, b::MeasureNil) = false
-
-+(a::MeasureNil, b::MeasureNil) = measure_nil
-+(a::MeasureNil, b)             = b
-+(a, b::MeasureNil)             = a
-
--(a::MeasureNil, b::MeasureNil) = measure_nil
--(a::MeasureNil, b)             = -b
--(a, b::MeasureNil)             =  a
--(a::MeasureNil)                = measure_nil
-
-*(a::MeasureNil, b::MeasureNil) = error("Two measure_nil objects multiplied")
-*(a::MeasureNil, b)             = measure_nil
-*(a, b::MeasureNil)             = measure_nil
-
-/(a::MeasureNil, b::MeasureNil) = error("Division by a measure_nil")
-/(a, b::MeasureNil)             = error("Division by a measure_nil")
-/(a::MeasureNil, b)             = measure_nil
-
 
 # All measures in Compose are specified as the sum
 immutable Measure{S, T}
@@ -62,6 +28,45 @@ immutable Measure{S, T}
         new(float64(abs), cx, cy, float64(cw), float64(ch))
     end
 end
+
+
+typealias MeasureOrNumber Union(Measure, Number)
+
+
+# MeasureNil semantics
+zero(::Type{MeasureNil}) = measure_nil
+zero(::MeasureNil) = measure_nil
+
+# ambiguity warning
+max(::Function, b::MeasureNil) = measure_nil
+min(::Function, b::MeasureNil) = measure_nil
+
+max(a::MeasureNil, b::MeasureNil) = measure_nil
+max(a::MeasureNil, b)             = b
+max(a, b::MeasureNil)             = a
+
+min(a::MeasureNil, b::MeasureNil) = measure_nil
+min(a::MeasureNil, b)             = measure_nil
+min(a, b::MeasureNil)             = measure_nil
+
+isless(a::MeasureNil, b::MeasureNil) = false
+
++(a::MeasureNil, b::MeasureNil)      = measure_nil
++(a::MeasureNil, b::MeasureOrNumber) = b
++(a::MeasureOrNumber, b::MeasureNil) = a
+
+-(a::MeasureNil, b::MeasureNil)      = measure_nil
+-(a::MeasureNil, b::MeasureOrNumber) = -b
+-(a::MeasureOrNumber, b::MeasureNil) =  a
+-(a::MeasureNil)                     = measure_nil
+
+*(a::MeasureNil, b::MeasureNil)      = error("Two measure_nil objects multiplied")
+*(a::MeasureNil, b::MeasureOrNumber) = measure_nil
+*(a::MeasureOrNumber, b::MeasureNil) = measure_nil
+
+/(a::MeasureNil, b::MeasureNil)      = error("Division by a measure_nil")
+/(a::MeasureOrNumber, b::MeasureNil) = error("Division by a measure_nil")
+/(a::MeasureNil, b::MeasureOrNumber) = measure_nil
 
 
 function -{S,T}(a::Measure{S, T})
@@ -102,9 +107,6 @@ function Measure{S, T}(u::Measure{S, T};
                    cw  === nothing ? u.cw  : cw,
                    ch  === nothing ? u.ch  : ch)
 end
-
-
-typealias MeasureOrNumber Union(Measure, Number)
 
 
 function zero{S, T}(::Type{Measure{S, T}})
