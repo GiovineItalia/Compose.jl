@@ -51,22 +51,22 @@ min(a, b::MeasureNil)             = measure_nil
 
 isless(a::MeasureNil, b::MeasureNil) = false
 
-+(a::MeasureNil, b::MeasureNil)      = measure_nil
-+(a::MeasureNil, b::MeasureOrNumber) = b
-+(a::MeasureOrNumber, b::MeasureNil) = a
++(a::MeasureNil, b::MeasureNil) = measure_nil
++(a::MeasureNil, b)             = b
++(a, b::MeasureNil)             = a
 
--(a::MeasureNil, b::MeasureNil)      = measure_nil
--(a::MeasureNil, b::MeasureOrNumber) = -b
--(a::MeasureOrNumber, b::MeasureNil) =  a
--(a::MeasureNil)                     = measure_nil
+-(a::MeasureNil, b::MeasureNil) = measure_nil
+-(a::MeasureNil, b)             = -b
+-(a, b::MeasureNil)             =  a
+-(a::MeasureNil)                = measure_nil
 
-*(a::MeasureNil, b::MeasureNil)      = error("Two measure_nil objects multiplied")
-*(a::MeasureNil, b::MeasureOrNumber) = measure_nil
-*(a::MeasureOrNumber, b::MeasureNil) = measure_nil
+*(a::MeasureNil, b::MeasureNil) = error("Two measure_nil objects multiplied")
+*(a::MeasureNil, b)             = measure_nil
+*(a, b::MeasureNil)             = measure_nil
 
-/(a::MeasureNil, b::MeasureNil)      = error("Division by a measure_nil")
-/(a::MeasureOrNumber, b::MeasureNil) = error("Division by a measure_nil")
-/(a::MeasureNil, b::MeasureOrNumber) = measure_nil
+/(a::MeasureNil, b::MeasureNil) = error("Division by a measure_nil")
+/(a, b::MeasureNil)             = error("Division by a measure_nil")
+/(a::MeasureNil, b)             = measure_nil
 
 
 function -{S,T}(a::Measure{S, T})
