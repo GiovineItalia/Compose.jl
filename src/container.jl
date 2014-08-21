@@ -320,7 +320,7 @@ function drawpart(backend::Backend, root_container::Container)
         if isa(container, ContainerPromise)
             container = realize(container,
                                 ParentDrawContext(parent_transform, units, parent_box))
-            if !isa(context, Container)
+            if !isa(container, Container)
                 error("Error: A container promise function did not evaluate to a container")
             end
             push!(S, (container, parent_transform, units, parent_box))
@@ -328,42 +328,42 @@ function drawpart(backend::Backend, root_container::Container)
         end
 
         @assert isa(container, Context)
-        context = container
+        ctx = container
 
-        box = absolute_units(context.box, parent_transform, units, parent_box)
-        rot = absolute_units(context.rot, parent_transform, units, box)
+        box = absolute_units(ctx.box, parent_transform, units, parent_box)
+        rot = absolute_units(ctx.rot, parent_transform, units, box)
         transform = combine(convert(Transform, rot), parent_transform)
 
-        if context.raster && isdefined(:Cairo) && isa(backend, SVG)
+        if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
             bitmapbackend = PNG(box.width, box.height, false)
-            draw(bitmapbackend, context)
+            draw(bitmapbackend, ctx)
 
             f = bitmap("image/png", takebuf_array(bitmapbackend.out),
                        0, 0, 1w, 1h)
-            c = ctx(context.box.x0, context.box.y0,
-                    context.box.width, context.box.height,
-                    units=context.units,
-                    order=context.order,
-                    clip=context.clip)
+            c = context(ctx.box.x0, ctx.box.y0,
+                        ctx.box.width, ctx.box.height,
+                        units=UnitBox(),
+                        order=ctx.order,
+                        clip=ctx.clip)
             push!(S, (compose(c, f), parent_transform, units, parent_box))
             continue
         end
 
-        if context.units != nil_unit_box
-            units = absolute_units(context.units, transform, units, box)
+        if ctx.units != nil_unit_box
+            units = absolute_units(ctx.units, transform, units, box)
         end
 
-        for child in context.children
+        for child in ctx.children
             if isa(child, Property)
                 push!(properties, absolute_units(child, parent_transform, units, parent_box))
             end
         end
 
-        if context.clip
-            x0 = context.box.x0
-            y0 = context.box.y0
-            x1 = x0 + context.box.width
-            y1 = y0 + context.box.height
+        if ctx.clip
+            x0 = ctx.box.x0
+            y0 = ctx.box.y0
+            x1 = x0 + ctx.box.width
+            y1 = y0 + ctx.box.height
             push!(properties,
                   absolute_units(clip(Point(x0, y0), Point(x1, y0),
                                       Point(x1, y1), Point(x0, y1)),
@@ -376,13 +376,13 @@ function drawpart(backend::Backend, root_container::Container)
             empty!(properties)
         end
 
-        for child in context.children
+        for child in ctx.children
             if isa(child, Form)
                 draw(backend, transform, units, box, child)
             end
         end
 
-        for child in context.children
+        for child in ctx.children
             if isa(child, Container)
                 push!(container_children,
                       (order(child), 1 + length(container_children), child))

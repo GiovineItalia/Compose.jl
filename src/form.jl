@@ -375,7 +375,7 @@ function absolute_units(p::BitmapPrimitive, t::Transform, units::UnitBox,
     return BitmapPrimitive(p.mime, p.data,
                            absolute_units(p.corner, t, units, box),
                            Measure(abs=absolute_units(p.width, t, units, box)),
-                           Measure(abs=absolute_units(p.width, t, units, box)))
+                           Measure(abs=absolute_units(p.height, t, units, box)))
 end
 
 
