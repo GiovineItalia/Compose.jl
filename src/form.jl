@@ -90,10 +90,11 @@ end
 
 function rectangle(x0s::AbstractArray, y0s::AbstractArray,
                    widths::AbstractArray, heights::AbstractArray)
-    return Rectangle([RectanglePrimitive(
-                         Point(x0, y0),
-                         x_measure(width), y_measure(height))
-                      for (x0, y0, width, height) in cyclezip(x0s, y0s, widths, heights)])
+    primitives = @makeprimitives RectanglePrimitive,
+                    (x0 in x0s, y0 in y0s, width in widths, height in heights),
+                    RectanglePrimitive(Point(x0, y0),
+                                       x_measure(width), y_measure(height))
+    return Rectangle(primitives)
 end
 
 
@@ -136,8 +137,10 @@ end
 
 
 function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
-    return Circle([CirclePrimitive(Point(x, y), x_measure(r))
-                   for (x, y, r) in cyclezip(xs, ys, rs)])
+    return Circle(
+        @makeprimitives CirclePrimitive,
+            (x in xs, y in ys, r in rs),
+            CirclePrimitive(Point(x, y), x_measure(r)))
 end
 
 
@@ -177,10 +180,12 @@ end
 
 function ellipse(xs::AbstractArray, ys::AbstractArray,
                  x_radiuses::AbstractArray, y_radiuses::AbstractArray)
-    return Ellipse[EllipsePrimitive(Point(x, y),
-                                    Point(x_measure(x) + x_measure(x_radius), y),
-                                    Point(x, y_measure(y) + y_measure(y_radius)))
-                   for (x, y, x_radius, y_radius) in cyclezip(xs, ys, x_radiuses, y_radiuses)]
+    return Ellipse(
+        @makeprimitives EllipsePrimitive,
+            (x in xs, y in ys, x_radius in x_radiuses, y_radius in y_radiuses),
+            EllipsePrimitive(Point(x, y),
+                             Point(x_measure(x) + x_measure(x_radius), y),
+                             Point(x, y_measure(y) + y_measure(y_radius))))
 end
 
 
@@ -246,16 +251,20 @@ end
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{String},
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
               rots::AbstractArray=[Rotation()])
-    return Text([TextPrimitive(Point(x, y), value, halign, valign, rot)
-                 for (x, y, value, halign, valign, rot) in cyclezip(xs, ys, values, haligns, valigns, rots)])
+    return Text(
+        @makeprimitives TextPrimitive,
+            (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
+            TextPrimitive(Point(x, y), value, halign, valign, rot))
 end
 
 
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
               rots::AbstractArray=[Rotation()])
-    return Text([TextPrimitive(Point(x, y), string(value), halign, valign, rot)
-                 for (x, y, value, halign, valign, rot) in cyclezip(xs, ys, values, haligns, valigns, rots)])
+    return Text(
+        @makeprimitives TextPrimitive,
+            (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
+            TextPrimitive(Point(x, y), string(value), halign, valign, rot))
 end
 
 
@@ -325,9 +334,11 @@ end
 
 function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
                ctrl1s::AbstractArray, anchor1s::AbstractArray)
-    return Curve([CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
-                                 convert(Point, ctrl1), convert(Point, anchor1))
-                  for (anchor0, ctrl0, ctrl1, anchor1) in cyclezip(anchor0s, ctrl0s, ctrl1s, anchor1s)])
+    return Curve(
+        @makeprimitives CurvePrimitive,
+            (anchor0 in archor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
+            CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
+                           convert(Point, ctrl1), convert(Point, anchor1)))
 end
 
 
@@ -365,8 +376,10 @@ end
 function bitmap(mimes::AbstractArray, datas::AbstractArray,
                 x0s::AbstractArray, y0s::AbstractArray,
                 widths::AbstractArray, heights::AbstractArray)
-    return Bitmap([BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height))
-                   for (mime, data, x0, y0, width, height) in cyclezip(mimes, datas, x0s, y0s, widths, heights)])
+    return Bitmap(
+        @makeprimitives BitmapPrimitive,
+            (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heigths),
+            BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height)))
 end
 
 

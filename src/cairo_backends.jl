@@ -669,6 +669,9 @@ end
 
 
 function draw(img::Image, form::Form)
+    # TODO: if the vector properties are only color, fill, stroke, etc
+    # we don't need to pop_after each one. We can just let value clobber
+    # each other. Figure out a nice way to decide to do that.
     for (idx, primitive) in enumerate(form.primitives)
         push_vector_properties(img, idx)
         draw(img, primitive)

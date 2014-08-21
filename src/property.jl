@@ -440,8 +440,10 @@ end
 
 
 function svgattribute(attributes::AbstractArray, values::AbstractArray)
-    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
-                         for (attribute, value) in cyclezip(attributes, values)])
+    return SVGAttribute(
+        @makeprimitives SVGAttributePrimitive,
+            (attribute in attributes, value in values),
+            SVGAttributePrimitive(attribute, string(value)))
 end
 
 
@@ -481,8 +483,10 @@ end
 
 function jscall(codes::AbstractArray,
                 args::AbstractArray{Vector{Measure}}=Vector{Measure}[Measure[]])
-    return JSCall([JSCallPrimitive(code, arg)
-                   for (code, arg) in cyclezip(codes, args)])
+    return JSCall(
+        @makeprimitives JSCallPrimitive,
+            (code in codes, arg in args),
+            JSCallPrimitive(code, arg))
 end
 
 
