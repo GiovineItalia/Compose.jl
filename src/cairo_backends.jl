@@ -397,6 +397,22 @@ function restore_property_state(img::Image)
 end
 
 
+
+# Return true if the vector properties need to be pushed and popped, rather
+# than simply applied.
+function vector_properties_require_push_pop(img::Image)
+    for (propertytype, property) in img.vector_properties
+        propertytype
+        if in(propertytype, [Property{FontPrimitive},
+                             Property{FontSizePrimitive},
+                             Property{ClipPrimitive}])
+            return true
+        end
+    end
+    return false
+end
+
+
 function push_vector_properties(img::Image, idx::Int)
     save_property_state(img)
     for (propertytype, property) in img.vector_properties
@@ -669,13 +685,25 @@ end
 
 
 function draw(img::Image, form::Form)
-    # TODO: if the vector properties are only color, fill, stroke, etc
-    # we don't need to pop_after each one. We can just let value clobber
-    # each other. Figure out a nice way to decide to do that.
-    for (idx, primitive) in enumerate(form.primitives)
-        push_vector_properties(img, idx)
-        draw(img, primitive)
-        pop_vector_properties(img)
+    if vector_properties_require_push_pop(img)
+        for (idx, primitive) in enumerate(form.primitives)
+            push_vector_properties(img, idx)
+            draw(img, primitive)
+            pop_vector_properties(img)
+        end
+    else
+        for (idx, primitive) in enumerate(form.primitives)
+            for (propertytype, property) in img.vector_properties
+                if property === nothing
+                    continue
+                end
+                if idx > length(property.primitives)
+                    error("Vector form and vector property differ in length. Can't distribute.")
+                end
+                apply_property(img, property.primitives[idx])
+            end
+            draw(img, primitive)
+        end
     end
 end
 
