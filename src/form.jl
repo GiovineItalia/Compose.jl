@@ -107,10 +107,10 @@ function absolute_units(p::RectanglePrimitive, t::Transform, units::UnitBox,
     height = absolute_units(p.height, t, units, box)
 
     return RectanglePrimitive(
-        Point(Measure(abs=width < 0 ? corner.x.abs + width : corner.x.abs),
-              Measure(abs=height < 0 ? corner.y.abs + height : corner.y.abs)),
-        Measure(abs=abs(width)),
-        Measure(abs=abs(height)))
+        Point(Measure(width < 0 ? corner.x.abs + width : corner.x.abs),
+              Measure(height < 0 ? corner.y.abs + height : corner.y.abs)),
+        Measure(abs(width)),
+        Measure(abs(height)))
 end
 
 
@@ -147,7 +147,7 @@ end
 function absolute_units(p::CirclePrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return CirclePrimitive(absolute_units(p.center, t, units, box),
-                           Measure(abs=absolute_units(p.radius, t, units, box)))
+                           Measure(absolute_units(p.radius, t, units, box)))
 end
 
 
@@ -387,8 +387,8 @@ function absolute_units(p::BitmapPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return BitmapPrimitive(p.mime, p.data,
                            absolute_units(p.corner, t, units, box),
-                           Measure(abs=absolute_units(p.width, t, units, box)),
-                           Measure(abs=absolute_units(p.height, t, units, box)))
+                           Measure(absolute_units(p.width, t, units, box)),
+                           Measure(absolute_units(p.height, t, units, box)))
 end
 
 
@@ -433,8 +433,8 @@ end
 
 function absolute_units(p::MoveRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return MoveRelPathOp(Point(Measure(abs=absolute_units(p.to.x, t, units, box)),
-                               Measure(abs=absolute_units(p.to.y, t, units, box))))
+    return MoveRelPathOp(Point(Measure(absolute_units(p.to.x, t, units, box)),
+                               Measure(absolute_units(p.to.y, t, units, box))))
 end
 
 
@@ -479,8 +479,8 @@ end
 
 function absolute_units(p::LineRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return LineRelPathOp(Point(Measure(abs=absolute_units(p.to.x, t, units, box)),
-                               Measure(abs=absolute_units(p.to.y, t, units, box))))
+    return LineRelPathOp(Point(Measure(absolute_units(p.to.x, t, units, box)),
+                               Measure(absolute_units(p.to.y, t, units, box))))
 end
 
 
@@ -496,7 +496,7 @@ end
 
 function absolute_units(p::HorLineAbsPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return HorLineAbsPathOp(Measure(abs=absolute_x_position(p.x, t, units, box)))
+    return HorLineAbsPathOp(Measure(absolute_x_position(p.x, t, units, box)))
 end
 
 
@@ -512,7 +512,7 @@ end
 
 function absolute_units(p::HorLineRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return HorLineRelPathOp(Measure(abs=absolute_units(p.Δx, t, units, box)))
+    return HorLineRelPathOp(Measure(absolute_units(p.Δx, t, units, box)))
 end
 
 
@@ -528,7 +528,7 @@ end
 
 function absolute_units(p::VertLineAbsPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return VertLineAbsPathOp(Measure(abs=absolute_y_position(p.x, t, units, box)))
+    return VertLineAbsPathOp(Measure(absolute_y_position(p.x, t, units, box)))
 end
 
 
@@ -544,7 +544,7 @@ end
 
 function absolute_units(p::VertLineRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return VertLineRelPathOp(Measure(abs=absolute_units(p.Δy, t, units, box)))
+    return VertLineRelPathOp(Measure(absolute_units(p.Δy, t, units, box)))
 end
 
 
@@ -588,12 +588,12 @@ end
 function absolute_units(p::CubicCurveRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return CubicCurveRelPathOp(
-            Point(Measure(abs=absolute_units(p.ctrl1.x, t, units, box)),
-                  Measure(abs=absolute_units(p.ctrl1.y, t, units, box))),
-            Point(Measure(abs=absolute_units(p.ctrl2.x, t, units, box)),
-                  Measure(abs=absolute_units(p.ctrl2.y, t, units, box))),
-            Point(Measure(abs=absolute_units(p.to.x, t, units, box)),
-                  Measure(abs=absolute_units(p.to.y, t, units, box))))
+            Point(Measure(absolute_units(p.ctrl1.x, t, units, box)),
+                  Measure(absolute_units(p.ctrl1.y, t, units, box))),
+            Point(Measure(absolute_units(p.ctrl2.x, t, units, box)),
+                  Measure(absolute_units(p.ctrl2.y, t, units, box))),
+            Point(Measure(absolute_units(p.to.x, t, units, box)),
+                  Measure(absolute_units(p.to.y, t, units, box))))
 end
 
 
@@ -632,10 +632,10 @@ end
 function absolute_units(p::QuadCurveRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return QuadCurveRelPathOp(
-            Point(Measure(abs=absolute_units(p.ctrl1.x, t, units, box)),
-                  Measure(abs=absolute_units(p.ctrl1.y, t, units, box))),
-            Point(Measure(abs=absolute_units(p.to.x, t, units, box)),
-                  Measure(abs=absolute_units(p.to.y, t, units, box))))
+            Point(Measure(absolute_units(p.ctrl1.x, t, units, box)),
+                  Measure(absolute_units(p.ctrl1.y, t, units, box))),
+            Point(Measure(absolute_units(p.to.x, t, units, box)),
+                  Measure(absolute_units(p.to.y, t, units, box))))
 end
 
 
@@ -669,8 +669,8 @@ end
 function absolute_units(p::QuadCurveRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return QuadCurveRelPathOp(
-            Point(Measure(abs=absolute_units(p.to.x, t, units, box)),
-                  Measure(abs=absolute_units(p.to.y, t, units, box))))
+            Point(Measure(absolute_units(p.to.x, t, units, box)),
+                  Measure(absolute_units(p.to.y, t, units, box))))
 end
 
 
@@ -686,8 +686,8 @@ end
 function absolute_units(p::ArcAbsPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return ArcAbsPathOp(
-        Measure(abs=absolute_units(p.rx, t, units, box)),
-        Measure(abs=absolute_units(p.ry, t, units, box)),
+        Measure(absolute_units(p.rx, t, units, box)),
+        Measure(absolute_units(p.ry, t, units, box)),
         p.rotation,
         p.largearc,
         p.sweep,
@@ -743,13 +743,13 @@ end
 function absolute_units(p::ArcRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return ArcRelPathOp(
-        Measure(abs=absolute_units(p.rx, t, units, box)),
-        Measure(abs=absolute_units(p.ry, t, units, box)),
+        Measure(absolute_units(p.rx, t, units, box)),
+        Measure(absolute_units(p.ry, t, units, box)),
         p.rotation,
         p.largearc,
         p.sweep,
-        Point(Measure(abs=absolute_units(to.x, t, units, box)),
-              Measure(abs=absolute_units(to.y, t, units, box))))
+        Point(Measure(absolute_units(to.x, t, units, box)),
+              Measure(absolute_units(to.y, t, units, box))))
 end
 
 const path_ops = [

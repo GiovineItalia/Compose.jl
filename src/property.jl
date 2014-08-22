@@ -112,7 +112,7 @@ end
 
 function absolute_units(primitive::StrokeDashPrimitive, t::Transform,
                         units::UnitBox, box::AbsoluteBoundingBox)
-    return StrokeDashPrimitive([Measure(abs=absolute_units(v, t, units, box))
+    return StrokeDashPrimitive([Measure(absolute_units(v, t, units, box))
                                 for v in primitive.value])
 end
 
@@ -211,7 +211,7 @@ end
 
 function absolute_units(primitive::LineWidthPrimitive, t::Transform,
                         units::UnitBox, box::AbsoluteBoundingBox)
-    return LineWidthPrimitive(Measure(abs=absolute_units(primitive.value, t, units, box)))
+    return LineWidthPrimitive(Measure(absolute_units(primitive.value, t, units, box)))
 end
 
 
@@ -374,7 +374,7 @@ end
 
 function absolue_units(primitive::FontSizePrimitive, t::Transform,
                        units::UnitBox, box::AbsoluteBoundingBox)
-    return FontSizePrimitive(Measure(abs=absolute_units(primitive.value, t, units, box)))
+    return FontSizePrimitive(Measure(absolute_units(primitive.value, t, units, box)))
 end
 
 

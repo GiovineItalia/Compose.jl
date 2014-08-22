@@ -291,7 +291,7 @@ end
 # properties, expanding context promises, etc as needed.
 #
 function drawpart(backend::Backend, root_container::Container)
-    S = {(root_container, Transform(), UnitBox(), root_box(backend))}
+    S = {(root_container, IdentityTransform(), UnitBox(), root_box(backend))}
 
     # used to collect property children
     properties = Array(Property, 0)
@@ -335,11 +335,13 @@ function drawpart(backend::Backend, root_container::Container)
         transform = combine(convert(Transform, rot), parent_transform)
 
         if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
+            # TODO: commented out while I search for the real source of the
+            # slowness, cause it it aint this.
             bitmapbackend = PNG(box.width, box.height, false)
             draw(bitmapbackend, ctx)
-
             f = bitmap("image/png", takebuf_array(bitmapbackend.out),
                        0, 0, 1w, 1h)
+
             c = context(ctx.box.x0, ctx.box.y0,
                         ctx.box.width, ctx.box.height,
                         units=UnitBox(),

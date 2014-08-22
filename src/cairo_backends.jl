@@ -767,19 +767,19 @@ function draw(img::Image, prim::TextPrimitive)
     pos = copy(prim.position)
     Cairo.set_text(img.ctx, prim.value, true)
     width, height = get_layout_size(img)
-    pos = Point(pos.x, Measure(abs=pos.y.abs - height))
+    pos = Point(pos.x, Measure(pos.y.abs - height))
 
     if prim.halign != hleft || prim.valign != vbottom
         if prim.halign == hcenter
-            pos = Point(Measure(abs=pos.x.abs - width/2), pos.y)
+            pos = Point(Measure(pos.x.abs - width/2), pos.y)
         elseif prim.halign == hright
-            pos = Point(Measure(abs=pos.x.abs - width), pos.y)
+            pos = Point(Measure(pos.x.abs - width), pos.y)
         end
 
         if prim.valign == vcenter
-            pos = Point(pos.x, Measure(abs=pos.y.abs + height/2))
+            pos = Point(pos.x, Measure(pos.y.abs + height/2))
         elseif prim.valign == vtop
-            pos = Point(pos.x, Measure(abs=pos.y.abs + height))
+            pos = Point(pos.x, Measure(pos.y.abs + height))
         end
     end
 

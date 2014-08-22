@@ -84,7 +84,7 @@ function zero(::Measure)
 end
 
 
-function Measure(abs, cx, cy, cw, ch)
+function Measure(abs, cx=measure_nil, cy=measure_nil, cw=0.0, ch=0.0)
     Measure{typeof(cx), typeof(cy)}(abs, cx, cy, cw, ch)
 end
 
@@ -333,7 +333,7 @@ function x_measure(a::Measure)
 end
 
 function x_measure(a)
-    Measure(cx=a)
+    Measure(0.0, a)
 end
 
 
@@ -342,7 +342,7 @@ function y_measure(a::Measure)
 end
 
 function y_measure(a)
-    Measure(cy=a)
+    Measure(0.0, measure_nil, a)
 end
 
 
@@ -351,7 +351,7 @@ function size_measure(a::Measure)
 end
 
 function size_measure(a)
-    Measure(abs=a)
+    Measure(a)
 end
 
 
@@ -568,7 +568,14 @@ end
 
 
 # Transform matrix in absolute coordinates
-immutable Transform
+
+abstract Transform
+
+
+immutable IdentityTransform <: Transform
+end
+
+immutable MatrixTransform <: Transform
     M::Matrix{Float64}
 
     function Transform()
@@ -577,22 +584,28 @@ immutable Transform
              0.0 0.0 1.0])
     end
 
-    function Transform(M::Matrix{Float64})
+    function MatrixTransform(M::Matrix{Float64})
         new(M)
     end
 end
 
-
-const identity_transform = Transform()
-
-
-function isidentity(a::Transform)
-    a.M == identity_transform.M
+function combine(a::IdentityTransform, b::IdentityTransform)
+    return a
 end
 
 
-function combine(a::Transform, b::Transform)
-    Transform(a.M * b.M)
+function combine(a::IdentityTransform, b::MatrixTransform)
+    return b
+end
+
+
+function combine(a::MatrixTransform, b::IdentityTransform)
+    return a
+end
+
+
+function combine(a::MatrixTransform, b::MatrixTransform)
+    MatrixTransform(a.M * b.M)
 end
 
 
@@ -629,13 +642,17 @@ copy(rot::Rotation) = Rotation(rot)
 
 
 function convert(::Type{Transform}, rot::Rotation)
-    ct = cos(rot.theta)
-    st = sin(rot.theta)
-    x0 = rot.offset.x - (ct * rot.offset.x - st * rot.offset.y)
-    y0 = rot.offset.y - (st * rot.offset.x + ct * rot.offset.y)
-    return Transform([ct  -st  x0.abs
-                      st   ct  y0.abs
-                      0.0 0.0  1.0])
+    if rot.theta == 0.0
+        return IdentityTransform()
+    else
+        ct = cos(rot.theta)
+        st = sin(rot.theta)
+        x0 = rot.offset.x - (ct * rot.offset.x - st * rot.offset.y)
+        y0 = rot.offset.y - (st * rot.offset.x + ct * rot.offset.y)
+        return MatrixTransform([ct  -st  x0.abs
+                                st   ct  y0.abs
+                                0.0 0.0  1.0])
+    end
 end
 
 
@@ -685,7 +702,7 @@ end
 
 # Convert a Rotation to a Transform
 function absolute_units(rot::Rotation,
-                        t::Transform,
+                        t::MatrixTransform,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
 
@@ -696,6 +713,15 @@ function absolute_units(rot::Rotation,
     t = combine(rott, t)
     theta = atan2(t.M[2,1], t.M[1,1])
     return Rotation(theta, absrot.offset)
+end
+
+
+function absolute_units(rot::Rotation,
+                        t::IdentityTransform,
+                        unit_box::UnitBox,
+                        parent_box::AbsoluteBoundingBox)
+
+    return Rotation(rot.theta, absolute_units(rot.offset, t, unit_box, parent_box))
 end
 
 
@@ -764,14 +790,22 @@ end
 
 # Convert a Point to a Point in absolute units
 function absolute_units(point::Point,
-                        t::Transform,
+                        t::MatrixTransform,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
     x = absolute_x_position(point.x, t, unit_box, parent_box)
     y = absolute_y_position(point.y, t, unit_box, parent_box)
     xyt = t.M * [x, y, 1.0]
-
-    Point(Measure(abs=xyt[1]), Measure(abs=xyt[2]))
+    return Point(Measure(xyt[1]), Measure(xyt[2]))
 end
 
+
+function absolute_units(point::Point,
+                        t::IdentityTransform,
+                        unit_box::UnitBox,
+                        parent_box::AbsoluteBoundingBox)
+    x = absolute_x_position(point.x, t, unit_box, parent_box)
+    y = absolute_y_position(point.y, t, unit_box, parent_box)
+    return Point(Measure(x), Measure(y))
+end
 
