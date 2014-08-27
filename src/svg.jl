@@ -7,7 +7,7 @@ const xmlns = Dict()
 
 
 # Format a floating point number into a decimal string of reasonable precision.
-function svg_fmt_float(x::Float64)
+function svg_fmt_float(x::FloatingPoint)
     # All svg (in our use) coordinates are in millimeters. This number gives the
     # largest deviation from the true position allowed in millimeters.
     const eps = 0.01
@@ -27,7 +27,7 @@ end
 
 # A much faster version of svg_fmt_float. This does not allocate any
 # temporary buffers, because it writes directly to the output.
-function svg_print_float(io::IO, x::Float64)
+function svg_print_float(io::IO, x::FloatingPoint)
     const ndig = 2
     const eps = 1.0/10^ndig
     if isfinite(x)
