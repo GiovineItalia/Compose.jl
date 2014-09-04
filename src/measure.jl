@@ -51,23 +51,6 @@ min(a, b::MeasureNil)             = measure_nil
 
 isless(a::MeasureNil, b::MeasureNil) = false
 
-+(a::MeasureNil, b::MeasureNil) = measure_nil
-+(a::MeasureNil, b)             = b
-+(a, b::MeasureNil)             = a
-
--(a::MeasureNil, b::MeasureNil) = measure_nil
--(a::MeasureNil, b)             = -b
--(a, b::MeasureNil)             =  a
--(a::MeasureNil)                = measure_nil
-
-*(a::MeasureNil, b::MeasureNil) = error("Two measure_nil objects multiplied")
-*(a::MeasureNil, b)             = measure_nil
-*(a, b::MeasureNil)             = measure_nil
-
-/(a::MeasureNil, b::MeasureNil) = error("Division by a measure_nil")
-/(a, b::MeasureNil)             = error("Division by a measure_nil")
-/(a::MeasureNil, b)             = measure_nil
-
 
 function -{S,T}(a::Measure{S, T})
     return Measure{S, T}(-a.abs, -a.cx, -a.cy, -a.cw, -a.ch)
@@ -190,10 +173,31 @@ end
 # Measure Arithmatic
 # ------------------
 
+
+# Avoid ambiguity errors
+add_measure_part(a::MeasureNil, b::MeasureNil) = measure_nil
+add_measure_part(a::MeasureNil, b)             = b
+add_measure_part(a, b::MeasureNil)             = a
+add_measure_part(a, b)                         = a + b
+
+sub_measure_part(a::MeasureNil, b::MeasureNil) = measure_nil
+sub_measure_part(a::MeasureNil, b)             = b
+sub_measure_part(a, b::MeasureNil)             = a
+sub_measure_part(a, b)                         = a + b
+
+*(a::MeasureNil, b::MeasureNil) = error("Two measure_nil objects multiplied")
+*(a::MeasureNil, b)             = measure_nil
+*(a, b::MeasureNil)             = measure_nil
+
+/(a::MeasureNil, b::MeasureNil) = error("Division by a measure_nil")
+/(a, b::MeasureNil)             = error("Division by a measure_nil")
+/(a::MeasureNil, b)             = measure_nil
+
+
 function +(a::Measure, b::Measure)
     Measure(a.abs + b.abs,
-            a.cx  + b.cx,
-            a.cy  + b.cy,
+            add_measure_part(a.cx, b.cx),
+            add_measure_part(a.cy, b.cy),
             a.cw  + b.cw,
             a.ch  + b.ch)
 end
@@ -201,8 +205,8 @@ end
 
 function -(a::Measure, b::Measure)
     Measure(a.abs - b.abs,
-            a.cx  - b.cx,
-            a.cy  - b.cy,
+            sub_measure_part(a.cx, b.cx),
+            sub_measure_part(a.cy, b.cy),
             a.cw  - b.cw,
             a.ch  - b.ch)
 end
@@ -666,11 +670,12 @@ function absolute_units(u::Measure,
                         t::Transform,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
-    u.abs +
-      (u.cx / unit_box.width) * parent_box.width +
-      (u.cy / unit_box.height) * parent_box.height +
-      u.cw * parent_box.width +
-      u.ch * parent_box.height
+    add_measure_part(u.abs,
+      add_measure_part(
+        add_measure_part((u.cx / unit_box.width) * parent_box.width,
+                         (u.cy / unit_box.height) * parent_box.height),
+        u.cw * parent_box.width +
+        u.ch * parent_box.height))
 end
 
 
