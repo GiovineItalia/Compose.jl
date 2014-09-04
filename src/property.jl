@@ -452,13 +452,14 @@ end
 
 immutable JSIncludePrimitive <: PropertyPrimitive
     value::String
+    jsmodule::Union(Nothing, (String, String))
 end
 
 typealias JSInclude Property{JSIncludePrimitive}
 
 
-function jsinclude(value::String)
-    return JSInclude([JSIncludePrimitive(value)])
+function jsinclude(value::String, module_name=nothing)
+    return JSInclude([JSIncludePrimitive(value, module_name)])
 end
 
 # Don't bother with a vectorized version of this. It wouldn't really make #

@@ -177,6 +177,9 @@ type SVG <: Backend
     # Filenames of javsacript to include before any JSCall code.
     jsheader::Vector{String}
 
+    # (Name, binding) pairs of javascript modules the embedded code depends on
+    jsmodules::Vector{(String, String)}
+
     # User javascript from JSCall attributes
     scripts::Vector{String}
 
@@ -219,6 +222,8 @@ type SVG <: Backend
         img.current_id = nothing
         img.id_count = 0
         img.jsheader = String[]
+        img.jsmodules = Array((String, String), 1)
+        img.jsmodules[1] = ("Snap.svg", "Snap")
         img.scripts = String[]
         img.withjs = jsmode != :none
         img.jsmode = jsmode
@@ -388,18 +393,23 @@ function finish(img::SVG)
                 write(img.out, "<script> <![CDATA[\n")
             end
 
+            mod_names = join([string("\"", name, "\"") for (name, binding) in img.jsmodules], ", ")
+            mod_bindings = join([binding for (name, binding) in img.jsmodules], ", ")
+            glob_mod_bindings = join([string("glob.", binding)
+                                      for (name, binding) in img.jsmodules], ", ")
+
             write(img.out,
                 """
                 (function (glob, factory) {
                     // AMD support
                       if (typeof require === "function" && typeof define === "function" && define.amd) {
-                        require(["Snap.svg", "Gadfly"], function (Snap, Gadfly) {
-                            factory(Snap, Gadfly);
+                        require([$(mod_names)], function ($(mod_bindings)) {
+                            factory($(mod_bindings));
                         });
                       } else {
-                          factory(glob.Snap, glob.Gadfly);
+                          factory($(glob_mod_bindings));
                       }
-                })(window, function (Snap, Gadfly) {
+                })(window, function ($(mod_bindings)) {
                     var fig = Snap(\"#$(img.id)\");
                 """)
 
@@ -656,6 +666,7 @@ end
 
 function print_property(img::SVG, property::JSIncludePrimitive)
     push!(img.jsheader, property.value)
+    push!(img.jsmodules, property.jsmodule)
 end
 
 
