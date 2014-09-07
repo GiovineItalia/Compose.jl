@@ -327,7 +327,7 @@ typealias Curve Form{CurvePrimitive}
 
 function curve(anchor0::XYTupleOrPoint, ctrl0::XYTupleOrPoint,
                ctrl1::XYTupleOrPoint, anchor1::XYTupleOrPoint)
-    return Curve([CurvePrimitive(convert(Point, ancho0), convert(Point, ctrl0),
+    return Curve([CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
                                  convert(Point, ctrl1), convert(Point, anchor1))])
 end
 
