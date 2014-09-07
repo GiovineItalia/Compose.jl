@@ -62,6 +62,18 @@ function absolute_units(p::PolygonPrimitive, t::Transform, units::UnitBox,
                                   for point in p.points])
 end
 
+function boundingbox(form::PolygonPrimitive, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    x0 = minimum([p.x for p in form.points])
+    x1 = maximum([p.x for p in form.points])
+    y0 = minimum([p.y for p in form.points])
+    y1 = maximum([p.y for p in form.points])
+    return BoundingBox(x0 - linewidth,
+                       y0 - linewidth,
+                       x1 - x0 + linewidth,
+                       y1 - y0 + linewidth)
+end
+
 
 # Rectangle
 # ---------
@@ -114,6 +126,15 @@ function absolute_units(p::RectanglePrimitive, t::Transform, units::UnitBox,
 end
 
 
+function boundingbox(form::RectanglePrimitive, linewidth::Measure,
+                     font::String, fontsize::Measure)
+
+    return BoundingBox(form.corner.x - linewidth,
+                       form.corner.y - linewidth,
+                       form.width + 2*linewidth,
+                       form.height + 2*linewidth)
+end
+
 # Circle
 # ------
 
@@ -148,6 +169,14 @@ function absolute_units(p::CirclePrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return CirclePrimitive(absolute_units(p.center, t, units, box),
                            Measure(absolute_units(p.radius, t, units, box)))
+end
+
+function boundingbox(form::CirclePrimitive, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    return BoundingBox(form.center.x - form.radius - linewidth,
+                       form.center.y - form.radius - linewidth,
+                       2 * (form.radius + linewidth),
+                       2 * (form.radius + linewidth))
 end
 
 
@@ -194,6 +223,20 @@ function absolute_units(p::EllipsePrimitive, t::Transform, units::UnitBox,
     return EllipsePrimitive(absolute_units(p.center, t, units, box),
                             absolute_units(p.x_point, t, units, box),
                             absolute_units(p.y_point, t, units, box))
+end
+
+function boundingbox(form::EllipsePrimitive, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    x0 = min(form.x_point.x, form.y_point.x)
+    x1 = max(form.x_point.x, form.y_point.x)
+    y0 = min(form.x_point.y, form.y_point.y)
+    y1 = max(form.x_point.y, form.y_point.y)
+    xr = x1 - x0
+    yr = y1 - y0
+    return BoundingBox(x0 - linewidth - xr,
+                       y0 - linewidth - yr,
+                       2 * (xr + linewidth),
+                       2 * (yr + linewidth))
 end
 
 
@@ -275,6 +318,32 @@ function absolute_units(p::TextPrimitive, t::Transform, units::UnitBox,
                          absolute_units(p.rot, t, units, box))
 end
 
+function boundingbox(form::TextPrimitive, linewidth::Measure,
+                     font::String, fontsize::Measure)
+
+    width, height = text_extents(font, fontsize, form.value)[1]
+
+    if form.halign == hleft
+        x0 = form.position.x
+    elseif form.halign == hcenter
+        x0 = form.position.x - width/2
+    elseif form.halign == hright
+        x0 = form.position.x - width
+    end
+
+    if form.valign == vbottom
+        y0 = form.position.y - height
+    elseif form.valign == vcenter
+        y0 = form.position.y - height/2
+    elseif form.valign == vtop
+        y0 = form.position.y
+    end
+
+    return BoundingBox(x0 - linewidth,
+                       y0 - linewidth,
+                       width + linewidth,
+                       height + linewidth)
+end
 
 # Line
 # ----
@@ -311,6 +380,18 @@ function absolute_units(p::LinePrimitive, t::Transform, units::UnitBox,
     return LinePrimitive([absolute_units(point, t, units, box) for point in p.points])
 end
 
+
+function boundingbox(form::LinePrimitive, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    x0 = minimum([p.x for p in form.points])
+    x1 = maximum([p.x for p in form.points])
+    y0 = minimum([p.y for p in form.points])
+    y1 = maximum([p.y for p in form.points])
+    return BoundingBox(x0 - linewidth,
+                       y0 - linewidth,
+                       x1 - x0 + linewidth,
+                       y1 - y0 + linewidth)
+end
 
 # Curve
 # -----
@@ -846,6 +927,4 @@ function absolute_units(p::PathPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return PathPrimitive([absolute_units(op, t, units, box) for op in p.ops])
 end
-
-
 

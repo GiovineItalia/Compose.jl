@@ -153,6 +153,60 @@ function minheight(cont::Container)
 end
 
 
+function boundingbox(c::Context,linewidth::Measure=default_line_width,
+                     font::String=default_font_family,
+                     fontsize::Measure=default_font_size)
+    for child in c.children
+        if !isa(child, Property)
+            continue
+        end
+        for p in child.primitives
+            if isa(p, LineWidthPrimitive)
+                linewidth = p.value
+            elseif isa(p, FontSizePrimitive)
+                fontsize = p.value
+            elseif isa(p, FontPrimitive)
+                font = p.family
+            end
+        end
+    end
+
+    bb = BoundingBox(Measure(),Measure(),Measure(),Measure())
+    for child in c.children
+        if isa(child, Property)
+            continue
+        elseif isa(child,Context)
+            cbb = boundingbox(child, linewidth, font, fontsize)
+            # TODO: What about pad
+            adjusted_ch = cbb.width.ch * child.box.height.ch / child.box.width.cw
+            width′  = Measure(cbb.width.abs,
+                        cbb.width.cx == measure_nil ? measure_nil :
+                            c.units.x0 + c.units.width*(cbb.width.cx-child.units.x0)/child.units.width,
+                        cbb.width.cy == measure_nil ? measure_nil :
+                            c.units.y0 + c.units.height*(cbb.width.cy-child.units.y0)/child.units.height,
+                                child.box.width.cw * (cbb.width.cw + (isfinite(adjusted_ch) ? adjusted_ch : 0.0)),
+                                    child.box.width.ch * cbb.height.ch)
+
+            adjusted_cw = cbb.height.cw * child.box.width.cw / child.box.height.ch
+            height′ = Measure(cbb.height.abs,
+                        cbb.height.cx == measure_nil ? measure_nil :
+                            c.units.x0 + c.units.width*(cbb.height.cx-child.units.x0)/child.units.width,
+                        cbb.height.cy == measure_nil ? measure_nil :
+                            c.units.y0 + c.units.height*(cbb.height.cy-child.units.y0)/child.units.height,
+                                child.box.height.cw * cbb.height.cw, child.box.height.ch * (cbb.height.ch + (isfinite(adjusted_cw) ? adjusted_cw : 0.0)))
+            bb = union(bb, BoundingBox(child.box.x0+cbb.x0, child.box.y0+cbb.y0, width′, height′))
+        elseif isa(child, Container)
+            bb = union(bb, boundingbox(child, linewidth, font, fontsize))
+        elseif isa(child, Form)
+            for prim in child.primitives
+                bb = union(bb, boundingbox(prim, linewidth, font, fontsize))
+            end
+        end
+    end
+    return bb
+end
+
+
 # Frequently we can't compute the contents of a container without knowing its
 # absolute size, or it is one many possible layout that we want to decide
 # between before rendering. A ContainerPromise lets us defer computing a subtree
