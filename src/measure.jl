@@ -183,7 +183,7 @@ add_measure_part(a, b)                         = a + b
 sub_measure_part(a::MeasureNil, b::MeasureNil) = measure_nil
 sub_measure_part(a::MeasureNil, b)             = b
 sub_measure_part(a, b::MeasureNil)             = a
-sub_measure_part(a, b)                         = a + b
+sub_measure_part(a, b)                         = a - b
 
 *(a::MeasureNil, b::MeasureNil) = error("Two measure_nil objects multiplied")
 *(a::MeasureNil, b)             = measure_nil
@@ -224,8 +224,7 @@ function /{T, S}(a::Measure{T}, b::Measure{S})
         vala = getfield(a, unit)
         valb = getfield(b, unit)
 
-        if vala == zero(typeof(vala)) &&
-           valb == zero(typeof(valb))
+        if valb == zero(typeof(valb))
             continue
         end
 
@@ -450,6 +449,8 @@ end
 # In other words, given two bounding boxes, return a new bounding box that
 # contains both.
 function union(a::BoundingBox, b::BoundingBox)
+    (a.width == Measure() || a.height == Measure()) && return b
+    (b.width == Measure() || b.height == Measure()) && return a
     x0 = min(a.x0, b.x0)
     y0 = min(a.y0, b.y0)
     x1 = max(a.x0 + a.width, b.x0 + b.width)
