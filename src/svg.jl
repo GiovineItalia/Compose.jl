@@ -666,7 +666,9 @@ end
 
 function print_property(img::SVG, property::JSIncludePrimitive)
     push!(img.jsheader, property.value)
-    push!(img.jsmodules, property.jsmodule)
+    if property.jsmodule != nothing
+        push!(img.jsmodules, property.jsmodule)
+    end
 end
 
 
