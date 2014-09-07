@@ -274,6 +274,23 @@ function compose(a, b::Nothing)
 end
 
 
+for (f, S, T) in [(:compose!, Property, Nothing),
+                  (:compose!, Form, Nothing),
+                  (:compose!, Property, Any),
+                  (:compose!, Form, Any),
+                  (:compose, Property, Nothing),
+                  (:compose, Form, Nothing),
+                  (:compose, Property, Any),
+                  (:compose, Form, Any)]
+    eval(
+        quote
+            function $(f)(a::$(S), b::$(T))
+                error(@sprintf("Invalid composition: %s cannot be a root node.", $(S).name))
+            end
+        end)
+end
+
+
 function draw(backend::Backend, root_canvas::Context)
     drawpart(backend, root_canvas)
     finish(backend)
