@@ -448,13 +448,36 @@ end
 #
 # In other words, given two bounding boxes, return a new bounding box that
 # contains both.
-function union(a::BoundingBox, b::BoundingBox)
+#
+# Unfortunately this is in general uncomputable without knowing the absolute
+# size of the parent canvas which may be passed in via the last two parameters.
+# If not passed, this throws an error if they would have been required.
+#
+function union(a::BoundingBox, b::BoundingBox, units=nothing, parent_abs_width=nothing, parent_abs_height=nothing)
     (a.width == Measure() || a.height == Measure()) && return b
     (b.width == Measure() || b.height == Measure()) && return a
     x0 = min(a.x0, b.x0)
     y0 = min(a.y0, b.y0)
     x1 = max(a.x0 + a.width, b.x0 + b.width)
     y1 = max(a.y0 + a.height, b.y0 + b.height)
+    # Check whether we had any problematic computations
+    for m in (x0,y0,x1,y1)
+        # Pure absolute or pure relative points are fine. When they are mixed,
+        # there are problems
+        if !isabsolute(m) && m.abs != 0.0
+            if units == nothing || parent_abs_width == nothing || parent_abs_height == nothing
+                error("""Bounding boxes are uncomputable without knowledge of the
+                         absolute dimensions of the top canvase due to mixing of relative
+                         and absolute coordinates. Either pass the dimension as a parameter
+                         or restrict the context to one kind of coordinates.""")
+            end
+            parent_box = AbsoluteBoundingBox(0.0,0.0,parent_abs_width,parent_abs_height)
+            abb = union(absolute_units(a,IdentityTransform(),units,parent_box),
+                        absolute_units(b,IdentityTransform(),units,parent_box))
+            return BoundingBox(Measure(;abs = abb.x0), Measure(;abs = abb.x0),
+                               Measure(;abs = abb.width), Measure(;abs = abb.height))
+        end
+    end
     return BoundingBox(x0, y0, x1 - x0, y1 - y0)
 end
 
@@ -474,6 +497,16 @@ immutable AbsoluteBoundingBox
     function AbsoluteBoundingBox()
         return new(0.0, 0.0, 1.0, 1.0)
     end
+end
+
+function union(a::AbsoluteBoundingBox, b::AbsoluteBoundingBox)
+    (a.width == 0.0 || a.height == 0.0) && return b
+    (b.width == 0.0 || b.height == 0.0) && return a
+    x0 = min(a.x0, b.x0)
+    y0 = min(a.y0, b.y0)
+    x1 = max(a.x0 + a.width, b.x0 + b.width)
+    y1 = max(a.y0 + a.height, b.y0 + b.height)
+    return AbsoluteBoundingBox(x0, y0, x1 - x0, y1 - y0)
 end
 
 
