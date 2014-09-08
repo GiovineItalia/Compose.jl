@@ -301,6 +301,7 @@ function writeheader(img::SVG)
                stroke="$(svg_fmt_color(default_stroke_color))"
                fill="$(svg_fmt_color(default_fill_color))"
                stroke-width="$(svg_fmt_float(default_line_width.abs))"
+               font-size="$(svg_fmt_float(default_font_size.abs))"
           """)
     if img.withjs
         write(img.out, "\n     id=\"$(img.id)\"")
