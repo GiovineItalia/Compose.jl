@@ -152,6 +152,104 @@ function minheight(cont::Container)
     return cont.minheight
 end
 
+function cx_percentage(from::Measure,units::UnitBox)
+    cux0 = units.x0
+    cuw = units.width
+    if cux0 == nothing
+        cux0 = 0.0
+        cuw = 1.0
+    end
+    ret_cx_percentage = from.cx != measure_nil ? (from.cx-cux0)/cuw : 0.0
+    !isfinite(ret_cx_percentage) && (ret_cx_percentage = 0.0)
+    ret_cx_percentage
+end
+
+function cy_percentage(from::Measure,units::UnitBox)
+    cuy0 = units.x0
+    cuh = units.width
+    if cuy0 == nothing
+        cuy0 = 0.0
+        cuh = 1.0
+    end
+    ret_cy_percentage  = from.cy != measure_nil ? (from.cy-cuy0)/cuh : 0.0
+    !isfinite(ret_cy_percentage) && (ret_cy_percentage = 0.0)
+    ret_cy_percentage
+end
+
+function transformcoordinates(from::Measure,child)
+    Measure(;abs = from.abs) + (from.cw + cx_percentage(from,child.units))*child.box.width +
+                (from.ch + cy_percentage(from,child.units))*child.box.height
+end
+
+function boundingbox(c::Context,linewidth::Measure=default_line_width,
+                     font::String=default_font_family,
+                     fontsize::Measure=default_font_size,
+                     parent_abs_width = nothing,
+                     parent_abs_height = nothing)
+    for child in c.children
+        if !isa(child, Property)
+            continue
+        end
+        for p in child.primitives
+            if isa(p, LineWidthPrimitive)
+                linewidth = p.value
+            elseif isa(p, FontSizePrimitive)
+                fontsize = p.value
+            elseif isa(p, FontPrimitive)
+                font = p.family
+            end
+        end
+    end
+
+    c_abs_width = c.box.width.abs
+    if (c.box.width.cx != measure_nil && c.box.width.cx != 0) ||
+        (c.box.width.cx != measure_nil && c.box.width.cx != 0) ||
+        (c.box.width.cw != 0.0 && c.box.width.ch != 0.0)
+        if parent_abs_width == nothing || parent_abs_height == nothing
+            c_abs_width = nothing
+        else
+            c_abs_width = parent_abs_width*(c.box.width.cw + cx_percentage(c.box.width,c.units)) +
+                parent_abs_height*(c.box.width.ch + cy_percentage(c.box.width,c.units))
+        end
+    end
+
+    c_abs_height = c.box.height.abs
+    if (c.box.height.cx != measure_nil && c.box.height.cx != 0) ||
+        (c.box.height.cx != measure_nil && c.box.height.cx != 0) ||
+        (c.box.height.cw != 0.0 && c.box.height.ch != 0.0)
+        if parent_abs_width == nothing || parent_abs_height == nothing
+            c_abs_height = nothing
+        else
+            c_abs_height = parent_abs_width*(c.box.height.cw + cx_percentage(c.box.height,c.units)) +
+                parent_abs_height*(c.box.height.ch + cy_percentage(c.box.height,c.units))
+        end
+    end
+
+    bb = BoundingBox(Measure(),Measure(),Measure(),Measure())
+    for child in c.children
+        if isa(child, Property)
+            continue
+        elseif isa(child,Context)
+            cbb = boundingbox(child, linewidth, font, fontsize, c_abs_width, c_abs_height)
+            width′  = transformcoordinates(cbb.width,child)
+            height′ = transformcoordinates(cbb.height,child)
+            x0′     = transformcoordinates(cbb.x0,child)
+            y0′     = transformcoordinates(cbb.y0,child)
+            bb′ = BoundingBox(child.box.x0+x0′, child.box.y0+y0′, width′, height′)
+            bb = union(bb, bb′, c.units, c_abs_width, c_abs_height)
+        elseif isa(child, Container)
+            error("Can not compute boundingbox for graphics with non-Context containers")
+        elseif isa(child, Form)
+            for prim in child.primitives
+                newbb = boundingbox(prim, linewidth, font, fontsize)
+                nextbb = union(bb, newbb, c.units, c_abs_height, c_abs_height)
+                bb = nextbb
+            end
+        end
+    end
+    return bb
+end
+
 
 # Frequently we can't compute the contents of a container without knowing its
 # absolute size, or it is one many possible layout that we want to decide
