@@ -186,8 +186,6 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
                      fontsize::Measure=default_font_size,
                      parent_abs_width = nothing,
                      parent_abs_height = nothing)
-    @show fontsize
-    @show parent_abs_width
     for child in c.children
         if !isa(child, Property)
             continue
@@ -203,7 +201,6 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
         end
     end
 
-    @show c.box
     c_abs_width = c.box.width.abs
     if (c.box.width.cx != measure_nil && c.box.width.cx != 0) ||
         (c.box.width.cx != measure_nil && c.box.width.cx != 0) ||
@@ -215,7 +212,6 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
                 parent_abs_height*(c.box.width.ch + cy_percentage(c.box.width,c.units))
         end
     end
-    @show c_abs_width
 
     c_abs_height = c.box.height.abs
     if (c.box.height.cx != measure_nil && c.box.height.cx != 0) ||
@@ -240,15 +236,13 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
             x0′     = transformcoordinates(cbb.x0,child)
             y0′     = transformcoordinates(cbb.y0,child)
             bb′ = BoundingBox(child.box.x0+x0′, child.box.y0+y0′, width′, height′)
-            bb = union(bb, bb′, c.units, parent_abs_width, parent_abs_height)
+            bb = union(bb, bb′, c.units, c_abs_width, c_abs_height)
         elseif isa(child, Container)
             error("Can not compute boundingbox for graphics with non-Context containers")
         elseif isa(child, Form)
             for prim in child.primitives
                 newbb = boundingbox(prim, linewidth, font, fontsize)
-                @show newbb
                 nextbb = union(bb, newbb, c.units, c_abs_height, c_abs_height)
-                @show nextbb
                 bb = nextbb
             end
         end
