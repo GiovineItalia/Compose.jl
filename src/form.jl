@@ -473,6 +473,11 @@ function absolute_units(p::BitmapPrimitive, t::Transform, units::UnitBox,
 end
 
 
+function boundingbox(form::BitmapPrimitive, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
+end
+
 # Path
 # ----
 
@@ -855,29 +860,6 @@ const path_ops = [
 ]
 
 
-# TODO: Actually, I don't think I'll need this.
-const path_op_type_string = [
-     MoveAbsPathOp           => "M",
-     MoveRelPathOp           => "m",
-     ClosePathOp             => "Z",
-     ClosePathOp             => "z",
-     LineAbsPathOp           => "L",
-     LineRelPathOp           => "l",
-     HorLineAbsPathOp        => "H",
-     HorLineAbsPathOp        => "h",
-     VertLineAbsPathOp       => "V",
-     VertLineRelPathOp       => "v",
-     CubicCurveAbsPathOp     => "C",
-     CubicCurveRelPathOp     => "c",
-     QuadCurveAbsPathOp      => "Q",
-     QuadCurveRelPathOp      => "q",
-     QuadCurveShortAbsPathOp => "T",
-     QuadCurveShortRelPathOp => "t",
-     ArcAbsPathOp            => "A",
-     ArcRelPathOp            => "a"
-]
-
-
 # A path is an array of symbols, numbers, and measures following SVGs path
 # mini-language.
 function parsepath(tokens::AbstractArray)
@@ -927,4 +909,7 @@ function absolute_units(p::PathPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return PathPrimitive([absolute_units(op, t, units, box) for op in p.ops])
 end
+
+
+# TODO: boundingbox
 

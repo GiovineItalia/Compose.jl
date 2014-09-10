@@ -37,6 +37,8 @@ typealias MeasureOrNumber Union(Measure, Number)
 zero(::Type{MeasureNil}) = measure_nil
 zero(::MeasureNil) = measure_nil
 
+iszero{T}(a::T) = a == zero(T)
+
 # ambiguity warning
 max(::Function, b::MeasureNil) = measure_nil
 min(::Function, b::MeasureNil) = measure_nil

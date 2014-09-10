@@ -152,33 +152,36 @@ function minheight(cont::Container)
     return cont.minheight
 end
 
-function cx_percentage(from::Measure,units::UnitBox)
+# Normalize cx or cy coordinate to a number [0,1] according to the given
+# unit box.
+function cx_proportion(from::Measure,units::UnitBox)
     cux0 = units.x0
     cuw = units.width
     if cux0 == nothing
         cux0 = 0.0
         cuw = 1.0
     end
-    ret_cx_percentage = from.cx != measure_nil ? (from.cx-cux0)/cuw : 0.0
-    !isfinite(ret_cx_percentage) && (ret_cx_percentage = 0.0)
-    ret_cx_percentage
+    ret_cx_proportion = from.cx != measure_nil ? (from.cx-cux0)/cuw : 0.0
+    !isfinite(ret_cx_proportion) && (ret_cx_proportion = 0.0)
+    ret_cx_proportion
 end
 
-function cy_percentage(from::Measure,units::UnitBox)
+function cy_proportion(from::Measure,units::UnitBox)
     cuy0 = units.x0
     cuh = units.width
     if cuy0 == nothing
         cuy0 = 0.0
         cuh = 1.0
     end
-    ret_cy_percentage  = from.cy != measure_nil ? (from.cy-cuy0)/cuh : 0.0
-    !isfinite(ret_cy_percentage) && (ret_cy_percentage = 0.0)
-    ret_cy_percentage
+    ret_cy_proportion  = from.cy != measure_nil ? (from.cy-cuy0)/cuh : 0.0
+    !isfinite(ret_cy_proportion) && (ret_cy_proportion = 0.0)
+    ret_cy_proportion
 end
 
-function transformcoordinates(from::Measure,child)
-    Measure(;abs = from.abs) + (from.cw + cx_percentage(from,child.units))*child.box.width +
-                (from.ch + cy_percentage(from,child.units))*child.box.height
+function transformcoordinates(from::Measure, ctx::Context)
+    Measure(;abs = from.abs) +
+        (from.cw + cx_proportion(from,ctx.units))*ctx.box.width +
+        (from.ch + cy_proportion(from,ctx.units))*ctx.box.height
 end
 
 function boundingbox(c::Context,linewidth::Measure=default_line_width,
@@ -202,26 +205,24 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
     end
 
     c_abs_width = c.box.width.abs
-    if (c.box.width.cx != measure_nil && c.box.width.cx != 0) ||
-        (c.box.width.cx != measure_nil && c.box.width.cx != 0) ||
-        (c.box.width.cw != 0.0 && c.box.width.ch != 0.0)
+    if !iszero(c.box.width.cx) || !iszero(c.box.width.cy) ||
+       !iszero(c.box.width.cw) || !iszero(c.box.width.ch)
         if parent_abs_width == nothing || parent_abs_height == nothing
             c_abs_width = nothing
         else
-            c_abs_width = parent_abs_width*(c.box.width.cw + cx_percentage(c.box.width,c.units)) +
-                parent_abs_height*(c.box.width.ch + cy_percentage(c.box.width,c.units))
+            c_abs_width = parent_abs_width*(c.box.width.cw + cx_proportion(c.box.width,c.units)) +
+                parent_abs_height*(c.box.width.ch + cy_proportion(c.box.width,c.units))
         end
     end
 
     c_abs_height = c.box.height.abs
-    if (c.box.height.cx != measure_nil && c.box.height.cx != 0) ||
-        (c.box.height.cx != measure_nil && c.box.height.cx != 0) ||
-        (c.box.height.cw != 0.0 && c.box.height.ch != 0.0)
+    if !iszero(c.box.height.cx) || !iszero(c.box.height.cy) ||
+       !iszero(c.box.height.cw) || !iszero(c.box.height.ch)
         if parent_abs_width == nothing || parent_abs_height == nothing
             c_abs_height = nothing
         else
-            c_abs_height = parent_abs_width*(c.box.height.cw + cx_percentage(c.box.height,c.units)) +
-                parent_abs_height*(c.box.height.ch + cy_percentage(c.box.height,c.units))
+            c_abs_height = parent_abs_width*(c.box.height.cw + cx_proportion(c.box.height,c.units)) +
+                parent_abs_height*(c.box.height.ch + cy_proportion(c.box.height,c.units))
         end
     end
 
