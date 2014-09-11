@@ -652,8 +652,8 @@ cairo_linejoin(::LineJoinBevel) = Cairo.CAIRO_LINE_JOIN_BEVEL
 cairo_linejoin(::LineJoinRound) = Cairo.CAIRO_LINE_JOIN_ROUND
 
 
-function fillstroke(img::Image)
-    if img.fill != nothing && img.fill_opacity > 0.0 && img.visible
+function fillstroke(img::Image, strokeonly::Bool=false)
+    if img.fill != nothing && img.fill_opacity > 0.0 && img.visible && !strokeonly
         rgb = convert(RGB, img.fill)
         Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.fill_opacity)
 
@@ -769,7 +769,7 @@ function draw(img::Image, prim::LinePrimitive)
         for point in path[2:end]
             line_to(img, point)
         end
-        fillstroke(img)
+        fillstroke(img, true)
     end
 end
 

@@ -808,7 +808,7 @@ function draw(img::SVG, prim::LinePrimitive, idx::Int)
      if n <= 1; return; end
 
      indent(img)
-     print(img.out, "<path d=\"")
+     print(img.out, "<path fill=\"none\" d=\"")
      print_svg_path(img.out, prim.points, true)
      print(img.out, "\"")
      print_vector_properties(img, idx)
