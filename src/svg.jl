@@ -681,7 +681,7 @@ end
 
 
 # Print the property at the given index in each vector property
-function print_vector_properties(img::SVG, idx::Int)
+function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
     if haskey(img.vector_properties, JSCall)
         if haskey(img.vector_properties, SVGID)
             img.current_id = img.vector_properties[SVGID].primitives[idx].value
@@ -692,9 +692,11 @@ function print_vector_properties(img::SVG, idx::Int)
     end
 
     for (propertytype, property) in img.vector_properties
-        if property === nothing
+        if property === nothing ||
+           (propertytype == Fill && supress_fill)
             continue
         end
+
         if idx > length(property.primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
@@ -811,7 +813,7 @@ function draw(img::SVG, prim::LinePrimitive, idx::Int)
      print(img.out, "<path fill=\"none\" d=\"")
      print_svg_path(img.out, prim.points, true)
      print(img.out, "\"")
-     print_vector_properties(img, idx)
+     print_vector_properties(img, idx, true)
      print(img.out, "/>\n")
 end
 
@@ -877,7 +879,7 @@ function draw(img::SVG, prim::CurvePrimitive, idx::Int)
     svg_print_float(img.out, prim.anchor1.y.abs)
     print(img.out, ' ')
     print(img.out, '"')
-    print_vector_properties(img, idx)
+    print_vector_properties(img, idx, true)
     print(img.out, "/>\n")
 end
 
