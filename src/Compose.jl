@@ -47,8 +47,8 @@ include("table.jl")
 include("stack.jl")
 
 # How large to draw graphics when not explicitly drawing to a backend
-default_graphic_width = 12cm
-default_graphic_height = 12cm
+default_graphic_width = sqrt(2)*10*cm
+default_graphic_height = 10cm
 
 function set_default_graphic_size(width::MeasureOrNumber,
                                   height::MeasureOrNumber)
