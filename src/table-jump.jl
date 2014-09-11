@@ -50,19 +50,36 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
 
     # optional proportionality constraints
     if tbl.x_prop != nothing
-        # TODO: there's probably a less barbaric way of doing this
+        k1 = 1
+        while k1 < length(tbl.x_focus) && isnan(tbl.x_prop[k1])
+            k1 += 1
+        end
+
         for k in 2:length(tbl.x_focus)
-            j1 = tbl.x_focus[1]
+            if isnan(tbl.x_prop[k])
+                continue
+            end
+
+            j1 = tbl.x_focus[k1]
             jk = tbl.x_focus[k]
-            @addConstraint(model, w[j1] / tbl.x_prop[1] ==  w[jk] / tbl.x_prop[k])
+            @addConstraint(model, w[j1] / tbl.x_prop[k1] ==  w[jk] / tbl.x_prop[k])
         end
     end
 
     if tbl.y_prop != nothing
+        k1 = 1
+        while k1 < length(tbl.y_focus) && isnan(tbl.y_prop[k1])
+            k1 += 1
+        end
+
         for k in 2:length(tbl.y_focus)
-            i1 = tbl.y_focus[1]
+            if isnan(tbl.y_prop[k])
+                continue
+            end
+
+            i1 = tbl.y_focus[k1]
             ik = tbl.y_focus[k]
-            @addConstraint(model, h[i1] / tbl.y_prop[1] ==  h[ik] / tbl.y_prop[k])
+            @addConstraint(model, h[i1] / tbl.y_prop[k1] ==  h[ik] / tbl.y_prop[k])
         end
     end
 

@@ -48,13 +48,13 @@ type Table <: ContainerPromise
 
         if x_prop != nothing
             @assert length(x_prop) == length(x_focus)
-            x_prop ./= sum(x_prop)
+            x_prop ./= sum(filter(x -> !isnan(x), x_prop))
         end
 
 
         if y_prop != nothing
             @assert length(y_prop) == length(y_focus)
-            y_prop ./= sum(y_prop)
+            y_prop ./= sum(filter(x -> !isnan(x), y_prop))
         end
 
         tbl = new(Array(Vector{Context}, (m, n)),
@@ -192,7 +192,17 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
 
         if tbl.x_prop != nothing
             for k in 1:length(tbl.x_focus)
-                focused_col_widths[k] = tbl.x_prop[k] * total_focus_width
+                if isnan(tbl.x_prop[k])
+                    total_focus_width -= mincolwidths[tbl.x_focus[k]]
+                end
+            end
+
+            for k in 1:length(tbl.x_focus)
+                if !isnan(tbl.x_prop[k])
+                    focused_col_widths[k] = tbl.x_prop[k] * total_focus_width
+                else
+                    focused_col_widths[k] = mincolwidths[tbl.x_focus[k]]
+                end
             end
         else
             extra_width = total_focus_width - sum(mincolwidths[tbl.x_focus])
@@ -210,7 +220,17 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
 
         if tbl.y_prop != nothing
             for k in 1:length(tbl.y_focus)
-                focused_row_heights[k] = tbl.y_prop[k] * total_focus_height
+                if isnan(tbl.y_prop[k])
+                    total_focus_height -= minrowheights(tbl.y_focus[k])
+                end
+            end
+
+            for k in 1:length(tbl.y_focus)
+                if !isnan(tbl.y_prop[k])
+                    focused_row_heights[k] = tbl.y_prop[k] * total_focus_height
+                else
+                    focused_row_heights[k] = minrowheights[tbl.y_focus[k]]
+                end
             end
         else
             extra_height = total_focus_height - sum(minrowheights[tbl.y_focus])
