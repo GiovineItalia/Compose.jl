@@ -859,7 +859,7 @@ end
 
 function draw(img::SVG, prim::CurvePrimitive, idx::Int)
     indent(img)
-    print(img.out, "<path d=\"M")
+    print(img.out, "<path fill=\"none\" d=\"M")
     svg_print_float(img.out, prim.anchor0.x.abs)
     print(img.out, ',')
     svg_print_float(img.out, prim.anchor0.y.abs)

@@ -831,6 +831,7 @@ end
 function draw(img::Image, prim::CurvePrimitive)
     move_to(img, prim.anchor0)
     curve_to(img, prim.ctrl0, prim.ctrl1, prim.anchor1)
+    fillstroke(img, true)
 end
 
 function draw(img::Image, prim::BitmapPrimitive)
