@@ -1120,7 +1120,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     id_needed = any([isa(property, JSCall) for property in scalar_properties])
     for property in scalar_properties
         if isa(property, SVGID)
-            img.current_id = p.primitives[1].value
+            img.current_id = property.primitives[1].value
         end
     end
 

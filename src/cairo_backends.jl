@@ -541,6 +541,9 @@ end
 function apply_property(img::Image, property::JSCallPrimitive)
 end
 
+function apply_property(img::Image, property::SVGIDPrimitive)
+end
+
 function apply_property(img::Image, property::SVGClassPrimitive)
 end
 
