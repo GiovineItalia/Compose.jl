@@ -18,22 +18,7 @@ const PANGO_SCALE = 1024.0
 
 
 function pango_fmt_float(x::Float64)
-    if x < 0.1
-        a = @sprintf("%0.18f", x)
-    else
-        a = @sprintf("%f", x)
-    end
-
-    n = length(a)
-    while a[n] == '0'
-        n -= 1
-    end
-
-    if a[n] == '.'
-        n -= 1
-    end
-
-    a[1:n]
+    return @sprintf("%0.4f", x)
 end
 
 
@@ -397,6 +382,8 @@ function pango_to_svg(text::String)
 
     last_idx = 1
     open_tag = false
+    baseline_shift = 0.0
+
     tagged_text = sprint() do io
         for (idx, attr) in unpack_pango_attr_list(c_attr_list[1])
             write(io, text[last_idx:idx])
@@ -406,7 +393,7 @@ function pango_to_svg(text::String)
                 write(io, "</tspan>")
             end
 
-            if isempty(attr)
+            if isempty(attr) && baseline_shift == 0.0
                 open_tag = false
                 continue
             end
@@ -422,13 +409,18 @@ function pango_to_svg(text::String)
             # end
 
             if !(attr.rise === nothing)
-                @printf(io, " dy=\"%s\"",
-                        pango_fmt_float(-((attr.rise / PANGO_SCALE)pt).abs))
+                bs = -((attr.rise / PANGO_SCALE)pt).abs
+                @printf(io, " dy=\"%s\"", pango_fmt_float(bs))
+                baseline_shift = bs
+            elseif baseline_shift != 0.0
+                @printf(io, " dy=\"%s\"", pango_fmt_float(-baseline_shift))
+                baseline_shift = 0.0
             end
 
             if !(attr.scale === nothing)
                 @printf(io, " font-size=\"%s%%\"",
                         pango_fmt_float(100.0 * attr.scale))
+                baseline_shift *= attr.scale
             end
 
             if !(attr.style === nothing)
@@ -449,6 +441,10 @@ function pango_to_svg(text::String)
         end
 
         write(io, text[last_idx:end])
+
+        if open_tag
+            write(io, "</tspan>")
+        end
     end
 
     tagged_text

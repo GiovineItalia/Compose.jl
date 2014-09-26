@@ -124,22 +124,34 @@ function pango_to_svg(text::String)
     input = convert(Array{Uint8}, text)
     output = IOBuffer()
     lastpos = 1
+
+    baseline_shift = 0.0
+    open_tag = false
+
     for mat in eachmatch(pat, text)
         write(output, input[lastpos:mat.offset-1])
+
+        closing_tag = mat.captures[1] == "/"
+
+        if open_tag && !closing_tag
+            write(output, "</tspan>")
+        end
 
         if mat.captures[2] == "sup"
             if mat.captures[1] == "/"
                 write(output, "</tspan>")
             else
                 # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"super\">")
-                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"-0.6em\" font-size=\"83.333333%\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"-0.6em\" font-size=\"83%\">")
+                baseline_shift = -0.6 * 0.83
             end
         elseif mat.captures[2] == "sub"
             if mat.captures[1] == "/"
                 write(output, "</tspan>")
             else
                 # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"sub\">")
-                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"0.6em\" font-size=\"83.333333%\">")
+                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"0.6em\" font-size=\"83%\">")
+                baseline_shift = 0.6 * 0.83
             end
         elseif mat.captures[2] == "i"
             if mat.captures[1] == "/"
@@ -154,9 +166,19 @@ function pango_to_svg(text::String)
                 write(output, "<tspan style=\"dominant-baseline:inherit\" font-weight=\"bold\">")
             end
         end
+
+        if closing_tag && baseline_shift != 0.0
+            @printf(output, "<tspan dy=\"%fem\">", -baseline_shift)
+            baseline_shift = 0.0
+            open_tag = true
+        end
+
         lastpos = mat.offset + length(mat.match)
     end
     write(output, input[lastpos:end])
+    if open_tag
+        write(output, "</tspan>")
+    end
     bytestring(output)
 end
 
