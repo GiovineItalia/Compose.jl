@@ -141,7 +141,7 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     @addConstraint(model, sum{w[i], i=1:n} == abswidth)
     @addConstraint(model, sum{h[i], i=1:m} == absheight)
 
-    status = solve(model)
+    status = solve(model,suppress_warnings=true)
 
     w_solution = getValue(w)[:]
     h_solution = getValue(h)[:]
