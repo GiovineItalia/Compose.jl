@@ -515,6 +515,80 @@ function drawpart(backend::Backend, root_container::Container)
     end
 end
 
+function draw_recursive(backend::Backend,
+                        container::ContainerPromise,
+                        transform=IdentityTransform(),
+                        units=UnitBox(),
+                        parent_box=root_box(backend))
+    container = realize(container,
+                        ParentDrawContext(transform, units, parent_box))
+    if !isa(container, Container)
+        error("Error: A container promise function did not evaluate to a container")
+    end
+    draw_recursive(backend, container, transform, units, parent_box)
+end
+
+function draw_recursive(backend::Backend,
+                        ctx::Context,
+                        parent_transform=IdentityTransform(),
+                        units=UnitBox(),
+                        parent_box=root_box(backend))
+
+        if (iswithjs(ctx) && !iswithjs(backend)) ||
+           (iswithoutjs(ctx) && iswithjs(backend))
+            return nothing
+        end
+
+        box = absolute_units(ctx.box, parent_transform, units, parent_box)
+        rot = absolute_units(ctx.rot, parent_transform, units, box)
+        transform = combine(convert(Transform, rot), parent_transform)
+
+        if ctx.units != nil_unit_box
+            units = absolute_units(ctx.units, transform, units, box)
+        end
+
+        acc = init_context(backend, ctx)
+
+        if ctx.clip
+            x0 = ctx.box.x0
+            y0 = ctx.box.y0
+            x1 = x0 + ctx.box.width
+            y1 = y0 + ctx.box.height
+            _clip = absolute_units(clip(Point(x0, y0), Point(x1, y0),
+                                        Point(x1, y1), Point(x0, y1)),
+                                   parent_transform, units, parent_box)
+
+            acc = addto(backend, acc, draw(backend, _clip))
+        end
+
+        child_containers = Any[]
+
+        for child in ctx.children
+            if isa(child, Property)
+                # Properties get the parent units
+                prop = absolute_units(child, parent_transform, units, parent_box)
+                acc = addto(backend, acc, draw(backend, prop))
+            elseif isa(child, Form)
+                # this draw call calls draw(backend, absolute_form)
+                acc = addto(backend, acc, draw(backend, transform, units, box, child))
+            elseif isa(child, Container)
+                push!(child_containers, (order(child), length(child_containers) + 1, child))
+            else
+                warn("Not rendering child of type $(typeof(child))")
+            end
+        end
+
+        sort!(child_containers)
+        for child in child_containers
+            ord, len, container = child
+            acc = addto(backend, acc, draw_recursive(backend, container, transform, units, box))
+        end
+        empty!(child_containers)
+
+        acc
+end
+
+
 
 # Produce a tree diagram representing the tree structure of a graphic.
 #

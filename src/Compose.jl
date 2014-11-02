@@ -129,6 +129,7 @@ catch
         error("Cairo must be installed to use the PDF backend.")
 end
 include("svg.jl")
+include("patchwork.jl")
 include("pgf_backend.jl")
 
 
