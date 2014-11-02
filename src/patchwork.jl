@@ -11,6 +11,7 @@ type Patchable <: Backend
     jsheader::Vector{String}
     jsmodules::Vector{(String, String)}
     clip_paths::Dict{ClipPrimitive, String}
+    vector_properties::Vector
     function Patchable(width, height, absolute_elems=Elem[])
         width = size_measure(width)
         height = size_measure(height)
@@ -21,12 +22,18 @@ type Patchable <: Backend
             height.abs,
             String[],
             (String, String)[],
-            Dict{ClipPrimitive, String}())
+            Dict{ClipPrimitive, String}(),
+            Any[])
     end
 end
 
+
 iswithjs(::Patchable) = false
 iswithousjs(::Patchable) = true
+
+vector_properties(img::Patchable) = if !isempty(img.vector_properties)
+    img.vector_properties[end]
+end
 
 clip_path_id(img, path) =
    if (haskey(img.clip_paths, path))
@@ -86,13 +93,39 @@ addto(::Patchable, acc::Elem, child::Elem) = Elem(:svg, :g, acc, child)
 addto(::Patchable, acc::Elem, child::Dict) = acc & child
 addto(::Patchable, acc::Nothing, child::Dict) = Elem(:svg, :g) & child
 
+function push_property_frame(img::Patchable, vector_props)
+    push!(img.vector_properties, vector_props)
+end
+
+function properties_at_index(img, prop_vecs, i)
+    props = Dict()
+    for (proptype, property) in prop_vecs
+        if i > length(property.primitives)
+            error("Vector of properties and vector of forms have different length")
+        end
+        draw!(img, property.primitives[i], props)
+    end
+    props
+end
+
+function pop_property_frame(img::Patchable)
+    pop!(img.vector_properties)
+end
+
 # Form Drawing
 # ------------
 
 function draw(img::Patchable, form::Form)
     acc = Array(Any, length(form.primitives))
+    properties = vector_properties(img)
+
     for i in 1:length(form.primitives)
-        @inbounds acc[i] = draw(img, form.primitives[i])
+        elem = draw(img, form.primitives[i])
+        if properties !== nothing && !isempty(properties)
+            props = properties_at_index(img, properties, i)
+            elem = addto(img, elem, props)
+        end
+        acc[i] = elem
     end
     acc
 end

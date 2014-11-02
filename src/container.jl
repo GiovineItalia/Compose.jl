@@ -562,21 +562,31 @@ function draw_recursive(backend::Backend,
         end
 
         child_containers = Any[]
+        vector_properties = Dict{Type, Property}()
 
         for child in ctx.children
             if isa(child, Property)
                 # Properties get the parent units
                 prop = absolute_units(child, parent_transform, units, parent_box)
-                acc = addto(backend, acc, draw(backend, prop))
-            elseif isa(child, Form)
+                if isscalar(child)
+                    acc = addto(backend, acc, draw(backend, prop))
+                else
+                    vector_properties[typeof(child)] = child
+                end
+            end
+        end
+
+        push_property_frame(backend, vector_properties)
+        for child in ctx.children
+            if isa(child, Form)
                 # this draw call calls draw(backend, absolute_form)
                 acc = addto(backend, acc, draw(backend, transform, units, box, child))
             elseif isa(child, Container)
                 push!(child_containers, (order(child), length(child_containers) + 1, child))
-            else
-                warn("Not rendering child of type $(typeof(child))")
             end
         end
+        pop_property_frame(backend)
+
 
         sort!(child_containers)
         for child in child_containers
