@@ -318,7 +318,7 @@ function draw(img::Patchable, prim::StrokeDashPrimitive)
     if isempty(prim.value)
         "stroke-dasharray", :none
     else
-        "stroke-dasharray", join(prim.value, ',')
+        "stroke-dasharray", join([v.abs for v in prim.value], ',')
     end
 end
 
