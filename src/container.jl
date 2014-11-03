@@ -576,7 +576,11 @@ function draw_recursive(backend::Backend,
             end
         end
 
-        push_property_frame(backend, vector_properties)
+        pop_frame = false
+        if !isempty(vector_properties)
+            push_property_frame(backend, vector_properties)
+            pop_frame = true
+        end
         for child in ctx.children
             if isa(child, Form)
                 # this draw call calls draw(backend, absolute_form)
@@ -585,14 +589,17 @@ function draw_recursive(backend::Backend,
                 push!(child_containers, (order(child), length(child_containers) + 1, child))
             end
         end
-        pop_property_frame(backend)
-
 
         sort!(child_containers)
         for child in child_containers
             ord, len, container = child
             acc = addto(backend, acc, draw_recursive(backend, container, transform, units, box))
         end
+
+        if pop_frame
+            pop_property_frame(backend)
+        end
+
         empty!(child_containers)
 
         acc
