@@ -25,7 +25,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Paren
        vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
-       boundingbox
+       boundingbox, patchable
 
 abstract Backend
 
@@ -72,6 +72,7 @@ function set_default_graphic_format(fmt::Symbol)
 end
 
 
+
 # Default means to include javascript dependencies in the SVGJS backend.
 default_jsmode = :embed
 
@@ -104,7 +105,6 @@ function default_mime()
     end
 end
 
-
 # Default property values
 default_font_family = "Helvetica Neue,Helvetica,Arial,sans"
 default_font_size = 11pt
@@ -129,9 +129,11 @@ catch
         error("Cairo must be installed to use the PDF backend.")
 end
 include("svg.jl")
-include("patchwork.jl")
 include("pgf_backend.jl")
 
+if (Pkg.installed("Patchwork") >= v"0-")
+    include("patchwork.jl")
+end
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
@@ -157,11 +159,18 @@ catch
     include("fontfallback.jl")
 end
 
-
 function writemime(io::IO, m::MIME"text/html", ctx::Context)
     draw(SVGJS(io, default_graphic_width, default_graphic_height, false,
                jsmode=default_jsmode), ctx)
 end
+
+function patchable(width, height, ctx)
+    if !isdefined(Compose, :Patchable)
+        error("You need to install Patchwork.jl to use the patchable feature")
+    end
+    draw(Patchable(width, height), ctx)
+end
+patchable(ctx) = patchable(default_graphic_width, default_graphic_height, ctx)
 
 
 function writemime(io::IO, m::MIME"image/svg+xml", ctx::Context)
