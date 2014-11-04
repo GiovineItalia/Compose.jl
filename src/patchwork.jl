@@ -222,9 +222,9 @@ function draw(img::Patchable, prim::RectanglePrimitive)
 end
 
 function draw(img::Patchable, prim::TextPrimitive)
-    el = Elem(:svg, :text, prim.value,
-              x=prim.position.x.abs,
-              y=prim.position.y.abs)
+    el = pango_to_elems(prim.value) & [
+            :x=>prim.position.x.abs,
+            :y=>prim.position.y.abs]
     if is(prim.halign, hcenter)
         el &= ["text-anchor" => "middle"]
     elseif is(prim.halign, hright)
@@ -343,3 +343,88 @@ end
 draw(img::Patchable, prim::VisiblePrimitive) =
     :visibility, prim.value ? "visible" : "hidden"
 
+# Pango markup to Patchwork
+function pango_to_elems(text::String)
+    pat = r"<(/?)\s*([^>]*)\s*>"
+    input = text
+    output = Elem[Elem(:svg, :text)] # Stack
+    lastpos = 1
+
+    baseline_shift = 0.0
+    open_tag = false
+
+    for mat in eachmatch(pat, text)
+        txt = input[lastpos:mat.offset-1]
+        if length(txt) > 0
+            output[end] <<= Patchwork.Text(txt)
+        end
+
+        closing_tag = mat.captures[1] == "/"
+
+        if open_tag && !closing_tag
+            el = pop!(output)
+            output[end] <<= el
+        end
+
+        if mat.captures[2] == "sup"
+            if mat.captures[1] == "/"
+                el = pop!(output)
+                output[end] <<= el
+            else
+                el = Elem(:svg, :tspan,
+                         style=["dominant-baseline" => :inherit],
+                         dy="-0.6em") & ["font-size" => "83%"]
+                push!(output, el)
+                baseline_shift = -0.6 * 0.83
+            end
+        elseif mat.captures[2] == "sub"
+            if mat.captures[1] == "/"
+                el = pop!(output)
+                output[end] <<= el
+            else
+                el = Elem(:svg, :tspan,
+                          style=["dominant-baseline" => :inherit],
+                          dy="0.6em") & ["font-size" => "83%"]
+                push!(output, el)
+                baseline_shift = 0.6 * 0.83
+            end
+        elseif mat.captures[2] == "i"
+            if mat.captures[1] == "/"
+                el = pop!(output)
+                output[end] <<= el
+            else
+                el = Elem(:svg, :tspan,
+                          style=["dominant-baseline" => :inherit]) & ["font-style"=>"italic"]
+                push!(output, el)
+            end
+        elseif mat.captures[2] == "b"
+            if mat.captures[1] == "/"
+                el = pop!(output)
+                output[end] <<= el
+            else
+                el = Elem(:svg, :tspan,
+                          style=["dominant-baseline" => :inherit]) & ["font-style"=>"bold"]
+                push!(output, el)
+            end
+        end
+
+        if closing_tag && baseline_shift != 0.0
+            el = Elem(:svg, :tspan,
+                      dy="$(-baseline_shift)em")
+            push!(output, el)
+            baseline_shift = 0.0
+            open_tag = true
+        end
+
+        lastpos = mat.offset + length(mat.match)
+    end
+    txt = input[lastpos:end]
+    if length(txt) > 0
+        output[end] <<= Patchwork.Text(string(txt))
+    end
+    if open_tag
+        el = pop!(output)
+        output[end] <<= el
+    end
+    output[1]
+end
