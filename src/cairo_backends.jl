@@ -761,17 +761,9 @@ function draw(img::Image, prim::LinePrimitive)
     end
 end
 
-
-#function get_layout_size(img::PNG)
-#    width, height = Cairo.get_layout_size(img.ctx)
-#    width / assumed_ppmm, height / assumed_ppmm
-#end
-
-
 function get_layout_size(img::Image)
     width, height = Cairo.get_layout_size(img.ctx)
     width / img.ppmm, height / img.ppmm
-#    25.4 * width / 72, 25.4 * height / 72
 end
 
 
