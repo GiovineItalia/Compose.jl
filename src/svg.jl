@@ -1,3 +1,4 @@
+using Compat
 
 const snapsvgjs = Pkg.dir("Compose", "data", "snap.svg-min.js")
 
@@ -36,13 +37,13 @@ function svg_print_float(io::IO, x::FloatingPoint)
             x = abs(x)
         end
         x = round(x/eps)*eps
-        xt = itrunc(Uint, x)
+        xt = trunc(Uint, x)
         dx = x - convert(Float64, xt)
         if !(0 <= dx < 1)
             error("Formatting overflow")
         end
         svg_print_uint(io, xt, 1)  # width=1 prints 0.2 instead of .2
-        dxi = iround(Uint, dx/eps)
+        dxi = round(Uint, dx/eps)
         if dxi != uint(0)
             write(io, '.')
             svg_print_uint(io, dxi, ndig, true)
