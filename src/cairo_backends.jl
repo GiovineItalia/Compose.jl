@@ -1,3 +1,4 @@
+using Compat
 
 # Cairo backend for compose
 import Cairo
@@ -250,7 +251,7 @@ function newsurface{B}(::Type{B}, out, width, height)
         if B == SVGBackend
             surface = CairoSVGSurface(out, width, height)
         elseif B == PNGBackend
-            surface = CairoARGBSurface(iround(width), iround(height))
+            surface = CairoARGBSurface(round(Integer, width), round(Integer, height))
         elseif B == PDFBackend
             surface = CairoPDFSurface(out, width, height)
         elseif B == PSBackend
