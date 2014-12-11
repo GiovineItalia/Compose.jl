@@ -751,8 +751,12 @@ function absolute_units(rot::Rotation,
                       absolute_units(rot.offset, t, unit_box, parent_box))
 
     rott = convert(Transform, absrot)
-    t = combine(rott, t)
-    theta = atan2(t.M[2,1], t.M[1,1])
+    if isa(rott, IdentityTransform)
+        theta = 0.0
+    else
+        theta = atan2(rott.M[2,1], rott.M[1,1])
+    end
+
     return Rotation(theta, absrot.offset)
 end
 
