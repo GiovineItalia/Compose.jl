@@ -15,6 +15,9 @@ type Context <: Container
     # Rotation is degrees of
     rot::Rotation
 
+    # arbitrary transform, applied before rotation
+    transform::Transform
+
     # Container children
     children::List{ComposeNode}
 
@@ -51,6 +54,7 @@ type Context <: Container
                      height=1.0h;
                      units=NilUnitBox(),
                      rotation=Rotation(),
+                     transform=IdentityTransform(),
                      order=0,
                      clip=false,
                      withjs=false,
@@ -67,6 +71,7 @@ type Context <: Container
     function Context(box::BoundingBox,
                      units::UnitBox,
                      rotation::Rotation,
+                     transform::Transform,
                      children::List{ComposeNode},
                      order::Int,
                      clip::Bool,
@@ -83,13 +88,13 @@ type Context <: Container
             minheight = minheight.abs
         end
 
-        return new(box, units, rotation, children, order,
+        return new(box, units, rotation, transform, children, order,
                    clip, withjs, withoutjs, raster, minwidth, minheight,
                    penalty)
     end
 
     function Context(ctx::Context)
-        return new(ctx.box, ctx.units, ctx.rot, ctx.children, ctx.order,
+        return new(ctx.box, ctx.units, ctx.rot, ctx.transform, ctx.children, ctx.order,
                    ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
                    ctx.minwidth, ctx.minheight, ctx.penalty)
     end
@@ -102,6 +107,7 @@ function context(x0=0.0w,
                  height=1.0h;
                  units=NilUnitBox(),
                  rotation=Rotation(),
+                 transform=IdentityTransform(),
                  order=0,
                  clip=false,
                  withjs=false,
@@ -110,7 +116,7 @@ function context(x0=0.0w,
                  minwidth=nothing,
                  minheight=nothing,
                  penalty=0.0)
-    return Context(BoundingBox(x0, y0, width, height), units, rotation,
+    return Context(BoundingBox(x0, y0, width, height), units, rotation, transform,
                    ListNull{ComposeNode}(), order, clip,
                    withjs, withoutjs, raster, minwidth, minheight, penalty)
 end
@@ -448,7 +454,8 @@ function drawpart(backend::Backend, root_container::Container)
 
         box = absolute_units(ctx.box, parent_transform, units, parent_box)
         rot = absolute_units(ctx.rot, parent_transform, units, box)
-        transform = combine(convert(Transform, rot), parent_transform)
+        transform = combine(ctx.transform, parent_transform)
+        transform = combine(convert(Transform, rot), transform)
 
         if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
             # TODO: commented out while I search for the real source of the
