@@ -818,8 +818,8 @@ function absolute_units(mir::Mirror,
                         parent_box::AbsoluteBoundingBox)
 
     theta = atan2(t.M[2,1], t.M[1,1])
-    absrot = Mirror(mir.theta + theta,
-                    absolute_units(mir.point, t, unit_box, parent_box))
+    Mirror(mir.theta + theta,
+            absolute_units(mir.point, t, unit_box, parent_box))
 end
 
 function absolute_units(mir::Mirror,
@@ -827,8 +827,8 @@ function absolute_units(mir::Mirror,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
 
-    absrot = Mirror(mir.theta,
-                    absolute_units(mir.point, t, unit_box, parent_box))
+    Mirror(mir.theta,
+           absolute_units(mir.point, t, unit_box, parent_box))
 end
 
 
