@@ -776,6 +776,9 @@ function draw(img::Image, prim::LinePrimitive)
     end
 end
 
+function draw(img::Image, prim::PathPrimitive)
+    # do nothing, but don't break IJulia
+end
 
 function get_layout_size(img::PNG)
     width, height = Cairo.get_layout_size(img.ctx)
