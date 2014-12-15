@@ -876,7 +876,7 @@ function parsepath(tokens::AbstractArray)
                 i += 1
                 op, i = parsepathop(op_type, tokens, i)
                 push!(ops, op)
-                last_op_type
+                last_op_type = op_type
             end
         else
             i += 1
