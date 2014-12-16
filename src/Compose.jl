@@ -25,7 +25,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
-       boundingbox, patchable
+       boundingbox, Patchable
 
 abstract Backend
 
@@ -131,7 +131,8 @@ end
 include("svg.jl")
 include("pgf_backend.jl")
 
-if (Pkg.installed("Patchwork") >= v"0-")
+const patchwork_version = try Pkg.installed("Patchwork") catch v"0.0.0" end
+if (patchwork_version > v"0.0.0")
     include("patchwork.jl")
 end
 
@@ -163,15 +164,6 @@ function writemime(io::IO, m::MIME"text/html", ctx::Context)
     draw(SVGJS(io, default_graphic_width, default_graphic_height, false,
                jsmode=default_jsmode), ctx)
 end
-
-function patchable(width, height, ctx)
-    if !isdefined(Compose, :Patchable)
-        error("You need to install Patchwork.jl to use the patchable feature")
-    end
-    draw(Patchable(width, height), ctx)
-end
-patchable(ctx) = patchable(default_graphic_width, default_graphic_height, ctx)
-
 
 function writemime(io::IO, m::MIME"image/svg+xml", ctx::Context)
     draw(SVG(io, default_graphic_width, default_graphic_height, false), ctx)
