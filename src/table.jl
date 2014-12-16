@@ -368,9 +368,9 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     return root
 end
 
-if Pkg.installed("JuMP") != nothing &&
-    (Pkg.installed("GLPKMathProgInterface") != nothing ||
-     Pkg.installed("Cbc") != nothing)
+if isinstalled("JuMP") &&
+    (isinstalled("GLPKMathProgInterface") ||
+     isinstalled("Cbc"))
     include("table-jump.jl")
 else
     function realize(tbl::Table, drawctx::ParentDrawContext)

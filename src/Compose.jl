@@ -30,6 +30,22 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
 
 abstract Backend
 
+function isinstalled(pkg, ge=v"0.0.0")
+    try
+        # Pkg.installed might throw an error,
+        # we need to account for it to be able to precompile
+        ver = Pkg.installed(pkg)
+        if ver != nothing && ver >= ge
+            return true
+        else
+            return false
+        end
+    catch
+        return false
+    end
+end
+
+
 include("misc.jl")
 include("measure.jl")
 include("list.jl")
@@ -132,8 +148,7 @@ end
 include("svg.jl")
 include("pgf_backend.jl")
 
-const patchwork_version = try Pkg.installed("Patchwork") catch v"0.0.0" end
-if (patchwork_version > v"0.0.0")
+if isinstalled("Patchwork", v"0.1.1")
     include("patchwork.jl")
 end
 

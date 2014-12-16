@@ -434,8 +434,7 @@ function pango_to_elems(text::String)
 end
 
 # writemime for signals
-const reactive_version = try Pkg.installed("Reactive") catch v"0.0.0" end
-if reactive_version > v"0.0.0"
+if isinstalled("Reactive")
 
     import Base: writemime
     import Reactive: Signal, lift
