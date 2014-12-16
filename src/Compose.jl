@@ -148,7 +148,7 @@ end
 include("svg.jl")
 include("pgf_backend.jl")
 
-if isinstalled("Patchwork", v"0.1.1")
+if isinstalled("Patchwork", v"0.1.2")
     include("patchwork.jl")
 end
 
