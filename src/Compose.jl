@@ -15,8 +15,8 @@ import Base: length, start, next, done, isempty, getindex, setindex!,
              display, writemime, convert, zero, isless, max, fill, size, copy,
              min, max, +, -, *, /
 
-export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, ParentDrawContext,
-       context, ctxpromise, table, set_units!, minwidth, minheight,
+export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
+       ParentDrawContext, context, ctxpromise, table, set_units!, minwidth, minheight,
        text_extents, max_text_extents, polygon, line, rectangle, circle, path,
        ellipse, text, curve, bitmap, stroke, fill, strokedash, strokelinecap,
        strokelinejoin, linewidth, visible, fillopacity, strokeopacity, clip,
@@ -222,7 +222,7 @@ function pad_outer(c::Context,
     c = copy(c)
     c.box = BoundingBox(left_padding, top_padding,
                         1w - left_padding - right_padding,
-                        1h - top_padding - right_padding)
+                        1h - top_padding - bottom_padding)
     return compose!(root, c)
 end
 

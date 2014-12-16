@@ -695,6 +695,49 @@ function convert(::Type{Transform}, rot::Rotation)
     end
 end
 
+# Mirror about a point at a given angle
+type Mirror
+    theta::Float64
+    point::Point
+
+    function Mirror()
+        new(0.0, Point(0.5w, 0.5h))
+    end
+
+    function Mirror(theta::Number)
+        Mirror(theta, 0.5w, 0.5h)
+    end
+
+    function Mirror(theta::Number, offset::XYTupleOrPoint)
+        new(convert(Float64, theta), convert(Point, offset))
+    end
+
+    function Mirror(theta::Number, offset_x, offset_y)
+        new(convert(Float64, theta), Point(offset_x, offset_y))
+    end
+
+    # copy constructor
+    function Mirror(mir::Mirror)
+        new(copy(mir.theta),
+            copy(mir.offset))
+    end
+end
+
+function convert(::Type{Transform}, mir::Mirror)
+    n = [cos(mir.theta), sin(mir.theta)]
+    x0 = mir.point.x
+    y0 = mir.point.y
+
+    offset = (2I - 2n*n') * [x0.abs, y0.abs]
+    scale  = (2n*n' - I)
+    M = vcat(hcat(scale, offset), [0 0 1])
+
+    MatrixTransform(M)
+end
+
+
+copy(mir::Mirror) = Mirror(mir)
+
 
 # Conversion to absolute units
 # ----------------------------
@@ -751,11 +794,14 @@ function absolute_units(rot::Rotation,
                       absolute_units(rot.offset, t, unit_box, parent_box))
 
     rott = convert(Transform, absrot)
-    t = combine(rott, t)
-    theta = atan2(t.M[2,1], t.M[1,1])
+    if isa(rott, IdentityTransform)
+        theta = 0.0
+    else
+        theta = atan2(rott.M[2,1], rott.M[1,1])
+    end
+
     return Rotation(theta, absrot.offset)
 end
-
 
 function absolute_units(rot::Rotation,
                         t::IdentityTransform,
@@ -763,6 +809,26 @@ function absolute_units(rot::Rotation,
                         parent_box::AbsoluteBoundingBox)
 
     return Rotation(rot.theta, absolute_units(rot.offset, t, unit_box, parent_box))
+end
+
+
+function absolute_units(mir::Mirror,
+                        t::MatrixTransform,
+                        unit_box::UnitBox,
+                        parent_box::AbsoluteBoundingBox)
+
+    theta = atan2(t.M[2,1], t.M[1,1])
+    Mirror(mir.theta + theta,
+            absolute_units(mir.point, t, unit_box, parent_box))
+end
+
+function absolute_units(mir::Mirror,
+                        t::IdentityTransform,
+                        unit_box::UnitBox,
+                        parent_box::AbsoluteBoundingBox)
+
+    Mirror(mir.theta,
+           absolute_units(mir.point, t, unit_box, parent_box))
 end
 
 

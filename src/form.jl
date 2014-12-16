@@ -417,7 +417,7 @@ function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
                ctrl1s::AbstractArray, anchor1s::AbstractArray)
     return Curve(
         @makeprimitives CurvePrimitive,
-            (anchor0 in archor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
+            (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
             CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
                            convert(Point, ctrl1), convert(Point, anchor1)))
 end
@@ -517,10 +517,18 @@ function parsepathop(::Type{MoveRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
+function absolute_offset(p::Point, t::Transform, units::UnitBox, box::AbsoluteBoundingBox)
+
+    absp = absolute_units(p, t, units, box)
+    zer0 = absolute_units(Point(0w, 0h), t, units, box)
+
+    return Point(Measure(absp.x.abs - zer0.x.abs),
+                               Measure(absp.y.abs - zer0.y.abs))
+end
+
 function absolute_units(p::MoveRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return MoveRelPathOp(Point(Measure(absolute_units(p.to.x, t, units, box)),
-                               Measure(absolute_units(p.to.y, t, units, box))))
+    return MoveRelPathOp(absolute_offset(p.to, t, units, box))
 end
 
 
@@ -565,8 +573,7 @@ end
 
 function absolute_units(p::LineRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return LineRelPathOp(Point(Measure(absolute_units(p.to.x, t, units, box)),
-                               Measure(absolute_units(p.to.y, t, units, box))))
+    return LineRelPathOp(absolute_offset(p.to, t, units, box))
 end
 
 
@@ -674,12 +681,9 @@ end
 function absolute_units(p::CubicCurveRelPathOp, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return CubicCurveRelPathOp(
-            Point(Measure(absolute_units(p.ctrl1.x, t, units, box)),
-                  Measure(absolute_units(p.ctrl1.y, t, units, box))),
-            Point(Measure(absolute_units(p.ctrl2.x, t, units, box)),
-                  Measure(absolute_units(p.ctrl2.y, t, units, box))),
-            Point(Measure(absolute_units(p.to.x, t, units, box)),
-                  Measure(absolute_units(p.to.y, t, units, box))))
+            absolute_offset(p.ctrl1, t, units, box),
+            absolute_offset(p.ctrl2, t, units, box),
+            absolute_offset(p.to, t, units, box))
 end
 
 
@@ -868,6 +872,7 @@ function parsepath(tokens::AbstractArray)
     i = 1
     while i <= length(tokens)
         tok = tokens[i]
+        strt = i
         if isa(tok, Symbol)
             if !haskey(path_ops, tok)
                 error("$(tok) is not a valid path operation")
@@ -876,11 +881,11 @@ function parsepath(tokens::AbstractArray)
                 i += 1
                 op, i = parsepathop(op_type, tokens, i)
                 push!(ops, op)
-                last_op_type
+                last_op_type = op_type
             end
         else
-            i += 1
             op, i = parsepathop(last_op_type, tokens, i)
+            push!(ops, op)
         end
     end
 
