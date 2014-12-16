@@ -25,7 +25,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
-       boundingbox
+       boundingbox, Patchable
 
 abstract Backend
 
@@ -72,6 +72,7 @@ function set_default_graphic_format(fmt::Symbol)
 end
 
 
+
 # Default means to include javascript dependencies in the SVGJS backend.
 default_jsmode = :embed
 
@@ -104,7 +105,6 @@ function default_mime()
     end
 end
 
-
 # Default property values
 default_font_family = "Helvetica Neue,Helvetica,Arial,sans"
 default_font_size = 11pt
@@ -131,6 +131,10 @@ end
 include("svg.jl")
 include("pgf_backend.jl")
 
+const patchwork_version = try Pkg.installed("Patchwork") catch v"0.0.0" end
+if (patchwork_version > v"0.0.0")
+    include("patchwork.jl")
+end
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
@@ -156,12 +160,10 @@ catch
     include("fontfallback.jl")
 end
 
-
 function writemime(io::IO, m::MIME"text/html", ctx::Context)
     draw(SVGJS(io, default_graphic_width, default_graphic_height, false,
                jsmode=default_jsmode), ctx)
 end
-
 
 function writemime(io::IO, m::MIME"image/svg+xml", ctx::Context)
     draw(SVG(io, default_graphic_width, default_graphic_height, false), ctx)
