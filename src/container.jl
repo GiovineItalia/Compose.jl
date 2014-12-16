@@ -554,6 +554,11 @@ function draw_recursive(backend::Backend,
         rot = absolute_units(ctx.rot, parent_transform, units, box)
         transform = combine(convert(Transform, rot), parent_transform)
 
+        if ctx.mir != nothing
+            mir = absolute_units(ctx.mir, parent_transform, units, box)
+            transform = combine(convert(Transform, mir), transform)
+        end
+
         if ctx.units != nil_unit_box
             units = absolute_units(ctx.units, transform, units, box)
         end
