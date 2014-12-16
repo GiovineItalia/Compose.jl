@@ -413,7 +413,7 @@ end
 # properties, expanding context promises, etc as needed.
 #
 function drawpart(backend::Backend, root_container::Container)
-    S = {(root_container, IdentityTransform(), UnitBox(), root_box(backend))}
+    S = Any[(root_container, IdentityTransform(), UnitBox(), root_box(backend))]
 
     # used to collect property children
     properties = Array(Property, 0)

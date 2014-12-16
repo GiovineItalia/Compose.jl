@@ -842,7 +842,7 @@ function absolute_units(p::ArcRelPathOp, t::Transform, units::UnitBox,
               Measure(absolute_units(to.y, t, units, box))))
 end
 
-const path_ops = [
+const path_ops = Dict(
      :M => MoveAbsPathOp,
      :m => MoveRelPathOp,
      :Z => ClosePathOp,
@@ -861,7 +861,7 @@ const path_ops = [
      :t => QuadCurveShortRelPathOp,
      :A => ArcAbsPathOp,
      :a => ArcRelPathOp
-]
+)
 
 
 # A path is an array of symbols, numbers, and measures following SVGs path
