@@ -617,7 +617,6 @@ function draw_recursive(backend::Backend,
         end
 
         empty!(child_containers)
-
         acc
 end
 

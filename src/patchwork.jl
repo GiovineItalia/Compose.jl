@@ -72,7 +72,7 @@ end
 root_box(img::Patchable) =
     AbsoluteBoundingBox(0.0, 0.0, img.width, img.height)
 
-init_context(::Patchable, ::Context) = nothing
+init_context(::Patchable, ::Context) = Elem(:svg, :g)
 
 typealias SVGPart Union(Elem, Dict, Nothing)
 
@@ -427,4 +427,25 @@ function pango_to_elems(text::String)
         output[end] <<= el
     end
     output[1]
+end
+
+# writemime for signals
+const reactive_version = try Pkg.installed("Reactive") catch v"0.0.0" end
+if reactive_version > v"0.0.0"
+
+    import Base: writemime
+    import Reactive: Signal, lift
+
+    if isdefined(Main, :IJulia)
+        import IJulia: metadata
+        metadata{T <: ComposeNode}(::Signal{T}) = Dict()
+    end
+
+    function writemime{T <: ComposeNode}(io::IO, m::MIME"text/html", ctx::Signal{T})
+        writemime(io, m, lift(c -> draw(
+            Patchable(
+                Compose.default_graphic_width,
+                Compose.default_graphic_height
+            ), c), ctx))
+    end
 end
