@@ -44,7 +44,7 @@ type Table <: ContainerPromise
                    y_prop=nothing, x_prop=nothing,
                    aspect_ratio=nothing,
                    units=NilUnitBox(), order=0, withjs=false, withoutjs=false,
-                   fixed_configs=[])
+                   fixed_configs=Any[])
 
         if x_prop != nothing
             @assert length(x_prop) == length(x_focus)
@@ -166,7 +166,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     # build equilavence classes of configurations basen on fixed_configs
     constrained_cells = Set()
     num_choices = [length(child) for child in tbl.children]
-    num_group_choices = []
+    num_group_choices = Any[]
     for fixed_config in fixed_configs
         push!(num_group_choices, num_choices[first(fixed_config)])
         for idx in fixed_config

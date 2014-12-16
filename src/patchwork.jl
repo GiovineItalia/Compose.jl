@@ -3,7 +3,6 @@
 import Patchwork
 import Patchwork.Elem
 
-using Compat
 # Names that can be easily imported
 export Patchable
 

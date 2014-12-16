@@ -9,6 +9,7 @@ module Compose
 using Color
 using Iterators
 using DataStructures
+using Compat
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!,

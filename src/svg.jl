@@ -543,7 +543,7 @@ end
 # Return array of paths to draw with printpath
 # array is formed by splitting by NaN values
 function make_paths(points::Vector{Point})
-    paths = []
+    paths = Any[]
     nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
                 [(point.x.abs, point.y.abs) for point in points])
 

@@ -842,7 +842,7 @@ function absolute_units(p::ArcRelPathOp, t::Transform, units::UnitBox,
               Measure(absolute_units(to.y, t, units, box))))
 end
 
-const path_ops = Dict(
+const path_ops = @compat Dict(
      :M => MoveAbsPathOp,
      :m => MoveRelPathOp,
      :Z => ClosePathOp,

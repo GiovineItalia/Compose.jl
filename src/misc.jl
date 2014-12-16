@@ -13,7 +13,7 @@ end
 # Cycle-zip. Zip two or more arrays, cycling the short ones.
 function cyclezip(xs::AbstractArray...)
     if any(map(isempty, xs))
-        return []
+        return Any[]
     end
     n = maximum([length(x) for x in xs])
     return takestrict(zip([cycle(x) for x in xs]...), n)
