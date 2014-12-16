@@ -98,7 +98,7 @@ type PGF <: Backend
         img.fontsize = 12.0
         img.indentation = 0
         img.out = out
-        img.color_set = Set{ColorValue}({color("black")})
+        img.color_set = Set{ColorValue}(color("black"))
         img.property_stack = Array(PGFPropertyFrame, 0)
         img.vector_properties = Dict{Type, Union(Nothing, Property)}()
         # img.clippaths = Dict{ClipPrimitive, String}()
