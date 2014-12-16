@@ -1,6 +1,9 @@
 # The Patchable backend
+
 import Patchwork
 import Patchwork.Elem
+
+using Compat
 # Names that can be easily imported
 export Patchable
 
@@ -54,8 +57,8 @@ function draw(img::Patchable, root::Context)
          stroke=svg_fmt_color(default_stroke_color),
          fill=svg_fmt_color(default_fill_color))
 
-    root &= ["stroke-width" => svg_fmt_float(default_line_width.abs),
-             "font-size" => svg_fmt_float(default_font_size.abs)]
+    root &= @compat Dict("stroke-width" => svg_fmt_float(default_line_width.abs),
+                 "font-size" => svg_fmt_float(default_font_size.abs))
 
     if !isempty(img.clip_paths)
         defs = Elem(:svg, :defs)
@@ -171,10 +174,10 @@ function draw(img::Patchable, prim::EllipsePrimitive)
     el = Elem(:svg, :ellipse,
               cx=cx, cy=cy, rx=rx, ry=ry)
     if abs(theta) > 1e-4
-        el = el & [:transform => string("rotate(",
+        el = el & @compat Dict(:transform => string("rotate(",
                                         svg_fmt_float(theta), ' ',
                                         svg_fmt_float(cx), ' ',
-                                        svg_fmt_float(cy), ')')]
+                                        svg_fmt_float(cy), ')'))
     end
     el
 end
@@ -222,25 +225,25 @@ function draw(img::Patchable, prim::RectanglePrimitive)
 end
 
 function draw(img::Patchable, prim::TextPrimitive)
-    el = pango_to_elems(prim.value) & [
+    el = pango_to_elems(prim.value) & @compat Dict(
             :x=>prim.position.x.abs,
-            :y=>prim.position.y.abs]
+            :y=>prim.position.y.abs)
     if is(prim.halign, hcenter)
-        el &= ["text-anchor" => "middle"]
+        el &= @compat Dict("text-anchor" => "middle")
     elseif is(prim.halign, hright)
-        el &= ["text-anchor" => "end"]
+        el &= @compat Dict("text-anchor" => "end")
     end
     if is(prim.valign, vcenter)
-        el &= [:dy=>"0.35em"]
+        el &= @compat Dict(:dy=>"0.35em")
     elseif is(prim.halign, vtop)
-        el &= [:dy=>"0.6mm"]
+        el &= @compat Dict(:dy=>"0.6mm")
     end
 
     if abs(prim.rot.theta) > 1e-4
-        el &= [:transform => string("rotate(",
+        el &= @compat Dict(:transform => string("rotate(",
                                      rad2deg(prim.rot.theta), ' ',
                                      svg_fmt_float(prim.rot.offset.x.abs), ' ',
-                                     svg_fmt_float(prim.rot.offset.y.abs), ')')]
+                                     svg_fmt_float(prim.rot.offset.y.abs), ')'))
      end
      el
 
@@ -372,8 +375,8 @@ function pango_to_elems(text::String)
                 output[end] <<= el
             else
                 el = Elem(:svg, :tspan,
-                         style=["dominant-baseline" => :inherit],
-                         dy="-0.6em") & ["font-size" => "83%"]
+                         style=(@compat Dict("dominant-baseline" => :inherit)),
+                         dy="-0.6em") & @compat Dict("font-size" => "83%")
                 push!(output, el)
                 baseline_shift = -0.6 * 0.83
             end
@@ -383,8 +386,8 @@ function pango_to_elems(text::String)
                 output[end] <<= el
             else
                 el = Elem(:svg, :tspan,
-                          style=["dominant-baseline" => :inherit],
-                          dy="0.6em") & ["font-size" => "83%"]
+                          style=(@compat Dict("dominant-baseline" => :inherit)),
+                          dy="0.6em") & @compat Dict("font-size" => "83%")
                 push!(output, el)
                 baseline_shift = 0.6 * 0.83
             end
@@ -394,7 +397,8 @@ function pango_to_elems(text::String)
                 output[end] <<= el
             else
                 el = Elem(:svg, :tspan,
-                          style=["dominant-baseline" => :inherit]) & ["font-style"=>"italic"]
+                          style = @compat Dict("dominant-baseline" => :inherit)) &
+                                    @compat Dict("font-style"=>"italic")
                 push!(output, el)
             end
         elseif mat.captures[2] == "b"
@@ -403,7 +407,8 @@ function pango_to_elems(text::String)
                 output[end] <<= el
             else
                 el = Elem(:svg, :tspan,
-                          style=["dominant-baseline" => :inherit]) & ["font-style"=>"bold"]
+                          style=@compat Dict("dominant-baseline" => :inherit)) &
+                                    @compat Dict("font-style"=>"bold")
                 push!(output, el)
             end
         end
