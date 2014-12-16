@@ -417,7 +417,7 @@ function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
                ctrl1s::AbstractArray, anchor1s::AbstractArray)
     return Curve(
         @makeprimitives CurvePrimitive,
-            (anchor0 in archor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
+            (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
             CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
                            convert(Point, ctrl1), convert(Point, anchor1)))
 end
