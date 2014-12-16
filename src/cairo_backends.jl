@@ -77,6 +77,9 @@ type Image{B <: ImageBackend} <: Backend
     # Emit on finish
     emit_on_finish::Bool
 
+    # Points (or pixels for PNG) per mm
+    ppmm::Float64
+
     function Image(surface::CairoSurface, ctx::CairoContext, out::IO)
         img = new()
         img.out = out
@@ -100,6 +103,7 @@ type Image{B <: ImageBackend} <: Backend
         img.filename = nothing
         img.finished = false
         img.emit_on_finish = false
+        img.ppmm = 72 / 25.4
         img
     end
 
@@ -113,7 +117,8 @@ type Image{B <: ImageBackend} <: Backend
     function Image(out::IO,
                    width::MeasureOrNumber,
                    height::MeasureOrNumber,
-                   emit_on_finish::Bool=true)
+                   emit_on_finish::Bool=true;
+                   dpi = (B == PNGBackend ? 96 : 72))
 
         width = size_measure(width)
         height = size_measure(height)
@@ -122,8 +127,9 @@ type Image{B <: ImageBackend} <: Backend
             error("Image size must be specificed in absolute units.")
         end
 
-        width = absolute_native_units(B, width.abs)
-        height = absolute_native_units(B, height.abs)
+        ppmm = dpi / 25.4
+        width = width.abs * ppmm
+        height = height.abs * ppmm
 
         surface = newsurface(B, out, width, height)
         img = Image{B}(surface, CairoContext(surface), out)
@@ -131,13 +137,15 @@ type Image{B <: ImageBackend} <: Backend
         img.height = height
         img.owns_surface = true
         img.emit_on_finish = emit_on_finish
+        img.ppmm = ppmm
         img
     end
 
     function Image(filename::String,
                    width::MeasureOrNumber,
-                   height::MeasureOrNumber)
-        img = Image{B}(open(filename, "w"), width, height)
+                   height::MeasureOrNumber;
+                   dpi = (B == PNGBackend ? 96 : 72))
+        img = Image{B}(open(filename, "w"), width, height, dpi = dpi)
         img.ownedfile = true
         img.filename = filename
         img
@@ -164,40 +172,17 @@ typealias CAIROSURFACE  Image{CairoBackend}
 
 # convert compose absolute units (millimeters) to the absolute units used by the
 # cairo surface (pixels for PNG, points for all others)
-function absolute_native_units(::Type{PNGBackend}, u::Float64)
-    assumed_ppmm * u
-end
-
-
-function absolute_native_units{B <: ImageBackend}(::Type{B},
-                                                  u::Float64)
-    72 * u / 25.4
-end
-
 
 function absolute_native_units{B}(img::Image{B}, u::Float64)
-    absolute_native_units(B, u)
+    img.ppmm * u
 end
-
-
-# Width and height of a backend in absolute units
-function width(img::PNG)
-    Cairo.width(img.surface) / assumed_ppmm
-end
-
 
 function width(img::Image)
-    25.4 * Cairo.width(img.surface) / 72
+    Cairo.width(img.surface) / img.ppmm
 end
-
-
-function height(img::PNG)
-    Cairo.height(img.surface) / assumed_ppmm
-end
-
 
 function height(img::Image)
-    25.4 * Cairo.height(img.surface) / 72
+    Cairo.height(img.surface) / img.ppmm
 end
 
 
@@ -781,15 +766,9 @@ function draw(img::Image, prim::PathPrimitive)
     # do nothing, but don't break IJulia
 end
 
-function get_layout_size(img::PNG)
-    width, height = Cairo.get_layout_size(img.ctx)
-    width / assumed_ppmm, height / assumed_ppmm
-end
-
-
 function get_layout_size(img::Image)
     width, height = Cairo.get_layout_size(img.ctx)
-    25.4 * width / 72, 25.4 * height / 72
+    width / img.ppmm, height / img.ppmm
 end
 
 
