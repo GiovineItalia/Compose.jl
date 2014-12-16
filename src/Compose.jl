@@ -212,7 +212,7 @@ function pad_outer(c::Context,
     c = copy(c)
     c.box = BoundingBox(left_padding, top_padding,
                         1w - left_padding - right_padding,
-                        1h - top_padding - right_padding)
+                        1h - top_padding - bottom_padding)
     return compose!(root, c)
 end
 
