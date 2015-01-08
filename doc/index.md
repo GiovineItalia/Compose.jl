@@ -238,9 +238,10 @@ circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
 ```
 
 The first of these creates only circle centered at `(x, y)` with radius `r`. The
-second form can succinctly create many circles:
+second form can succinctly create many circles (using the [Color](https://github.com/JuliaLang/Color.jl) package to specify the `LHCab` colorspace):
 
 ```julia
+using Color
 compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1, 0.1, 0.1]),
         fill(LCHab(92, 10, 77)))
