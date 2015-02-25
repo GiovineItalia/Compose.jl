@@ -1,7 +1,6 @@
-
 using Compose
 
-function sierpinski(n)
+function sierpinski(n::Int)
     if n == 0
         compose(context(), polygon([(1,1), (0,1), (1/2, 0)]))
     else
@@ -13,6 +12,6 @@ function sierpinski(n)
     end
 end
 
-img = SVG("sierpinski.svg", 4inch, 4(sqrt(3)/2)inch)
+img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
 draw(img, compose(sierpinski(8), linewidth(0.1mm), fill(nothing), stroke("black")))
 
