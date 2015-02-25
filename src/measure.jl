@@ -323,7 +323,7 @@ const cy   = Measure(cy=1.0)
 
 # Pixels are not typically used in Compose in preference of absolute
 # measurements or measurements relative to parent canvases. So for the
-# 'px' constant, we just punt and give something do something vagually
+# 'px' constant, we just punt and give something do something vaguely
 # reasonable.
 
 const assumed_ppmm = 3.78 # equivalent to 96 DPI

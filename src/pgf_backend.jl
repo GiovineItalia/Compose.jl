@@ -20,7 +20,7 @@ type PGF <: Backend
     out::IO
 
     # Fill properties cannot be "cleanly" applied to
-    # multiple form primatives.  It must be applied
+    # multiple form primitives.  It must be applied
     # each time an object is drawn
     fill::Union(Nothing, ColorValue)
     fill_opacity::Float64
@@ -41,7 +41,7 @@ type PGF <: Backend
     visible::Bool
 
     # Have not found an easy way to define color as
-    # a draw parameter.  Whenever we encouter a color, we add it to the
+    # a draw parameter.  Whenever we encounter a color, we add it to the
     # color_set set.  That way, we can write out all the color
     # definitions at the same time.
     color_set::Set{ColorValue}
@@ -71,7 +71,7 @@ type PGF <: Backend
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
-    # Emit only the tikzpicture environment 
+    # Emit only the tikzpicture environment
     only_tikz :: Bool
 
     function PGF(out::IO,
@@ -157,7 +157,7 @@ function finish(img::PGF)
         """
         \\end{document}
         """
-        )   
+        )
 
     if method_exists(flush, (typeof(img.out),))
         flush(img.out)
