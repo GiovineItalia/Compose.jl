@@ -86,7 +86,7 @@ type Image{B <: ImageBackend} <: Backend
         img.stroke = default_stroke_color == nothing ?
                         RGBA{Float64}(0, 0, 0, 0) : convert(RGBA{Float64}, default_stroke_color)
         img.fill   = default_fill_color == nothing ?
-                        RGBA(0, 0, 0, 0) : convert(RGBA{Float64}, default_fill_color)
+                        RGBA{Float64}(0, 0, 0, 0) : convert(RGBA{Float64}, default_fill_color)
         img.stroke_dash = []
         img.stroke_linecap = LineCapButt()
         img.stroke_linejoin = LineJoinMiter()

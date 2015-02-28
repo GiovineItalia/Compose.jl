@@ -153,7 +153,7 @@ type SVG <: Backend
     # Output stream.
     out::IO
 
-    # Save output from IOBuffrs to allow multiple calls to writemime
+    # Save output from IOBuffers to allow multiple calls to writemime
     cached_out::Union(String, Nothing)
 
     # Unique ID for the figure.
@@ -189,9 +189,10 @@ type SVG <: Backend
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
-    # IDs of the SVG element currently being generated, or nothing if it has
-    # none.
-    current_id::Union(String, Nothing)
+    # IDs of the SVG element currently being generated. `has_current_id` is
+    # false if the element being drawn does not have an id.
+    current_id::String
+    has_current_id::Bool
 
     # A counter used to generate unique IDs
     id_count::Int
@@ -241,7 +242,8 @@ type SVG <: Backend
         img.embobj = Set{String}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
-        img.current_id = nothing
+        img.current_id = ""
+        img.has_current_id = false
         img.id_count = 0
         img.jsheader = String[]
         img.jsmodules = Array((String, String), 1)
@@ -696,6 +698,7 @@ end
 
 
 function print_property(img::SVG, property::JSCallPrimitive)
+    @assert img.has_current_id
     push!(img.scripts,
           @sprintf("fig.select(\"#%s\")\n   .%s;",
                    img.current_id, property.code))
@@ -711,6 +714,7 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
             img.current_id = genid(img)
             print_property(img, SVGIDPrimitive(img.current_id))
         end
+        img.has_current_id = true
     end
 
     for (propertytype, property) in img.vector_properties
@@ -725,7 +729,7 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
         print_property(img, property.primitives[idx])
     end
 
-    img.current_id = nothing
+    img.has_current_id = false
 end
 
 
@@ -1143,12 +1147,14 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     for property in scalar_properties
         if isa(property, SVGID)
             img.current_id = property.primitives[1].value
+            img.has_current_id = true
         end
     end
 
-    if img.current_id === nothing
+    if !img.has_current_id
         img.current_id = genid(img)
         push!(scalar_properties, svgid(img.current_id))
+        img.has_current_id = true
     end
 
     indent(img)
@@ -1157,7 +1163,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
         print_property(img, property.primitives[1])
     end
     write(img.out, ">\n");
-    img.current_id = nothing
+    img.has_current_id = false
     img.indentation += 1
 end
 
