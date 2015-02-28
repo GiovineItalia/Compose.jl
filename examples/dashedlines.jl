@@ -7,10 +7,10 @@ using Color
 
 function draw_lines(dash_patterns)
     if length(dash_patterns) == 0
-        canvas()
+        context()
     else
-        compose(compose(canvas(), lines((0, 0), (1, 0)), strokedash(dash_patterns[1])),
-                compose(canvas(0, 0.1), draw_lines(dash_patterns[2:end])))
+        compose(compose(context(), line([(0, 0), (1, 0)]), strokedash(dash_patterns[1])),
+                compose(context(0, 0.1), draw_lines(dash_patterns[2:end])))
     end
 end
 
@@ -25,7 +25,7 @@ patterns = Array[
     [15mm, 10mm, 5mm, 10mm],
     [15mm, 10mm, 5mm, 10mm, 15mm],
     [5mm, 5mm, 1mm, 5mm]]
-    
+
 
 c = draw_lines(patterns)
 

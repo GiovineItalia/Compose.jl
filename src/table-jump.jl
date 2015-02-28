@@ -13,7 +13,7 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     abswidth = drawctx.box.width
     absheight = drawctx.box.height
 
-    c_indexes = {}
+    c_indexes = (Int, Int, Int)[]
     idx_cs = Dict()
     for i in 1:m, j in 1:n
         if length(tbl.children[i, j]) > 1

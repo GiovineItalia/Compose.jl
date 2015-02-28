@@ -35,7 +35,7 @@ type Table <: ContainerPromise
     # not drawing to the javascript backend.
     withjs::Bool
 
-    # Igonre this context if we are drawing to the SVGJS backend.
+    # Ignore this context if we are drawing to the SVGJS backend.
     withoutjs::Bool
 
 

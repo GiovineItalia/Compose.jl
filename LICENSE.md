@@ -1,6 +1,6 @@
 Compose is licensed under the MIT License:
 
-> Copyright (c) 2012: Daniel C. Jones
+> Copyright (c) 2012--2015: Daniel C. Jones and other contributors
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the

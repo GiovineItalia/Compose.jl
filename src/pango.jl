@@ -27,7 +27,7 @@ end
 #
 # Args:
 #   desc: A string giving the font description. This can
-#         also provide a comma-seperated list of families. E.g.,
+#         also provide a comma-separated list of families. E.g.,
 #         "Helvetica, Arial 10"
 #
 # Returns:

@@ -1,5 +1,5 @@
 
-# Convient function for rearranging contexts
+# Convenience function for rearranging contexts
 
 
 # Create a new context containing the given contexts stacked horizontally.
@@ -8,7 +8,7 @@
 #  x0: X-position of the new root context
 #  y0: Y-position of the new root context
 #  height: Height of the root context.
-#  aligned_contexts: One or more canveses accompanied with a vertical alignment
+#  aligned_contexts: One or more canvases accompanied with a vertical alignment
 #                    specifier, giving the vertical positioning of the context.
 #
 function hstack(x0, y0, height, aligned_contexts::(Context, VAlignment)...)
@@ -85,7 +85,7 @@ end
 #  x0: X-position of the new root context
 #  y0: Y-position of the new root context
 #  width: Height of the root context.
-#  aligned_contexts: One or more canveses accompanied with a horizontal alignment
+#  aligned_contexts: One or more canvases accompanied with a horizontal alignment
 #                    specifier, giving the horizontal positioning of the context.
 #
 function vstack(x0, y0, width, aligned_contexts::(Context, HAlignment)...)

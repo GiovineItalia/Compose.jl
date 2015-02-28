@@ -7,7 +7,7 @@ It forms the basis for the statistical graphics system
 
 ## Synopsis
 
-Unilke most vector graphics libraries, compose is thoroughly declarative. Rather
+Unlike most vector graphics libraries, Compose is thoroughly declarative. Rather
 than issue a sequence of drawing commands, graphics are formed by sticking
 various things together and then letting the library figure out how to draw it.
 The "things" in this case fall one of three types: Property, Form, and Canvas.
@@ -23,7 +23,7 @@ consistent and powerful means of building vector graphics.
 ## Example
 
 The easiest way to get a sense of how Compose works is with an example. So,
-here's how to draw a sierpinski triangle.
+here's how to draw a Sierpinski triangle.
 
 ![Sierpinski](http://dcjones.github.com/Compose.jl/sierpinski.svg)
 
@@ -51,13 +51,13 @@ system relative to its parent canvas. One context is made a child of another wit
 a call to `compose(a::Context, b::Context)`.
 
 Contexts may also have children of type `Form`, which are rectangles, ellipses,
-text, etc, and `Property`, which are line width, fill color, etc. `Form` and
+text, etc., and `Property`, which are line width, fill color, etc. `Form` and
 `Property` nodes are always leaf nodes.
 
 ## Fancier compositions
 
-There are fancier forms of the compose function. In particular, variadic
-compose, which is roughly defined as:
+There are fancier forms of the `compose` function, in particular, variadic
+`compose`, which is roughly defined as:
 
 ```julia
 compose(a, b, cs...) = compose(compose(a, b), cs...)

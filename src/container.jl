@@ -31,7 +31,7 @@ type Context <: Container
     # not drawing to the SVGJS backend.
     withjs::Bool
 
-    # Igonre this context if wer *are* drawing on the SVGJS backend.
+    # Ignore this context if we *are* drawing on the SVGJS backend.
     withoutjs::Bool
 
     # If possible, render this subtree as a bitmap. This requires the Cairo. If
@@ -275,7 +275,7 @@ end
 
 # TODO:
 # Optionl in layouts will typically be expressed with ad hoc container promises,
-# since we can that way avoid realizing layout possibilties that are not used.
+# since we can that way avoid realizing layout possibilities that are not used.
 # That means we need to be able to express size constraints on these.
 
 
@@ -409,8 +409,8 @@ end
 
 # Draw without finishing the backend
 #
-# Drawing is basically a depth-first traversal of the tree, pushing and poping
-# properties, expanding context promises, etc as needed.
+# Drawing is basically a depth-first traversal of the tree, pushing and popping
+# properties, expanding context promises, etc. as needed.
 #
 function drawpart(backend::Backend, root_container::Container)
     S = Any[(root_container, IdentityTransform(), UnitBox(), root_box(backend))]
@@ -424,7 +424,7 @@ function drawpart(backend::Backend, root_container::Container)
     while !isempty(S)
         s = pop!(S)
 
-        # Groups of properties are in a property frame, analagous to a stack
+        # Groups of properties are in a property frame, analogous to a stack
         # frame. A marker is pushed to the stack so we know when to pop the
         # frame.
         if s == :POP_PROPERTY_FRAME
@@ -463,7 +463,7 @@ function drawpart(backend::Backend, root_container::Container)
 
         if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
             # TODO: commented out while I search for the real source of the
-            # slowness, cause it it aint this.
+            # slowness, cause it it ain't this.
             bitmapbackend = PNG(box.width, box.height, false)
             draw(bitmapbackend, ctx)
             f = bitmap("image/png", takebuf_array(bitmapbackend.out),
