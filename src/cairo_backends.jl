@@ -16,10 +16,8 @@ abstract PSBackend  <: VectorImageBackend
 abstract CairoBackend <: VectorImageBackend
 
 type ImagePropertyState
-    stroke::Maybe(ColorValue)
-    fill::Maybe(ColorValue)
-    fill_opacity::Float64
-    stroke_opacity::Float64
+    stroke::RGBA{Float64}
+    fill::RGBA{Float64}
     stroke_dash::Array{Float64,1}
     stroke_linecap::LineCap
     stroke_linejoin::LineJoin
@@ -48,10 +46,8 @@ type Image{B <: ImageBackend} <: Backend
     height::Float64
 
     # Current state
-    stroke::Maybe(ColorValue)
-    fill::Maybe(ColorValue)
-    fill_opacity::Float64 # in [0,1]
-    stroke_opacity::Float64 # in [0,1]
+    stroke::RGBA{Float64}
+    fill::RGBA{Float64}
     stroke_dash::Array{Float64,1}
     stroke_linecap::LineCap
     stroke_linejoin::LineJoin
@@ -87,10 +83,10 @@ type Image{B <: ImageBackend} <: Backend
         img.height = 0
         img.surface = surface
         img.ctx = ctx
-        img.stroke = default_stroke_color
-        img.fill   = default_fill_color
-        img.fill_opacity = 1.0
-        img.stroke_opacity = 1.0
+        img.stroke = default_stroke_color == nothing ?
+                        RGBA{Float64}(0, 0, 0, 0) : convert(RGBA{Float64}, default_stroke_color)
+        img.fill   = default_fill_color == nothing ?
+                        RGBA(0, 0, 0, 0) : convert(RGBA{Float64}, default_fill_color)
         img.stroke_dash = []
         img.stroke_linecap = LineCapButt()
         img.stroke_linejoin = LineJoinMiter()
@@ -359,8 +355,6 @@ function save_property_state(img::Image)
         ImagePropertyState(
             img.stroke,
             img.fill,
-            img.fill_opacity,
-            img.stroke_opacity,
             img.stroke_dash,
             img.stroke_linecap,
             img.stroke_linejoin,
@@ -373,8 +367,6 @@ function restore_property_state(img::Image)
     state = pop!(img.state_stack)
     img.stroke = state.stroke
     img.fill = state.fill
-    img.fill_opacity = state.fill_opacity
-    img.stroke_opacity = state.stroke_opacity
     img.stroke_dash = state.stroke_dash
     img.stroke_linecap = state.stroke_linecap
     img.stroke_linejoin = state.stroke_linejoin
@@ -419,32 +411,22 @@ end
 
 
 function apply_property(img::Image, p::StrokePrimitive)
-    if isa(p.color, AlphaColorValue)
-        img.stroke = p.color.c
-        img.stroke_opacity = p.color.alpha
-    else
-        img.stroke = p.color
-    end
+    img.stroke = p.color
 end
 
 
 function apply_property(img::Image, p::FillPrimitive)
-    if isa(p.color, AlphaColorValue)
-        img.fill = p.color.c
-        img.fill_opacity = p.color.alpha
-    else
-        img.fill = p.color
-    end
+    img.fill = p.color
 end
 
 
 function apply_property(img::Image, p::FillOpacityPrimitive)
-    img.fill_opacity = p.value
+    img.fill = RGBA{Float64}(img.fill.c, p.value)
 end
 
 
 function apply_property(img::Image, p::StrokeOpacityPrimitive)
-    img.stroke_opacity = p.value
+    img.stroke = RGBA{Float64}(img.stroke.c, p.value)
 end
 
 
@@ -642,20 +624,24 @@ cairo_linejoin(::LineJoinRound) = Cairo.CAIRO_LINE_JOIN_ROUND
 
 
 function fillstroke(img::Image, strokeonly::Bool=false)
-    if img.fill != nothing && img.fill_opacity > 0.0 && img.visible && !strokeonly
-        rgb = convert(RGB, img.fill)
-        Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.fill_opacity)
+    if !img.visible
+        return
+    end
 
-        if img.stroke != nothing
+    if img.fill.alpha > 0.0 && !strokeonly
+        Cairo.set_source_rgba(img.ctx, img.fill.c.r, img.fill.c.g, img.fill.c.b,
+                              img.fill.alpha)
+
+        if img.stroke.alpha > 0.0
             Cairo.fill_preserve(img.ctx)
         else
             Cairo.fill(img.ctx)
         end
     end
 
-    if img.stroke != nothing && img.stroke_opacity > 0.0
-        rgb = convert(RGB, img.stroke)
-        Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.stroke_opacity)
+    if img.stroke.alpha > 0.0
+        Cairo.set_source_rgba(img.ctx, img.stroke.c.r, img.stroke.c.g,
+                                     img.stroke.c.b, img.stroke.alpha)
         Cairo.set_dash(img.ctx, img.stroke_dash)
         Cairo.set_line_cap(img.ctx, cairo_linecap(img.stroke_linecap))
         Cairo.set_line_join(img.ctx, cairo_linejoin(img.stroke_linejoin))
@@ -773,8 +759,7 @@ end
 
 
 function draw(img::Image, prim::TextPrimitive)
-    if !img.visible || ((img.fill_opacity == 0.0 || img.fill === nothing) &&
-            (img.stroke_opacity == 0.0 || img.stroke === nothing))
+    if !img.visible || (img.fill.alpha == 0.0 && img.stroke.alpha == 0.0)
         return
     end
 
@@ -797,8 +782,8 @@ function draw(img::Image, prim::TextPrimitive)
         end
     end
 
-    rgb = convert(RGB, img.fill)
-    Cairo.set_source_rgba(img.ctx, rgb.r, rgb.g, rgb.b, img.fill_opacity)
+    Cairo.set_source_rgba(img.ctx, img.fill.c.r, img.fill.c.g, img.fill.c.b,
+                          img.fill.alpha)
 
     if prim.rot.theta != 0.0
         save_property_state(img)

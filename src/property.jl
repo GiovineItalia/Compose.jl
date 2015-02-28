@@ -43,14 +43,14 @@ end
 # ------
 
 immutable StrokePrimitive <: PropertyPrimitive
-	color::Maybe(ColorValue)
+	color::RGBA{Float64}
 end
 
 typealias Stroke Property{StrokePrimitive}
 
 
 function stroke(c::Nothing)
-    return Stroke([StrokePrimitive(c)])
+    return Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
 end
 
 
@@ -60,7 +60,7 @@ end
 
 
 function stroke(cs::AbstractArray)
-	return Stroke([StrokePrimitive(c == nothing ? c : color(c)) for c in cs])
+	return Stroke([StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : color(c)) for c in cs])
 end
 
 
@@ -68,14 +68,14 @@ end
 # ----
 
 immutable FillPrimitive <: PropertyPrimitive
-	color::Union(ColorValue, AlphaColorValue, Nothing)
+	color::RGBA{Float64}
 end
 
 typealias Fill Property{FillPrimitive}
 
 
 function fill(c::Nothing)
-    return Fill([FillPrimitive(c)])
+    return Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
 end
 
 
@@ -85,7 +85,7 @@ end
 
 
 function fill(cs::AbstractArray)
-	return Fill([FillPrimitive(c == nothing ? c : color(c)) for c in cs])
+	return Fill([FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : color(c)) for c in cs])
 end
 
 
