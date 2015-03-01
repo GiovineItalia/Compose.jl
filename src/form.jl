@@ -18,18 +18,18 @@ function isscalar(f::Form)
 end
 
 
-function draw{P}(backend::Backend, t::Transform, units::UnitBox,
-                 box::AbsoluteBoundingBox, form::Form{P})
-    draw(backend, Form(P[absolute_units(primitive, t, units, box)
-                         for primitive in form.primitives]))
+function draw(backend::Backend, t::Transform, units::UnitBox,
+              box::AbsoluteBoundingBox, form::Form)
+    draw(backend, Form([absolute_units(primitive, t, units, box)
+                        for primitive in form.primitives]))
 end
 
 
 # Polygon
 # -------
 
-immutable PolygonPrimitive <: FormPrimitive
-    points::Vector{Point}
+immutable PolygonPrimitive{P <: Point} <: FormPrimitive
+    points::Vector{P}
 end
 
 typealias Polygon Form{PolygonPrimitive}
@@ -46,20 +46,47 @@ function polygon{T <: XYTupleOrPoint}(points::AbstractArray{T})
 end
 
 
-function polygon(point_arrays::AbstractArray)
-    polyprims = Array(PolygonPrimitive, length(point_arrays))
-    for (i, point_array) in enumerate(point_arrays)
-        polyprims[i] = PolygonPrimitive([convert(Point, point)
-                                         for point in point_array])
+function narrow_polygon_point_types{XM, YM}(
+            point_arrays::AbstractArray{Vector{Point{XM, YM}}})
+    return (XM, YM)
+end
+
+
+function narrow_polygon_point_types(point_arrays::AbstractArray)
+    type_params{XM, YM}(p::Point{XM, YM}) = (XM, YM)
+
+    if !isempty(point_arrays) && all([eltype(arr) <: Point for arr in point_arrays])
+        xm, ym = type_params(eltype(point_arrays[1]))
+        for i in 2:length(point_arrays)
+            if type_params(eltype(point_arrays[i])) != (xm, ym)
+                return Any, Any
+            end
+        end
+        return xm, ym
+    else
+        return Any, Any
     end
-    return Polygon(polyprims)
+end
+
+
+function polygon(point_arrays::AbstractArray)
+    XM, YM = narrow_polygon_point_types(point_arrays)
+    PointType = XM == YM == Any ? Point : Point{XM, YM}
+    PrimType = XM == YM == Any ? LinePrimitive : LinePrimitive{PointType}
+
+    polyprims = Array(PrimType, length(point_arrays))
+    for (i, point_array) in enumerate(point_arrays)
+        polyprims[i] = PrimType(PointType[convert(Point, point)
+                                          for point in point_array])
+    end
+    return Form{PrimType}(polyprims)
 end
 
 
 function absolute_units(p::PolygonPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return PolygonPrimitive(Point[absolute_units(point, t, units, box)
-                                  for point in p.points])
+    return PolygonPrimitive{SimplePoint}(
+                [absolute_units(point, t, units, box) for point in p.points])
 end
 
 function boundingbox(form::PolygonPrimitive, linewidth::Measure,
@@ -78,10 +105,10 @@ end
 # Rectangle
 # ---------
 
-immutable RectanglePrimitive <: FormPrimitive
-    corner::Point
-    width::Measure
-    height::Measure
+immutable RectanglePrimitive{P <: Point, M1 <: Measure, M2 <: Measure} <: FormPrimitive
+    corner::P
+    width::M1
+    height::M2
 end
 
 typealias Rectangle Form{RectanglePrimitive}
@@ -102,11 +129,9 @@ end
 
 function rectangle(x0s::AbstractArray, y0s::AbstractArray,
                    widths::AbstractArray, heights::AbstractArray)
-    primitives = @makeprimitives RectanglePrimitive,
-                    (x0 in x0s, y0 in y0s, width in widths, height in heights),
-                    RectanglePrimitive(Point(x0, y0),
-                                       x_measure(width), y_measure(height))
-    return Rectangle(primitives)
+    return @makeform (x0 in x0s, y0 in y0s, width in widths, height in heights),
+                     RectanglePrimitive(Point(x0, y0),
+                                        x_measure(width), y_measure(height))
 end
 
 
@@ -118,7 +143,7 @@ function absolute_units(p::RectanglePrimitive, t::Transform, units::UnitBox,
     width = absolute_units(p.width, t, units, box)
     height = absolute_units(p.height, t, units, box)
 
-    return RectanglePrimitive(
+    return RectanglePrimitive{SimplePoint, SimpleMeasure, SimpleMeasure}(
         Point(Measure(width < 0 ? corner.x.abs + width : corner.x.abs),
               Measure(height < 0 ? corner.y.abs + height : corner.y.abs)),
         Measure(abs(width)),
@@ -138,9 +163,19 @@ end
 # Circle
 # ------
 
-immutable CirclePrimitive <: FormPrimitive
-    center::Point
-    radius::Measure
+immutable CirclePrimitive{P <: Point, M <: Measure} <: FormPrimitive
+    center::P
+    radius::M
+end
+
+
+function CirclePrimitive{P, M}(center::P, radius::M)
+    return CirclePrimitive{P, M}(center, radius)
+end
+
+
+function CirclePrimitive(x, y, r)
+    return CirclePrimitive(Point(x, y), size_measure(r))
 end
 
 
@@ -153,22 +188,24 @@ end
 
 
 function circle(x, y, r)
-    return Circle([CirclePrimitive(Point(x, y), x_measure(r))])
+    return Circle([CirclePrimitive(x, y, r)])
 end
 
 
 function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
-    return Circle(
-        @makeprimitives CirclePrimitive,
-            (x in xs, y in ys, r in rs),
-            CirclePrimitive(Point(x, y), x_measure(r)))
+    if isempty(xs) || isempty(ys) || isempty(rs)
+        return Circle(CirclePrimitive[])
+    end
+
+    return @makeform (x in xs, y in ys, r in rs), CirclePrimitive(x, y, r)
 end
 
 
 function absolute_units(p::CirclePrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return CirclePrimitive(absolute_units(p.center, t, units, box),
-                           Measure(absolute_units(p.radius, t, units, box)))
+    return CirclePrimitive{SimplePoint, SimpleMeasure}(
+                    absolute_units(p.center, t, units, box),
+                    Measure(absolute_units(p.radius, t, units, box)))
 end
 
 function boundingbox(form::CirclePrimitive, linewidth::Measure,
@@ -184,10 +221,10 @@ end
 # -------
 
 
-immutable EllipsePrimitive <: FormPrimitive
-    center::Point
-    x_point::Point
-    y_point::Point
+immutable EllipsePrimitive{P1 <: Point, P2 <: Point, P3 <: Point} <: FormPrimitive
+    center::P1
+    x_point::P2
+    y_point::P3
 end
 
 typealias Ellipse Form{EllipsePrimitive}
@@ -209,20 +246,19 @@ end
 
 function ellipse(xs::AbstractArray, ys::AbstractArray,
                  x_radiuses::AbstractArray, y_radiuses::AbstractArray)
-    return Ellipse(
-        @makeprimitives EllipsePrimitive,
-            (x in xs, y in ys, x_radius in x_radiuses, y_radius in y_radiuses),
+    return @makeform (x in xs, y in ys, x_radius in x_radiuses, y_radius in y_radiuses),
             EllipsePrimitive(Point(x, y),
                              Point(x_measure(x) + x_measure(x_radius), y),
-                             Point(x, y_measure(y) + y_measure(y_radius))))
+                             Point(x, y_measure(y) + y_measure(y_radius)))
 end
 
 
 function absolute_units(p::EllipsePrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return EllipsePrimitive(absolute_units(p.center, t, units, box),
-                            absolute_units(p.x_point, t, units, box),
-                            absolute_units(p.y_point, t, units, box))
+    return EllipsePrimitive{SimplePoint, SimplePoint, SimplePoint}(
+                        absolute_units(p.center, t, units, box),
+                        absolute_units(p.x_point, t, units, box),
+                        absolute_units(p.y_point, t, units, box))
 end
 
 function boundingbox(form::EllipsePrimitive, linewidth::Measure,
@@ -263,15 +299,15 @@ const vcenter = VCenter()
 const vbottom = VBottom()
 
 
-immutable TextPrimitive <: FormPrimitive
-    position::Point
+immutable TextPrimitive{P <: Point, R <: Rotation} <: FormPrimitive
+    position::P
     value::String
     halign::HAlignment
     valign::VAlignment
 
     # Text forms need their own rotation field unfortunately, since there is no
     # way to give orientation with just a position point.
-    rot::Rotation
+    rot::R
 end
 
 typealias Text Form{TextPrimitive}
@@ -294,28 +330,25 @@ end
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{String},
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
               rots::AbstractArray=[Rotation()])
-    return Text(
-        @makeprimitives TextPrimitive,
-            (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-            TextPrimitive(Point(x, y), value, halign, valign, rot))
+    return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
+            TextPrimitive(Point(x, y), value, halign, valign, rot)
 end
 
 
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
               rots::AbstractArray=[Rotation()])
-    return Text(
-        @makeprimitives TextPrimitive,
-            (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-            TextPrimitive(Point(x, y), string(value), halign, valign, rot))
+    return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
+            TextPrimitive(Point(x, y), value, halign, valign, rot)
 end
 
 
 function absolute_units(p::TextPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return TextPrimitive(absolute_units(p.position, t, units, box),
-                         p.value, p.halign, p.valign,
-                         absolute_units(p.rot, t, units, box))
+    return TextPrimitive{SimplePoint, Rotation{SimplePoint}}(
+                     absolute_units(p.position, t, units, box),
+                     p.value, p.halign, p.valign,
+                     absolute_units(p.rot, t, units, box))
 end
 
 function boundingbox(form::TextPrimitive, linewidth::Measure,
@@ -348,8 +381,8 @@ end
 # Line
 # ----
 
-immutable LinePrimitive <: FormPrimitive
-    points::Vector{Point}
+immutable LinePrimitive{P <: Point} <: FormPrimitive
+    points::Vector{P}
 end
 
 typealias Line Form{LinePrimitive}
@@ -366,18 +399,24 @@ end
 
 
 function line(point_arrays::AbstractArray)
-    lineprims = Array(LinePrimitive, length(point_arrays))
+    XM, YM = narrow_polygon_point_types(point_arrays)
+    PointType = XM == YM == Any ? Point : Point{XM, YM}
+    PrimType = XM == YM == Any ? LinePrimitive : LinePrimitive{PointType}
+
+    lineprims = Array(PrimType, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
-        lineprims[i] = LinePrimitive([convert(Point, point)
-                                      for point in point_array])
+        p =  PrimType(PointType[convert(Point, point) for point in point_array])
+        lineprims[i] = PrimType(PointType[convert(Point, point)
+                                          for point in point_array])
     end
-    return Line(lineprims)
+    return Form{PrimType}(lineprims)
 end
 
 
 function absolute_units(p::LinePrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return LinePrimitive([absolute_units(point, t, units, box) for point in p.points])
+    return LinePrimitive{SimplePoint}(
+                [absolute_units(point, t, units, box) for point in p.points])
 end
 
 
@@ -396,11 +435,11 @@ end
 # Curve
 # -----
 
-immutable CurvePrimitive <: FormPrimitive
-    anchor0::Point
-    ctrl0::Point
-    ctrl1::Point
-    anchor1::Point
+immutable CurvePrimitive{P1 <: Point, P2 <: Point, P3 <: Point, P4 <: Point} <: FormPrimitive
+    anchor0::P1
+    ctrl0::P2
+    ctrl1::P3
+    anchor1::P4
 end
 
 typealias Curve Form{CurvePrimitive}
@@ -415,32 +454,31 @@ end
 
 function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
                ctrl1s::AbstractArray, anchor1s::AbstractArray)
-    return Curve(
-        @makeprimitives CurvePrimitive,
-            (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
+    return @makeform (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
             CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
-                           convert(Point, ctrl1), convert(Point, anchor1)))
+                           convert(Point, ctrl1), convert(Point, anchor1))
 end
 
 
 function absolute_units(p::CurvePrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return CurvePrimitive(absolute_units(p.anchor0, t, units, box),
-                          absolute_units(p.ctrl0, t, units, box),
-                          absolute_units(p.ctrl1, t, units, box),
-                          absolute_units(p.anchor1, t, units, box))
+    return CurvePrimitive{SimplePoint, SimplePoint, SimplePoint, SimplePoint}(
+                      absolute_units(p.anchor0, t, units, box),
+                      absolute_units(p.ctrl0, t, units, box),
+                      absolute_units(p.ctrl1, t, units, box),
+                      absolute_units(p.anchor1, t, units, box))
 end
 
 
 # Bitmap
 # ------
 
-immutable BitmapPrimitive <: FormPrimitive
+immutable BitmapPrimitive{P <: Point, XM <: Measure, YM <: Measure} <: FormPrimitive
     mime::String
     data::Vector{Uint8}
-    corner::Point
-    width::Measure
-    height::Measure
+    corner::P
+    width::XM
+    height::YM
 end
 
 typealias Bitmap Form{BitmapPrimitive}
@@ -457,19 +495,18 @@ end
 function bitmap(mimes::AbstractArray, datas::AbstractArray,
                 x0s::AbstractArray, y0s::AbstractArray,
                 widths::AbstractArray, heights::AbstractArray)
-    return Bitmap(
-        @makeprimitives BitmapPrimitive,
-            (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heigths),
-            BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height)))
+    return @makeform (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heigths),
+            BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height))
 end
 
 
 function absolute_units(p::BitmapPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return BitmapPrimitive(p.mime, p.data,
-                           absolute_units(p.corner, t, units, box),
-                           Measure(absolute_units(p.width, t, units, box)),
-                           Measure(absolute_units(p.height, t, units, box)))
+    return BitmapPrimitive{SimplePoint, SimpleMeasure, SimpleMeasure}(
+                       p.mime, p.data,
+                       absolute_units(p.corner, t, units, box),
+                       Measure(absolute_units(p.width, t, units, box)),
+                       Measure(absolute_units(p.height, t, units, box)))
 end
 
 

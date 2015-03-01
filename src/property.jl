@@ -294,8 +294,8 @@ end
 # Clip
 # ----
 
-immutable ClipPrimitive <: PropertyPrimitive
-    points::Vector{Point}
+immutable ClipPrimitive{P <: Point} <: PropertyPrimitive
+    points::Vector{P}
 end
 
 typealias Clip Property{ClipPrimitive}
@@ -323,8 +323,8 @@ end
 
 function absolute_units(primitive::ClipPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
-    return ClipPrimitive([absolute_units(point, t, units, box)
-                          for point in primitive.points])
+    return ClipPrimitive(SimplePoint[absolute_units(point, t, units, box)
+                                     for point in primitive.points])
 end
 
 

@@ -32,10 +32,44 @@ end
 
 typealias MeasureOrNumber Union(Measure, Number)
 
+typealias SimpleMeasure Measure{MeasureNil, MeasureNil}
+
 
 # MeasureNil semantics
 zero(::Type{MeasureNil}) = measure_nil
 zero(::MeasureNil) = measure_nil
+
+#function convert{S, T}(::Type{Measure{S, T}}, a::Measure{S, T})
+    #return a
+#end
+
+#function convert{S, T, U, V}(::Type{Measure{S, T}}, a::Measure{U, V})
+    #if U == S
+        #cx = a.cx
+    #elseif U == MeasureNil
+        #cx = zero(S)
+    #else
+        #error("Cannot convert incompatible measure types")
+    #end
+
+    #if V == T
+        #cy = a.cy
+    #elseif V == MeasureNil
+        #cy = zero(T)
+    #else
+        #error("Cannot convert incompatible measure types")
+    #end
+
+    #return Measure{S, T}(a.abs, cx, cy, a.cw, a.ch)
+#end
+
+
+#function Base.promote_rule{S, T, U, V}(::Type{Measure{S, T}},
+                                       #::Type{Measure{U, V}})
+    #return Measure{S == MeasureNil ? U : S,
+                   #T == MeasureNil ? V : T}
+#end
+
 
 iszero{T}(a::T) = a == zero(T)
 
@@ -363,25 +397,32 @@ end
 # Higher-order measures
 # ---------------------
 
-immutable Point
-    x::Measure
-    y::Measure
+immutable Point{XM <: Measure, YM <: Measure}
+    x::XM
+    y::YM
+end
 
-    function Point()
-        new(Measure(), Measure())
-    end
+typealias SimplePoint Point{SimpleMeasure, SimpleMeasure}
 
-    function Point(x, y)
-        new(x_measure(x), y_measure(y))
-    end
+function Point()
+    Point(Measure(), Measure())
+end
 
-    function Point(point::Point)
-        new(point.x, point.y)
-    end
 
-    function Point(xy::NTuple{2})
-        Point(x_measure(xy[1]), y_measure(xy[2]))
-    end
+function Point{XM <: Measure, YM <: Measure}(x::XM, y::YM)
+    Point{XM, YM}(x, y)
+end
+
+function Point(x, y)
+    Point(x_measure(x), y_measure(y))
+end
+
+function Point(point::Point)
+    Point(point.x, point.y)
+end
+
+function Point(xy::NTuple{2})
+    Point(x_measure(xy[1]), y_measure(xy[2]))
 end
 
 
@@ -650,32 +691,42 @@ end
 
 
 # Rotation about a point.
-type Rotation
+immutable Rotation{P <: Point}
     theta::Float64
-    offset::Point
-
-    function Rotation()
-        new(0.0, Point(0.5w, 0.5h))
-    end
-
-    function Rotation(theta::Number)
-        Rotation(theta, 0.5w, 0.5h)
-    end
-
-    function Rotation(theta::Number, offset::XYTupleOrPoint)
-        new(convert(Float64, theta), convert(Point, offset))
-    end
-
-    function Rotation(theta::Number, offset_x, offset_y)
-        new(convert(Float64, theta), Point(offset_x, offset_y))
-    end
+    offset::P
 
     # copy constructor
     function Rotation(rot::Rotation)
         new(copy(rot.theta),
             copy(rot.offset))
     end
+
+    function Rotation(theta::Float64, offset::P)
+        new(theta, offset)
+    end
 end
+
+
+function Rotation()
+    Rotation{SimplePoint}(0.0, Point(0.5w, 0.5h))
+end
+
+function Rotation{P <: Point}(theta::Float64, offset::P)
+    Rotation{P}(theta, offset)
+end
+
+function Rotation(theta::Number)
+    Rotation{SimplePoint}(theta, Point(0.5w, 0.5h))
+end
+
+function Rotation(theta::Number, offset::XYTupleOrPoint)
+    Rotation(convert(Float64, theta), convert(Point, offset))
+end
+
+function Rotation(theta::Number, offset_x, offset_y)
+    Rotation(convert(Float64, theta), Point(offset_x, offset_y))
+end
+
 
 
 copy(rot::Rotation) = Rotation(rot)
@@ -808,7 +859,7 @@ function absolute_units(rot::Rotation,
                         unit_box::UnitBox,
                         parent_box::AbsoluteBoundingBox)
 
-    return Rotation(rot.theta, absolute_units(rot.offset, t, unit_box, parent_box))
+    return Rotation{SimplePoint}(rot.theta, absolute_units(rot.offset, t, unit_box, parent_box))
 end
 
 

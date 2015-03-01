@@ -213,7 +213,8 @@ function writecolors(img::PGF)
     end
 end
 
-function print_pgf_path(out, points::Vector{Point}, bridge_gaps::Bool=false)
+function print_pgf_path(out::IO, points::Vector{SimplePoint},
+                        bridge_gaps::Bool=false)
     isfirst = true
     for point in points
         x, y = point.x.abs, point.y.abs

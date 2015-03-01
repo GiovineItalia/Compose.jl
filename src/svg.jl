@@ -516,7 +516,8 @@ end
 # Returns:
 #   A string containing SVG path data.
 #
-function print_svg_path(out, points::Vector{Point}, bridge_gaps::Bool=false)
+function print_svg_path(out, points::Vector{SimplePoint},
+                        bridge_gaps::Bool=false)
     isfirst = true
     for point in points
         x, y = point.x.abs, point.y.abs
@@ -544,8 +545,8 @@ end
 
 # Return array of paths to draw with printpath
 # array is formed by splitting by NaN values
-function make_paths(points::Vector{Point})
-    paths = Any[]
+function make_paths(points::Vector{SimplePoint})
+    paths = Vector{SimplePoint}[]
     nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
                 [(point.x.abs, point.y.abs) for point in points])
 
@@ -570,21 +571,21 @@ end
 
 
 function print_property(img::SVG, property::StrokePrimitive)
-    if isa(property.color, AlphaColorValue)
+    if property.color.alpha != 1.0
         @printf(img.out, " stroke=\"%s\" stroke-opacity=\"%0.3f\"",
                 svg_fmt_color(property.color.c), property.color.alpha)
     else
-        @printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color))
+        @printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color.c))
     end
 end
 
 
 function print_property(img::SVG, property::FillPrimitive)
-    if isa(property.color, AlphaColorValue)
+    if property.color.alpha != 1.0
         @printf(img.out, " fill=\"%s\" fill-opacity=\"%0.3f\"",
                 svg_fmt_color(property.color.c), property.color.alpha)
     else
-        @printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color))
+        @printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color.c))
     end
 end
 
@@ -717,6 +718,9 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
         img.has_current_id = true
     end
 
+    has_stroke_opacity = haskey(img.vector_properties, StrokeOpacity)
+    has_fill_opacity = haskey(img.vector_properties, FillOpacity)
+
     for (propertytype, property) in img.vector_properties
         if property === nothing ||
            (propertytype == Fill && supress_fill)
@@ -726,7 +730,15 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
         if idx > length(property.primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
-        print_property(img, property.primitives[idx])
+
+        # let the opacity primitives clobber the alpha value in fill and stroke
+        if propertytype == Fill && has_fill_opacity
+           print_property(img, FillPrimitive(RGBA{Float64}(property.primitives[idx].color, 1.0)))
+        elseif propertytype == Stroke && has_stroke_opacity
+           print_property(img, StrokePrimitive(RGBA{Float64}(property.primitives[idx].color, 1.0)))
+        else
+            print_property(img, property.primitives[idx])
+        end
     end
 
     img.has_current_id = false
