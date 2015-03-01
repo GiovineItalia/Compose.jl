@@ -77,3 +77,39 @@ macro makeform(args)
 end
 
 
+# TODO: Remove after replacing usage in property.jl
+macro makeprimitives(args)
+    @assert args.head == :tuple
+    @assert length(args.args) == 3
+    T, iterators, constructor = args.args
+
+    maxlen_ex = quote begin n = 0 end end
+    iter_ex = quote begin end end
+
+    for iterator in iterators.args
+        @assert iterator.head == :in
+        var = iterator.args[1]
+        arr = iterator.args[2]
+
+        push!(maxlen_ex.args, quote
+            if isempty($(arr))
+                primitives = Array($(T), 0)
+                @goto done
+            end end)
+        push!(maxlen_ex.args, quote n = max(n, length($(arr))) end)
+        push!(iter_ex.args, quote
+            $(var) = $(arr)[((i - 1) % length($(arr))) + 1]
+        end)
+    end
+
+    quote
+        $(maxlen_ex)
+        primitives = Array($(T), n)
+        for i in 1:n
+            $(iter_ex)
+            primitives[i] = $(constructor)
+        end
+        @label done
+        primitives
+    end
+end
