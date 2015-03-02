@@ -54,7 +54,7 @@ function stroke(c::Nothing)
 end
 
 
-function stroke(c::Union(ColorValue, String))
+function stroke(c::Union(ColorValue, AlphaColorValue, String))
 	return Stroke([StrokePrimitive(color(c))])
 end
 
