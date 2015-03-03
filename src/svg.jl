@@ -1,6 +1,6 @@
 using Compat
 
-const snapsvgjs = Pkg.dir("Compose", "data", "snap.svg-min.js")
+const snapsvgjs = joinpath(dirname(@__FILE__), "..", "data", "snap.svg-min.js")
 
 # Packages can insert extra XML namespaces here to be defined in the output
 # SVG.
