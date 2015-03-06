@@ -181,7 +181,7 @@ function draw(img::Patchable, prim::EllipsePrimitive)
     el
 end
 
-function svg_fmt_path(points::Vector{Point}, bridge_gaps::Bool=false)
+function svg_fmt_path{P <: Point}(points::Vector{P}, bridge_gaps::Bool=false)
     io=IOBuffer()
     print_svg_path(io, points, bridge_gaps)
     takebuf_string(io)
@@ -336,7 +336,7 @@ draw(img::Patchable, prim::StrokeOpacityPrimitive) =
 function draw!(img::Patchable, prim::StrokePrimitive, dict)
     if isa(prim.color, AlphaColorValue)
         dict[:stroke] = svg_fmt_color(prim.color.c)
-        dict["stroke-opacity"] = property.color.value
+        dict["stroke-opacity"] = prim.color.alpha
     else
         dict[:stroke] = svg_fmt_color(prim.color)
     end
