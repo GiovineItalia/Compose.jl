@@ -72,7 +72,7 @@ end
 function polygon(point_arrays::AbstractArray)
     XM, YM = narrow_polygon_point_types(point_arrays)
     PointType = XM == YM == Any ? Point : Point{XM, YM}
-    PrimType = XM == YM == Any ? LinePrimitive : LinePrimitive{PointType}
+    PrimType = XM == YM == Any ? PolygonPrimitive : PolygonPrimitive{PointType}
 
     polyprims = Array(PrimType, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
