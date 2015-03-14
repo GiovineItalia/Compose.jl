@@ -764,7 +764,7 @@ function draw(img::Image, prim::TextPrimitive)
     end
 
     pos = copy(prim.position)
-    Cairo.set_text(img.ctx, prim.value, true)
+    Cairo.set_text(img.ctx, replace(prim.value, "&", "&amp;"), true)
     width, height = get_layout_size(img)
     pos = Point(pos.x, Measure(pos.y.abs - height))
 
