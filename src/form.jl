@@ -41,7 +41,7 @@ end
 
 
 function polygon{T <: XYTupleOrPoint}(points::AbstractArray{T})
-    XM, YM = narrow_polygon_point_types([points])
+    XM, YM = narrow_polygon_point_types(Vector[points];)
     PointType = XM == YM == Any ? Point : Point{XM, YM}
     return Polygon([PolygonPrimitive(PointType[convert(PointType, point)
                                                for point in points])])
@@ -396,7 +396,7 @@ end
 
 
 function line{T <: XYTupleOrPoint}(points::AbstractArray{T})
-    XM, YM = narrow_polygon_point_types([points])
+    XM, YM = narrow_polygon_point_types(Vector[points])
     PointType = XM == YM == Any ? Point : Point{XM, YM}
     return Line([LinePrimitive(PointType[convert(PointType, point) for point in points])])
 end

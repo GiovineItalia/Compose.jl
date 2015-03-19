@@ -516,8 +516,8 @@ end
 # Returns:
 #   A string containing SVG path data.
 #
-function print_svg_path(out, points::Vector{SimplePoint},
-                        bridge_gaps::Bool=false)
+function print_svg_path{P <: Point}(out, points::Vector{P},
+                                    bridge_gaps::Bool=false)
     isfirst = true
     for point in points
         x, y = point.x.abs, point.y.abs
