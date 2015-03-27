@@ -381,10 +381,13 @@ function draw(img::PGF, prim::LinePrimitive, idx::Int)
     modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
 
-    write(img.buf, join(modifiers))
-    @printf(img.buf, "\\path [%s] ", join(props, ","));
-    print_pgf_path(img.buf, prim.points, true)
-    write(img.buf, ";\n")
+    paths = make_paths(prim.points)
+    for path in paths
+        write(img.buf, join(modifiers))
+        @printf(img.buf, "\\path [%s] ", join(props, ","));
+        print_pgf_path(img.buf, path, true)
+        write(img.buf, ";\n")
+    end
 end
 
 function draw(img::PGF, prim::RectanglePrimitive, idx::Int)
@@ -410,10 +413,13 @@ function draw(img::PGF, prim::PolygonPrimitive, idx::Int)
     modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
 
-    write(img.buf, join(modifiers))
-    @printf(img.buf, "\\path [%s] ", join(props, ","))
-    print_pgf_path(img.buf, prim.points, true)
-    write(img.buf, " -- cycle;\n")
+    paths = make_paths(prim.points)
+    for path in paths
+        write(img.buf, join(modifiers))
+        @printf(img.buf, "\\path [%s] ", join(props, ","))
+        print_pgf_path(img.buf, path, true)
+        write(img.buf, " -- cycle;\n")
+    end
 end
 
 function draw(img::PGF, prim::CirclePrimitive, idx::Int)

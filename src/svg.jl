@@ -549,7 +549,6 @@ function make_paths(points::Vector{SimplePoint})
     paths = Vector{SimplePoint}[]
     nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
                 [(point.x.abs, point.y.abs) for point in points])
-
     if length(nans) == 0
         push!(paths, points)
     else
@@ -779,15 +778,18 @@ end
 
 
 function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
-     n = length(prim.points)
-     if n <= 1; return; end
+    n = length(prim.points)
+    if n <= 1; return; end
 
-     indent(img)
-     write(img.out, "<path d=\"")
-     print_svg_path(img.out, prim.points, true)
-     write(img.out, " z\"")
-     print_vector_properties(img, idx)
-     write(img.out, "/>\n")
+    paths = make_paths(prim.points)
+    for path in paths
+        indent(img)
+        write(img.out, "<path d=\"")
+        print_svg_path(img.out, path, true)
+        write(img.out, " z\"")
+        print_vector_properties(img, idx)
+        write(img.out, "/>\n")
+    end
 end
 
 
@@ -844,15 +846,18 @@ end
 
 
 function draw(img::SVG, prim::LinePrimitive, idx::Int)
-     n = length(prim.points)
-     if n <= 1; return; end
+    n = length(prim.points)
+    if n <= 1; return; end
 
-     indent(img)
-     print(img.out, "<path fill=\"none\" d=\"")
-     print_svg_path(img.out, prim.points, true)
-     print(img.out, "\"")
-     print_vector_properties(img, idx, true)
-     print(img.out, "/>\n")
+    paths = make_paths(prim.points)
+    for path in paths
+        indent(img)
+        print(img.out, "<path fill=\"none\" d=\"")
+        print_svg_path(img.out, path, true)
+        print(img.out, "\"")
+        print_vector_properties(img, idx, true)
+        print(img.out, "/>\n")
+    end
 end
 
 

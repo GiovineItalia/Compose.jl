@@ -147,7 +147,7 @@ draw(img::Patchable, prim::CirclePrimitive) =
 draw(img::Patchable, prim::CurvePrimitive) =
     Elem(:svg, :path,
          fill="none",
-         path=string("M" 
+         path=string("M"
                      , prim.anchor0.x.abs, ','
                      , prim.anchor0.y.abs, "C"
                      , prim.ctrl0.x.abs, ','
@@ -188,10 +188,17 @@ function svg_fmt_path{P <: Point}(points::Vector{P}, bridge_gaps::Bool=false)
 end
 
 function draw(img::Patchable, prim::LinePrimitive)
-     n = length(prim.points)
-     if n <= 1; return; end
+    n = length(prim.points)
+    if n <= 1; return; end
 
-     Elem(:svg, :path, fill="none", d=svg_fmt_path(prim.points, true))
+    paths = make_paths(prim.points)
+    if length(paths) > 1
+        addto(Elem(:svg, :g)
+              [Elem(:svg, :path, fill="none", d=svg_fmt_path(path, true))
+               for path in paths])
+    else
+        Elem(:svg, :path, fill="none", d=svg_fmt_path(paths[1], true))
+    end
 end
 
 function svg_fmt_path_ops(ops)
@@ -209,7 +216,14 @@ function draw(img::Patchable, prim::PolygonPrimitive)
      n = length(prim.points)
      if n <= 1; return; end
 
-     Elem(:svg, :path, d=svg_fmt_path(prim.points, true) * " z")
+    paths = make_paths(prim.points)
+    if length(paths) > 1
+        addto(Elem(:svg, :g)
+              [Elem(:svg, :path, fill="none", d=svg_fmt_path(path, true) * " z")
+               for path in paths])
+    else
+        Elem(:svg, :path, fill="none", d=svg_fmt_path(paths[1], true) * " z")
+    end
 end
 
 function draw(img::Patchable, prim::RectanglePrimitive)
