@@ -21,11 +21,13 @@ immutable Measure{S, T}
     ch::Float64  # proportion of canvas height
 
     function Measure(abs::Number, cx::S, cy::T, cw::Number, ch::Number)
-        new(float64(abs), cx, cy, float64(cw), float64(ch))
+        new((@compat Float64(abs)), cx, cy,
+            (@compat Float64(cw)), (@compat Float64(ch)))
     end
 
     function Measure(; abs=0.0, cx::S=zero(S), cy::T=zero(T), cw=0.0, ch=0.0)
-        new(float64(abs), cx, cy, float64(cw), float64(ch))
+        new((@compat Float64(abs)), cx, cy,
+            (@compat Float64(cw)), (@compat Float64(ch)))
     end
 end
 
@@ -891,7 +893,7 @@ end
 
 function absolute_position_cx(cx, unit_box::UnitBox,
                               parent_box::AbsoluteBoundingBox)
-    float64(((cx - unit_box.x0) / unit_box.width)) * parent_box.width
+    (@compat Float64(((cx - unit_box.x0) / unit_box.width))) * parent_box.width
 end
 
 
@@ -903,7 +905,7 @@ end
 
 function absolute_position_cy(cy, unit_box::UnitBox,
                               parent_box::AbsoluteBoundingBox)
-    float64(((cy - unit_box.y0) / unit_box.height)) * parent_box.height
+    (@compat Float64(((cy - unit_box.y0) / unit_box.height))) * parent_box.height
 end
 
 

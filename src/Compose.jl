@@ -1,8 +1,4 @@
 
-require("Color")
-require("Iterators")
-require("JSON")
-
 
 module Compose
 

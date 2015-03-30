@@ -229,13 +229,13 @@ end
 #   The attr.
 function update_pango_attr(attr::PangoAttr, attr_name::Symbol, value)
     if attr_name == :PANGO_ATTR_RISE
-        attr.rise = int64(value)
+        attr.rise = @compat Int64(value)
     elseif attr_name == :PANGO_ATTR_SCALE
         attr.scale = value
     elseif attr_name == :PANGO_ATTR_STYLE
-        attr.style = int64(value)
+        attr.style = @compat Int64(value)
     elseif attr_name == :PANGO_ATTR_WEIGHT
-        attr.weight = int64(value)
+        attr.weight = @compat Int64(value)
     end
     attr
 end

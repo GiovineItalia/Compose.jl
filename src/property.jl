@@ -242,7 +242,7 @@ immutable FillOpacityPrimitive <: PropertyPrimitive
     value::Float64
 
     function FillOpacityPrimitive(value_::Number)
-        value = float64(value_)
+        value = @compat Float64(value_)
         if value < 0.0 || value > 1.0
             error("Opacity must be between 0 and 1.")
         end
@@ -270,7 +270,7 @@ immutable StrokeOpacityPrimitive <: PropertyPrimitive
     value::Float64
 
     function StrokeOpacityPrimitive(value_::Number)
-        value = float64(value_)
+        value = @compat Float64(value_)
         if value < 0.0 || value > 1.0
             error("Opacity must be between 0 and 1.")
         end

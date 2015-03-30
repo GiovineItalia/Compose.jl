@@ -44,7 +44,7 @@ function svg_print_float(io::IO, x::FloatingPoint)
         end
         svg_print_uint(io, xt, 1)  # width=1 prints 0.2 instead of .2
         dxi = round(Uint, dx/eps)
-        if dxi != uint(0)
+        if dxi != 0
             write(io, '.')
             svg_print_uint(io, dxi, ndig, true)
         end
@@ -85,7 +85,7 @@ end
 end
 
 # Format a color for SVG.
-svg_fmt_color(c::ColorValue) = @sprintf("#%s", hex(c))
+svg_fmt_color(c::ColorValue) = string("#", hex(c))
 svg_fmt_color(c::Nothing) = "none"
 
 
@@ -552,7 +552,7 @@ function make_paths(points::Vector{SimplePoint})
     if length(nans) == 0
         push!(paths, points)
     else
-        nans = [0, nans, length(points) + 1]
+        nans = [0, nans..., length(points) + 1]
         i, n = 1, length(nans)
         while i <= n-1
             if nans[i] + 1 < nans[i + 1]
