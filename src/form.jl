@@ -177,7 +177,7 @@ end
 
 
 function CirclePrimitive(x, y, r)
-    return CirclePrimitive(Point(x, y), size_measure(r))
+    return CirclePrimitive(Point(x, y), x_measure(r))
 end
 
 
