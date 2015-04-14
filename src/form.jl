@@ -241,8 +241,8 @@ end
 
 function ellipse(x, y, x_radius, y_radius)
     return Ellipse([EllipsePrimitive(Point(x, y),
-                                     Point(x + x_measure(x_radius), y),
-                                     Point(x, y + y_measure(y_radius)))])
+                                     Point(x_measure(x) + x_measure(x_radius), y),
+                                     Point(x, y_measure(y) + y_measure(y_radius)))])
 end
 
 
