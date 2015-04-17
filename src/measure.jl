@@ -718,7 +718,7 @@ function Rotation{P <: Point}(theta::Float64, offset::P)
 end
 
 function Rotation(theta::Number)
-    Rotation{SimplePoint}(theta, Point(0.5w, 0.5h))
+    Rotation{SimplePoint}(convert(Float64, theta), Point(0.5w, 0.5h))
 end
 
 function Rotation(theta::Number, offset::XYTupleOrPoint)
@@ -758,7 +758,7 @@ type Mirror
     end
 
     function Mirror(theta::Number)
-        Mirror(theta, 0.5w, 0.5h)
+        Mirror(convert(Float64, theta), 0.5w, 0.5h)
     end
 
     function Mirror(theta::Number, offset::XYTupleOrPoint)
