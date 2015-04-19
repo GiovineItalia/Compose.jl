@@ -728,6 +728,46 @@ function absolute_units(p::CubicCurveRelPathOp, t::Transform, units::UnitBox,
 end
 
 
+immutable CubicCurveShortAbsPathOp <: PathOp
+    ctrl2::Point
+    to::Point
+end
+
+function parsepathop(::Type{CubicCurveShortAbsPathOp}, tokens::AbstractArray, i)
+    assert_pathop_tokens_len(CubicCurveShortAbsPathOp, tokens, i, 4)
+    op = CubicCurveShortAbsPathOp(Point(tokens[i],     tokens[i + 1]),
+                                  Point(tokens[i + 2], tokens[i + 3]))
+    return (op, i + 4)
+end
+
+function absolute_units(p::CubicCurveShortAbsPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return CubicCurveShortAbsPathOp(
+            absolute_offset(p.ctrl2, t, units, box),
+            absolute_offset(p.to, t, units, box))
+end
+
+
+immutable CubicCurveShortRelPathOp <: PathOp
+    ctrl2::Point
+    to::Point
+end
+
+function parsepathop(::Type{CubicCurveShortRelPathOp}, tokens::AbstractArray, i)
+    assert_pathop_tokens_len(CubicCurveShortRelPathOp, tokens, i, 4)
+    op = CubicCurveShortRelPathOp(Point(tokens[i],     tokens[i + 1]),
+                                  Point(tokens[i + 2], tokens[i + 3]))
+    return (op, i + 4)
+end
+
+function absolute_units(p::CubicCurveShortRelPathOp, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return CubicCurveShortRelPathOp(
+            absolute_offset(p.ctrl2, t, units, box),
+            absolute_offset(p.to, t, units, box))
+end
+
+
 immutable QuadCurveAbsPathOp <: PathOp
     ctrl1::Point
     to::Point
@@ -879,8 +919,8 @@ function absolute_units(p::ArcRelPathOp, t::Transform, units::UnitBox,
         p.rotation,
         p.largearc,
         p.sweep,
-        Point(Measure(absolute_units(to.x, t, units, box)),
-              Measure(absolute_units(to.y, t, units, box))))
+        Point(Measure(absolute_units(p.to.x, t, units, box)),
+              Measure(absolute_units(p.to.y, t, units, box))))
 end
 
 const path_ops = @compat Dict(
@@ -891,11 +931,13 @@ const path_ops = @compat Dict(
      :L => LineAbsPathOp,
      :l => LineRelPathOp,
      :H => HorLineAbsPathOp,
-     :h => HorLineAbsPathOp,
+     :h => HorLineRelPathOp,
      :V => VertLineAbsPathOp,
      :v => VertLineRelPathOp,
      :C => CubicCurveAbsPathOp,
      :c => CubicCurveRelPathOp,
+     :S => CubicCurveShortAbsPathOp,
+     :s => CubicCurveShortRelPathOp,
      :Q => QuadCurveAbsPathOp,
      :q => QuadCurveRelPathOp,
      :T => QuadCurveShortAbsPathOp,

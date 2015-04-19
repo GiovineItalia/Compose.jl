@@ -1041,6 +1041,30 @@ function svg_print_path_op(io::IO, op::CubicCurveRelPathOp)
 end
 
 
+function svg_print_path_op(io::IO, op::CubicCurveShortAbsPathOp)
+    print(io, 'S')
+    svg_print_float(io, op.ctrl2.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2.y.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
+function svg_print_path_op(io::IO, op::CubicCurveShortRelPathOp)
+    print(io, 's')
+    svg_print_float(io, op.ctrl2.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2.y.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.x.abs)
+    print(io, ' ')
+    svg_print_float(io, op.to.y.abs)
+end
+
+
 function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
     print(io, 'Q')
     svg_print_float(io, op.ctrl1.x.abs)
@@ -1065,7 +1089,7 @@ function svg_print_path_op(io::IO, op::QuadCurveRelPathOp)
 end
 
 
-function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
+function svg_print_path_op(io::IO, op::QuadCurveShortAbsPathOp)
     print(io, 'T')
     svg_print_float(io, op.to.x.abs)
     print(io, ' ')
@@ -1073,7 +1097,7 @@ function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
 end
 
 
-function svg_print_path_op(io::IO, op::QuadCurveRelPathOp)
+function svg_print_path_op(io::IO, op::QuadCurveShortRelPathOp)
     print(io, 't')
     svg_print_float(io, op.to.x.abs)
     print(io, ' ')
@@ -1098,7 +1122,7 @@ end
 
 
 function svg_print_path_op(io::IO, op::ArcRelPathOp)
-    print(io, 'A')
+    print(io, 'a')
     svg_print_float(io, op.rx.abs)
     print(io, ' ')
     svg_print_float(io, op.ry.abs)
