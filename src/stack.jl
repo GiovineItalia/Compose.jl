@@ -11,7 +11,7 @@
 #  aligned_contexts: One or more canvases accompanied with a vertical alignment
 #                    specifier, giving the vertical positioning of the context.
 #
-function hstack(x0, y0, height, aligned_contexts::(Context, VAlignment)...)
+function hstack(x0, y0, height, aligned_contexts::@compat Tuple{Context, VAlignment} ...)
     if isempty(aligned_contexts)
         return context(x0, y0, 0, height)
     end
@@ -88,7 +88,7 @@ end
 #  aligned_contexts: One or more canvases accompanied with a horizontal alignment
 #                    specifier, giving the horizontal positioning of the context.
 #
-function vstack(x0, y0, width, aligned_contexts::(Context, HAlignment)...)
+function vstack(x0, y0, width, aligned_contexts::@compat Tuple{Context, HAlignment} ...)
 
     if isempty(aligned_contexts)
         return context(x0, y0, width, 0)

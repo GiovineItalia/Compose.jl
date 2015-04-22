@@ -105,7 +105,7 @@ function text_extents(font_family::String, size::Measure, texts::String...)
     height = glyphsizes[font_family]["height"]
     widths = glyphsizes[font_family]["widths"]
 
-    extents = Array((Measure, Measure), length(texts))
+    extents = Array((@compat Tuple{Measure, Measure}), length(texts))
     for (i, text) in enumerate(texts)
         width = text_width(widths, text, size/pt)*mm
         extents[i] = (text_extents_scale_x * scale * width,

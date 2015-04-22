@@ -419,7 +419,7 @@ function drawpart(backend::Backend, root_container::Container)
     properties = Array(Property, 0)
 
     # collect and sort container children
-    container_children = Array((Int, Int, Container), 0)
+    container_children = Array((@compat Tuple{Int, Int, Container}), 0)
 
     while !isempty(S)
         s = pop!(S)

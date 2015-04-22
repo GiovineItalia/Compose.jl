@@ -201,7 +201,7 @@ type SVG <: Backend
     jsheader::Vector{String}
 
     # (Name, binding) pairs of javascript modules the embedded code depends on
-    jsmodules::Vector{(String, String)}
+    jsmodules::Vector{@compat Tuple{String, String}}
 
     # User javascript from JSCall attributes
     scripts::Vector{String}
@@ -246,7 +246,7 @@ type SVG <: Backend
         img.has_current_id = false
         img.id_count = 0
         img.jsheader = String[]
-        img.jsmodules = Array((String, String), 1)
+        img.jsmodules = Array((@compat Tuple{String, String}), 1)
         img.jsmodules[1] = ("Snap.svg", "Snap")
         img.scripts = String[]
         img.withjs = jsmode != :none

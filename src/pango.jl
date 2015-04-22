@@ -333,7 +333,7 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
     end
 
 
-    attrs = Array((Int, PangoAttr), 0)
+    attrs = Array((@compat Tuple{Int, PangoAttr}), 0)
 
     while attr_it_next() != 0
 
