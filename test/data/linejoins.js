@@ -9,7 +9,7 @@
      font-size="3.88"
 
      id="fig-7c17cb36d15b4fd9b0c66020318c44ee">
-<g fill="none" stroke-width="2" stroke="#000000" stroke-linejoin="round" id="fig-7c17cb36d15b4fd9b0c66020318c44ee-element-1">
+<g fill="#000000" fill-opacity="0.000" stroke-width="2" stroke="#000000" stroke-linejoin="round" id="fig-7c17cb36d15b4fd9b0c66020318c44ee-element-1">
   <path fill="none" d="M5,5 L 10 10 15 5"/>
   <g stroke-linejoin="miter" id="fig-7c17cb36d15b4fd9b0c66020318c44ee-element-2">
     <path fill="none" d="M5,10 L 10 15 15 10"/>

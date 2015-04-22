@@ -452,7 +452,7 @@ end
 
 immutable JSIncludePrimitive <: PropertyPrimitive
     value::String
-    jsmodule::Union(Nothing, (String, String))
+    jsmodule::Union(Nothing, @compat Tuple{String, String})
 end
 
 typealias JSInclude Property{JSIncludePrimitive}
