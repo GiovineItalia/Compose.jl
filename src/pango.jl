@@ -214,7 +214,7 @@ end
 
 
 function isempty(attr::PangoAttr)
-    all([getfield(attr, name) === nothing for name in PangoAttr.names])
+    all([getfield(attr, name) === nothing for name in fieldnames(PangoAttr)])
 end
 
 

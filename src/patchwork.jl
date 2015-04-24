@@ -11,7 +11,7 @@ type Patchable <: Backend
     height::Float64
 
     jsheader::Vector{String}
-    jsmodules::Vector{(String, String)}
+    jsmodules::Vector{(@compat Tuple{String, String})}
     clip_paths::Dict{ClipPrimitive, String}
     vector_properties::Vector
     function Patchable(width, height, absolute_elems=Elem[])
@@ -23,7 +23,7 @@ type Patchable <: Backend
         new(width.abs,
             height.abs,
             String[],
-            (String, String)[],
+            (@compat Tuple{String, String})[],
             Dict{ClipPrimitive, String}(),
             Any[])
     end
