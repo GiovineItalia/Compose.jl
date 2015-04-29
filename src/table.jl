@@ -11,8 +11,8 @@ type Table <: ContainerPromise
     # In the formulation of the table layout problem used here, we are trying
     # find a feasible solution in which the width + height of a particular
     # group of cells in the table is maximized.
-    x_focus::Range1{Int}
-    y_focus::Range1{Int}
+    x_focus::UnitRange{Int}
+    y_focus::UnitRange{Int}
 
     # If non-nothing, constrain the focused cells to have a proportional
     # relationship.
@@ -40,7 +40,7 @@ type Table <: ContainerPromise
 
 
     function Table(m::Integer, n::Integer,
-                   y_focus::Range1{Int}, x_focus::Range1{Int};
+                   y_focus::UnitRange{Int}, x_focus::UnitRange{Int};
                    y_prop=nothing, x_prop=nothing,
                    aspect_ratio=nothing,
                    units=NilUnitBox(), order=0, withjs=false, withoutjs=false,
