@@ -40,6 +40,7 @@ typealias SimpleMeasure Measure{MeasureNil, MeasureNil}
 # MeasureNil semantics
 zero(::Type{MeasureNil}) = measure_nil
 zero(::MeasureNil) = measure_nil
+abs(::MeasureNil) = measure_nil
 
 #function convert{S, T}(::Type{Measure{S, T}}, a::Measure{S, T})
     #return a
@@ -804,10 +805,10 @@ function absolute_units(u::Measure,
                         parent_box::AbsoluteBoundingBox)
     add_measure_part(u.abs,
       add_measure_part(
-        add_measure_part((u.cx / unit_box.width) * parent_box.width,
-                         (u.cy / unit_box.height) * parent_box.height),
-        u.cw * parent_box.width +
-        u.ch * parent_box.height))
+        abs(add_measure_part((u.cx / unit_box.width) * parent_box.width,
+                             (u.cy / unit_box.height) * parent_box.height)),
+        abs(u.cw * parent_box.width) +
+        abs(u.ch * parent_box.height)))
 end
 
 

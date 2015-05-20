@@ -10,7 +10,7 @@ import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!,
              display, writemime, convert, zero, isless, max, fill, size, copy,
-             min, max, +, -, *, /
+             min, max, abs, +, -, *, /
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
        ParentDrawContext, context, ctxpromise, table, set_units!, minwidth, minheight,
