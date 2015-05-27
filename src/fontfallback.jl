@@ -85,15 +85,27 @@ function max_text_extents(font_family::String, size::Measure,
     end
     scale = size / 12pt
     font_family = match_font(font_family)
-    height = glyphsizes[font_family]["height"]
+    glyphheight = glyphsizes[font_family]["height"]
     widths = glyphsizes[font_family]["widths"]
 
-    # nudge the height if the text contains <sub> or <sup> tags
-    if any([match(r"<su(p|b)>", text) != nothing for text in texts])
-        height *= 1.5
+    fontsize = size/pt
+    chunkwidths = Float64[]
+    textheights = Float64[]
+    for text in texts
+        textheight = 0.0
+        for chunk in split(text, '\n')
+            chunkheight = glyphheight
+            if match(r"<su(p|b)>", chunk) != nothing
+                chunkheight *= 1.5
+            end
+            textheight += chunkheight
+            push!(chunkwidths, text_width(widths, chunk, fontsize))
+        end
+        push!(textheights, textheight)
     end
 
-    width = maximum([text_width(widths, text, size/pt) for text in texts])
+    width = maximum(chunkwidths)
+    height = maximum(textheights)
     (text_extents_scale_x * scale * width * mm,
      text_extents_scale_y * scale * height * mm)
 end
