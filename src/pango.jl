@@ -35,7 +35,7 @@ end
 #
 let available_font_families = Set{String}()
     for font_pattern in Fontconfig.list()
-        push!(available_font_families, lowercase(format(font_pattern, "%{family}")))
+        push!(available_font_families, lowercase(Fontconfig.format(font_pattern, "%{family}")))
     end
 
     const meta_families = Set(["serif", "sans", "sans-serif", "monospace",
@@ -50,7 +50,7 @@ let available_font_families = Set{String}()
                 break
             end
         end
-        family = format(match(Fontconfig.Pattern(family=family)), "%{family}")
+        family = Fontconfig.format(match(Fontconfig.Pattern(family=family)), "%{family}")
         desc = @sprintf("%s %fpx", family, size)
         fd = ccall((:pango_font_description_from_string, libpango),
                    Ptr{Void}, (Ptr{Uint8},), bytestring(desc))
