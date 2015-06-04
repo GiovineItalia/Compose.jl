@@ -155,6 +155,15 @@ function isabsolute{S, T}(u::Measure{S, T})
 end
 
 
+function hascontextunits(u::Measure{MeasureNil, MeasureNil})
+    return false
+end
+
+function hascontextunits(u::Measure)
+    return true
+end
+
+
 function copy{S, T}(a::Measure{S, T})
     Measure{S, T}(abs=a.abs, cx=a.cx, cy=a.cy, cw=a.cw, ch=a.ch)
 end
@@ -807,8 +816,7 @@ function absolute_units(u::Measure,
       add_measure_part(
         abs(add_measure_part((u.cx / unit_box.width) * parent_box.width,
                              (u.cy / unit_box.height) * parent_box.height)),
-        abs(u.cw * parent_box.width) +
-        abs(u.ch * parent_box.height)))
+        abs(u.cw * parent_box.width) +abs(u.ch * parent_box.height)))
 end
 
 

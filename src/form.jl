@@ -145,11 +145,20 @@ function absolute_units(p::RectanglePrimitive, t::Transform, units::UnitBox,
     width = absolute_units(p.width, t, units, box)
     height = absolute_units(p.height, t, units, box)
 
+    if hascontextunits(p.corner.x) && units.width < zero(typeof(units.width))
+        x = corner.x.abs - width
+    else
+        x = corner.x.abs
+    end
+
+    if hascontextunits(p.corner.y) && units.height < zero(typeof(units.height))
+        y = corner.y.abs - height
+    else
+        y = corner.y.abs
+    end
+
     return RectanglePrimitive{SimplePoint, SimpleMeasure, SimpleMeasure}(
-        Point(Measure(units.width < zero(typeof(units.width)) ? corner.x.abs - width : corner.x.abs),
-              Measure(units.height < zero(typeof(units.height)) ? corner.y.abs - height : corner.y.abs)),
-        Measure(width),
-        Measure(height))
+        Point(Measure(x), Measure(y)), Measure(width), Measure(height))
 end
 
 
