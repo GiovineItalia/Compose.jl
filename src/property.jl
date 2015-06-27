@@ -24,17 +24,14 @@ function isrepeatable(p::Property)
 end
 
 
-function absolute_units{T}(p::Property{T}, t::Transform, units::UnitBox,
-                           box::AbsoluteBoundingBox)
-    return Property{T}([absolute_units(primitive, t, units, box)
-                        for primitive in p.primitives])
+function resolve{T}(box::AbsoluteBox, units::UnitBox, t::Transform, p::Property{T})
+    return Property{T}([resolve(box, units, t, primitive) for primitive in p.primitives])
 end
 
 
 # Property primitive catchall: most properties don't need measure transforms
-function absolute_units{T <: PropertyPrimitive}(primitive::T, t::Transform,
-                                                units::UnitBox,
-                                                box::AbsoluteBoundingBox)
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::PropertyPrimitive)
     return primitive
 end
 
@@ -90,149 +87,149 @@ end
 
 
 
-# StrokeDash
-# ----------
+## StrokeDash
+## ----------
 
-immutable StrokeDashPrimitive <: PropertyPrimitive
-    value::Vector{Measure}
-end
+#immutable StrokeDashPrimitive <: PropertyPrimitive
+    #value::Vector{Measure}
+#end
 
-typealias StrokeDash Property{StrokeDashPrimitive}
-
-
-function strokedash(values::AbstractArray)
-    return StrokeDash([StrokeDashPrimitive(collect(Measure, values))])
-end
+#typealias StrokeDash Property{StrokeDashPrimitive}
 
 
-function strokedash(values::AbstractArray{AbstractArray})
-    return StrokeDash([StrokeDashPrimitive(collect(Measure, value)) for value in values])
-end
+#function strokedash(values::AbstractArray)
+    #return StrokeDash([StrokeDashPrimitive(collect(Measure, values))])
+#end
 
 
-function absolute_units(primitive::StrokeDashPrimitive, t::Transform,
-                        units::UnitBox, box::AbsoluteBoundingBox)
-    return StrokeDashPrimitive([Measure(absolute_units(v, t, units, box))
-                                for v in primitive.value])
-end
-
-# StrokeLineCap
-# -------------
+#function strokedash(values::AbstractArray{AbstractArray})
+    #return StrokeDash([StrokeDashPrimitive(collect(Measure, value)) for value in values])
+#end
 
 
-abstract LineCap
-immutable LineCapButt <: LineCap end
-immutable LineCapSquare <: LineCap end
-immutable LineCapRound <: LineCap end
+#function absolute_units(primitive::StrokeDashPrimitive, t::Transform,
+                        #units::UnitBox, box::AbsoluteBoundingBox)
+    #return StrokeDashPrimitive([Measure(absolute_units(v, t, units, box))
+                                #for v in primitive.value])
+#end
+
+## StrokeLineCap
+## -------------
 
 
-immutable StrokeLineCapPrimitive <: PropertyPrimitive
-    value::LineCap
-
-    function StrokeLineCapPrimitive(value::LineCap)
-        return new(value)
-    end
-
-    function StrokeLineCapPrimitive(value::Type{LineCap})
-        return new(value())
-    end
-end
-
-typealias StrokeLineCap Property{StrokeLineCapPrimitive}
+#abstract LineCap
+#immutable LineCapButt <: LineCap end
+#immutable LineCapSquare <: LineCap end
+#immutable LineCapRound <: LineCap end
 
 
-function strokelinecap(value::Union(LineCap, Type{LineCap}))
-    return StrokeLineCap([StrokeLineCapPrimitive(value)])
-end
+#immutable StrokeLineCapPrimitive <: PropertyPrimitive
+    #value::LineCap
+
+    #function StrokeLineCapPrimitive(value::LineCap)
+        #return new(value)
+    #end
+
+    #function StrokeLineCapPrimitive(value::Type{LineCap})
+        #return new(value())
+    #end
+#end
+
+#typealias StrokeLineCap Property{StrokeLineCapPrimitive}
 
 
-function strokelinecap(values::AbstractArray)
-    return StrokeLineCap([StrokeLineCapPrimitive(value) for value in values])
-end
+#function strokelinecap(value::Union(LineCap, Type{LineCap}))
+    #return StrokeLineCap([StrokeLineCapPrimitive(value)])
+#end
 
 
-# StrokeLineJoin
-# --------------
-
-abstract LineJoin
-immutable LineJoinMiter <: LineJoin end
-immutable LineJoinRound <: LineJoin end
-immutable LineJoinBevel <: LineJoin end
+#function strokelinecap(values::AbstractArray)
+    #return StrokeLineCap([StrokeLineCapPrimitive(value) for value in values])
+#end
 
 
-immutable StrokeLineJoinPrimitive <: PropertyPrimitive
-    value::LineJoin
+## StrokeLineJoin
+## --------------
 
-    function StrokeLineJoinPrimitive(value::LineJoin)
-        return new(value)
-    end
-
-    function StrokeLineCapPrimitive(value::Type{LineJoin})
-        return new(value())
-    end
-end
-
-typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
+#abstract LineJoin
+#immutable LineJoinMiter <: LineJoin end
+#immutable LineJoinRound <: LineJoin end
+#immutable LineJoinBevel <: LineJoin end
 
 
-function strokelinejoin(value::Union(LineJoin, Type{LineJoin}))
-    return StrokeLineJoin([StrokeLineJoinPrimitive(value)])
-end
+#immutable StrokeLineJoinPrimitive <: PropertyPrimitive
+    #value::LineJoin
+
+    #function StrokeLineJoinPrimitive(value::LineJoin)
+        #return new(value)
+    #end
+
+    #function StrokeLineCapPrimitive(value::Type{LineJoin})
+        #return new(value())
+    #end
+#end
+
+#typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
 
 
-function strokelinejoin(values::AbstractArray)
-    return StrokeLineJoin([StrokeLineJoinPrimitive(value) for value in values])
-end
+#function strokelinejoin(value::Union(LineJoin, Type{LineJoin}))
+    #return StrokeLineJoin([StrokeLineJoinPrimitive(value)])
+#end
 
 
-# LineWidth
-# ---------
-
-immutable LineWidthPrimitive <: PropertyPrimitive
-    value::Measure
-
-    function LineWidthPrimitive(value)
-        return new(size_measure(value))
-    end
-end
-
-typealias LineWidth Property{LineWidthPrimitive}
+#function strokelinejoin(values::AbstractArray)
+    #return StrokeLineJoin([StrokeLineJoinPrimitive(value) for value in values])
+#end
 
 
-function linewidth(value::Union(Measure, Number))
-    return LineWidth([LineWidthPrimitive(value)])
-end
+## LineWidth
+## ---------
+
+#immutable LineWidthPrimitive <: PropertyPrimitive
+    #value::Measure
+
+    #function LineWidthPrimitive(value)
+        #return new(size_measure(value))
+    #end
+#end
+
+#typealias LineWidth Property{LineWidthPrimitive}
 
 
-function linewidth(values::AbstractArray)
-    return LineWidth([LineWidthPrimitive(value) for value in values])
-end
+#function linewidth(value::Union(Measure, Number))
+    #return LineWidth([LineWidthPrimitive(value)])
+#end
 
 
-function absolute_units(primitive::LineWidthPrimitive, t::Transform,
-                        units::UnitBox, box::AbsoluteBoundingBox)
-    return LineWidthPrimitive(Measure(absolute_units(primitive.value, t, units, box)))
-end
+#function linewidth(values::AbstractArray)
+    #return LineWidth([LineWidthPrimitive(value) for value in values])
+#end
 
 
-# Visible
-# -------
-
-immutable VisiblePrimitive <: PropertyPrimitive
-    value::Bool
-end
-
-typealias Visible Property{VisiblePrimitive}
+#function absolute_units(primitive::LineWidthPrimitive, t::Transform,
+                        #units::UnitBox, box::AbsoluteBoundingBox)
+    #return LineWidthPrimitive(Measure(absolute_units(primitive.value, t, units, box)))
+#end
 
 
-function visible(value::Bool)
-    return Visible([VisiblePrimitive(value)])
-end
+## Visible
+## -------
+
+#immutable VisiblePrimitive <: PropertyPrimitive
+    #value::Bool
+#end
+
+#typealias Visible Property{VisiblePrimitive}
 
 
-function visible(values::AbstractArray)
-    return Visible([VisiblePrimitive(value) for value in values])
-end
+#function visible(value::Bool)
+    #return Visible([VisiblePrimitive(value)])
+#end
+
+
+#function visible(values::AbstractArray)
+    #return Visible([VisiblePrimitive(value) for value in values])
+#end
 
 
 # FillOpacity
@@ -258,9 +255,9 @@ function fillopacity(value::Float64)
 end
 
 
-function fillopacity(values::AbstractArray)
-    return FillOpacity([FillOpacityPrimitive(value) for value in values])
-end
+#function fillopacity(values::AbstractArray)
+    #return FillOpacity([FillOpacityPrimitive(value) for value in values])
+#end
 
 
 # StrokeOpacity
@@ -294,7 +291,7 @@ end
 # Clip
 # ----
 
-immutable ClipPrimitive{P <: Point} <: PropertyPrimitive
+immutable ClipPrimitive{P <: Vec} <: PropertyPrimitive
     points::Vector{P}
 end
 
@@ -302,80 +299,80 @@ typealias Clip Property{ClipPrimitive}
 
 
 function clip()
-    return Clip([ClipPrimitive(Array(Point, 0))])
+    return Clip([ClipPrimitive(Array(Vec, 0))])
 end
 
 
-function clip(points::XYTupleOrPoint...)
-    return Clip([ClipPrimitive([convert(Point, point) for point in points])])
+function clip(points::XYTupleOrVec...)
+    return Clip([ClipPrimitive([convert(Vec, point) for point in points])])
 end
 
 
 function clip(point_arrays::AbstractArray...)
     clipprims = Array(ClipPrimitive, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
-        clipprims[i] = ClipPrimitive([convert(Point, point)
+        clipprims[i] = ClipPrimitive([convert(Vec, point)
                                       for point in point_array])
     end
     return Clip(clipprims)
 end
 
 
-function absolute_units(primitive::ClipPrimitive, t::Transform, units::UnitBox,
-                        box::AbsoluteBoundingBox)
-    return ClipPrimitive(SimplePoint[absolute_units(point, t, units, box)
-                                     for point in primitive.points])
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 p::ClipPrimitive)
+    return ClipPrimitive{AbsoluteVec}(
+        AbsoluteVec[resolve(box, units, t, point) for point in p.points])
 end
 
 
-# Font
-# ----
+## Font
+## ----
 
-immutable FontPrimitive <: PropertyPrimitive
-    family::String
-end
+#immutable FontPrimitive <: PropertyPrimitive
+    #family::String
+#end
 
-typealias Font Property{FontPrimitive}
-
-
-function font(family::String)
-    return Font([FontPrimitive(family)])
-end
+#typealias Font Property{FontPrimitive}
 
 
-function font(families::AbstractArray)
-    return Font([FontPrimitive(family) for family in families])
-end
+#function font(family::String)
+    #return Font([FontPrimitive(family)])
+#end
 
 
-# FontSize
-# --------
-
-immutable FontSizePrimitive <: PropertyPrimitive
-    value::Measure
-
-    function FontSizePrimitive(value)
-        return new(size_measure(value))
-    end
-end
-
-typealias FontSize Property{FontSizePrimitive}
+#function font(families::AbstractArray)
+    #return Font([FontPrimitive(family) for family in families])
+#end
 
 
-function fontsize(value::Union(Number, Measure))
-    return FontSize([FontSizePrimitive(value)])
-end
+## FontSize
+## --------
+
+#immutable FontSizePrimitive <: PropertyPrimitive
+    #value::Measure
+
+    #function FontSizePrimitive(value)
+        #return new(size_measure(value))
+    #end
+#end
+
+#typealias FontSize Property{FontSizePrimitive}
 
 
-function fontsize(values::AbstractArray)
-    return FontSize([FontSizePrimitive(value) for value in values])
-end
+#function fontsize(value::Union(Number, Measure))
+    #return FontSize([FontSizePrimitive(value)])
+#end
 
 
-function absolue_units(primitive::FontSizePrimitive, t::Transform,
-                       units::UnitBox, box::AbsoluteBoundingBox)
-    return FontSizePrimitive(Measure(absolute_units(primitive.value, t, units, box)))
-end
+#function fontsize(values::AbstractArray)
+    #return FontSize([FontSizePrimitive(value) for value in values])
+#end
+
+
+#function absolue_units(primitive::FontSizePrimitive, t::Transform,
+                       #units::UnitBox, box::AbsoluteBoundingBox)
+    #return FontSizePrimitive(Measure(absolute_units(primitive.value, t, units, box)))
+#end
 
 
 # SVGID
@@ -398,72 +395,72 @@ function svgid(values::AbstractArray)
 end
 
 
-# SVGClass
-# --------
+## SVGClass
+## --------
 
-immutable SVGClassPrimitive <: PropertyPrimitive
-    value::String
-end
+#immutable SVGClassPrimitive <: PropertyPrimitive
+    #value::String
+#end
 
-typealias SVGClass Property{SVGClassPrimitive}
-
-
-function svgclass(value::String)
-    return SVGClass([SVGClassPrimitive(value)])
-end
-
-function svgclass(values::AbstractArray)
-    return SVGClass([SVGClassPrimitive(value) for value in values])
-end
+#typealias SVGClass Property{SVGClassPrimitive}
 
 
-# SVGAttribute
-# ------------
+#function svgclass(value::String)
+    #return SVGClass([SVGClassPrimitive(value)])
+#end
 
-immutable SVGAttributePrimitive <: PropertyPrimitive
-    attribute::String
-    value::String
-end
-
-typealias SVGAttribute Property{SVGAttributePrimitive}
+#function svgclass(values::AbstractArray)
+    #return SVGClass([SVGClassPrimitive(value) for value in values])
+#end
 
 
-function svgattribute(attribute::String, value)
-    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))])
-end
+## SVGAttribute
+## ------------
+
+#immutable SVGAttributePrimitive <: PropertyPrimitive
+    #attribute::String
+    #value::String
+#end
+
+#typealias SVGAttribute Property{SVGAttributePrimitive}
 
 
-function svgattribute(attribute::String, values::AbstractArray)
-    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
-                         for value in values])
-end
+#function svgattribute(attribute::String, value)
+    #return SVGAttribute([SVGAttributePrimitive(attribute, string(value))])
+#end
 
 
-function svgattribute(attributes::AbstractArray, values::AbstractArray)
-    return SVGAttribute(
-        @makeprimitives SVGAttributePrimitive,
-            (attribute in attributes, value in values),
-            SVGAttributePrimitive(attribute, string(value)))
-end
+#function svgattribute(attribute::String, values::AbstractArray)
+    #return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
+                         #for value in values])
+#end
 
 
-# JSInclude
-# ---------
-
-immutable JSIncludePrimitive <: PropertyPrimitive
-    value::String
-    jsmodule::Union(Nothing, @compat Tuple{String, String})
-end
-
-typealias JSInclude Property{JSIncludePrimitive}
+#function svgattribute(attributes::AbstractArray, values::AbstractArray)
+    #return SVGAttribute(
+        #@makeprimitives SVGAttributePrimitive,
+            #(attribute in attributes, value in values),
+            #SVGAttributePrimitive(attribute, string(value)))
+#end
 
 
-function jsinclude(value::String, module_name=nothing)
-    return JSInclude([JSIncludePrimitive(value, module_name)])
-end
+## JSInclude
+## ---------
 
-# Don't bother with a vectorized version of this. It wouldn't really make #
-# sense.
+#immutable JSIncludePrimitive <: PropertyPrimitive
+    #value::String
+    #jsmodule::Union(Nothing, @compat Tuple{String, String})
+#end
+
+#typealias JSInclude Property{JSIncludePrimitive}
+
+
+#function jsinclude(value::String, module_name=nothing)
+    #return JSInclude([JSIncludePrimitive(value, module_name)])
+#end
+
+## Don't bother with a vectorized version of this. It wouldn't really make #
+## sense.
 
 
 # JSCall
@@ -491,8 +488,9 @@ function jscall(codes::AbstractArray,
 end
 
 
-function absolute_units(primitive::JSCallPrimitive, t::Transform,
-                        units::UnitBox, box::AbsoluteBoundingBox)
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::JSCallPrimitive)
+    
     # we are going to build a new string by scanning across "code" and
     # replacing %x with translated x values, %y with translated y values
     # and %s with translated size values.
@@ -515,16 +513,16 @@ function absolute_units(primitive::JSCallPrimitive, t::Transform,
         elseif primitive.code[j+1] == '%'
             write(newcode, '%')
         elseif primitive.code[j+1] == 'x'
-            val = absolute_x_position(primitive.args[validx], t, units, box)
-            write(newcode, svg_fmt_float(val))
+            val = resolve(box, units, t, Vec(primitive.args[validx], 0mm))
+            write(newcode, svg_fmt_float(val.x.value))
             validx += 1
         elseif primitive.code[j+1] == 'y'
-            val = absolute_y_position(primitive.args[validx], t, units, box)
-            write(newcode, svg_fmt_float(val))
+            val = resolve(box, units, t, Vec(0mm, primitive.args[validx]))
+            write(newcode, svg_fmt_float(val.y.value))
             validx += 1
         elseif primitive.code[j+1] == 's'
-            val = absolute_units(primitive.args[validx], t, units, box)
-            write(newcode, svg_fmt_float(val.abs))
+            val = resolve(box, units, t, primitive.args[validx])
+            write(newcode, svg_fmt_float(val.value))
             validx += 1
         else
             write(newcode, '%', primitive.code[j+1])

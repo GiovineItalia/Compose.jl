@@ -4,11 +4,14 @@ using Colors
 using Iterators
 using DataStructures
 using Compat
+using Measures
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!,
              display, writemime, convert, zero, isless, max, fill, size, copy,
              min, max, abs, +, -, *, /
+
+import Measures: resolve, w, h
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
        ParentDrawContext, context, ctxpromise, table, set_units!, minwidth, minheight,
@@ -128,22 +131,22 @@ default_fill_color = colorant"black"
 
 
 # Use cairo for the PNG, PS, PDF if it's installed.
-if isinstalled("Cairo")
-    include("cairo_backends.jl")
-else
-    global PNG
-    global PS
-    global PDF
-    PNG(args...) = error("Cairo must be installed to use the PNG backend.")
-    PS(args...) = error("Cairo must be installed to use the PS backend.")
-    PDF(args...) = error("Cairo must be installed to use the PDF backend.")
-end
+#if isinstalled("Cairo")
+    #include("cairo_backends.jl")
+#else
+    #global PNG
+    #global PS
+    #global PDF
+    #PNG(args...) = error("Cairo must be installed to use the PNG backend.")
+    #PS(args...) = error("Cairo must be installed to use the PS backend.")
+    #PDF(args...) = error("Cairo must be installed to use the PDF backend.")
+#end
 include("svg.jl")
-include("pgf_backend.jl")
+#include("pgf_backend.jl")
 
-if isinstalled("Patchwork", v"0.1.2")
-    include("patchable.jl")
-end
+#if isinstalled("Patchwork", v"0.1.2")
+    #include("patchwork.jl")
+#end
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.

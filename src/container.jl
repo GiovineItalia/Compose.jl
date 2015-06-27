@@ -116,6 +116,10 @@ function context(x0=0.0w,
                  minwidth=nothing,
                  minheight=nothing,
                  penalty=0.0)
+    @show typeof(x0)
+    @show typeof(y0)
+    @show typeof(width)
+    @show typeof(height)
     return Context(BoundingBox(x0, y0, width, height), units, rotation, mirror,
                    ListNull{ComposeNode}(), order, clip,
                    withjs, withoutjs, raster, minwidth, minheight, penalty)
@@ -269,7 +273,7 @@ abstract ContainerPromise <: Container
 immutable ParentDrawContext
     t::Transform
     units::UnitBox
-    box::AbsoluteBoundingBox
+    box::AbsoluteBox
 end
 
 
@@ -452,12 +456,12 @@ function drawpart(backend::Backend, root_container::Container)
         @assert isa(container, Context)
         ctx = container
 
-        box = absolute_units(ctx.box, parent_transform, units, parent_box)
-        rot = absolute_units(ctx.rot, parent_transform, units, box)
+        box = resolve(parent_box, units, parent_transform, ctx.box)
+        rot = resolve(box, units, parent_transform, ctx.rot)
         transform = combine(convert(Transform, rot), parent_transform)
 
         if ctx.mir != nothing
-            mir = absolute_units(ctx.mir, parent_transform, units, box)
+            mir = resolve(box, units, parent_transform, ctx.mir)
             transform = combine(convert(Transform, mir), transform)
         end
 
@@ -478,13 +482,15 @@ function drawpart(backend::Backend, root_container::Container)
             continue
         end
 
-        if ctx.units != nil_unit_box
-            units = absolute_units(ctx.units, transform, units, box)
-        end
+        # TODO: Fix this!
+        #if ctx.units != nil_unit_box
+            #units = resolve(box, units, transform, ctx.units)
+        #end
 
         for child in ctx.children
             if isa(child, Property)
-                push!(properties, absolute_units(child, parent_transform, units, parent_box))
+                @show typeof(child)
+                push!(properties, resolve(parent_box, units, parent_transform, child))
             end
         end
 
@@ -507,7 +513,7 @@ function drawpart(backend::Backend, root_container::Container)
 
         for child in ctx.children
             if isa(child, Form)
-                draw(backend, transform, units, box, child)
+                draw(backend, box, units, transform, child)
             end
         end
 
