@@ -401,8 +401,8 @@ for (f, S, T) in [(:compose!, Property, Nothing),
 end
 
 
-function draw(backend::Backend, root_canvas::Context)
-    drawpart(backend, root_canvas)
+function draw(backend::Backend, root_container::Container)
+    drawpart(backend, root_container, IdentityTransform(), UnitBox(), root_box(backend))
     finish(backend)
 end
 
@@ -434,137 +434,124 @@ end
 # Drawing is basically a depth-first traversal of the tree, pushing and popping
 # properties, expanding context promises, etc. as needed.
 #
-function drawpart(backend::Backend, root_container::Container)
-    S = DrawState[DrawState(root_container, IdentityTransform(), UnitBox(), root_box(backend))]
+function drawpart(backend::Backend, container::Container,
+                  parent_transform::Transform, units::UnitBox,
+                  parent_box::Absolute2DBox)
 
     # used to collect property children
     properties = Array(Property, 0)
     container_children = Array((@compat Tuple{Int, Int, Container}), 0)
 
-    while !isempty(S)
-        s = pop!(S)
+    if (iswithjs(container) && !iswithjs(backend)) ||
+       (iswithoutjs(container) && iswithjs(backend))
+        return
+    end
 
-        # Groups of properties are in a property frame, analogous to a stack
-        # frame. A marker is pushed to the stack so we know when to pop the
-        # frame.
-        if s.pop_poperty
-            pop_property_frame(backend)
-            continue
+    if isa(container, ContainerPromise)
+        container = realize(container,
+                            ParentDrawContext(parent_transform, units, parent_box))
+        if !isa(container, Container)
+            error("Error: A container promise function did not evaluate to a container")
         end
+        drawpart(backend, container, parent_transform, units, parent_box)
+    end
 
-        container, parent_transform, units, parent_box =
-            s.container, s.parent_transform, s.units, s.parent_box
+    ctx = container
+    box = resolve(parent_box, units, parent_transform, ctx.box)
 
-        if (iswithjs(container) && !iswithjs(backend)) ||
-           (iswithoutjs(container) && iswithjs(backend))
-            continue
+    transform = parent_transform
+    if !isnull(ctx.rot)
+        rot = resolve(box, units, parent_transform, get(ctx.rot))
+        transform = combine(convert(Transform, rot), transform)
+    end
+
+    if !isnull(ctx.mir)
+        mir = resolve(box, units, parent_transform, get(ctx.mir))
+        transform = combine(convert(Transform, mir), transform)
+    end
+
+    if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
+        # TODO: commented out while I search for the real source of the
+        # slowness, cause it it ain't this.
+        bitmapbackend = PNG(box.width, box.height, false)
+        draw(bitmapbackend, ctx)
+        f = bitmap("image/png", takebuf_array(bitmapbackend.out),
+                   0, 0, 1w, 1h)
+
+        c = context(ctx.box.x0, ctx.box.y0,
+                    ctx.box.width, ctx.box.height,
+                    units=UnitBox(),
+                    order=ctx.order,
+                    clip=ctx.clip)
+        drawpart(backend, compose(c, f), parent_transform, units, parent_box)
+        return
+    end
+
+    if !isnull(ctx.units)
+        units = resolve(box, units, transform, get(ctx.units))
+    end
+
+    for child in ctx.children
+        if isa(child, Property)
+            push!(properties, resolve(parent_box, units, parent_transform, child))
         end
+    end
 
-        if isa(container, ContainerPromise)
-            container = realize(container,
-                                ParentDrawContext(parent_transform, units, parent_box))
-            if !isa(container, Container)
-                error("Error: A container promise function did not evaluate to a container")
-            end
-            push!(S, DrawState(container, parent_transform, units, parent_box))
-            continue
+    if ctx.clip
+        x0 = ctx.box.x0
+        y0 = ctx.box.y0
+        x1 = x0 + ctx.box.width
+        y1 = y0 + ctx.box.height
+        push!(properties,
+              absolute_units(clip(Point(x0, y0), Point(x1, y0),
+                                  Point(x1, y1), Point(x0, y1)),
+                             parent_transform, units, parent_box))
+    end
+
+    if !isempty(properties)
+        push_property_frame(backend, properties)
+    end
+
+    for child in ctx.children
+        if isa(child, Form)
+            draw(backend, box, units, transform, child)
         end
+    end
 
-        ctx = container
-        box = resolve(parent_box, units, parent_transform, ctx.box)
-
-        transform = parent_transform
-        if !isnull(ctx.rot)
-            rot = resolve(box, units, parent_transform, get(ctx.rot))
-            transform = combine(convert(Transform, rot), transform)
-        end
-
-        if !isnull(ctx.mir)
-            mir = resolve(box, units, parent_transform, get(ctx.mir))
-            transform = combine(convert(Transform, mir), transform)
-        end
-
-        if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
-            # TODO: commented out while I search for the real source of the
-            # slowness, cause it it ain't this.
-            bitmapbackend = PNG(box.width, box.height, false)
-            draw(bitmapbackend, ctx)
-            f = bitmap("image/png", takebuf_array(bitmapbackend.out),
-                       0, 0, 1w, 1h)
-
-            c = context(ctx.box.x0, ctx.box.y0,
-                        ctx.box.width, ctx.box.height,
-                        units=UnitBox(),
-                        order=ctx.order,
-                        clip=ctx.clip)
-            push!(S, DrawState(compose(c, f), parent_transform, units, parent_box))
-            continue
-        end
-
-        if !isnull(ctx.units)
-            units = resolve(box, units, transform, get(ctx.units))
-        end
-
-        for child in ctx.children
-            if isa(child, Property)
-                push!(properties, resolve(parent_box, units, parent_transform, child))
-            end
-        end
-
-        if ctx.clip
-            x0 = ctx.box.x0
-            y0 = ctx.box.y0
-            x1 = x0 + ctx.box.width
-            y1 = y0 + ctx.box.height
-            push!(properties,
-                  absolute_units(clip(Point(x0, y0), Point(x1, y0),
-                                      Point(x1, y1), Point(x0, y1)),
-                                 parent_transform, units, parent_box))
-        end
-
-        if !isempty(properties)
-            push_property_frame(backend, properties)
-            push!(S, DrawState()) # indicate that the property stack should be popped
-            empty!(properties)
-        end
-
-        for child in ctx.children
-            if isa(child, Form)
-                draw(backend, box, units, transform, child)
+    # Order children if needed
+    ordered_children = false
+    for child in ctx.children
+        if isa(child, Container)
+            if order(child) != 0
+                ordered_children = true
+                break
             end
         end
+    end
 
-        # Order children if needed
-        ordered_children = false
+    if ordered_children
         for child in ctx.children
             if isa(child, Container)
-                if order(child) != 0
-                    ordered_children = true
-                    break
-                end
+                push!(container_children,
+                      (order(child), 1 + length(container_children), child))
             end
         end
 
-        if ordered_children
-            for child in ctx.children
-                if isa(child, Container)
-                    push!(container_children,
-                          (order(child), 1 + length(container_children), child))
-                end
-            end
-
-            sort!(container_children, rev=true)
-            for (_, _, child) in container_children
-                push!(S, DrawState(child, transform, units, box))
-            end
-            empty!(container_children)
-        else
-            for child in ctx.children
-                if isa(child, Container)
-                    push!(S, DrawState(child, transform, units, box))
-                end
+        sort!(container_children, rev=true)
+        for (_, _, child) in container_children
+            drawpart(backend, child, transform, units, box)
+        end
+        empty!(container_children)
+    else
+        for child in ctx.children
+            if isa(child, Container)
+                drawpart(backend, child, transform, units, box)
             end
         end
+    end
+
+    if !isempty(properties)
+        pop_property_frame(backend)
     end
 end
 
