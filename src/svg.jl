@@ -793,6 +793,19 @@ function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
 end
 
 
+function draw(img::SVG, prim::ComplexPolygonPrimitive, idx::Int)
+    Compose.write(img.out, "<path d=\"")
+    for ring in prim.rings
+        indent(img)
+        print_svg_path(img.out, ring, true)
+        write(img.out, " ")
+    end
+    write(img.out, " z\"")
+    print_vector_properties(img, idx)
+    write(img.out, "/>\n")
+end
+
+
 function draw(img::SVG, prim::CirclePrimitive, idx::Int)
     indent(img)
     print(img.out, "<circle cx=\"")

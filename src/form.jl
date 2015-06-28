@@ -28,11 +28,14 @@ end
 # Polygon
 # -------
 
-immutable PolygonPrimitive{P <: Point} <: FormPrimitive
+immutable SimplePolygonPrimitive{P <: Point} <: FormPrimitive
     points::Vector{P}
 end
 
-typealias Polygon Form{PolygonPrimitive}
+typealias SimplePolygon Form{SimplePolygonPrimitive}
+
+typealias Polygon SimplePolygon
+typealias PolygonPrimitive SimplePolygonPrimitive
 
 
 function polygon()
@@ -101,6 +104,31 @@ function boundingbox(form::PolygonPrimitive, linewidth::Measure,
                        y0 - linewidth,
                        x1 - x0 + linewidth,
                        y1 - y0 + linewidth)
+end
+
+immutable ComplexPolygonPrimitive{P <: Point} <: FormPrimitive
+    rings::Vector{Vector{P}}
+end
+
+typealias ComplexPolygon Form{ComplexPolygonPrimitive}
+
+function complexpolygon()
+    return ComplexPolygon([ComplexPolygonPrimitive(Point[])])
+end
+
+function complexpolygon{T <: Real}(coords::Vector{Vector{Vector{T}}})
+    return ComplexPolygon([ComplexPolygonPrimitive(Vector{Point}[Point[Point(i,j) for (i,j) in ring] for ring in coords])])
+end
+
+function complexpolygon{P <: Point}(rings::Vector{Vector{P}})
+    return ComplexPolygon([ComplexPolygonPrimitive(rings)])
+end
+
+function absolute_units(p::ComplexPolygonPrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return ComplexPolygonPrimitive{SimplePoint}(
+                [SimplePoint[absolute_units(point, t, units, box) for point in ring]
+                for ring in p.rings])
 end
 
 
