@@ -13,10 +13,10 @@ type Context <: Container
     units::Nullable{UnitBox}
 
     # Rotation is degrees of
-    rot::Rotation
+    rot::Nullable{Rotation}
 
     # Maybe mirror about a line, after rotation
-    mir::Maybe(Mirror)
+    mir::Nullable{Mirror}
 
     # Container children
     children::List{ComposeNode}
@@ -53,8 +53,8 @@ type Context <: Container
                      width=1.0w,
                      height=1.0h;
                      units=NullUnitBox(),
-                     rotation=Rotation(),
-                     mirror=nothing,
+                     rotation=Nullable{Rotation}(),
+                     mirror=Nullable{Mirror}(),
                      order=0,
                      clip=false,
                      withjs=false,
@@ -70,7 +70,7 @@ type Context <: Container
 
     function Context(box::BoundingBox,
                      units::Nullable{UnitBox},
-                     rotation::Rotation,
+                     rotation::Nullable{Rotation},
                      mirror,
                      children::List{ComposeNode},
                      order::Int,
@@ -106,7 +106,7 @@ function context(x0=0.0w,
                  width=1.0w,
                  height=1.0h;
                  units=NullUnitBox(),
-                 rotation=Rotation(),
+                 rotation=Nullable{Rotation}(),
                  mirror=nothing,
                  order=0,
                  clip=false,
@@ -121,8 +121,8 @@ function context(x0=0.0w,
     return Context(BoundingBox(x_measure(x0), y_measure(y0),
                                x_measure(width), y_measure(height)),
                    isa(units, Nullable) ? units : Nullable(units),
-                   rotation, mirror,
-                   ListNull{ComposeNode}(), order, clip,
+                   isa(rotation, Nullable) ? rotation : Nullable(rotation),
+                   mirror, ListNull{ComposeNode}(), order, clip,
                    withjs, withoutjs, raster, minwidth, minheight, penalty)
 end
 
@@ -412,18 +412,33 @@ function draw(backend::Backend, root_form::Form)
 end
 
 
+immutable DrawState
+    pop_poperty::Bool
+    container::Container
+    parent_transform::Transform
+    units::UnitBox
+    parent_box::Absolute2DBox
+
+    function DrawState()
+        new(true)
+    end
+
+    function DrawState(container, parent_transform, units, parent_box)
+        new(false, container, parent_transform, units, parent_box)
+    end
+end
+
+
 # Draw without finishing the backend
 #
 # Drawing is basically a depth-first traversal of the tree, pushing and popping
 # properties, expanding context promises, etc. as needed.
 #
 function drawpart(backend::Backend, root_container::Container)
-    S = Any[(root_container, IdentityTransform(), UnitBox(), root_box(backend))]
+    S = DrawState[DrawState(root_container, IdentityTransform(), UnitBox(), root_box(backend))]
 
     # used to collect property children
     properties = Array(Property, 0)
-
-    # collect and sort container children
     container_children = Array((@compat Tuple{Int, Int, Container}), 0)
 
     while !isempty(S)
@@ -432,12 +447,13 @@ function drawpart(backend::Backend, root_container::Container)
         # Groups of properties are in a property frame, analogous to a stack
         # frame. A marker is pushed to the stack so we know when to pop the
         # frame.
-        if s == :POP_PROPERTY_FRAME
+        if s.pop_poperty
             pop_property_frame(backend)
             continue
         end
 
-        container, parent_transform, units, parent_box = s
+        container, parent_transform, units, parent_box =
+            s.container, s.parent_transform, s.units, s.parent_box
 
         if (iswithjs(container) && !iswithjs(backend)) ||
            (iswithoutjs(container) && iswithjs(backend))
@@ -450,19 +466,21 @@ function drawpart(backend::Backend, root_container::Container)
             if !isa(container, Container)
                 error("Error: A container promise function did not evaluate to a container")
             end
-            push!(S, (container, parent_transform, units, parent_box))
+            push!(S, DrawState(container, parent_transform, units, parent_box))
             continue
         end
 
-        @assert isa(container, Context)
         ctx = container
-
         box = resolve(parent_box, units, parent_transform, ctx.box)
-        rot = resolve(box, units, parent_transform, ctx.rot)
-        transform = combine(convert(Transform, rot), parent_transform)
 
-        if ctx.mir != nothing
-            mir = resolve(box, units, parent_transform, ctx.mir)
+        transform = parent_transform
+        if !isnull(ctx.rot)
+            rot = resolve(box, units, parent_transform, get(ctx.rot))
+            transform = combine(convert(Transform, rot), transform)
+        end
+
+        if !isnull(ctx.mir)
+            mir = resolve(box, units, parent_transform, get(ctx.mir))
             transform = combine(convert(Transform, mir), transform)
         end
 
@@ -479,7 +497,7 @@ function drawpart(backend::Backend, root_container::Container)
                         units=UnitBox(),
                         order=ctx.order,
                         clip=ctx.clip)
-            push!(S, (compose(c, f), parent_transform, units, parent_box))
+            push!(S, DrawState(compose(c, f), parent_transform, units, parent_box))
             continue
         end
 
@@ -506,7 +524,7 @@ function drawpart(backend::Backend, root_container::Container)
 
         if !isempty(properties)
             push_property_frame(backend, properties)
-            push!(S, :POP_PROPERTY_FRAME)
+            push!(S, DrawState()) # indicate that the property stack should be popped
             empty!(properties)
         end
 
@@ -516,18 +534,37 @@ function drawpart(backend::Backend, root_container::Container)
             end
         end
 
+        # Order children if needed
+        ordered_children = false
         for child in ctx.children
             if isa(child, Container)
-                push!(container_children,
-                      (order(child), 1 + length(container_children), child))
+                if order(child) != 0
+                    ordered_children = true
+                    break
+                end
             end
         end
-        sort!(container_children, rev=true)
 
-        for (_, _, child) in container_children
-            push!(S, (child, transform, units, box))
+        if ordered_children
+            for child in ctx.children
+                if isa(child, Container)
+                    push!(container_children,
+                          (order(child), 1 + length(container_children), child))
+                end
+            end
+
+            sort!(container_children, rev=true)
+            for (_, _, child) in container_children
+                push!(S, DrawState(child, transform, units, box))
+            end
+            empty!(container_children)
+        else
+            for child in ctx.children
+                if isa(child, Container)
+                    push!(S, DrawState(child, transform, units, box))
+                end
+            end
         end
-        empty!(container_children)
     end
 end
 

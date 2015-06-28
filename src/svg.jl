@@ -540,24 +540,24 @@ end
 
 # Return array of paths to draw with printpath
 # array is formed by splitting by NaN values
-function make_paths(points::Vector{AbsoluteVec})
-    paths = Vector{AbsoluteVec}[]
-    nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
-                [(point[1].value, point[2].value) for point in points])
-    if length(nans) == 0
-        push!(paths, points)
-    else
-        nans = [0, nans..., length(points) + 1]
-        i, n = 1, length(nans)
-        while i <= n-1
-            if nans[i] + 1 < nans[i + 1]
-                push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])
-            end
-            i += 1
-        end
-    end
-    paths
-end
+#function make_paths(points::Vector{AbsoluteVec})
+    #paths = Vector{AbsoluteVec}[]
+    #nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
+                #[(point[1].value, point[2].value) for point in points])
+    #if length(nans) == 0
+        #push!(paths, points)
+    #else
+        #nans = [0, nans..., length(points) + 1]
+        #i, n = 1, length(nans)
+        #while i <= n-1
+            #if nans[i] + 1 < nans[i + 1]
+                #push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])
+            #end
+            #i += 1
+        #end
+    #end
+    #paths
+#end
 
 
 # Property Printing
@@ -776,15 +776,12 @@ function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
     n = length(prim.points)
     if n <= 1; return; end
 
-    paths = make_paths(prim.points)
-    for path in paths
-        indent(img)
-        write(img.out, "<path d=\"")
-        print_svg_path(img.out, path, true)
-        write(img.out, " z\"")
-        print_vector_properties(img, idx)
-        write(img.out, "/>\n")
-    end
+    indent(img)
+    write(img.out, "<path d=\"")
+    print_svg_path(img.out, prim.points, true)
+    write(img.out, " z\"")
+    print_vector_properties(img, idx)
+    write(img.out, "/>\n")
 end
 
 
