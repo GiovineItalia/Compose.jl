@@ -338,14 +338,15 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy})
 end
 
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec)
-    map(x -> resolve(box, units, t, x), p) + box.x0
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec{2})
+        (resolve(box, units, t, p[1]) + box.x0[1],
+         resolve(box, units, t, p[2]) + box.x0[2])
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::BoundingBox)
-    b = BoundingBox(resolve(box, units, t, a.x0), map(x -> resolve(box, units, t, x), a.a))
-    return b
+    return BoundingBox(resolve(box, units, t, a.x0),
+                       (resolve(box, units, t, a.a[1]), resolve(box, units, t, a.a[2])))
 end
 
 
