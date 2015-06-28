@@ -769,6 +769,18 @@ function draw(img::Image, prim::PolygonPrimitive)
     end
 end
 
+function draw(img::Image, prim::Compose.ComplexPolygonPrimitive)
+    if isempty(prim.rings); return; end
+
+    for ring in prim.rings
+        move_to(img, ring[1])
+        for point in ring[2:end]
+            line_to(img, point)
+        end
+        close_path(img)
+    end
+    fillstroke(img)
+end
 
 function draw(img::Image, prim::CirclePrimitive)
     circle(img, prim.center, prim.radius)

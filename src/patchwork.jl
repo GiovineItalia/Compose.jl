@@ -226,6 +226,10 @@ function draw(img::Patchable, prim::PolygonPrimitive)
     end
 end
 
+function draw(img::Patchable, prim::ComplexPolygonPrimitive)
+    Elem(:svg, :path, d=join(map(r -> svg_fmt_path(r, true), prim.rings), "") * " z")
+end
+
 function draw(img::Patchable, prim::RectanglePrimitive)
     width = max(prim.width.abs, 0.01)
     height = max(prim.height.abs, 0.01)
