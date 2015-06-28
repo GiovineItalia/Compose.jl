@@ -541,63 +541,63 @@ end
 function move_to(img::Image, point::Point)
     Cairo.move_to(
         img.ctx,
-        absolute_native_units(img, point.x.abs),
-        absolute_native_units(img, point.y.abs))
+        absolute_native_units(img, point[1].value),
+        absolute_native_units(img, point[2].value))
 end
 
 
 function rel_move_to(img::Image, point::Point)
     Cairo.rel_move_to(
         img.ctx,
-        absolute_native_units(img, point.x.abs),
-        absolute_native_units(img, point.y.abs))
+        absolute_native_units(img, point[1].value),
+        absolute_native_units(img, point[2].value))
 end
 
 
 function line_to(img::Image, point::Point)
     Cairo.line_to(
         img.ctx,
-        absolute_native_units(img, point.x.abs),
-        absolute_native_units(img, point.y.abs))
+        absolute_native_units(img, point[1].value),
+        absolute_native_units(img, point[2].value))
 end
 
 
 function rel_line_to(img::Image, point::Point)
     Cairo.rel_line_to(
         img.ctx,
-        absolute_native_units(img, point.x.abs),
-        absolute_native_units(img, point.y.abs))
+        absolute_native_units(img, point[1].value),
+        absolute_native_units(img, point[2].value))
 end
 
 
 function curve_to(img::Image, ctrl1::Point, ctrl2::Point, to::Point)
     Cairo.curve_to(
         img.ctx,
-        absolute_native_units(img, ctrl1.x.abs),
-        absolute_native_units(img, ctrl1.y.abs),
-        absolute_native_units(img, ctrl2.x.abs),
-        absolute_native_units(img, ctrl2.y.abs),
-        absolute_native_units(img, to.x.abs),
-        absolute_native_units(img, to.y.abs),)
+        absolute_native_units(img, ctrl1[1].value),
+        absolute_native_units(img, ctrl1[2].value),
+        absolute_native_units(img, ctrl2[1].value),
+        absolute_native_units(img, ctrl2[2].value),
+        absolute_native_units(img, to[1].value),
+        absolute_native_units(img, to[2].value),)
 end
 
 
 function rel_curve_to(img::Image, ctrl1::Point, ctrl2::Point, to::Point)
     Cairo.rel_curve_to(
         img.ctx,
-        absolute_native_units(img, ctrl1.x.abs),
-        absolute_native_units(img, ctrl1.y.abs),
-        absolute_native_units(img, ctrl2.x.abs),
-        absolute_native_units(img, ctrl2.y.abs),
-        absolute_native_units(img, to.x.abs),
-        absolute_native_units(img, to.y.abs),)
+        absolute_native_units(img, ctrl1[1].value),
+        absolute_native_units(img, ctrl1[2].value),
+        absolute_native_units(img, ctrl2[1].value),
+        absolute_native_units(img, ctrl2[2].value),
+        absolute_native_units(img, to[1].value),
+        absolute_native_units(img, to[2].value),)
 end
 
 
 function rectangle(img::Image, corner::Point, width::Measure, height::Measure)
     Cairo.rectangle(img.ctx,
-                    absolute_native_units(img, corner.x.abs),
-                    absolute_native_units(img, corner.y.abs),
+                    absolute_native_units(img, corner[1].value),
+                    absolute_native_units(img, corner[2].value),
                     absolute_native_units(img, width.abs),
                     absolute_native_units(img, height.abs))
 end
@@ -605,8 +605,8 @@ end
 
 function circle(img::Image, center::Point, radius::Measure)
     Cairo.circle(img.ctx,
-                 absolute_native_units(img, center.x.abs),
-                 absolute_native_units(img, center.y.abs),
+                 absolute_native_units(img, center[1].value),
+                 absolute_native_units(img, center[2].value),
                  absolute_native_units(img, radius.abs))
 end
 
@@ -614,12 +614,12 @@ end
 function curve_to(img::Image, ctrl1::Point, ctrl2::Point, anchor::Point)
     Cairo.curve_to(
         img.ctx,
-        absolute_native_units(img, ctrl1.x.abs),
-        absolute_native_units(img, ctrl1.y.abs),
-        absolute_native_units(img, ctrl2.x.abs),
-        absolute_native_units(img, ctrl2.y.abs),
-        absolute_native_units(img, anchor.x.abs),
-        absolute_native_units(img, anchor.y.abs))
+        absolute_native_units(img, ctrl1[1].value),
+        absolute_native_units(img, ctrl1[2].value),
+        absolute_native_units(img, ctrl2[1].value),
+        absolute_native_units(img, ctrl2[2].value),
+        absolute_native_units(img, anchor[1].value),
+        absolute_native_units(img, anchor[2].value))
 end
 
 
@@ -789,14 +789,14 @@ end
 
 
 function draw(img::Image, prim::EllipsePrimitive)
-    cx = prim.center.x.abs
-    cy = prim.center.y.abs
-    rx = sqrt((prim.x_point.x.abs - cx)^2 +
-              (prim.x_point.y.abs - cy)^2)
-    ry = sqrt((prim.y_point.x.abs - cx)^2 +
-              (prim.y_point.y.abs - cy)^2)
-    theta = atan2(prim.x_point.y.abs - cy,
-                  prim.x_point.x.abs - cx)
+    cx = prim.center[1].value
+    cy = prim.center[2].value
+    rx = sqrt((prim.x_point[1].value - cx)^2 +
+              (prim.x_point[2].value - cy)^2)
+    ry = sqrt((prim.y_point[1].value - cx)^2 +
+              (prim.y_point[2].value - cy)^2)
+    theta = atan2(prim.x_point[2].value - cy,
+                  prim.x_point[1].value - cx)
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
         return
@@ -841,19 +841,19 @@ function draw(img::Image, prim::TextPrimitive)
     pos = copy(prim.position)
     Cairo.set_text(img.ctx, prim.value, true)
     width, height = get_layout_size(img)
-    pos = Point(pos.x, Measure(pos.y.abs - height))
+    pos = Point(pos.x, Measure(pos[2].value - height))
 
     if prim.halign != hleft || prim.valign != vbottom
         if prim.halign == hcenter
-            pos = Point(Measure(pos.x.abs - width/2), pos.y)
+            pos = Point(Measure(pos[1].value - width/2), pos.y)
         elseif prim.halign == hright
-            pos = Point(Measure(pos.x.abs - width), pos.y)
+            pos = Point(Measure(pos[1].value - width), pos.y)
         end
 
         if prim.valign == vcenter
-            pos = Point(pos.x, Measure(pos.y.abs + height/2))
+            pos = Point(pos.x, Measure(pos[2].value + height/2))
         elseif prim.valign == vtop
-            pos = Point(pos.x, Measure(pos.y.abs + height))
+            pos = Point(pos.x, Measure(pos[2].value + height))
         end
     end
 
@@ -863,7 +863,7 @@ function draw(img::Image, prim::TextPrimitive)
     if prim.rot.theta != 0.0
         save_property_state(img)
         rotate(img, prim.rot.theta,
-               prim.rot.offset.x.abs, prim.rot.offset.y.abs)
+               prim.rot.offset[1].value, prim.rot.offset[2].value)
     end
 
     move_to(img, pos)
@@ -950,24 +950,24 @@ function draw_path_op(img::Image, op::CubicCurveRelPathOp)
     xy = current_point(img)
     rel_curve_to(img, op.ctrl1, op.ctrl2, op.to)
     img.last_ctrl2_point =
-        Point(Measure(abs=op.ctrl2.x.abs + xy.x.abs),
-              Measure(abs=op.ctrl2.y.abs + xy.y.abs))
+        Point(Measure(abs=op.ctrl2[1].value + xy.x.abs),
+              Measure(abs=op.ctrl2[2].value + xy.y.abs))
 end
 
 
 function draw_path_op(img::Image, op::CubicCurveShortAbsPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
 
     ctrl1 = img.last_ctrl2_point
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=2*x1 - ctrl1.x.abs),
-                      Measure(abs=2*y1 - ctrl1.y.abs))
+        ctrl1 = Point(Measure(abs=2*x1 - ctrl1[1].value),
+                      Measure(abs=2*y1 - ctrl1[2].value))
     end
-    cx, cy = ctrl1.x.abs, ctrl1.y.abs
+    cx, cy = ctrl1[1].value, ctrl1[2].value
 
     curve_to(img, ctrl1, op.ctrl2, op.to)
     img.last_ctrl2_point = op.ctrl2
@@ -976,30 +976,30 @@ end
 
 function draw_path_op(img::Image, op::CubicCurveShortRelPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
 
     ctrl1 = img.last_ctrl2_point
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=(2*x1 - ctrl1.x.abs) - x1),
-                      Measure(abs=(2*y1 - ctrl1.y.abs) - y1))
+        ctrl1 = Point(Measure(abs=(2*x1 - ctrl1[1].value) - x1),
+                      Measure(abs=(2*y1 - ctrl1[2].value) - y1))
     end
-    cx, cy = ctrl1.x.abs, ctrl1.y.abs
+    cx, cy = ctrl1[1].value, ctrl1[2].value
 
     rel_curve_to(img, ctrl1, op.ctrl2, op.to)
     img.last_ctrl2_point =
-        Point(Measure(abs=op.ctrl2.x.abs + xy.x.abs),
-              Measure(abs=op.ctrl2.y.abs + xy.y.abs))
+        Point(Measure(abs=op.ctrl2[1].value + xy.x.abs),
+              Measure(abs=op.ctrl2[2].value + xy.y.abs))
 end
 
 
 function draw_path_op(img::Image, op::QuadCurveAbsPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
-    cx, cy = op.ctrl1.x.abs, op.ctrl1.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
+    cx, cy = op.ctrl1[1].value, op.ctrl1[2].value
     curve_to(img,
              Point(Measure(abs=(x1 + 2*cx)/3),
                    Measure(abs=(y1 + 2*cy)/3)),
@@ -1012,9 +1012,9 @@ end
 
 function draw_path_op(img::Image, op::QuadCurveRelPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
-    cx, cy = op.ctrl1.x.abs, op.ctrl1.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
+    cx, cy = op.ctrl1[1].value, op.ctrl1[2].value
     rel_curve_to(img,
              Point(Measure(abs=(x1 + 2*cx)/3),
                    Measure(abs=(y1 + 2*cy)/3)),
@@ -1022,24 +1022,24 @@ function draw_path_op(img::Image, op::QuadCurveRelPathOp)
                    Measure(abs=(y2 + 2*cy)/3)),
              op.to)
     img.last_ctrl1_point =
-        Point(Measure(abs=op.ctrl1.x.abs + xy.x.abs),
-              Measure(abs=op.ctrl1.y.abs + xy.y.abs))
+        Point(Measure(abs=op.ctrl1[1].value + xy.x.abs),
+              Measure(abs=op.ctrl1[2].value + xy.y.abs))
 end
 
 
 function draw_path_op(img::Image, op::QuadCurveShortAbsPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
 
     ctrl1 = img.last_ctrl1_point
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=2*x1 - ctrl1.x.abs),
-                      Measure(abs=2*y1 - ctrl1.y.abs))
+        ctrl1 = Point(Measure(abs=2*x1 - ctrl1[1].value),
+                      Measure(abs=2*y1 - ctrl1[2].value))
     end
-    cx, cy = ctrl1.x.abs, ctrl1.y.abs
+    cx, cy = ctrl1[1].value, ctrl1[2].value
 
     curve_to(img,
              Point(Measure(abs=(x1 + 2*cx)/3),
@@ -1053,17 +1053,17 @@ end
 
 function draw_path_op(img::Image, op::QuadCurveShortRelPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = x1 + op.to.x.abs, y1 + op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = x1 + op.to[1].value, y1 + op.to[2].value
 
     ctrl1 = img.last_ctrl1_point
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=(2*x1 - ctrl1.x.abs) - x1),
-                      Measure(abs=(2*y1 - ctrl1.y.abs) - y1))
+        ctrl1 = Point(Measure(abs=(2*x1 - ctrl1[1].value) - x1),
+                      Measure(abs=(2*y1 - ctrl1[2].value) - y1))
     end
-    cx, cy = ctrl1.x.abs, ctrl1.y.abs
+    cx, cy = ctrl1[1].value, ctrl1[2].value
 
     rel_curve_to(img,
                  Point(Measure(abs=(x1 + 2*cx)/3),
@@ -1072,15 +1072,15 @@ function draw_path_op(img::Image, op::QuadCurveShortRelPathOp)
                        Measure(abs=(y2 + 2*cy)/3)),
                  Point(Measure(abs=x2), Measure(abs=y2)))
     img.last_ctrl1_point =
-        Point(Measure(abs=op.ctrl1.x.abs + x1),
-              Measure(abs=op.ctrl1.y.abs + y1))
+        Point(Measure(abs=op.ctrl1[1].value + x1),
+              Measure(abs=op.ctrl1[2].value + y1))
 end
 
 
 function draw_path_op(img::Image, op::ArcAbsPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
     rx, ry = op.rx.abs, op.ry.abs
     φ = deg2rad(op.rotation)
     draw_endpoint_arc(img, rx, ry, φ, op.largearc, op.sweep, x1, y1, x2, y2)
@@ -1089,8 +1089,8 @@ end
 
 function draw_path_op(img::Image, op::ArcRelPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = x1 + op.to.x.abs, y1 + op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = x1 + op.to[1].value, y1 + op.to[2].value
     rx, ry = op.rx.abs, op.ry.abs
     φ = deg2rad(op.rotation)
     draw_endpoint_arc(img, rx, ry, φ, op.largearc, op.sweep, x1, y1, x2, y2)

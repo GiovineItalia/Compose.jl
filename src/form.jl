@@ -44,10 +44,17 @@ end
 
 
 function polygon{T <: XYTupleOrVec}(points::AbstractArray{T})
-    XM, YM = narrow_polygon_point_types(Vector[points];)
-    VecType = XM == YM == Any ? Vec : Vec{XM, YM}
-    return Polygon([PolygonPrimitive(VecType[convert(VecType, point)
-                                               for point in points])])
+    XM, YM = narrow_polygon_point_types(Vector[points])
+    if XM == Any
+        XM = Length{:cx, Float64}
+    end
+    if YM == Any
+        YM = Length{:cy, Float64}
+    end
+    VecType = Tuple{XM, YM}
+
+    return Polygon([PolygonPrimitive(VecType[(XM(point[1]), YM(point[2]))
+                    for point in points])])
 end
 
 
@@ -58,7 +65,7 @@ end
 
 
 function narrow_polygon_point_types(point_arrays::AbstractArray)
-    type_params{XM, YM}(p::Vec{XM, YM}) = (XM, YM)
+    type_params{XM, YM}(p::Tuple{XM, YM}) = (XM, YM)
 
     if !isempty(point_arrays) && all([eltype(arr) <: Vec for arr in point_arrays])
         xm, ym = type_params(eltype(point_arrays[1]))
@@ -89,17 +96,18 @@ end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PolygonPrimitive)
+    #@show box
     return PolygonPrimitive{AbsoluteVec}(
-                [resolve(box, units, t, p) for point in p.points])
+                [resolve(box, units, t, point) for point in p.points])
 end
 
 
 function boundingbox(form::PolygonPrimitive, linewidth::Measure,
                      font::String, fontsize::Measure)
-    x0 = minimum([p.x for p in form.points])
-    x1 = maximum([p.x for p in form.points])
-    y0 = minimum([p.y for p in form.points])
-    y1 = maximum([p.y for p in form.points])
+    x0 = minimum([p[1] for p in form.points])
+    x1 = maximum([p[1] for p in form.points])
+    y0 = minimum([p[2] for p in form.points])
+    y1 = maximum([p[2] for p in form.points])
     return BoundingBox(x0 - linewidth,
                        y0 - linewidth,
                        x1 - x0 + linewidth,

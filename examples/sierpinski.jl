@@ -12,5 +12,9 @@ function sierpinski(n::Int)
     end
 end
 
+#img = SVG(open("/dev/null", "w"), 4inch, 4(√3/2)inch)
+#img = PNG("sierpinski.png", 4inch, 4(√3/2)inch)
 img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
-draw(img, compose(sierpinski(8), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
+@time draw(img, compose(sierpinski(10), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
+img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
+@time draw(img, compose(sierpinski(10), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))

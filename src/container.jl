@@ -10,7 +10,7 @@ type Context <: Container
     box::BoundingBox
 
     # Context coordinates used for children
-    units::UnitBox
+    units::Nullable{UnitBox}
 
     # Rotation is degrees of
     rot::Rotation
@@ -52,7 +52,7 @@ type Context <: Container
                      y0=0.0h,
                      width=1.0w,
                      height=1.0h;
-                     units=NilUnitBox(),
+                     units=NullUnitBox(),
                      rotation=Rotation(),
                      mirror=nothing,
                      order=0,
@@ -69,7 +69,7 @@ type Context <: Container
     end
 
     function Context(box::BoundingBox,
-                     units::UnitBox,
+                     units::Nullable{UnitBox},
                      rotation::Rotation,
                      mirror,
                      children::List{ComposeNode},
@@ -105,7 +105,7 @@ function context(x0=0.0w,
                  y0=0.0h,
                  width=1.0w,
                  height=1.0h;
-                 units=NilUnitBox(),
+                 units=NullUnitBox(),
                  rotation=Rotation(),
                  mirror=nothing,
                  order=0,
@@ -116,11 +116,12 @@ function context(x0=0.0w,
                  minwidth=nothing,
                  minheight=nothing,
                  penalty=0.0)
-    @show typeof(x0)
-    @show typeof(y0)
-    @show typeof(width)
-    @show typeof(height)
-    return Context(BoundingBox(x0, y0, width, height), units, rotation, mirror,
+    
+
+    return Context(BoundingBox(x_measure(x0), y_measure(y0),
+                               x_measure(width), y_measure(height)),
+                   isa(units, Nullable) ? units : Nullable(units),
+                   rotation, mirror,
                    ListNull{ComposeNode}(), order, clip,
                    withjs, withoutjs, raster, minwidth, minheight, penalty)
 end
@@ -482,14 +483,12 @@ function drawpart(backend::Backend, root_container::Container)
             continue
         end
 
-        # TODO: Fix this!
-        #if ctx.units != nil_unit_box
-            #units = resolve(box, units, transform, ctx.units)
-        #end
+        if !isnull(ctx.units)
+            units = resolve(box, units, transform, get(ctx.units))
+        end
 
         for child in ctx.children
             if isa(child, Property)
-                @show typeof(child)
                 push!(properties, resolve(parent_box, units, parent_transform, child))
             end
         end

@@ -543,7 +543,7 @@ end
 function make_paths(points::Vector{AbsoluteVec})
     paths = Vector{AbsoluteVec}[]
     nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
-                [(point.x.value, point.y.value) for point in points])
+                [(point[1].value, point[2].value) for point in points])
     if length(nans) == 0
         push!(paths, points)
     else
@@ -621,11 +621,11 @@ end
 #end
 
 
-#function print_property(img::SVG, property::LineWidthPrimitive)
-    #print(img.out, " stroke-width=\"")
-    #svg_print_float(img.out, property.value.abs)
-    #print(img.out, '"')
-#end
+function print_property(img::SVG, property::LineWidthPrimitive)
+    print(img.out, " stroke-width=\"")
+    svg_print_float(img.out, property.value.value)
+    print(img.out, '"')
+end
 
 
 #function print_property(img::SVG, property::FillOpacityPrimitive)
@@ -759,9 +759,9 @@ function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
     height = max(prim.height.value, 0.01)
 
     print(img.out, "<rect x=\"")
-    svg_print_float(img.out, prim.corner.x.value)
+    svg_print_float(img.out, prim.corner[1].value)
     print(img.out, "\" y=\"")
-    svg_print_float(img.out, prim.corner.y.value)
+    svg_print_float(img.out, prim.corner[2].value)
     print(img.out, "\" width=\"")
     svg_print_float(img.out, width)
     print(img.out, "\" height=\"")
@@ -816,14 +816,14 @@ end
 
 
 #function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
-    #cx = prim.center.x.abs
+    #cx = prim.center[1].abs
     #cy = prim.center.y.abs
-    #rx = sqrt((prim.x_point.x.abs - cx)^2 +
-              #(prim.x_point.y.abs - cy)^2)
-    #ry = sqrt((prim.y_point.x.abs - cx)^2 +
+    #rx = sqrt((prim[1]_point.x.abs - cx)^2 +
+              #(prim[1]_point.y.abs - cy)^2)
+    #ry = sqrt((prim.y_point[1].abs - cx)^2 +
               #(prim.y_point.y.abs - cy)^2)
-    #theta = rad2deg(atan2(prim.x_point.y.abs - cy,
-                          #prim.x_point.x.abs - cx))
+    #theta = rad2deg(atan2(prim[1]_point.y.abs - cy,
+                          #prim[1]_point.x.abs - cx))
 
     #if !all(isfinite([cx, cy, rx, ry, theta]))
         #return

@@ -102,43 +102,40 @@ immutable UnitBox{S, T, U, V}
     width::U
     height::V
 
-    leftpad::AbsoluteLength
-    rightpad::AbsoluteLength
-    toppad::AbsoluteLength
-    bottompad::AbsoluteLength
+    leftpad::Nullable{AbsoluteLength}
+    rightpad::Nullable{AbsoluteLength}
+    toppad::Nullable{AbsoluteLength}
+    bottompad::Nullable{AbsoluteLength}
 
     function UnitBox(x0::S, y0::T, width::U, height::V;
-                     leftpad::Measure=0mm,
-                     rightpad::Measure=0mm,
-                     toppad::Measure=0mm,
-                     bottompad::Measure=0mm)
+                     leftpad=Nullable{AbsoluteLength}(),
+                     rightpad=Nullable{AbsoluteLength}(),
+                     toppad=Nullable{AbsoluteLength}(),
+                     bottompad=Nullable{AbsoluteLength}())
         return new(x0, y0, width, height, leftpad, rightpad, toppad, bottompad)
     end
 end
 
 
 function UnitBox{S,T}(width::S, height::T;
-                      leftpad::Measure=0mm,
-                      rightpad::Measure=0mm,
-                      toppad::Measure=0mm,
-                      bottompad::Measure=0mm)
+                      leftpad=Nullable{AbsoluteLength}(),
+                      rightpad=Nullable{AbsoluteLength}(),
+                      toppad=Nullable{AbsoluteLength}(),
+                      bottompad=Nullable{AbsoluteLength}())
     x0 = zero(S)
     y0 = zero(T)
-
     return UnitBox{S, T, S, T}(x0, y0, width, height,
                                leftpad=leftpad, rightpad=rightpad,
                                toppad=toppad, bottompad=bottompad)
 end
 
 
-function UnitBox(x0, y0, width, height;
-                 leftpad::Measure=0mm,
-                 rightpad::Measure=0mm,
-                 toppad::Measure=0mm,
-                 bottompad::Measure=0mm)
-    x0, width  = promote(x0, width)
-    y0, height = promote(y0, height)
-    return UnitBox{typeof(x0), typeof(y0), typeof(width), typeof(height)}(
+function UnitBox{S, T, U, V}(x0::S, y0::T, width::U, height::V;
+                             leftpad=Nullable{AbsoluteLength}(),
+                             rightpad=Nullable{AbsoluteLength}(),
+                             toppad=Nullable{AbsoluteLength}(),
+                             bottompad=Nullable{AbsoluteLength}())
+    return UnitBox{S, T, U, V}(
                    x0, y0, width, height,
                    leftpad=leftpad, rightpad=rightpad,
                    toppad=toppad, bottompad=bottompad)
@@ -150,39 +147,35 @@ function UnitBox()
 end
 
 
+typealias NullUnitBox Nullable{UnitBox}
+
+
+# TODO: Hopefully I don't need this.
 # copy with substitution
-function UnitBox(units::UnitBox;
-                 x0=nothing, y0=nothing, width=nothing, height=nothing,
-                 leftpad=nothing, rightpad=nothing, toppad=nothing,
-                 bottompad=nothing)
-    return UnitBox(x0 === nothing ? units.x0 : x0,
-                   y0 === nothing ? units.y0 : y0,
-                   width === nothing ? units.width : width,
-                   height === nothing ? units.height : height,
-                   leftpad   = leftpad   === nothing ? units.leftpad : leftpad,
-                   rightpad  = rightpad  === nothing ? units.rightpad : rightpad,
-                   toppad    = toppad    === nothing ? units.toppad : toppad,
-                   bottompad = bottompad === nothing ? units.bottompad : bottompad)
-end
+#function UnitBox(units::UnitBox;
+                 #x0=nothing, y0=nothing, width=nothing, height=nothing,
+                 #leftpad=nothing, rightpad=nothing, toppad=nothing,
+                 #bottompad=nothing)
+    #return UnitBox(x0 === nothing ? units.x0 : x0,
+                   #y0 === nothing ? units.y0 : y0,
+                   #width === nothing ? units.width : width,
+                   #height === nothing ? units.height : height,
+                   #leftpad   = leftpad   === nothing ? units.leftpad : leftpad,
+                   #rightpad  = rightpad  === nothing ? units.rightpad : rightpad,
+                   #toppad    = toppad    === nothing ? units.toppad : toppad,
+                   #bottompad = bottompad === nothing ? units.bottompad : bottompad)
+#end
 
 
-width(units::UnitBox) = units.width
-width(units::UnitBox) = units.height
+Measures.width(units::UnitBox) = units.width
+Measures.height(units::UnitBox) = units.height
 
 
-function NilUnitBox()
-    return UnitBox{Nothing, Nothing, Nothing, Nothing}(
-                nothing, nothing, nothing, nothing)
-end
-
-
-const nil_unit_box = NilUnitBox()
-
-
-function isabsolute(units::UnitBox)
-    return units.leftpad == 0mm && units.rightpad == 0mm &&
-           units.toppad == 0mm && units.bottompad == 0mm
-end
+# TODO: Wuut? Is this really the definition I want?
+#function isabsolute(units::UnitBox)
+    #return units.leftpad == 0mm && units.rightpad == 0mm &&
+           #units.toppad == 0mm && units.bottompad == 0mm
+#end
 
 
 
@@ -249,7 +242,6 @@ function Rotation()
 end
 
 function Rotation{P <: Vec}(theta::Float64, offset::P)
-    @show P
     Rotation{P}(theta, offset)
 end
 
@@ -352,7 +344,8 @@ end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::BoundingBox)
-    BoundingBox(resolve(box, units, t, box.x0), map(x -> resolve(box, units, t, x), box.a))
+    b = BoundingBox(resolve(box, units, t, a.x0), map(x -> resolve(box, units, t, x), a.a))
+    return b
 end
 
 

@@ -185,31 +185,31 @@ end
 ## LineWidth
 ## ---------
 
-#immutable LineWidthPrimitive <: PropertyPrimitive
-    #value::Measure
+immutable LineWidthPrimitive <: PropertyPrimitive
+    value::Measure
 
-    #function LineWidthPrimitive(value)
-        #return new(size_measure(value))
-    #end
-#end
+    function LineWidthPrimitive(value)
+        return new(size_measure(value))
+    end
+end
 
-#typealias LineWidth Property{LineWidthPrimitive}
-
-
-#function linewidth(value::Union(Measure, Number))
-    #return LineWidth([LineWidthPrimitive(value)])
-#end
+typealias LineWidth Property{LineWidthPrimitive}
 
 
-#function linewidth(values::AbstractArray)
-    #return LineWidth([LineWidthPrimitive(value) for value in values])
-#end
+function linewidth(value::Union(Measure, Number))
+    return LineWidth([LineWidthPrimitive(value)])
+end
 
 
-#function absolute_units(primitive::LineWidthPrimitive, t::Transform,
-                        #units::UnitBox, box::AbsoluteBoundingBox)
-    #return LineWidthPrimitive(Measure(absolute_units(primitive.value, t, units, box)))
-#end
+function linewidth(values::AbstractArray)
+    return LineWidth([LineWidthPrimitive(value) for value in values])
+end
+
+
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::LineWidthPrimitive)
+    return LineWidthPrimitive(resolve(box, units, t, primitive.value))
+end
 
 
 ## Visible
