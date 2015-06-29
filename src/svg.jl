@@ -745,8 +745,12 @@ end
 # ------------
 
 function draw{T}(img::SVG, form::Form{T})
-    for (idx, primitive) in enumerate(form.primitives)
-        draw(img, primitive, idx)
+    # TODO: This is much slower that the version below. Figure out why?
+    #for (idx, primitive) in enumerate(form.primitives)
+        #draw(img, primitive, idx)
+    #end
+    for i in 1:length(form.primitives)
+        draw(img, form.primitives[i], i)
     end
 end
 
