@@ -30,7 +30,9 @@ end
 # temporary buffers, because it writes directly to the output.
 function svg_print_float(io::IO, x::FloatingPoint)
     const ndig = 2
-    const eps = 1.0/10^ndig
+    const eps = 0.01
+    #const eps = 1.0/10^ndig
+
     if isfinite(x)
         if x < 0
             write(io, '-')
@@ -742,8 +744,7 @@ end
 # Form Drawing
 # ------------
 
-
-function draw(img::SVG, form::Form)
+function draw{T}(img::SVG, form::Form{T})
     for (idx, primitive) in enumerate(form.primitives)
         draw(img, primitive, idx)
     end
