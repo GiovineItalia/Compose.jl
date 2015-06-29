@@ -96,7 +96,6 @@ end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PolygonPrimitive)
-    #@show box
     return PolygonPrimitive{AbsoluteVec}(
                 [resolve(box, units, t, point) for point in p.points])
 end

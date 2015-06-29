@@ -19,7 +19,9 @@ type Context <: Container
     mir::Nullable{Mirror}
 
     # Container children
-    children::List{ComposeNode}
+    container_children::List{Container}
+    form_children::List{Form}
+    property_children::List{Property}
 
     # Z-order of this context relative to its siblings.
     order::Int
@@ -72,7 +74,9 @@ type Context <: Container
                      units::Nullable{UnitBox},
                      rotation::Nullable{Rotation},
                      mirror,
-                     children::List{ComposeNode},
+                     container_children::List{Container},
+                     form_children::List{Form},
+                     property_children::List{Property},
                      order::Int,
                      clip::Bool,
                      withjs::Bool,
@@ -88,13 +92,16 @@ type Context <: Container
             minheight = minheight.abs
         end
 
-        return new(box, units, rotation, mirror, children, order,
+        return new(box, units, rotation, mirror, container_children,
+                   form_children, property_children, order,
                    clip, withjs, withoutjs, raster, minwidth, minheight,
                    penalty)
     end
 
     function Context(ctx::Context)
-        return new(ctx.box, ctx.units, ctx.rot, ctx.mir, ctx.children, ctx.order,
+        return new(ctx.box, ctx.units, ctx.rot, ctx.mir,
+                   ctx.container_children, ctx.form_children,
+                   ctx.property_children, ctx.order,
                    ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
                    ctx.minwidth, ctx.minheight, ctx.penalty)
     end
@@ -116,14 +123,19 @@ function context(x0=0.0w,
                  minwidth=nothing,
                  minheight=nothing,
                  penalty=0.0)
-    
 
     return Context(BoundingBox(x_measure(x0), y_measure(y0),
                                x_measure(width), y_measure(height)),
                    isa(units, Nullable) ? units : Nullable(units),
                    isa(rotation, Nullable) ? rotation : Nullable(rotation),
-                   mirror, ListNull{ComposeNode}(), order, clip,
+                   mirror, ListNull{Container}(), ListNull{Form}(),
+                   ListNull{Property}(), order, clip,
                    withjs, withoutjs, raster, minwidth, minheight, penalty)
+end
+
+
+function children(ctx::Context)
+    chain(ctx.container_children, ctx.form_children, ctx.property_children)
 end
 
 
@@ -200,10 +212,7 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
                      fontsize::Measure=default_font_size,
                      parent_abs_width = nothing,
                      parent_abs_height = nothing)
-    for child in c.children
-        if !isa(child, Property)
-            continue
-        end
+    for child in c.property_children
         for p in child.primitives
             if isa(p, LineWidthPrimitive)
                 linewidth = p.value
@@ -238,27 +247,27 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
     end
 
     bb = BoundingBox(Measure(),Measure(),Measure(),Measure())
-    for child in c.children
-        if isa(child, Property)
-            continue
-        elseif isa(child,Context)
-            cbb = boundingbox(child, linewidth, font, fontsize, c_abs_width, c_abs_height)
-            width′  = transformcoordinates(cbb.width,child)
-            height′ = transformcoordinates(cbb.height,child)
-            x0′     = transformcoordinates(cbb.x0,child)
-            y0′     = transformcoordinates(cbb.y0,child)
-            bb′ = BoundingBox(child.box.x0+x0′, child.box.y0+y0′, width′, height′)
-            bb = union(bb, bb′, c.units, c_abs_width, c_abs_height)
-        elseif isa(child, Container)
+    for child in c.container_children
+        if !isa(child, Context)
             error("Can not compute boundingbox for graphics with non-Context containers")
-        elseif isa(child, Form)
-            for prim in child.primitives
-                newbb = boundingbox(prim, linewidth, font, fontsize)
-                nextbb = union(bb, newbb, c.units, c_abs_height, c_abs_height)
-                bb = nextbb
-            end
+        end
+        cbb = boundingbox(child, linewidth, font, fontsize, c_abs_width, c_abs_height)
+        width′  = transformcoordinates(cbb.width,child)
+        height′ = transformcoordinates(cbb.height,child)
+        x0′     = transformcoordinates(cbb.x0,child)
+        y0′     = transformcoordinates(cbb.y0,child)
+        bb′ = BoundingBox(child.box.x0+x0′, child.box.y0+y0′, width′, height′)
+        bb = union(bb, bb′, c.units, c_abs_width, c_abs_height)
+    end
+
+    for child in c.form_children
+        for prim in child.primitives
+            newbb = boundingbox(prim, linewidth, font, fontsize)
+            nextbb = union(bb, newbb, c.units, c_abs_height, c_abs_height)
+            bb = nextbb
         end
     end
+
     return bb
 end
 
@@ -325,8 +334,20 @@ function realize(promise::AdhocContainerPromise, drawctx::ParentDrawContext)
 end
 
 
-function compose!(a::Context, b::ComposeNode)
-    a.children = cons(b, a.children)
+function compose!(a::Context, b::Container)
+    a.container_children = cons(b, a.container_children)
+    return a
+end
+
+
+function compose!(a::Context, b::Form)
+    a.form_children = cons(b, a.form_children)
+    return a
+end
+
+
+function compose!(a::Context, b::Property)
+    a.property_children = cons(b, a.property_children)
     return a
 end
 
@@ -407,11 +428,6 @@ function draw(backend::Backend, root_container::Container)
 end
 
 
-function draw(backend::Backend, root_form::Form)
-    draw(backend, compose(context(), root_form))
-end
-
-
 immutable DrawState
     pop_poperty::Bool
     container::Container
@@ -440,7 +456,6 @@ function drawpart(backend::Backend, container::Container,
 
     # used to collect property children
     properties = Array(Property, 0)
-    container_children = Array((@compat Tuple{Int, Int, Container}), 0)
 
     if (iswithjs(container) && !iswithjs(backend)) ||
        (iswithoutjs(container) && iswithjs(backend))
@@ -491,10 +506,10 @@ function drawpart(backend::Backend, container::Container,
         units = resolve(box, units, transform, get(ctx.units))
     end
 
-    for child in ctx.children
-        if isa(child, Property)
-            push!(properties, resolve(parent_box, units, parent_transform, child))
-        end
+    child = ctx.property_children
+    while !isa(child, ListNull)
+        push!(properties, resolve(parent_box, units, parent_transform, child.head))
+        child = child.tail
     end
 
     if ctx.clip
@@ -512,29 +527,37 @@ function drawpart(backend::Backend, container::Container,
         push_property_frame(backend, properties)
     end
 
-    for child in ctx.children
-        if isa(child, Form)
-            draw(backend, box, units, transform, child)
-        end
+    child = ctx.form_children
+    while !isa(child, ListNull)
+        draw(backend, box, units, transform, child.head)
+        child = child.tail
     end
 
     # Order children if needed
     ordered_children = false
-    for child in ctx.children
-        if isa(child, Container)
-            if order(child) != 0
-                ordered_children = true
-                break
-            end
+    #for child in ctx.container_children
+        #if order(child) != 0
+            #ordered_children = true
+            #break
+        #end
+    #end
+
+    child = ctx.container_children
+    while !isa(child, ListNull)
+        if order(child.head) != 0
+            ordered_children = true
+            break
         end
+        child = child.tail
     end
 
     if ordered_children
-        for child in ctx.children
-            if isa(child, Container)
-                push!(container_children,
-                      (order(child), 1 + length(container_children), child))
-            end
+        container_children = Array((@compat Tuple{Int, Int, Container}), 0)
+        child = ctx.container_children
+        while !isa(child, ListNull)
+            push!(container_children,
+                  (order(child.head), 1 + length(container_children), child.head))
+            child = child.tail
         end
 
         sort!(container_children, rev=true)
@@ -543,10 +566,10 @@ function drawpart(backend::Backend, container::Container,
         end
         empty!(container_children)
     else
-        for child in ctx.children
-            if isa(child, Container)
-                drawpart(backend, child, transform, units, box)
-            end
+        child = ctx.container_children
+        while !isa(child, ListNull)
+            drawpart(backend, child.head, transform, units, box)
+            child = child.tail
         end
     end
 
@@ -609,15 +632,13 @@ function draw_recursive(backend::Backend,
         child_containers = Any[]
         vector_properties = Dict{Type, Property}()
 
-        for child in ctx.children
-            if isa(child, Property)
-                # Properties get the parent units
-                prop = absolute_units(child, parent_transform, units, parent_box)
-                if isscalar(child)
-                    acc = addto(backend, acc, draw(backend, prop))
-                else
-                    vector_properties[typeof(child)] = child
-                end
+        for child in ctx.property_children
+            # Properties get the parent units
+            prop = absolute_units(child, parent_transform, units, parent_box)
+            if isscalar(child)
+                acc = addto(backend, acc, draw(backend, prop))
+            else
+                vector_properties[typeof(child)] = child
             end
         end
 
@@ -626,13 +647,12 @@ function draw_recursive(backend::Backend,
             push_property_frame(backend, vector_properties)
             pop_frame = true
         end
-        for child in ctx.children
-            if isa(child, Form)
-                # this draw call calls draw(backend, absolute_form)
-                acc = addto(backend, acc, draw(backend, transform, units, box, child))
-            elseif isa(child, Container)
-                push!(child_containers, (order(child), length(child_containers) + 1, child))
-            end
+        for child in ctx.form_children
+            # this draw call calls draw(backend, absolute_form)
+            acc = addto(backend, acc, draw(backend, transform, units, box, child))
+        end
+        for child in ctx.container_children
+            push!(child_containers, (order(child), length(child_containers) + 1, child))
         end
 
         sort!(child_containers)
@@ -685,7 +705,7 @@ function introspect(root::Context)
         fig = context(level_count[level] - 1, level - 1)
         if isa(node, Context)
             compose!(fig, circle(0.5, 0.5, figsize/2), fill(LCHab(92, 10, 77)))
-            for child in node.children
+            for child in children(node)
                 enqueue!(q, (child, level + 1))
             end
         elseif isa(node, Container)
@@ -721,7 +741,7 @@ function introspect(root::Context)
         end
         pos = positions[node]
 
-        for child in node.children
+        for child in children(node)
             childpos = positions[child]
             compose!(lines_ctx,
                      line([(pos[1], pos[2]), (childpos[1], childpos[2])]))
