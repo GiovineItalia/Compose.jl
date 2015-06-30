@@ -87,103 +87,103 @@ end
 
 
 
-## StrokeDash
-## ----------
+# StrokeDash
+# ----------
 
-#immutable StrokeDashPrimitive <: PropertyPrimitive
-    #value::Vector{Measure}
-#end
+immutable StrokeDashPrimitive <: PropertyPrimitive
+    value::Vector{Measure}
+end
 
-#typealias StrokeDash Property{StrokeDashPrimitive}
-
-
-#function strokedash(values::AbstractArray)
-    #return StrokeDash([StrokeDashPrimitive(collect(Measure, values))])
-#end
+typealias StrokeDash Property{StrokeDashPrimitive}
 
 
-#function strokedash(values::AbstractArray{AbstractArray})
-    #return StrokeDash([StrokeDashPrimitive(collect(Measure, value)) for value in values])
-#end
+function strokedash(values::AbstractArray)
+    return StrokeDash([StrokeDashPrimitive(collect(Measure, values))])
+end
 
 
-#function absolute_units(primitive::StrokeDashPrimitive, t::Transform,
-                        #units::UnitBox, box::AbsoluteBoundingBox)
-    #return StrokeDashPrimitive([Measure(absolute_units(v, t, units, box))
-                                #for v in primitive.value])
-#end
-
-## StrokeLineCap
-## -------------
+function strokedash(values::AbstractArray{AbstractArray})
+    return StrokeDash([StrokeDashPrimitive(collect(Measure, value)) for value in values])
+end
 
 
-#abstract LineCap
-#immutable LineCapButt <: LineCap end
-#immutable LineCapSquare <: LineCap end
-#immutable LineCapRound <: LineCap end
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::StrokeDashPrimitive)
+    return StrokeDashPrimitive([resolve(box, units, t, v)
+                                for v in primitive.value])
+end
+
+# StrokeLineCap
+# -------------
 
 
-#immutable StrokeLineCapPrimitive <: PropertyPrimitive
-    #value::LineCap
-
-    #function StrokeLineCapPrimitive(value::LineCap)
-        #return new(value)
-    #end
-
-    #function StrokeLineCapPrimitive(value::Type{LineCap})
-        #return new(value())
-    #end
-#end
-
-#typealias StrokeLineCap Property{StrokeLineCapPrimitive}
+abstract LineCap
+immutable LineCapButt <: LineCap end
+immutable LineCapSquare <: LineCap end
+immutable LineCapRound <: LineCap end
 
 
-#function strokelinecap(value::Union(LineCap, Type{LineCap}))
-    #return StrokeLineCap([StrokeLineCapPrimitive(value)])
-#end
+immutable StrokeLineCapPrimitive <: PropertyPrimitive
+    value::LineCap
+
+    function StrokeLineCapPrimitive(value::LineCap)
+        return new(value)
+    end
+
+    function StrokeLineCapPrimitive(value::Type{LineCap})
+        return new(value())
+    end
+end
+
+typealias StrokeLineCap Property{StrokeLineCapPrimitive}
 
 
-#function strokelinecap(values::AbstractArray)
-    #return StrokeLineCap([StrokeLineCapPrimitive(value) for value in values])
-#end
+function strokelinecap(value::Union(LineCap, Type{LineCap}))
+    return StrokeLineCap([StrokeLineCapPrimitive(value)])
+end
 
 
-## StrokeLineJoin
-## --------------
-
-#abstract LineJoin
-#immutable LineJoinMiter <: LineJoin end
-#immutable LineJoinRound <: LineJoin end
-#immutable LineJoinBevel <: LineJoin end
+function strokelinecap(values::AbstractArray)
+    return StrokeLineCap([StrokeLineCapPrimitive(value) for value in values])
+end
 
 
-#immutable StrokeLineJoinPrimitive <: PropertyPrimitive
-    #value::LineJoin
+# StrokeLineJoin
+# --------------
 
-    #function StrokeLineJoinPrimitive(value::LineJoin)
-        #return new(value)
-    #end
-
-    #function StrokeLineCapPrimitive(value::Type{LineJoin})
-        #return new(value())
-    #end
-#end
-
-#typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
+abstract LineJoin
+immutable LineJoinMiter <: LineJoin end
+immutable LineJoinRound <: LineJoin end
+immutable LineJoinBevel <: LineJoin end
 
 
-#function strokelinejoin(value::Union(LineJoin, Type{LineJoin}))
-    #return StrokeLineJoin([StrokeLineJoinPrimitive(value)])
-#end
+immutable StrokeLineJoinPrimitive <: PropertyPrimitive
+    value::LineJoin
+
+    function StrokeLineJoinPrimitive(value::LineJoin)
+        return new(value)
+    end
+
+    function StrokeLineCapPrimitive(value::Type{LineJoin})
+        return new(value())
+    end
+end
+
+typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
 
 
-#function strokelinejoin(values::AbstractArray)
-    #return StrokeLineJoin([StrokeLineJoinPrimitive(value) for value in values])
-#end
+function strokelinejoin(value::Union(LineJoin, Type{LineJoin}))
+    return StrokeLineJoin([StrokeLineJoinPrimitive(value)])
+end
 
 
-## LineWidth
-## ---------
+function strokelinejoin(values::AbstractArray)
+    return StrokeLineJoin([StrokeLineJoinPrimitive(value) for value in values])
+end
+
+
+# LineWidth
+# ---------
 
 immutable LineWidthPrimitive <: PropertyPrimitive
     value::Measure
@@ -212,24 +212,24 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
 end
 
 
-## Visible
-## -------
+# Visible
+# -------
 
-#immutable VisiblePrimitive <: PropertyPrimitive
-    #value::Bool
-#end
+immutable VisiblePrimitive <: PropertyPrimitive
+    value::Bool
+end
 
-#typealias Visible Property{VisiblePrimitive}
-
-
-#function visible(value::Bool)
-    #return Visible([VisiblePrimitive(value)])
-#end
+typealias Visible Property{VisiblePrimitive}
 
 
-#function visible(values::AbstractArray)
-    #return Visible([VisiblePrimitive(value) for value in values])
-#end
+function visible(value::Bool)
+    return Visible([VisiblePrimitive(value)])
+end
+
+
+function visible(values::AbstractArray)
+    return Visible([VisiblePrimitive(value) for value in values])
+end
 
 
 # FillOpacity
@@ -255,9 +255,9 @@ function fillopacity(value::Float64)
 end
 
 
-#function fillopacity(values::AbstractArray)
-    #return FillOpacity([FillOpacityPrimitive(value) for value in values])
-#end
+function fillopacity(values::AbstractArray)
+    return FillOpacity([FillOpacityPrimitive(value) for value in values])
+end
 
 
 # StrokeOpacity
@@ -303,76 +303,89 @@ function clip()
 end
 
 
-function clip(points::XYTupleOrVec...)
-    return Clip([ClipPrimitive([convert(Vec, point) for point in points])])
+function clip{T <: XYTupleOrVec}(points::AbstractArray{T})
+    XM, YM = narrow_polygon_point_types(Vector[points])
+    if XM == Any
+        XM = Length{:cx, Float64}
+    end
+    if YM == Any
+        YM = Length{:cy, Float64}
+    end
+    VecType = Tuple{XM, YM}
+
+    return Clip([ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])])
 end
 
 
 function clip(point_arrays::AbstractArray...)
-    clipprims = Array(ClipPrimitive, length(point_arrays))
+    XM, YM = narrow_polygon_point_types(point_arrays)
+    VecType = XM == YM == Any ? Vec : Vec{XM, YM}
+    PrimType = XM == YM == Any ? ClipPrimitive : ClipPrimitive{VecType}
+
+    clipprims = Array(PrimType, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
-        clipprims[i] = ClipPrimitive([convert(Vec, point)
-                                      for point in point_array])
+        clipprims[i] = ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
+                                             for point in point_array])
     end
-    return Clip(clipprims)
+    return Property{PrimType}(clipprims)
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::ClipPrimitive)
-    return ClipPrimitive{AbsoluteVec}(
-        AbsoluteVec[resolve(box, units, t, point) for point in p.points])
+                 primitive::ClipPrimitive)
+    return ClipPrimitive{AbsoluteVec2}(
+        AbsoluteVec2[resolve(box, units, t, point) for point in primitive.points])
 end
 
 
-## Font
-## ----
+# Font
+# ----
 
-#immutable FontPrimitive <: PropertyPrimitive
-    #family::String
-#end
+immutable FontPrimitive <: PropertyPrimitive
+    family::String
+end
 
-#typealias Font Property{FontPrimitive}
-
-
-#function font(family::String)
-    #return Font([FontPrimitive(family)])
-#end
+typealias Font Property{FontPrimitive}
 
 
-#function font(families::AbstractArray)
-    #return Font([FontPrimitive(family) for family in families])
-#end
+function font(family::String)
+    return Font([FontPrimitive(family)])
+end
 
 
-## FontSize
-## --------
-
-#immutable FontSizePrimitive <: PropertyPrimitive
-    #value::Measure
-
-    #function FontSizePrimitive(value)
-        #return new(size_measure(value))
-    #end
-#end
-
-#typealias FontSize Property{FontSizePrimitive}
+function font(families::AbstractArray)
+    return Font([FontPrimitive(family) for family in families])
+end
 
 
-#function fontsize(value::Union(Number, Measure))
-    #return FontSize([FontSizePrimitive(value)])
-#end
+# FontSize
+# --------
+
+immutable FontSizePrimitive <: PropertyPrimitive
+    value::Measure
+
+    function FontSizePrimitive(value)
+        return new(size_measure(value))
+    end
+end
+
+typealias FontSize Property{FontSizePrimitive}
 
 
-#function fontsize(values::AbstractArray)
-    #return FontSize([FontSizePrimitive(value) for value in values])
-#end
+function fontsize(value::Union(Number, Measure))
+    return FontSize([FontSizePrimitive(value)])
+end
 
 
-#function absolue_units(primitive::FontSizePrimitive, t::Transform,
-                       #units::UnitBox, box::AbsoluteBoundingBox)
-    #return FontSizePrimitive(Measure(absolute_units(primitive.value, t, units, box)))
-#end
+function fontsize(values::AbstractArray)
+    return FontSize([FontSizePrimitive(value) for value in values])
+end
+
+
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::FontSizePrimitive)
+    return FontSizePrimitive(resolve(box, units, t, primitive.value))
+end
 
 
 # SVGID
@@ -395,72 +408,72 @@ function svgid(values::AbstractArray)
 end
 
 
-## SVGClass
-## --------
+# SVGClass
+# --------
 
-#immutable SVGClassPrimitive <: PropertyPrimitive
-    #value::String
-#end
+immutable SVGClassPrimitive <: PropertyPrimitive
+    value::String
+end
 
-#typealias SVGClass Property{SVGClassPrimitive}
-
-
-#function svgclass(value::String)
-    #return SVGClass([SVGClassPrimitive(value)])
-#end
-
-#function svgclass(values::AbstractArray)
-    #return SVGClass([SVGClassPrimitive(value) for value in values])
-#end
+typealias SVGClass Property{SVGClassPrimitive}
 
 
-## SVGAttribute
-## ------------
+function svgclass(value::String)
+    return SVGClass([SVGClassPrimitive(value)])
+end
 
-#immutable SVGAttributePrimitive <: PropertyPrimitive
-    #attribute::String
-    #value::String
-#end
-
-#typealias SVGAttribute Property{SVGAttributePrimitive}
+function svgclass(values::AbstractArray)
+    return SVGClass([SVGClassPrimitive(value) for value in values])
+end
 
 
-#function svgattribute(attribute::String, value)
-    #return SVGAttribute([SVGAttributePrimitive(attribute, string(value))])
-#end
+# SVGAttribute
+# ------------
+
+immutable SVGAttributePrimitive <: PropertyPrimitive
+    attribute::String
+    value::String
+end
+
+typealias SVGAttribute Property{SVGAttributePrimitive}
 
 
-#function svgattribute(attribute::String, values::AbstractArray)
-    #return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
-                         #for value in values])
-#end
+function svgattribute(attribute::String, value)
+    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))])
+end
 
 
-#function svgattribute(attributes::AbstractArray, values::AbstractArray)
-    #return SVGAttribute(
-        #@makeprimitives SVGAttributePrimitive,
-            #(attribute in attributes, value in values),
-            #SVGAttributePrimitive(attribute, string(value)))
-#end
+function svgattribute(attribute::String, values::AbstractArray)
+    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
+                         for value in values])
+end
 
 
-## JSInclude
-## ---------
-
-#immutable JSIncludePrimitive <: PropertyPrimitive
-    #value::String
-    #jsmodule::Union(Nothing, @compat Tuple{String, String})
-#end
-
-#typealias JSInclude Property{JSIncludePrimitive}
+function svgattribute(attributes::AbstractArray, values::AbstractArray)
+    return SVGAttribute(
+        @makeprimitives SVGAttributePrimitive,
+            (attribute in attributes, value in values),
+            SVGAttributePrimitive(attribute, string(value)))
+end
 
 
-#function jsinclude(value::String, module_name=nothing)
-    #return JSInclude([JSIncludePrimitive(value, module_name)])
-#end
+# JSInclude
+# ---------
 
-## Don't bother with a vectorized version of this. It wouldn't really make #
-## sense.
+immutable JSIncludePrimitive <: PropertyPrimitive
+    value::String
+    jsmodule::Union(Nothing, @compat Tuple{String, String})
+end
+
+typealias JSInclude Property{JSIncludePrimitive}
+
+
+function jsinclude(value::String, module_name=nothing)
+    return JSInclude([JSIncludePrimitive(value, module_name)])
+end
+
+# Don't bother with a vectorized version of this. It wouldn't really make #
+# sense.
 
 
 # JSCall
@@ -490,7 +503,6 @@ end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                  primitive::JSCallPrimitive)
-    
     # we are going to build a new string by scanning across "code" and
     # replacing %x with translated x values, %y with translated y values
     # and %s with translated size values.

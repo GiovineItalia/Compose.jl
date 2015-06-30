@@ -215,9 +215,9 @@ function pad_outer(c::Context,
     top_padding    = size_measure(top_padding)
     bottom_padding = size_measure(bottom_padding)
 
-    root = context(c.box.x0, c.box.y0,
-                   c.box.width + left_padding + right_padding,
-                   c.box.height + top_padding + bottom_padding,
+    root = context(c.box.x0[1], c.box.x0[1],
+                   c.box.a[1] + left_padding + right_padding,
+                   c.box.a[2] + top_padding + bottom_padding,
                    minwidth=c.minwidth,
                    minheight=c.minheight)
     c = copy(c)
@@ -258,9 +258,8 @@ function pad_inner(c::Context,
     top_padding    = size_measure(top_padding)
     bottom_padding = size_measure(bottom_padding)
 
-    root = context(c.box.x0, c.box.y0,
-                   c.box.width,
-                   c.box.height,
+    root = context(c.box.x0[1], c.box.x0[2],
+                   c.box.a[1], c.box.a[2],
                    minwidth=c.minwidth,
                    minheight=c.minheight)
     c = copy(c)
