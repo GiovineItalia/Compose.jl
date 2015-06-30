@@ -102,26 +102,20 @@ immutable UnitBox{S, T, U, V}
     width::U
     height::V
 
-    leftpad::Nullable{AbsoluteLength}
-    rightpad::Nullable{AbsoluteLength}
-    toppad::Nullable{AbsoluteLength}
-    bottompad::Nullable{AbsoluteLength}
+    leftpad::AbsoluteLength
+    rightpad::AbsoluteLength
+    toppad::AbsoluteLength
+    bottompad::AbsoluteLength
 
     function UnitBox(x0::S, y0::T, width::U, height::V;
-                     leftpad=Nullable{AbsoluteLength}(),
-                     rightpad=Nullable{AbsoluteLength}(),
-                     toppad=Nullable{AbsoluteLength}(),
-                     bottompad=Nullable{AbsoluteLength}())
+                     leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
         return new(x0, y0, width, height, leftpad, rightpad, toppad, bottompad)
     end
 end
 
 
 function UnitBox{S,T}(width::S, height::T;
-                      leftpad=Nullable{AbsoluteLength}(),
-                      rightpad=Nullable{AbsoluteLength}(),
-                      toppad=Nullable{AbsoluteLength}(),
-                      bottompad=Nullable{AbsoluteLength}())
+                      leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
     x0 = zero(S)
     y0 = zero(T)
     return UnitBox{S, T, S, T}(x0, y0, width, height,
@@ -131,10 +125,7 @@ end
 
 
 function UnitBox{S, T, U, V}(x0::S, y0::T, width::U, height::V;
-                             leftpad=Nullable{AbsoluteLength}(),
-                             rightpad=Nullable{AbsoluteLength}(),
-                             toppad=Nullable{AbsoluteLength}(),
-                             bottompad=Nullable{AbsoluteLength}())
+                             leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
     return UnitBox{S, T, U, V}(
                    x0, y0, width, height,
                    leftpad=leftpad, rightpad=rightpad,
@@ -150,32 +141,35 @@ end
 typealias NullUnitBox Nullable{UnitBox}
 
 
-# TODO: Hopefully I don't need this.
 # copy with substitution
-#function UnitBox(units::UnitBox;
-                 #x0=nothing, y0=nothing, width=nothing, height=nothing,
-                 #leftpad=nothing, rightpad=nothing, toppad=nothing,
-                 #bottompad=nothing)
-    #return UnitBox(x0 === nothing ? units.x0 : x0,
-                   #y0 === nothing ? units.y0 : y0,
-                   #width === nothing ? units.width : width,
-                   #height === nothing ? units.height : height,
-                   #leftpad   = leftpad   === nothing ? units.leftpad : leftpad,
-                   #rightpad  = rightpad  === nothing ? units.rightpad : rightpad,
-                   #toppad    = toppad    === nothing ? units.toppad : toppad,
-                   #bottompad = bottompad === nothing ? units.bottompad : bottompad)
-#end
+function UnitBox(units::UnitBox;
+                 x0=Nullable{Measure}(),
+                 y0=Nullable{Measure}(),
+                 width=Nullable{Measure}(),
+                 height=Nullable{Measure}(),
+                 leftpad=Nullable{AbsoluteLength}(),
+                 rightpad=Nullable{AbsoluteLength}(),
+                 toppad=Nullable{AbsoluteLength}(),
+                 bottompad=Nullable{AbsoluteLength}())
+    return UnitBox(ifelse(isa(x0, Nullable)     && isnull(x0),     units.x0,     x0),
+                   ifelse(isa(y0, Nullable)     && isnull(y0),     units.y0,     y0),
+                   ifelse(isa(width, Nullable)  && isnull(width),  units.width,  width),
+                   ifelse(isa(height, Nullable) && isnull(height), units.height, height),
+                   leftpad   = ifelse(isa(leftpad,   Nullable) && isnull(leftpad),   units.leftpad,   leftpad),
+                   rightpad  = ifelse(isa(rightpad,  Nullable) && isnull(rightpad),  units.rightpad,  rightpad),
+                   toppad    = ifelse(isa(toppad,    Nullable) && isnull(toppad),    units.toppad,    toppad),
+                   bottompad = ifelse(isa(bottompad, Nullable) && isnull(bottompad), units.bottompad, bottompad))
+end
 
 
 Measures.width(units::UnitBox) = units.width
 Measures.height(units::UnitBox) = units.height
 
 
-# TODO: Wuut? Is this really the definition I want?
-#function isabsolute(units::UnitBox)
-    #return units.leftpad == 0mm && units.rightpad == 0mm &&
-           #units.toppad == 0mm && units.bottompad == 0mm
-#end
+function ispadded(units::UnitBox)
+    return units.leftpad != 0mm || units.rightpad != 0mm ||
+           units.toppad != 0mm || units.bottompad != 0mm
+end
 
 
 
@@ -356,6 +350,11 @@ end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::UnitBox)
+
+    return UnitBox(
+
+    )
+
     error("TODO")
 end
 
@@ -390,30 +389,29 @@ end
 
 
 
-#function absolute_units(units::UnitBox, t::Transform, parent_units::UnitBox,
-                        #box::AbsoluteBox)
-    #if isabsolute(units)
-        #return units
-    #else
-        #leftpad   = absolute_units(units.leftpad, t, parent_units, box)
-        #rightpad  = absolute_units(units.rightpad, t, parent_units, box)
-        #toppad    = absolute_units(units.toppad, t, parent_units, box)
-        #bottompad = absolute_units(units.bottompad, t, parent_units, box)
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, u::UnitBox)
+    if !ispadded(units)
+        return units
+    else
+        leftpad   = resolve(box, units, t, units.leftpad)
+        rightpad  = resolve(box, units, t, units.rightpad)
+        toppad    = resolve(box, units, t, units.toppad)
+        bottompad = resolve(box, units, t, units.bottompad)
 
-        ## just give up trying to pad the units if it's impossible
-        #if leftpad + rightpad >= box.width ||
-           #toppad + bottompad >= box.height
-            #return UnitBox(units.x0, units.y0, units.width, units.height)
-       #end
+        # just give up trying to pad the units if it's impossible
+        if leftpad + rightpad >= box.width ||
+           toppad + bottompad >= box.height
+            return UnitBox(units.x0, units.y0, units.width, units.height)
+        end
 
-        #width = units.width * (box.width / (box.width - leftpad - rightpad))
-        #height = units.height * (box.height / (box.height - toppad - bottompad))
-        #x0 = units.x0 - width * (leftpad / box.width)
-        #y0 = units.y0 - height * (toppad / box.height)
+        width = units.width * (box.width / (box.width - leftpad - rightpad))
+        height = units.height * (box.height / (box.height - toppad - bottompad))
+        x0 = units.x0 - width * (leftpad / box.width)
+        y0 = units.y0 - height * (toppad / box.height)
 
-        #return UnitBox(x0, y0, width, height)
-    #end
-#end
+        return UnitBox(x0, y0, width, height)
+    end
+end
 
 
 ## Convert a Rotation to a Transform

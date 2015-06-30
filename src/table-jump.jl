@@ -10,8 +10,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
 
     m, n = size(tbl.children)
 
-    abswidth = drawctx.box.width
-    absheight = drawctx.box.height
+    abswidth = drawctx.box.a[1].value
+    absheight = drawctx.box.a[2].value
 
     c_indexes = @compat Tuple{Int, Int, Int}[]
     idx_cs = Dict{(@compat Tuple{Int, Int}), Vector{Int}}()

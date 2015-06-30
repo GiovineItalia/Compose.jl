@@ -26,7 +26,7 @@ type Table <: ContainerPromise
     fixed_configs::Vector
 
     # Coordinate system used for children
-    units::UnitBox
+    units::Nullable{UnitBox}
 
     # Z-order of this context relative to its siblings.
     order::Int
@@ -43,7 +43,7 @@ type Table <: ContainerPromise
                    y_focus::UnitRange{Int}, x_focus::UnitRange{Int};
                    y_prop=nothing, x_prop=nothing,
                    aspect_ratio=nothing,
-                   units=NilUnitBox(), order=0, withjs=false, withoutjs=false,
+                   units=NullUnitBox(), order=0, withjs=false, withoutjs=false,
                    fixed_configs=Any[])
 
         if x_prop != nothing
@@ -188,7 +188,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     function update_focused_col_widths!(focused_col_widths)
         minwidth = sum(mincolwidths)
         total_focus_width =
-            drawctx.box.width - minwidth + sum(mincolwidths[tbl.x_focus])
+            drawctx.box.a[1].value - minwidth + sum(mincolwidths[tbl.x_focus])
 
         if tbl.x_prop != nothing
             for k in 1:length(tbl.x_focus)
@@ -216,7 +216,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     function update_focused_row_heights!(focused_row_heights)
         minheight = sum(minrowheights)
         total_focus_height =
-            drawctx.box.height - minheight + sum(minrowheights[tbl.y_focus])
+            drawctx.box.a[2].value - minheight + sum(minrowheights[tbl.y_focus])
 
         if tbl.y_prop != nothing
             for k in 1:length(tbl.y_focus)
@@ -293,7 +293,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         objective = sum(focused_col_widths) + sum(focused_row_heights) - penalty
 
         # feasible?
-        if minwidth < drawctx.box.width && minheight < drawctx.box.height &&
+        if minwidth < drawctx.box.a[1].value && minheight < drawctx.box.a[2].value &&
            all(focused_col_widths .>= mincolwidths[tbl.x_focus]) &&
            all(focused_row_heights .>= minrowheights[tbl.y_focus])
             if objective > maxobjective || !feasible
@@ -303,8 +303,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             end
             feasible = true
         else
-            badness = max(minwidth - drawctx.box.width, 0.0) +
-                      max(minheight - drawctx.box.height, 0.0)
+            badness = max(minwidth - drawctx.box.a[1].value, 0.0) +
+                      max(minheight - drawctx.box.a[2].value, 0.0)
             if badness < minbadness && !feasible
                 minbadness = badness
                 optimal_choice = copy(choice)

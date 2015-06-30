@@ -71,7 +71,7 @@ type Context <: Container
     end
 
     function Context(box::BoundingBox,
-                     units::Nullable{UnitBox},
+                     units,
                      rotation::Nullable{Rotation},
                      mirror,
                      container_children::List{Container},
@@ -84,12 +84,12 @@ type Context <: Container
                      raster::Bool,
                      minwidth, minheight,
                      penalty)
-        if isa(minwidth, Measure)
-            minwidth = minwidth.abs
+        if isa(minwidth, AbsoluteLength)
+            minwidth = minwidth.value
         end
 
-        if isa(minheight, Measure)
-            minheight = minheight.abs
+        if isa(minheight, AbsoluteLength)
+            minheight = minheight.value
         end
 
         return new(box, units, rotation, mirror, container_children,
@@ -513,14 +513,13 @@ function drawpart(backend::Backend, container::Container,
     end
 
     if ctx.clip
-        x0 = ctx.box.x0
-        y0 = ctx.box.y0
-        x1 = x0 + ctx.box.width
-        y1 = y0 + ctx.box.height
+        x0 = ctx.box.x0[1]
+        y0 = ctx.box.x0[1]
+        x1 = x0 + ctx.box.a[1]
+        y1 = y0 + ctx.box.a[2]
         push!(properties,
-              absolute_units(clip(Point(x0, y0), Point(x1, y0),
-                                  Point(x1, y1), Point(x0, y1)),
-                             parent_transform, units, parent_box))
+              resolve(parent_box, units, parent_transform,
+                      clip([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])))
     end
 
     if !isempty(properties)

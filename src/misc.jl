@@ -113,3 +113,28 @@ macro makeprimitives(args)
         primitives
     end
 end
+
+
+function narrow_polygon_point_types{XM, YM}(
+            point_arrays::AbstractArray{Vector{Tuple{XM, YM}}})
+    return (XM, YM)
+end
+
+
+function narrow_polygon_point_types(point_arrays::AbstractArray)
+    type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (XM, YM)
+
+    if !isempty(point_arrays) && all([eltype(arr) <: Vec for arr in point_arrays])
+        xm, ym = type_params(eltype(point_arrays[1]))
+        for i in 2:length(point_arrays)
+            if type_params(eltype(point_arrays[i])) != (xm, ym)
+                return Any, Any
+            end
+        end
+        return xm, ym
+    else
+        return Any, Any
+    end
+end
+
+

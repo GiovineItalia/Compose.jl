@@ -513,7 +513,7 @@ end
 # Returns:
 #   A string containing SVG path data.
 #
-function print_svg_path(out, points::Vector{AbsoluteVec},
+function print_svg_path(out, points::Vector{AbsoluteVec2},
                         bridge_gaps::Bool=false)
     isfirst = true
     for point in points
@@ -540,6 +540,7 @@ function print_svg_path(out, points::Vector{AbsoluteVec},
 end
 
 
+# TODO: This logic should be moved to Gadfly
 # Return array of paths to draw with printpath
 # array is formed by splitting by NaN values
 #function make_paths(points::Vector{AbsoluteVec})
@@ -586,41 +587,41 @@ function print_property(img::SVG, property::FillPrimitive)
 end
 
 
-#function print_property(img::SVG, property::StrokeDashPrimitive)
-    #if isempty(property.value)
-        #print(img.out, " stroke-dasharray=\"none\"")
-    #else
-        #print(img.out, " stroke-dasharray=\"")
-        #svg_print_float(img.out, property.value[1].abs)
-        #for i in 2:length(property.value)
-            #print(img.out, ',')
-            #svg_print_float(img.out, property.value[i].abs)
-        #end
-        #print(img.out, '"')
-    #end
-#end
+function print_property(img::SVG, property::StrokeDashPrimitive)
+    if isempty(property.value)
+        print(img.out, " stroke-dasharray=\"none\"")
+    else
+        print(img.out, " stroke-dasharray=\"")
+        svg_print_float(img.out, property.value[1].value)
+        for i in 2:length(property.value)
+            print(img.out, ',')
+            svg_print_float(img.out, property.value[i].value)
+        end
+        print(img.out, '"')
+    end
+end
 
 
 # Format a line-cap specifier into the attribute string that SVG expects.
-#svg_fmt_linecap(::LineCapButt) = "butt"
-#svg_fmt_linecap(::LineCapSquare) = "square"
-#svg_fmt_linecap(::LineCapRound) = "round"
+svg_fmt_linecap(::LineCapButt) = "butt"
+svg_fmt_linecap(::LineCapSquare) = "square"
+svg_fmt_linecap(::LineCapRound) = "round"
 
 
-#function print_property(img::SVG, property::StrokeLineCapPrimitive)
-    #@printf(img.out, " stroke-linecap=\"%s\"", svg_fmt_linecap(property.value))
-#end
+function print_property(img::SVG, property::StrokeLineCapPrimitive)
+    @printf(img.out, " stroke-linecap=\"%s\"", svg_fmt_linecap(property.value))
+end
 
 
-## Format a line-join specifier into the attribute string that SVG expects.
-#svg_fmt_linejoin(::LineJoinMiter) = "miter"
-#svg_fmt_linejoin(::LineJoinRound) = "round"
-#svg_fmt_linejoin(::LineJoinBevel) = "bevel"
+# Format a line-join specifier into the attribute string that SVG expects.
+svg_fmt_linejoin(::LineJoinMiter) = "miter"
+svg_fmt_linejoin(::LineJoinRound) = "round"
+svg_fmt_linejoin(::LineJoinBevel) = "bevel"
 
 
-#function print_property(img::SVG, property::StrokeLineJoinPrimitive)
-    #@printf(img.out, " stroke-linejoin=\"%s\"", svg_fmt_linejoin(property.value))
-#end
+function print_property(img::SVG, property::StrokeLineJoinPrimitive)
+    @printf(img.out, " stroke-linejoin=\"%s\"", svg_fmt_linejoin(property.value))
+end
 
 
 function print_property(img::SVG, property::LineWidthPrimitive)
@@ -630,44 +631,44 @@ function print_property(img::SVG, property::LineWidthPrimitive)
 end
 
 
-#function print_property(img::SVG, property::FillOpacityPrimitive)
-    #print(img.out, " opacity=\"")
-    #svg_print_float(img.out, property.value)
-    #print(img.out, '"')
-#end
+function print_property(img::SVG, property::FillOpacityPrimitive)
+    print(img.out, " opacity=\"")
+    svg_print_float(img.out, property.value)
+    print(img.out, '"')
+end
 
 
-#function print_property(img::SVG, property::StrokeOpacityPrimitive)
-    #print(img.out, " stroke-opacity=\"")
-    #svg_print_float(img.out, property.value)
-    #print(img.out, '"')
-#end
+function print_property(img::SVG, property::StrokeOpacityPrimitive)
+    print(img.out, " stroke-opacity=\"")
+    svg_print_float(img.out, property.value)
+    print(img.out, '"')
+end
 
 
-#function print_property(img::SVG, property::VisiblePrimitive)
-    #@printf(img.out, " visibility=\"%s\"",
-            #property.value ? "visible" : "hidden")
-#end
+function print_property(img::SVG, property::VisiblePrimitive)
+    @printf(img.out, " visibility=\"%s\"",
+            property.value ? "visible" : "hidden")
+end
 
 
-## I may end up applying the same clip path to many forms separately, so I
-## shouldn't make a new one for each applicaiton. Where should that happen?
-#function print_property(img::SVG, property::ClipPrimitive)
-    #url = clippathurl(img, property)
-    #@printf(img.out, " clip-path=\"url(#%s)\"", url)
-#end
+# I may end up applying the same clip path to many forms separately, so I
+# shouldn't make a new one for each applicaiton. Where should that happen?
+function print_property(img::SVG, property::ClipPrimitive)
+    url = clippathurl(img, property)
+    @printf(img.out, " clip-path=\"url(#%s)\"", url)
+end
 
 
-#function print_property(img::SVG, property::FontPrimitive)
-    #@printf(img.out, " font-family=\"%s\"", escape_string(property.family))
-#end
+function print_property(img::SVG, property::FontPrimitive)
+    @printf(img.out, " font-family=\"%s\"", escape_string(property.family))
+end
 
 
-#function print_property(img::SVG, property::FontSizePrimitive)
-    #print(img.out, " font-size=\"")
-    #svg_print_float(img.out, property.value.abs)
-    #print(img.out, '"')
-#end
+function print_property(img::SVG, property::FontSizePrimitive)
+    print(img.out, " font-size=\"")
+    svg_print_float(img.out, property.value.value)
+    print(img.out, '"')
+end
 
 
 function print_property(img::SVG, property::SVGIDPrimitive)
@@ -675,23 +676,23 @@ function print_property(img::SVG, property::SVGIDPrimitive)
 end
 
 
-#function print_property(img::SVG, property::SVGClassPrimitive)
-    #@printf(img.out, " class=\"%s\"", escape_string(property.value))
-#end
+function print_property(img::SVG, property::SVGClassPrimitive)
+    @printf(img.out, " class=\"%s\"", escape_string(property.value))
+end
 
 
-#function print_property(img::SVG, property::SVGAttributePrimitive)
-    #@printf(img.out, " %s=\"%s\"",
-            #property.attribute, escape_string(property.value))
-#end
+function print_property(img::SVG, property::SVGAttributePrimitive)
+    @printf(img.out, " %s=\"%s\"",
+            property.attribute, escape_string(property.value))
+end
 
 
-#function print_property(img::SVG, property::JSIncludePrimitive)
-    #push!(img.jsheader, property.value)
-    #if property.jsmodule != nothing
-        #push!(img.jsmodules, property.jsmodule)
-    #end
-#end
+function print_property(img::SVG, property::JSIncludePrimitive)
+    push!(img.jsheader, property.value)
+    if property.jsmodule != nothing
+        push!(img.jsmodules, property.jsmodule)
+    end
+end
 
 
 function print_property(img::SVG, property::JSCallPrimitive)
@@ -745,10 +746,6 @@ end
 # ------------
 
 function draw{T}(img::SVG, form::Form{T})
-    # TODO: This is much slower that the version below. Figure out why?
-    #for (idx, primitive) in enumerate(form.primitives)
-        #draw(img, primitive, idx)
-    #end
     for i in 1:length(form.primitives)
         draw(img, form.primitives[i], i)
     end
@@ -855,61 +852,58 @@ end
 #end
 
 
-#function draw(img::SVG, prim::LinePrimitive, idx::Int)
-    #n = length(prim.points)
-    #if n <= 1; return; end
+function draw(img::SVG, prim::LinePrimitive, idx::Int)
+    n = length(prim.points)
+    if n <= 1; return; end
 
-    #paths = make_paths(prim.points)
-    #for path in paths
-        #indent(img)
-        #print(img.out, "<path fill=\"none\" d=\"")
-        #print_svg_path(img.out, path, true)
-        #print(img.out, "\"")
-        #print_vector_properties(img, idx, true)
-        #print(img.out, "/>\n")
-    #end
-#end
+    indent(img)
+    print(img.out, "<path fill=\"none\" d=\"")
+    print_svg_path(img.out, prim.points, true)
+    print(img.out, "\"")
+    print_vector_properties(img, idx, true)
+    print(img.out, "/>\n")
+end
 
 
-#function draw(img::SVG, prim::TextPrimitive, idx::Int)
-    #indent(img)
-    #print(img.out, "<text x=\"")
-    #svg_print_float(img.out, prim.position.x.abs)
-    #print(img.out, "\" y=\"")
-    #svg_print_float(img.out, prim.position.y.abs)
-    #print(img.out, '"')
+function draw(img::SVG, prim::TextPrimitive, idx::Int)
+    indent(img)
+    print(img.out, "<text x=\"")
+    svg_print_float(img.out, prim.position[1].value)
+    print(img.out, "\" y=\"")
+    svg_print_float(img.out, prim.position[2].value)
+    print(img.out, '"')
 
-    #if is(prim.halign, hcenter)
-        #print(img.out, " text-anchor=\"middle\"")
-    #elseif is(prim.halign, hright)
-        #print(img.out, " text-anchor=\"end\"")
-    #end
+    if is(prim.halign, hcenter)
+        print(img.out, " text-anchor=\"middle\"")
+    elseif is(prim.halign, hright)
+        print(img.out, " text-anchor=\"end\"")
+    end
 
-    ## NOTE: "dominant-baseline" is the correct way to vertically center text
-    ## in SVG, but implementations are pretty inconsistent (chrome in particular
-    ## does a really bad job). We fake it by shifting by some reasonable amount.
-    #if is(prim.valign, vcenter)
-        #print(img.out, " dy=\"0.35em\"")
-        ##print(img.out, " style=\"dominant-baseline:central\"")
-    #elseif is(prim.valign, vtop)
-        #print(img.out, " dy=\"0.6em\"")
-        ##print(img.out, " style=\"dominant-baseline:text-before-edge\"")
-    #end
+    # NOTE: "dominant-baseline" is the correct way to vertically center text
+    # in SVG, but implementations are pretty inconsistent (chrome in particular
+    # does a really bad job). We fake it by shifting by some reasonable amount.
+    if is(prim.valign, vcenter)
+        print(img.out, " dy=\"0.35em\"")
+        #print(img.out, " style=\"dominant-baseline:central\"")
+    elseif is(prim.valign, vtop)
+        print(img.out, " dy=\"0.6em\"")
+        #print(img.out, " style=\"dominant-baseline:text-before-edge\"")
+    end
 
-    #if abs(prim.rot.theta) > 1e-4
-        #print(img.out, " transform=\"rotate(")
-        #svg_print_float(img.out, rad2deg(prim.rot.theta))
-        #print(img.out, ", ")
-        #svg_print_float(img.out, prim.rot.offset.x.abs)
-        #print(img.out, ", ")
-        #svg_print_float(img.out, prim.rot.offset.y.abs)
-        #print(img.out, ")\"")
-    #end
-    #print_vector_properties(img, idx)
+    if abs(prim.rot.theta) > 1e-4
+        print(img.out, " transform=\"rotate(")
+        svg_print_float(img.out, rad2deg(prim.rot.theta))
+        print(img.out, ", ")
+        svg_print_float(img.out, prim.rot.offset[1].value)
+        print(img.out, ", ")
+        svg_print_float(img.out, prim.rot.offset[2].value)
+        print(img.out, ")\"")
+    end
+    print_vector_properties(img, idx)
 
-    #@printf(img.out, ">%s</text>\n",
-            #svg_newlines(pango_to_svg(prim.value), prim.position.x.abs))
-#end
+    @printf(img.out, ">%s</text>\n",
+            svg_newlines(pango_to_svg(prim.value), prim.position[1].value))
+end
 
 
 #function draw(img::SVG, prim::CurvePrimitive, idx::Int)
