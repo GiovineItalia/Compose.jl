@@ -219,10 +219,10 @@ function draw(img::Patchable, prim::PolygonPrimitive)
     paths = make_paths(prim.points)
     if length(paths) > 1
         addto(Elem(:svg, :g)
-              [Elem(:svg, :path, fill="none", d=svg_fmt_path(path, true) * " z")
+              [Elem(:svg, :path, d=svg_fmt_path(path, true) * " z")
                for path in paths])
     else
-        Elem(:svg, :path, fill="none", d=svg_fmt_path(paths[1], true) * " z")
+        Elem(:svg, :path, d=svg_fmt_path(paths[1], true) * " z")
     end
 end
 
