@@ -322,19 +322,64 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length)
 end
 
 
+function resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cx})
+    return ((a.value - units.x0) / width(units)) * box.a[1]
+end
+
+
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cx})
-    return (a.value / width(units)) * width(box).value * mm
+    return (a.value / width(units)) * box.a[1]
+end
+
+
+function resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy})
+    return ((a.value - units.y0) / height(units)) * box.a[2]
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy})
-    return (a.value / height(units)) * height(box).value * mm
+    return (a.value / height(units)) * box.a[2]
 end
 
+#function absolute_units(u::Measure,
+                        #t::Transform,
+                        #unit_box::UnitBox,
+                        #parent_box::AbsoluteBoundingBox)
+    #add_measure_part(u.abs,
+      #add_measure_part(
+        #abs(add_measure_part((u.cx / unit_box.width) * parent_box.width,
+                             #(u.cy / unit_box.height) * parent_box.height)),
+        #abs(u.cw * parent_box.width) +abs(u.ch * parent_box.height)))
+#end
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec{2})
-        (resolve(box, units, t, p[1]) + box.x0[1],
-         resolve(box, units, t, p[2]) + box.x0[2])
+
+#function absolute_position_cy(cy, unit_box::UnitBox,
+                              #parent_box::AbsoluteBoundingBox)
+    #(@compat Float64(((cy - unit_box.y0) / unit_box.height))) * parent_box.height
+#end
+
+
+#function absolute_x_position(u::Measure,
+                             #t::Transform,
+                             #unit_box::UnitBox,
+                             #parent_box::AbsoluteBoundingBox)
+    #parent_box.x0 +
+      #u.abs +
+      #absolute_position_cx(u.cx, unit_box, parent_box) +
+      #absolute_position_cy(u.cy, unit_box, parent_box) +
+      #u.cw * parent_box.width +
+      #u.ch * parent_box.height
+#end
+
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec2)
+    # Ok, this is not quite right.
+    # We aren't accounting for units.x0/y0
+    @show box.x0
+    @show p
+    xy = (resolve_position(box, units, t, p[1]) + box.x0[1],
+          resolve_position(box, units, t, p[2]) + box.x0[2])
+    @show xy
+    return xy
 end
 
 
@@ -349,13 +394,28 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Rotation)
 end
 
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::UnitBox)
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, u::UnitBox)
+    if !ispadded(units)
+        return u
+    else
+        leftpad   = resolve(box, units, t, u.leftpad)
+        rightpad  = resolve(box, units, t, u.rightpad)
+        toppad    = resolve(box, units, t, u.toppad)
+        bottompad = resolve(box, units, t, u.bottompad)
 
-    return UnitBox(
+        # just give up trying to pad the units if it's impossible
+        if leftpad + rightpad >= box.a[1] ||
+           toppad + bottompad >= box.a[2]
+            return UnitBox(u.x0, u.y0, u.width, u.height)
+        end
 
-    )
+        width = u.width * (box.a[1] / (box.a[1] - leftpad - rightpad))
+        height = u.height * (box.a[2] / (box.a[2] - toppad - bottompad))
+        x0 = u.x0 - width * (leftpad / box.a[1])
+        y0 = u.y0 - height * (toppad / box.a[2])
 
-    error("TODO")
+        return UnitBox(x0, y0, width, height)
+    end
 end
 
 
@@ -386,32 +446,13 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Max)
 end
 
 
+resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a) = resolve(box, units, t, a)
 
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, u::UnitBox)
-    if !ispadded(units)
-        return units
-    else
-        leftpad   = resolve(box, units, t, units.leftpad)
-        rightpad  = resolve(box, units, t, units.rightpad)
-        toppad    = resolve(box, units, t, units.toppad)
-        bottompad = resolve(box, units, t, units.bottompad)
-
-        # just give up trying to pad the units if it's impossible
-        if leftpad + rightpad >= box.width ||
-           toppad + bottompad >= box.height
-            return UnitBox(units.x0, units.y0, units.width, units.height)
-        end
-
-        width = units.width * (box.width / (box.width - leftpad - rightpad))
-        height = units.height * (box.height / (box.height - toppad - bottompad))
-        x0 = units.x0 - width * (leftpad / box.width)
-        y0 = units.y0 - height * (toppad / box.height)
-
-        return UnitBox(x0, y0, width, height)
-    end
+function resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, op::Add)
+    return resolve_position(box, units, t, op.a) + resolve_position(box, units, t, op.b)
 end
+
 
 
 ## Convert a Rotation to a Transform

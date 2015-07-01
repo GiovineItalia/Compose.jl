@@ -53,7 +53,7 @@ function polygon{T <: XYTupleOrVec}(points::AbstractArray{T})
     end
     VecType = Tuple{XM, YM}
 
-    return Polygon([PolygonPrimitive(VecType[(XM(point[1]), YM(point[2]))
+    return Polygon([PolygonPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
                     for point in points])])
 end
 
@@ -340,14 +340,14 @@ typealias Text Form{TextPrimitive}
 function text(x, y, value::String,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation())
-    return Text([TextPrimitive((x, y), value, halign, valign, rot)])
+    return Text([TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot)])
 end
 
 
 function text(x, y, value,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation())
-    return Text([TextPrimitive((x, y), string(value), halign, valign, rot)])
+    return Text([TextPrimitive((x_measure(x), y_measure(y)), string(value), halign, valign, rot)])
 end
 
 

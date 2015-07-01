@@ -469,6 +469,7 @@ function drawpart(backend::Backend, container::Container,
             error("Error: A container promise function did not evaluate to a container")
         end
         drawpart(backend, container, parent_transform, units, parent_box)
+        return
     end
 
     ctx = container
