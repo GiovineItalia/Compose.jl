@@ -335,6 +335,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         h_solution[tbl.y_focus[k]] = focused_row_heights[k]
     end
 
+    @show minrowheights
+
     x_solution = cumsum(mincolwidths) .- w_solution
     y_solution = cumsum(minrowheights) .- h_solution
 
