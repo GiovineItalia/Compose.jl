@@ -1,10 +1,10 @@
 using Compose
 
 #Run the examples
-testdir = joinpath(Pkg.dir("Compose"), "test")
+testdir = dirname(@__FILE__)
 cd(testdir)
 
-exampledir = joinpath(Pkg.dir("Compose"), "examples")
+exampledir = joinpath(dirname(@__FILE__), "..", "examples")
 for ex in readdir(exampledir)
     endswith(ex, ".jl") || continue
     srand(1) #Needed so that SVG uuid is reproducible
@@ -12,7 +12,7 @@ for ex in readdir(exampledir)
 end
 
 #Compare with cached output
-cachedout = joinpath(Pkg.dir("Compose"), "test", "data")
+cachedout = joinpath(dirname(@__FILE__), "data")
 differentfiles = String[]
 for output in readdir(cachedout)
     cached = open(readall, joinpath(cachedout, output))
