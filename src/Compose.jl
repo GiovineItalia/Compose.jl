@@ -1,5 +1,3 @@
-
-
 module Compose
 
 using Color
@@ -31,11 +29,14 @@ function isinstalled(pkg, ge=v"0.0.0")
         # Pkg.installed might throw an error,
         # we need to account for it to be able to precompile
         ver = Pkg.installed(pkg)
-        if ver != nothing && ver >= ge
+        ver == nothing && try
+            # Assume the version is new enough if the package is in LOAD_PATH
+            require(pkg)
             return true
-        else
+        catch
             return false
         end
+        return ver >= ge
     catch
         return false
     end
