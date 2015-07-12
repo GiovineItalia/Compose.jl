@@ -1,12 +1,12 @@
-
 # Font handling when pango and fontconfig are not available.
 
 # Define this even if we're not calling pango, since cairo needs it.
 const PANGO_SCALE = 1024.0
 
 # Serialized glyph sizes for commont fonts.
-const glyphsizes = JSON.parse(
-    readall(open(joinpath(Pkg.dir("Compose"), "data", "glyphsize.json"))))
+const glyphsizes = open(fd -> JSON.parse(readall(fd)),
+                        joinpath(dirname(@__FILE__), "..", "data",
+                                 "glyphsize.json"))
 
 
 # It's better to overestimate text extents than to underestimes, since the later
