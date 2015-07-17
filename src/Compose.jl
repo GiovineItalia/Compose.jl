@@ -126,7 +126,7 @@ default_stroke_color = nothing
 default_fill_color = color("black")
 
 
-# Use cairo for the PNG, PS, PDF if its installed.
+# Use cairo for the PNG, PS, PDF if it's installed.
 try
     require("Cairo")
     include("cairo_backends.jl")
@@ -134,12 +134,9 @@ catch
     global PNG
     global PS
     global PDF
-    PNG(::Union(IO,String), ::MeasureOrNumber, ::MeasureOrNumber) =
-        error("Cairo must be installed to use the PNG backend.")
-    PS(::Union(IO,String), ::MeasureOrNumber, ::MeasureOrNumber) =
-        error("Cairo must be installed to use the PS backend.")
-    PDF(::Union(IO,String), ::MeasureOrNumber, ::MeasureOrNumber) =
-        error("Cairo must be installed to use the PDF backend.")
+    PNG(args...) = error("Cairo must be installed to use the PNG backend.")
+    PS(args...) = error("Cairo must be installed to use the PS backend.")
+    PDF(args...) = error("Cairo must be installed to use the PDF backend.")
 end
 include("svg.jl")
 include("pgf_backend.jl")
