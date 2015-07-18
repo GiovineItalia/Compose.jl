@@ -240,7 +240,7 @@ function Rotation{P <: Vec}(theta::Float64, offset::P)
 end
 
 function Rotation(theta::Number)
-    Rotation{SimpleVec}(convert(Float64, theta), (0.5w, 0.5h))
+    Rotation{Vec2}(convert(Float64, theta), (0.5w, 0.5h))
 end
 
 function Rotation(theta::Number, offset::XYTupleOrVec)
@@ -372,13 +372,8 @@ end
 #end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec2)
-    # Ok, this is not quite right.
-    # We aren't accounting for units.x0/y0
-    @show box.x0
-    @show p
     xy = (resolve_position(box, units, t, p[1]) + box.x0[1],
           resolve_position(box, units, t, p[2]) + box.x0[2])
-    @show xy
     return xy
 end
 
@@ -395,7 +390,7 @@ end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, u::UnitBox)
-    if !ispadded(units)
+    if !ispadded(u)
         return u
     else
         leftpad   = resolve(box, units, t, u.leftpad)

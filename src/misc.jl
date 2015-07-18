@@ -115,15 +115,16 @@ macro makeprimitives(args)
 end
 
 
-function narrow_polygon_point_types{XM, YM}(
+function narrow_polygon_point_types{XM <: Measure, YM <: Measure}(
             point_arrays::AbstractArray{Vector{Tuple{XM, YM}}})
     return (XM, YM)
 end
 
 
-function narrow_polygon_point_types(point_arrays::AbstractArray)
-    type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (XM, YM)
+type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (Any, Any)
+type_params{XM <: Measure, YM <: Measure}(p::Type{Tuple{XM, YM}}) = (XM, YM)
 
+function narrow_polygon_point_types(point_arrays::AbstractArray)
     if !isempty(point_arrays) && all([eltype(arr) <: Vec for arr in point_arrays])
         xm, ym = type_params(eltype(point_arrays[1]))
         for i in 2:length(point_arrays)
@@ -134,6 +135,31 @@ function narrow_polygon_point_types(point_arrays::AbstractArray)
         return xm, ym
     else
         return Any, Any
+    end
+end
+
+
+function narrow_polygon_point_types{P <: Tuple}(ring_arrays::Vector{Vector{Vector{P}}})
+    type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (XM, YM)
+
+    xm = nothing
+    ym = nothing
+    for point_arrays in ring_arrays
+        if !isempty(point_arrays) && all([eltype(arr) <: Vec for arr in point_arrays])
+            if xm == nothing
+                xm, ym = type_params(eltype(point_arrays[1]))
+            end
+            for i in 2:length(point_arrays)
+                if type_params(eltype(point_arrays[i])) != (xm, ym)
+                    return Any, Any
+                end
+            end
+        end
+    end
+    if xm == nothing
+        return Any, Any
+    else
+        return xy, ym
     end
 end
 
