@@ -149,7 +149,7 @@ vstack() = context()
 function vstack(contexts::Context...; x0::MeasureOrNumber=0,
                 y0::MeasureOrNumber=0, width::MeasureOrNumber=0)
     if width == 0
-        width = max([context.box.width for context in contexts]...)
+        width = max([context.box.a[1] for context in contexts]...)
     end
     return vstack(x0, y0, width, [(context, hcenter) for context in contexts]...)
 end

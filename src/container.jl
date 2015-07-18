@@ -283,7 +283,7 @@ abstract ContainerPromise <: Container
 immutable ParentDrawContext
     t::Transform
     units::UnitBox
-    box::AbsoluteBox
+    box::Absolute2DBox
 end
 
 
@@ -515,7 +515,7 @@ function drawpart(backend::Backend, container::Container,
 
     if ctx.clip
         x0 = ctx.box.x0[1]
-        y0 = ctx.box.x0[1]
+        y0 = ctx.box.x0[2]
         x1 = x0 + ctx.box.a[1]
         y1 = y0 + ctx.box.a[2]
         push!(properties,
@@ -560,7 +560,7 @@ function drawpart(backend::Backend, container::Container,
             child = child.tail
         end
 
-        sort!(container_children, rev=true)
+        sort!(container_children)
         for (_, _, child) in container_children
             drawpart(backend, child, transform, units, box)
         end

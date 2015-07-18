@@ -77,8 +77,8 @@ type Image{B <: ImageBackend} <: Backend
     ppmm::Float64
 
     # For use with the t/T and s/S commands in SVG-style paths
-    last_ctrl1_point::Union(Point, Nothing)
-    last_ctrl2_point::Union(Point, Nothing)
+    last_ctrl1_point::Nullable{AbsoluteVec2}
+    last_ctrl2_point::Nullable{AbsoluteVec2}
 
     function Image(surface::CairoSurface, ctx::CairoContext, out::IO)
         img = new()
@@ -104,8 +104,8 @@ type Image{B <: ImageBackend} <: Backend
         img.finished = false
         img.emit_on_finish = false
         img.ppmm = 72 / 25.4
-        img.last_ctrl1_point = nothing
-        img.last_ctrl2_point = nothing
+        img.last_ctrl1_point = Nullable{AbsoluteVec2}()
+        img.last_ctrl2_point = Nullable{AbsoluteVec2}()
         img
     end
 
@@ -1022,8 +1022,8 @@ function draw_path_op(img::Image, op::QuadCurveRelPathOp)
                    Measure(abs=(y2 + 2*cy)/3)),
              op.to)
     img.last_ctrl1_point =
-        Point(Measure(abs=op.ctrl1[1].value + xy.x.abs),
-              Measure(abs=op.ctrl1[2].value + xy.y.abs))
+        (Measure(abs=op.ctrl1[1].value + xy.x.abs),
+         Measure(abs=op.ctrl1[2].value + xy.y.abs))
 end
 
 
@@ -1033,11 +1033,11 @@ function draw_path_op(img::Image, op::QuadCurveShortAbsPathOp)
     x2, y2 = op.to[1].value, op.to[2].value
 
     ctrl1 = img.last_ctrl1_point
-    if ctrl1 === nothing
+    if isnull(img.last_ctrl1_point)
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=2*x1 - ctrl1[1].value),
-                      Measure(abs=2*y1 - ctrl1[2].value))
+        ctrl1 = (Measure(abs=2*x1 - ctrl1[1].value),
+                 Measure(abs=2*y1 - ctrl1[2].value))
     end
     cx, cy = ctrl1[1].value, ctrl1[2].value
 

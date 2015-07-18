@@ -60,7 +60,7 @@ end
 
 function polygon(point_arrays::AbstractArray)
     XM, YM = narrow_polygon_point_types(point_arrays)
-    VecType = XM == YM == Any ? Vec : Vec{XM, YM}
+    VecType = XM == YM == Any ? Vec : Tuple{XM, YM}
     PrimType = XM == YM == Any ? PolygonPrimitive : PolygonPrimitive{VecType}
 
     polyprims = Array(PrimType, length(point_arrays))
@@ -90,28 +90,48 @@ function boundingbox(form::PolygonPrimitive, linewidth::Measure,
                        y1 - y0 + linewidth)
 end
 
-immutable ComplexPolygonPrimitive{P <: Point} <: FormPrimitive
+immutable ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
     rings::Vector{Vector{P}}
 end
 
 typealias ComplexPolygon Form{ComplexPolygonPrimitive}
 
+
 function complexpolygon()
-    return ComplexPolygon([ComplexPolygonPrimitive(Point[])])
+    return ComplexPolygon([ComplexPolygonPrimitive(Vec[])])
 end
 
-function complexpolygon{T <: Real}(coords::Vector{Vector{Vector{T}}})
-    return ComplexPolygon([ComplexPolygonPrimitive(Vector{Point}[Point[Point(i,j) for (i,j) in ring] for ring in coords])])
+
+function complexpolygon(rings::Vector{Vector})
+    XM, YM = narrow_polygon_point_types(rings)
+    if XM == Any
+        XM = Length{:cx, Float64}
+    end
+    if YM == Any
+        YM = Length{:cy, Float64}
+    end
+    VecType = Tuple{XM, YM}
+
+    return ComplexPolygon([
+        ComplexPolygonPrimitive([VecType[(x_measure(point[1]), y_measure(point[2]))
+                                         for point in points]])])
 end
 
-function complexpolygon{P <: Point}(rings::Vector{Vector{P}})
-    return ComplexPolygon([ComplexPolygonPrimitive(rings)])
+
+function complexpolygon(ring_arrays::Vector{Vector{Vector}})
+    XM, YM = narrow_polygon_point_types(coords)
+    VecType = XM == YM == Any ? Vec : Tuple{XM, YM}
+    PrimType = XM == YM == Any ? ComplexPolygonPrimitive : ComplexPolygonPrimitive{VecType}
+
+    ComplexPolygon([PrimType[[(x_measure(x), y_measure(y)) for (x, y) in ring]
+                    for ring in ring_array] for ring_array in ring_arrays])
 end
 
-function absolute_units(p::ComplexPolygonPrimitive, t::Transform, units::UnitBox,
-                        box::AbsoluteBoundingBox)
+
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 p::ComplexPolygonPrimitive)
     return ComplexPolygonPrimitive{SimplePoint}(
-                [SimplePoint[absolute_units(point, t, units, box) for point in ring]
+                [SimplePoint[resolve(box, units, t, point, t) for point in ring]
                 for ring in p.rings])
 end
 
@@ -144,8 +164,8 @@ end
 function rectangle(x0s::AbstractArray, y0s::AbstractArray,
                    widths::AbstractArray, heights::AbstractArray)
     return @makeform (x0 in x0s, y0 in y0s, width in widths, height in heights),
-                     RectanglePrimitive((x_measure(x0), y_measure(y0)),
-                                        x_measure(width), y_measure(height))
+        RectanglePrimitive{Vec2, Measure, Measure}((x_measure(x0), y_measure(y0)),
+                                                    x_measure(width), y_measure(height))
 end
 
 
@@ -156,13 +176,15 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
     width = resolve(box, units, t, p.width)
     height = resolve(box, units, t, p.height)
 
-    if isa(p.corner[1], AbsoluteLength) && units.width < zero(typeof(units.width))
+    if width < 0mm
+        width = abs(width)
         x = corner[1] - width
     else
         x = corner[1]
     end
 
-    if isa(p.corner[2], AbsoluteLength) && units.height < zero(typeof(units.height))
+    if height < 0mm
+        height = abs(height)
         y = corner[2] - height
     else
         y = corner[2]
@@ -355,7 +377,7 @@ function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{String
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
               rots::AbstractArray=[Rotation()])
     return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-            TextPrimitive((x_measure(x), x_measure(y)), value, halign, valign, rot)
+            TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot)
 end
 
 
@@ -419,14 +441,14 @@ end
 
 function line{T <: XYTupleOrVec}(points::AbstractArray{T})
     XM, YM = narrow_polygon_point_types(Vector[points])
-    VecType = XM == YM == Any ? Vec : Vec{XM, YM}
-    return Line([LinePrimitive(VecType[convert(VecType, point) for point in points])])
+    VecType = XM == YM == Any ? Vec2 : Tuple{XM, YM}
+    return Line([LinePrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])])
 end
 
 
 function line(point_arrays::AbstractArray)
     XM, YM = narrow_polygon_point_types(point_arrays)
-    VecType = XM == YM == Any ? Vec : Vec{XM, YM}
+    VecType = XM == YM == Any ? Vec2 : Tuple{XM, YM}
     PrimType = XM == YM == Any ? LinePrimitive : LinePrimitive{VecType}
 
     lineprims = Array(PrimType, length(point_arrays))
