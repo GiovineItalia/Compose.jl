@@ -128,10 +128,9 @@ default_fill_color = color("black")
 
 
 # Use cairo for the PNG, PS, PDF if it's installed.
-try
-    require("Cairo")
+if isinstalled("Cairo")
     include("cairo_backends.jl")
-catch
+else
     global PNG
     global PS
     global PDF
@@ -149,10 +148,7 @@ end
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 
-try
-    # Trigger an exception if unavailable.
-    require("Fontconfig")
-
+if isinstalled("Fontconfig")
     pango_cairo_ctx = C_NULL
     include("pango.jl")
 
@@ -166,7 +162,7 @@ try
                                  Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
         pangolayout = PangoLayout()
     end
-catch
+else
     include("fontfallback.jl")
 end
 
