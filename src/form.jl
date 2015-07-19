@@ -1076,9 +1076,8 @@ function path{T <: AbstractArray}(tokens::AbstractArray{T})
 end
 
 
-function absolute_units(p::PathPrimitive, t::Transform, units::UnitBox,
-                        box::AbsoluteBox)
-    return PathPrimitive([absolute_units(op, t, units, box) for op in p.ops])
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PathPrimitive)
+    return PathPrimitive([resolve(box, units, t, op) for op in p.ops])
 end
 
 
