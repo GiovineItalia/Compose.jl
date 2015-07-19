@@ -13,8 +13,11 @@ using Measures: Add, Min, Max, Div, Mul, Neg
 # TODO: Possibly we should have two relative unit types.
 # One to indicate a position in the context, and one to indicate a size.
 
-const cx = Length{:cx, Float64}(1.0)
-const cy = Length{:cy, Float64}(1.0)
+const cx = Length{:cx}
+const cy = Length{:cy}
+
+Base.(:*){T}(a::T, b::Type{cx}) = x_measure(a)
+Base.(:*){T}(a::T, b::Type{cy}) = y_measure(a)
 
 # Pixels are not typically used in Compose in preference of absolute
 # measurements or measurements relative to parent canvases. So for the
@@ -27,14 +30,51 @@ const px = mm/assumed_ppmm
 typealias XYTupleOrVec Union(NTuple{2}, Vec)
 typealias MeasureOrNumber Union(Measure, Number)
 
+
+# Scaling w and h components
+# --------------------------
+
+# Compute the length of the given type.
+function sum_component{T <: Length}(::Type{T}, l)
+    return 0.0
+end
+
+
+function sum_component{T <: Length}(::Type{T}, l::T)
+    return l.value
+end
+
+
+function sum_component{T <: Length}(::Type{T}, l::Add)
+    return sum_component(T, l.a) + sum_component(T, l.b)
+end
+
+
+# Scale a length component by some factor.
+function scale_component{T <: Length}(::Type{T}, scale, l)
+    return l
+end
+
+
+function scale_component{T <: Length}(::Type{T}, scale, l::T)
+    return T(scale * l.value)
+end
+
+
+function scale_component{T <: Length}(::Type{T}, scale, l::Add)
+    return scale_component(T, scale, l.a) + scale_component(T, scale, l.b)
+end
+
+
+
 # Interpretation of bare numbers
 # ------------------------------
 
 x_measure(a::Measure) = a
-x_measure(a) = a * cx
+x_measure{T}(a::T) = Length{:cx, T}(a)
 
 y_measure(a::Measure) = a
-y_measure(a) = a * cy
+y_measure{T}(a::T) = Length{:cy, T}(a)
 
 size_measure(a::Measure) = a
 size_measure(a) = a * mm
@@ -244,11 +284,11 @@ function Rotation(theta::Number)
 end
 
 function Rotation(theta::Number, offset::XYTupleOrVec)
-    Rotation(convert(Float64, theta), convert(Vec, offset))
+    Rotation(convert(Float64, theta), (x_measure(offset[1]), y_measure(offset[2])))
 end
 
 function Rotation(theta::Number, offset_x, offset_y)
-    Rotation(convert(Float64, theta), (offset_x, offset_y))
+    Rotation(convert(Float64, theta), (x_measure(offset_x), y_measure(offset_y)))
 end
 
 
@@ -284,7 +324,7 @@ type Mirror
     end
 
     function Mirror(theta::Number, offset::XYTupleOrVec)
-        new(convert(Float64, theta), convert(Vec, offset))
+        new(convert(Float64, theta), (x_measure(offset[1]), y_measure(offset[2])))
     end
 
     function Mirror(theta::Number, offset_x, offset_y)
