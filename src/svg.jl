@@ -814,42 +814,42 @@ function draw(img::SVG, prim::CirclePrimitive, idx::Int)
 end
 
 
-#function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
-    #cx = prim.center[1].abs
-    #cy = prim.center.y.abs
-    #rx = sqrt((prim[1]_point.x.abs - cx)^2 +
-              #(prim[1]_point.y.abs - cy)^2)
-    #ry = sqrt((prim.y_point[1].abs - cx)^2 +
-              #(prim.y_point.y.abs - cy)^2)
-    #theta = rad2deg(atan2(prim[1]_point.y.abs - cy,
-                          #prim[1]_point.x.abs - cx))
+function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
+    cx = prim.center[1].value
+    cy = prim.center[2].value
+    rx = sqrt((prim.x_point[1].value - cx)^2 +
+              (prim.x_point[2].value - cy)^2)
+    ry = sqrt((prim.y_point[1].value - cx)^2 +
+              (prim.y_point[2].value - cy)^2)
+    theta = rad2deg(atan2(prim.x_point[2].value - cy,
+                          prim.x_point[1].value - cx))
 
-    #if !all(isfinite([cx, cy, rx, ry, theta]))
-        #return
-    #end
+    if !all(isfinite([cx, cy, rx, ry, theta]))
+        return
+    end
 
-    #indent(img)
-    #print(img.out, "<ellipse cx=\"")
-    #svg_print_float(img.out, cx)
-    #print(img.out, "\" cy=\"")
-    #svg_print_float(img.out, cy)
-    #print(img.out, "\" rx=\"")
-    #svg_print_float(img.out, rx)
-    #print(img.out, "\" ry=\"")
-    #svg_print_float(img.out, ry)
-    #print(img.out, '"')
-    #if abs(theta) > 1e-4
-        #print(img.out, " transform=\"rotate(")
-        #svg_print_float(img.out, theta)
-        #print(img.out, ' ')
-        #svg_print_float(img.out, cx)
-        #print(img.out, ' ')
-        #svg_print_float(img.out, cy)
-        #print(img.out, ")\"")
+    indent(img)
+    print(img.out, "<ellipse cx=\"")
+    svg_print_float(img.out, cx)
+    print(img.out, "\" cy=\"")
+    svg_print_float(img.out, cy)
+    print(img.out, "\" rx=\"")
+    svg_print_float(img.out, rx)
+    print(img.out, "\" ry=\"")
+    svg_print_float(img.out, ry)
+    print(img.out, '"')
+    if abs(theta) > 1e-4
+        print(img.out, " transform=\"rotate(")
+        svg_print_float(img.out, theta)
+        print(img.out, ' ')
+        svg_print_float(img.out, cx)
+        print(img.out, ' ')
+        svg_print_float(img.out, cy)
+        print(img.out, ")\"")
 
-    #end
-    #print(img.out, "/>\n")
-#end
+    end
+    print(img.out, "/>\n")
+end
 
 
 function draw(img::SVG, prim::LinePrimitive, idx::Int)
@@ -906,251 +906,251 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
 end
 
 
-#function draw(img::SVG, prim::CurvePrimitive, idx::Int)
-    #indent(img)
-    #print(img.out, "<path fill=\"none\" d=\"M")
-    #svg_print_float(img.out, prim.anchor0.x.abs)
-    #print(img.out, ',')
-    #svg_print_float(img.out, prim.anchor0.y.abs)
-    #print(img.out, " C")
-    #svg_print_float(img.out, prim.ctrl0.x.abs)
-    #print(img.out, ',')
-    #svg_print_float(img.out, prim.ctrl0.y.abs)
-    #print(img.out, ' ')
-    #svg_print_float(img.out, prim.ctrl1.x.abs)
-    #print(img.out, ',')
-    #svg_print_float(img.out, prim.ctrl1.y.abs)
-    #print(img.out, ' ')
-    #svg_print_float(img.out, prim.anchor1.x.abs)
-    #print(img.out, ',')
-    #svg_print_float(img.out, prim.anchor1.y.abs)
-    #print(img.out, ' ')
-    #print(img.out, '"')
-    #print_vector_properties(img, idx, true)
-    #print(img.out, "/>\n")
-#end
+function draw(img::SVG, prim::CurvePrimitive, idx::Int)
+    indent(img)
+    print(img.out, "<path fill=\"none\" d=\"M")
+    svg_print_float(img.out, prim.anchor0[1].value)
+    print(img.out, ',')
+    svg_print_float(img.out, prim.anchor0[2].value)
+    print(img.out, " C")
+    svg_print_float(img.out, prim.ctrl0[1].value)
+    print(img.out, ',')
+    svg_print_float(img.out, prim.ctrl0[2].value)
+    print(img.out, ' ')
+    svg_print_float(img.out, prim.ctrl1[1].value)
+    print(img.out, ',')
+    svg_print_float(img.out, prim.ctrl1[2].value)
+    print(img.out, ' ')
+    svg_print_float(img.out, prim.anchor1[1].value)
+    print(img.out, ',')
+    svg_print_float(img.out, prim.anchor1[2].value)
+    print(img.out, ' ')
+    print(img.out, '"')
+    print_vector_properties(img, idx, true)
+    print(img.out, "/>\n")
+end
 
 
-#function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
-    #indent(img)
-    #print(img.out, "<image x=\"")
-    #svg_print_float(img.out, prim.corner.x.abs)
-    #print(img.out, "\" y=\"")
-    #svg_print_float(img.out, prim.corner.y.abs)
-    #print(img.out, "\" width=\"")
-    #svg_print_float(img.out, prim.width.abs)
-    #print(img.out, "\" height=\"")
-    #svg_print_float(img.out, prim.height.abs)
-    #print(img.out, '"')
-    #print_vector_properties(img, idx)
+function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
+    indent(img)
+    print(img.out, "<image x=\"")
+    svg_print_float(img.out, prim.corner[1].value)
+    print(img.out, "\" y=\"")
+    svg_print_float(img.out, prim.corner[2].value)
+    print(img.out, "\" width=\"")
+    svg_print_float(img.out, prim.width.value)
+    print(img.out, "\" height=\"")
+    svg_print_float(img.out, prim.height.value)
+    print(img.out, '"')
+    print_vector_properties(img, idx)
 
-    #print(img.out, " xlink:href=\"data:", prim.mime, ";base64,")
-    #b64pipe = Base64Pipe(img.out)
-    #write(b64pipe, prim.data)
-    #close(b64pipe)
-    #print(img.out, "\"></image>\n")
-#end
-
-
-#function svg_print_path_op(io::IO, op::MoveAbsPathOp)
-    #print(io, 'M')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+    print(img.out, " xlink:href=\"data:", prim.mime, ";base64,")
+    b64pipe = Base64Pipe(img.out)
+    write(b64pipe, prim.data)
+    close(b64pipe)
+    print(img.out, "\"></image>\n")
+end
 
 
-#function svg_print_path_op(io::IO, op::MoveRelPathOp)
-    #print(io, 'm')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::MoveAbsPathOp)
+    print(io, 'M')
+    svg_print_float(io, op.to[1].abs)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].abs)
+end
 
 
-#function svg_print_path_op(io::IO, op::ClosePathOp)
-    #print(io, 'z')
-#end
+function svg_print_path_op(io::IO, op::MoveRelPathOp)
+    print(io, 'm')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::LineAbsPathOp)
-    #print(io, 'L')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::ClosePathOp)
+    print(io, 'z')
+end
 
 
-#function svg_print_path_op(io::IO, op::LineRelPathOp)
-    #print(io, 'l')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::LineAbsPathOp)
+    print(io, 'L')
+    svg_print_float(io, op.to.x[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::HorLineRelPathOp)
-    #print(io, 'H')
-    #svg_print_float(io, op.x.abs)
-#end
+function svg_print_path_op(io::IO, op::LineRelPathOp)
+    print(io, 'l')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::HorLineRelPathOp)
-    #print(io, 'h')
-    #svg_print_float(io, op.Δx.abs)
-#end
+function svg_print_path_op(io::IO, op::HorLineRelPathOp)
+    print(io, 'H')
+    svg_print_float(io, op.x.value)
+end
 
 
-#function svg_print_path_op(io::IO, op::VertLineAbsPathOp)
-    #print(io, 'V')
-    #svg_print_float(io, op.y.abs)
-#end
+function svg_print_path_op(io::IO, op::HorLineRelPathOp)
+    print(io, 'h')
+    svg_print_float(io, op.Δx.value)
+end
 
 
-#function svg_print_path_op(io::IO, op::VertLineRelPathOp)
-    #print(io, 'v')
-    #svg_print_float(io, op.Δy.abs)
-#end
+function svg_print_path_op(io::IO, op::VertLineAbsPathOp)
+    print(io, 'V')
+    svg_print_float(io, op.y.value)
+end
 
 
-#function svg_print_path_op(io::IO, op::CubicCurveAbsPathOp)
-    #print(io, 'C')
-    #svg_print_float(io, op.ctrl1.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl1.y.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl2.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl2.y.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::VertLineRelPathOp)
+    print(io, 'v')
+    svg_print_float(io, op.Δy.value)
+end
 
 
-#function svg_print_path_op(io::IO, op::CubicCurveRelPathOp)
-    #print(io, 'c')
-    #svg_print_float(io, op.ctrl1.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl1.y.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl2.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl2.y.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::CubicCurveAbsPathOp)
+    print(io, 'C')
+    svg_print_float(io, op.ctrl1[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl1[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::CubicCurveShortAbsPathOp)
-    #print(io, 'S')
-    #svg_print_float(io, op.ctrl2.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl2.y.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::CubicCurveRelPathOp)
+    print(io, 'c')
+    svg_print_float(io, op.ctrl1[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl1[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::CubicCurveShortRelPathOp)
-    #print(io, 's')
-    #svg_print_float(io, op.ctrl2.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl2.y.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::CubicCurveShortAbsPathOp)
+    print(io, 'S')
+    svg_print_float(io, op.ctrl2[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
-    #print(io, 'Q')
-    #svg_print_float(io, op.ctrl1.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl1.y.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::CubicCurveShortRelPathOp)
+    print(io, 's')
+    svg_print_float(io, op.ctrl2[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::QuadCurveRelPathOp)
-    #print(io, 'q')
-    #svg_print_float(io, op.ctrl1.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ctrl1.y.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
+    print(io, 'Q')
+    svg_print_float(io, op.ctrl1[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl1[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::QuadCurveShortAbsPathOp)
-    #print(io, 'T')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::QuadCurveRelPathOp)
+    print(io, 'q')
+    svg_print_float(io, op.ctrl1[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl1[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::QuadCurveShortRelPathOp)
-    #print(io, 't')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::QuadCurveShortAbsPathOp)
+    print(io, 'T')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::ArcAbsPathOp)
-    #print(io, 'A')
-    #svg_print_float(io, op.rx.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ry.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.rotation)
-    #print(io, ' ',
-          #op.largearc ? 1 : 0, ' ',
-          #op.sweep ? 1 : 0, ' ')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::QuadCurveShortRelPathOp)
+    print(io, 't')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function svg_print_path_op(io::IO, op::ArcRelPathOp)
-    #print(io, 'a')
-    #svg_print_float(io, op.rx.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.ry.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.rotation)
-    #print(io, ' ',
-          #op.largearc ? 1 : 0, ' ',
-          #op.sweep ? 1 : 0, ' ')
-    #svg_print_float(io, op.to.x.abs)
-    #print(io, ' ')
-    #svg_print_float(io, op.to.y.abs)
-#end
+function svg_print_path_op(io::IO, op::ArcAbsPathOp)
+    print(io, 'A')
+    svg_print_float(io, op.rx.value)
+    print(io, ' ')
+    svg_print_float(io, op.ry.value)
+    print(io, ' ')
+    svg_print_float(io, op.rotation)
+    print(io, ' ',
+          op.largearc ? 1 : 0, ' ',
+          op.sweep ? 1 : 0, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
 
 
-#function draw(img::SVG, prim::PathPrimitive, idx::Int)
-    #indent(img)
-    #print(img.out, "<path d=\"")
-    #for op in prim.ops
-        #svg_print_path_op(img.out, op)
-    #end
-    #print(img.out, '"')
-    #print_vector_properties(img, idx)
-    #print(img.out, "/>\n")
-#end
+function svg_print_path_op(io::IO, op::ArcRelPathOp)
+    print(io, 'a')
+    svg_print_float(io, op.rx.value)
+    print(io, ' ')
+    svg_print_float(io, op.ry.value)
+    print(io, ' ')
+    svg_print_float(io, op.rotation)
+    print(io, ' ',
+          op.largearc ? 1 : 0, ' ',
+          op.sweep ? 1 : 0, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
+
+
+function draw(img::SVG, prim::PathPrimitive, idx::Int)
+    indent(img)
+    print(img.out, "<path d=\"")
+    for op in prim.ops
+        svg_print_path_op(img.out, op)
+    end
+    print(img.out, '"')
+    print_vector_properties(img, idx)
+    print(img.out, "/>\n")
+end
 
 
 # Applying properties
