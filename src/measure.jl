@@ -6,13 +6,6 @@ using Measures: Add, Min, Max, Div, Mul, Neg
 # Measure Constants
 # -----------------
 
-# Measure instances are usually constructed by multiplying by one of these
-# constants. E.g. "10mm"
-
-
-# TODO: Possibly we should have two relative unit types.
-# One to indicate a position in the context, and one to indicate a size.
-
 const cx = Length{:cx}
 const cy = Length{:cy}
 
@@ -310,6 +303,7 @@ function convert(::Type{Transform}, rot::Rotation)
     end
 end
 
+
 # Mirror about a point at a given angle
 type Mirror
     theta::Float64
@@ -337,6 +331,7 @@ type Mirror
             copy(mir.offset))
     end
 end
+
 
 function convert(::Type{Transform}, mir::Mirror)
     n = [cos(mir.theta), sin(mir.theta)]
@@ -381,35 +376,6 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy})
     return (a.value / height(units)) * box.a[2]
 end
 
-#function absolute_units(u::Measure,
-                        #t::Transform,
-                        #unit_box::UnitBox,
-                        #parent_box::AbsoluteBoundingBox)
-    #add_measure_part(u.abs,
-      #add_measure_part(
-        #abs(add_measure_part((u.cx / unit_box.width) * parent_box.width,
-                             #(u.cy / unit_box.height) * parent_box.height)),
-        #abs(u.cw * parent_box.width) +abs(u.ch * parent_box.height)))
-#end
-
-
-#function absolute_position_cy(cy, unit_box::UnitBox,
-                              #parent_box::AbsoluteBoundingBox)
-    #(@compat Float64(((cy - unit_box.y0) / unit_box.height))) * parent_box.height
-#end
-
-
-#function absolute_x_position(u::Measure,
-                             #t::Transform,
-                             #unit_box::UnitBox,
-                             #parent_box::AbsoluteBoundingBox)
-    #parent_box.x0 +
-      #u.abs +
-      #absolute_position_cx(u.cx, unit_box, parent_box) +
-      #absolute_position_cy(u.cy, unit_box, parent_box) +
-      #u.cw * parent_box.width +
-      #u.ch * parent_box.height
-#end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec2)
     xy = (resolve_position(box, units, t, p[1]) + box.x0[1],
@@ -460,21 +426,26 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Neg)
     return -resolve(box, units, t, x.a)
 end
 
+
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Add)
     return resolve(box, units, t, x.a) + resolve(box, units, t, x.b)
 end
+
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Mul)
     return resolve(box, units, t, x.a) * x.b
 end
 
+
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Div)
     return resolve(box, units, t, x.a) / x.b
 end
 
+
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Min)
     return min(resolve(box, units, t, x.a), resolve(box, units, t, x.b))
 end
+
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Max)
     return max(resolve(box, units, t, x.a), resolve(box, units, t, x.b))
@@ -487,138 +458,4 @@ resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a) = resolve(bo
 function resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, op::Add)
     return resolve_position(box, units, t, op.a) + resolve_position(box, units, t, op.b)
 end
-
-
-
-## Convert a Rotation to a Transform
-#function absolute_units(rot::Rotation,
-                        #t::MatrixTransform,
-                        #unit_box::UnitBox,
-                        #parent_box::AbsoluteBox)
-
-    #absrot = Rotation(rot.theta,
-                      #absolute_units(rot.offset, t, unit_box, parent_box))
-
-    #rott = convert(Transform, absrot)
-    #if isa(rott, IdentityTransform)
-        #theta = 0.0
-    #else
-        #theta = atan2(rott.M[2,1], rott.M[1,1])
-    #end
-
-    #return Rotation(theta, absrot.offset)
-#end
-
-#function absolute_units(rot::Rotation,
-                        #t::IdentityTransform,
-                        #unit_box::UnitBox,
-                        #parent_box::AbsoluteBox)
-
-    #return Rotation{SimpleVec}(rot.theta, absolute_units(rot.offset, t, unit_box, parent_box))
-#end
-
-
-#function absolute_units(mir::Mirror,
-                        #t::MatrixTransform,
-                        #unit_box::UnitBox,
-                        #parent_box::AbsoluteBox)
-
-    #theta = atan2(t.M[2,1], t.M[1,1])
-    #Mirror(mir.theta + theta,
-            #absolute_units(mir.point, t, unit_box, parent_box))
-#end
-
-#function absolute_units(mir::Mirror,
-                        #t::IdentityTransform,
-                        #unit_box::UnitBox,
-                        #parent_box::AbsoluteBox)
-
-    #Mirror(mir.theta,
-           #absolute_units(mir.point, t, unit_box, parent_box))
-#end
-
-
-#function absolute_position_cx(::MeasureNil, unit_box::UnitBox,
-                              #parent_box::AbsoluteBox)
-    #0.0
-#end
-
-
-#function absolute_position_cx(cx, unit_box::UnitBox,
-                              #parent_box::AbsoluteBox)
-    #(@compat Float64(((cx - unit_box.x0) / unit_box.width))) * parent_box.width
-#end
-
-
-#function absolute_position_cy(::MeasureNil, unit_box::UnitBox,
-                              #parent_box::AbsoluteBox)
-    #0.0
-#end
-
-
-#function absolute_position_cy(cy, unit_box::UnitBox,
-                              #parent_box::AbsoluteBox)
-    #(@compat Float64(((cy - unit_box.y0) / unit_box.height))) * parent_box.height
-#end
-
-
-#function absolute_x_position(u::Measure,
-                             #t::Transform,
-                             #unit_box::UnitBox,
-                             #parent_box::AbsoluteBox)
-    #parent_box.x0 +
-      #u.abs +
-      #absolute_position_cx(u.cx, unit_box, parent_box) +
-      #absolute_position_cy(u.cy, unit_box, parent_box) +
-      #u.cw * parent_box.width +
-      #u.ch * parent_box.height
-#end
-
-
-#function absolute_y_position(u::Measure,
-                             #t::Transform,
-                             #unit_box::UnitBox,
-                             #parent_box::AbsoluteBox)
-    #parent_box.y0 +
-      #u.abs +
-      #absolute_position_cx(u.cx, unit_box, parent_box) +
-      #absolute_position_cy(u.cy, unit_box, parent_box) +
-      #u.cw * parent_box.width +
-      #u.ch * parent_box.height
-#end
-
-
-## Convert a BoundingBox to a AbsoluteBox
-#function absolute_units(box::BoundingBox,
-                        #t::Transform,
-                        #unit_box::UnitBox,
-                        #parent_box::AbsoluteBox)
-    #AbsoluteBox(
-        #absolute_x_position(box.x0, t, unit_box, parent_box),
-        #absolute_y_position(box.y0, t, unit_box, parent_box),
-        #absolute_units(box.width, t, unit_box, parent_box),
-        #absolute_units(box.height, t, unit_box, parent_box))
-#end
-
-
-## Convert a Vec to a Vec in absolute units
-#function absolute_units(point::Vec,
-                        #t::MatrixTransform,
-                        #unit_box::UnitBox,
-                        #parent_box::AbsoluteBox)
-    #x = absolute_x_position(point.x, t, unit_box, parent_box)
-    #y = absolute_y_position(point.y, t, unit_box, parent_box)
-    #xyt = t.M * [x, y, 1.0]
-    #return Vec(Measure(xyt[1]), Measure(xyt[2]))
-#end
-
-
-#function absolute_units(point::Vec,
-                        #t::IdentityTransform,
-                        #unit_box::UnitBox,
-                        #parent_box::AbsoluteBox)
-    #x = absolute_x_position(point.x, t, unit_box, parent_box)
-    #y = absolute_y_position(point.y, t, unit_box, parent_box)
-    #return Vec(Measure(x), Measure(y))
-#end
 
