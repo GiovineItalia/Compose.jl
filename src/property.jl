@@ -525,12 +525,12 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
         elseif primitive.code[j+1] == '%'
             write(newcode, '%')
         elseif primitive.code[j+1] == 'x'
-            val = resolve(box, units, t, Vec(primitive.args[validx], 0mm))
-            write(newcode, svg_fmt_float(val.x.value))
+            val = resolve(box, units, t, (primitive.args[validx], 0mm))
+            write(newcode, svg_fmt_float(val[1].value))
             validx += 1
         elseif primitive.code[j+1] == 'y'
-            val = resolve(box, units, t, Vec(0mm, primitive.args[validx]))
-            write(newcode, svg_fmt_float(val.y.value))
+            val = resolve(box, units, t, (0mm, primitive.args[validx]))
+            write(newcode, svg_fmt_float(val[2].value))
             validx += 1
         elseif primitive.code[j+1] == 's'
             val = resolve(box, units, t, primitive.args[validx])

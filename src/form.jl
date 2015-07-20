@@ -533,7 +533,7 @@ typealias Bitmap Form{BitmapPrimitive}
 
 
 function bitmap(mime::String, data::Vector{Uint8}, x0, y0, width, height)
-    corner = (x0, y0)
+    corner = (x_measure(x0), y_measure(y0))
     width = x_measure(width)
     height = y_measure(height)
     return Bitmap([BitmapPrimitive(mime, data, corner, width, height)])

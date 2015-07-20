@@ -131,16 +131,16 @@ default_fill_color = color("black")
 
 
 # Use cairo for the PNG, PS, PDF if it's installed.
-#if isinstalled("Cairo")
-    #include("cairo_backends.jl")
-#else
-    #global PNG
-    #global PS
-    #global PDF
-    #PNG(args...) = error("Cairo must be installed to use the PNG backend.")
-    #PS(args...) = error("Cairo must be installed to use the PS backend.")
-    #PDF(args...) = error("Cairo must be installed to use the PDF backend.")
-#end
+if isinstalled("Cairo")
+    include("cairo_backends.jl")
+else
+    global PNG
+    global PS
+    global PDF
+    PNG(args...) = error("Cairo must be installed to use the PNG backend.")
+    PS(args...) = error("Cairo must be installed to use the PS backend.")
+    PDF(args...) = error("Cairo must be installed to use the PDF backend.")
+end
 include("svg.jl")
 #include("pgf_backend.jl")
 
