@@ -41,22 +41,31 @@ end
 
 
 # Find the nearst typeface from the glyph size table.
-function match_font(families::String)
-    smallest_dist = Inf
-    best_match = "Helvetica"
-    for family in [lowercase(strip(family, [' ', '"', '\''])) for family in split(families, ',')]
-        for available_family in keys(glyphsizes)
-            d = levenshtein(family, available_family)
-            if d < smallest_dist
-                smallest_dist = d
-                best_match = available_family
+let
+    matched_font_cache = Dict{String, String}()
+    global match_font
+
+    function match_font(families::String)
+        if haskey(matched_font_cache, families)
+            return matched_font_cache[families]
+        end
+
+        smallest_dist = Inf
+        best_match = "Helvetica"
+        for family in [lowercase(strip(family, [' ', '"', '\''])) for family in split(families, ',')]
+            for available_family in keys(glyphsizes)
+                d = levenshtein(family, available_family)
+                if d < smallest_dist
+                    smallest_dist = d
+                    best_match = available_family
+                end
             end
         end
+
+        matched_font_cache[families] = best_match
+        return best_match
     end
-
-    return best_match
 end
-
 
 # Approximate width of a text in millimeters.
 #
