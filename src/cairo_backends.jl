@@ -56,7 +56,7 @@ type Image{B <: ImageBackend} <: Backend
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
     property_stack::Vector{ImagePropertyFrame}
-    vector_properties::Dict{Type, Union(Nothing, Property)}
+    vector_properties::Dict{Type, Nullable{Property}}
 
     # Close the surface when finished
     owns_surface::Bool
@@ -97,7 +97,7 @@ type Image{B <: ImageBackend} <: Backend
         img.visible = true
         img.state_stack = Array(ImagePropertyState, 0)
         img.property_stack = Array(ImagePropertyFrame, 0)
-        img.vector_properties = Dict{Type, Union(Nothing, Property)}()
+        img.vector_properties = Dict{Type, Nullable{Property}}()
         img.owns_surface = false
         img.ownedfile = false
         img.filename = nothing
@@ -125,13 +125,13 @@ type Image{B <: ImageBackend} <: Backend
         width = size_measure(width)
         height = size_measure(height)
 
-        if !isabsolute(width) || !isabsolute(height)
+        if !isa(width, AbsoluteLength) || !isa(height, AbsoluteLength)
             error("Image size must be specificed in absolute units.")
         end
 
         ppmm = dpi / 25.4
-        width = width.abs * ppmm
-        height = height.abs * ppmm
+        width = width.value * ppmm
+        height = height.value * ppmm
 
         surface = newsurface(B, out, width, height)
         img = Image{B}(surface, CairoContext(surface), out)
@@ -179,12 +179,12 @@ function absolute_native_units{B}(img::Image{B}, u::Float64)
     img.ppmm * u
 end
 
-function width(img::Image)
-    Cairo.width(img.surface) / img.ppmm
+function Measures.width(img::Image)
+    (Cairo.width(img.surface) / img.ppmm) * mm
 end
 
-function height(img::Image)
-    Cairo.height(img.surface) / img.ppmm
+function Measures.height(img::Image)
+    (Cairo.height(img.surface) / img.ppmm) * mm
 end
 
 
@@ -284,7 +284,7 @@ end
 
 
 function root_box(img::Image)
-    AbsoluteBoundingBox(0.0, 0.0, width(img), height(img))
+    BoundingBox(width(img), height(img))
 end
 
 
@@ -345,7 +345,7 @@ function pop_property_frame(img::Image)
     end
 
     for (propertytype, property) in frame.vector_properties
-        img.vector_properties[propertytype] = nothing
+        img.vector_properties[propertytype] = Nullable{Property}()
         for i in length(img.property_stack):-1:1
             if haskey(img.property_stack[i].vector_properties, propertytype)
                 img.vector_properties[propertytype] =
@@ -400,13 +400,14 @@ end
 function push_vector_properties(img::Image, idx::Int)
     save_property_state(img)
     for (propertytype, property) in img.vector_properties
-        if property === nothing
+        if isnull(property)
             continue
         end
-        if idx > length(property.primitives)
+        primitives = get(property).primitives
+        if idx > length(primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
-        apply_property(img, property.primitives[idx])
+        apply_property(img, primitives[idx])
     end
 end
 
@@ -437,7 +438,7 @@ end
 
 
 function apply_property(img::Image, p::StrokeDashPrimitive)
-    img.stroke_dash = map(v -> absolute_native_units(img, v.abs), p.value)
+    img.stroke_dash = map(v -> absolute_native_units(img, v.value), p.value)
 end
 
 
@@ -459,7 +460,7 @@ end
 function apply_property(img::Image, property::LineWidthPrimitive)
     Cairo.set_line_width(
         img.ctx,
-        absolute_native_units(img, property.value.abs))
+        absolute_native_units(img, property.value.value))
 end
 
 
@@ -468,7 +469,7 @@ function apply_property(img::Image, property::FontPrimitive)
                       Ptr{Void}, (Ptr{Void},), img.ctx.layout)
 
     if font_desc == C_NULL
-        size = absolute_native_units(img, default_font_size.abs)
+        size = absolute_native_units(img, default_font_size.value)
     else
         size = ccall((:pango_font_description_get_size, Cairo._jl_libpango),
                      Cint, (Ptr{Void},), font_desc)
@@ -493,7 +494,7 @@ function apply_property(img::Image, property::FontSizePrimitive)
 
     Cairo.set_font_face(img.ctx,
         @sprintf("%s %.2fpx",
-            family, absolute_native_units(img, property.value.abs)))
+            family, absolute_native_units(img, property.value.value)))
 end
 
 
@@ -533,12 +534,11 @@ function current_point(img::Image)
     y = Array(Float64, 1)
     ccall((:cairo_get_current_point, Cairo._jl_libcairo), Void,
           (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
-    return Point(Measure(abs=x[1] / img.ppmm),
-                 Measure(abs=y[1] / img.ppmm))
+    return ((x[1] / img.ppmm)*mm, (x[2] / img.ppmm)*mm)
 end
 
 
-function move_to(img::Image, point::Point)
+function move_to(img::Image, point::AbsoluteVec2)
     Cairo.move_to(
         img.ctx,
         absolute_native_units(img, point[1].value),
@@ -546,7 +546,7 @@ function move_to(img::Image, point::Point)
 end
 
 
-function rel_move_to(img::Image, point::Point)
+function rel_move_to(img::Image, point::AbsoluteVec2)
     Cairo.rel_move_to(
         img.ctx,
         absolute_native_units(img, point[1].value),
@@ -554,7 +554,7 @@ function rel_move_to(img::Image, point::Point)
 end
 
 
-function line_to(img::Image, point::Point)
+function line_to(img::Image, point::AbsoluteVec2)
     Cairo.line_to(
         img.ctx,
         absolute_native_units(img, point[1].value),
@@ -562,7 +562,7 @@ function line_to(img::Image, point::Point)
 end
 
 
-function rel_line_to(img::Image, point::Point)
+function rel_line_to(img::Image, point::AbsoluteVec2)
     Cairo.rel_line_to(
         img.ctx,
         absolute_native_units(img, point[1].value),
@@ -570,7 +570,7 @@ function rel_line_to(img::Image, point::Point)
 end
 
 
-function curve_to(img::Image, ctrl1::Point, ctrl2::Point, to::Point)
+function curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, to::AbsoluteVec2)
     Cairo.curve_to(
         img.ctx,
         absolute_native_units(img, ctrl1[1].value),
@@ -582,7 +582,7 @@ function curve_to(img::Image, ctrl1::Point, ctrl2::Point, to::Point)
 end
 
 
-function rel_curve_to(img::Image, ctrl1::Point, ctrl2::Point, to::Point)
+function rel_curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, to::AbsoluteVec2)
     Cairo.rel_curve_to(
         img.ctx,
         absolute_native_units(img, ctrl1[1].value),
@@ -594,24 +594,25 @@ function rel_curve_to(img::Image, ctrl1::Point, ctrl2::Point, to::Point)
 end
 
 
-function rectangle(img::Image, corner::Point, width::Measure, height::Measure)
+function rectangle(img::Image, corner::AbsoluteVec2,
+                   width::AbsoluteLength, height::AbsoluteLength)
     Cairo.rectangle(img.ctx,
                     absolute_native_units(img, corner[1].value),
                     absolute_native_units(img, corner[2].value),
-                    absolute_native_units(img, width.abs),
-                    absolute_native_units(img, height.abs))
+                    absolute_native_units(img, width.value),
+                    absolute_native_units(img, height.value))
 end
 
 
-function circle(img::Image, center::Point, radius::Measure)
+function circle(img::Image, center::AbsoluteVec2, radius::AbsoluteLength)
     Cairo.circle(img.ctx,
                  absolute_native_units(img, center[1].value),
                  absolute_native_units(img, center[2].value),
-                 absolute_native_units(img, radius.abs))
+                 absolute_native_units(img, radius.value))
 end
 
 
-function curve_to(img::Image, ctrl1::Point, ctrl2::Point, anchor::Point)
+function curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, anchor::AbsoluteVec2)
     Cairo.curve_to(
         img.ctx,
         absolute_native_units(img, ctrl1[1].value),
@@ -735,13 +736,14 @@ function draw(img::Image, form::Form)
     else
         for (idx, primitive) in enumerate(form.primitives)
             for (propertytype, property) in img.vector_properties
-                if property === nothing
+                if isnull(property)
                     continue
                 end
-                if idx > length(property.primitives)
+                primitives = get(property).primitives
+                if idx > length(primitives)
                     error("Vector form and vector property differ in length. Can't distribute.")
                 end
-                apply_property(img, property.primitives[idx])
+                apply_property(img, primitives[idx])
             end
             draw(img, primitive)
         end
@@ -756,18 +758,19 @@ end
 
 
 function draw(img::Image, prim::PolygonPrimitive)
-    if isempty(prim.points); return; end
-
-    paths = make_paths(prim.points)
-    for path in paths
-        move_to(img, path[1])
-        for point in path[2:end]
-            line_to(img, point)
-        end
-        close_path(img)
-        fillstroke(img)
+    n = length(prim.points)
+    if n <= 1
+        return
     end
+
+    move_to(img, prim.points[1])
+    for i in 2:length(prim.points)
+        line_to(img, prim.points[i])
+    end
+    close_path(img)
+    fillstroke(img)
 end
+
 
 function draw(img::Image, prim::Compose.ComplexPolygonPrimitive)
     if isempty(prim.rings); return; end
@@ -781,6 +784,7 @@ function draw(img::Image, prim::Compose.ComplexPolygonPrimitive)
     end
     fillstroke(img)
 end
+
 
 function draw(img::Image, prim::CirclePrimitive)
     circle(img, prim.center, prim.radius)
@@ -815,21 +819,17 @@ end
 
 function draw(img::Image, prim::LinePrimitive)
     if length(prim.points) <= 1; return; end
-
-    paths = make_paths(prim.points)
-    for path in paths
-        move_to(img, path[1])
-        for point in path[2:end]
-            line_to(img, point)
-        end
-        fillstroke(img, true)
+    move_to(img, prim.points[1])
+    for i in 2:length(prim.points)
+        line_to(img, prim.points[i])
     end
+    fillstroke(img, true)
 end
 
 
 function get_layout_size(img::Image)
     width, height = Cairo.get_layout_size(img.ctx)
-    width / img.ppmm, height / img.ppmm
+    return ((width / img.ppmm) * mm, (height / img.ppmm) * mm)
 end
 
 
@@ -838,22 +838,22 @@ function draw(img::Image, prim::TextPrimitive)
         return
     end
 
-    pos = copy(prim.position)
+    pos = prim.position
     Cairo.set_text(img.ctx, prim.value, true)
     width, height = get_layout_size(img)
-    pos = Point(pos.x, Measure(pos[2].value - height))
+    pos = (pos[1], pos[2] - height)
 
     if prim.halign != hleft || prim.valign != vbottom
         if prim.halign == hcenter
-            pos = Point(Measure(pos[1].value - width/2), pos.y)
+            pos = (pos[1] - width/2, pos[2])
         elseif prim.halign == hright
-            pos = Point(Measure(pos[1].value - width), pos.y)
+            pos = (pos[1] - width, pos[2])
         end
 
         if prim.valign == vcenter
-            pos = Point(pos.x, Measure(pos[2].value + height/2))
+            pos = (pos[1], pos[2] + height/2)
         elseif prim.valign == vtop
-            pos = Point(pos.x, Measure(pos[2].value + height))
+            pos = (pos[1], pos[2] + height)
         end
     end
 
@@ -874,11 +874,13 @@ function draw(img::Image, prim::TextPrimitive)
     end
 end
 
+
 function draw(img::Image, prim::CurvePrimitive)
     move_to(img, prim.anchor0)
     curve_to(img, prim.ctrl0, prim.ctrl1, prim.anchor1)
     fillstroke(img, true)
 end
+
 
 function draw(img::Image, prim::BitmapPrimitive)
     error("Embedding bitmaps in Cairo backends (i.e. PNG, PDF, PS) is not supported.")
@@ -920,23 +922,23 @@ end
 
 function draw_path_op(img::Image, op::HorLineAbsPathOp)
     pos = current_point(img)
-    line_to(img, Point(op.x, pos.y))
+    line_to(img, (op.x, pos.y))
 end
 
 
 function draw_path_op(img::Image, op::HorLineRelPathOp)
-    rel_line_to(img, Point(op.Δx, 0.0))
+    rel_line_to(img, (op.Δx, 0.0mm))
 end
 
 
 function draw_path_op(img::Image, op::VertLineAbsPathOp)
     pos = current_point(img)
-    line_to(img, Point(pos.x, op.y))
+    line_to(img, (pos.x, op.y))
 end
 
 
 function draw_path_op(img::Image, op::VertLineRelPathOp)
-    rel_line_to(img, Point(0.0, op.Δy))
+    rel_line_to(img, (0.0mm, op.Δy))
 end
 
 
@@ -949,26 +951,18 @@ end
 function draw_path_op(img::Image, op::CubicCurveRelPathOp)
     xy = current_point(img)
     rel_curve_to(img, op.ctrl1, op.ctrl2, op.to)
-    img.last_ctrl2_point =
-        Point(Measure(abs=op.ctrl2[1].value + xy.x.abs),
-              Measure(abs=op.ctrl2[2].value + xy.y.abs))
+    img.last_ctrl2_point = (op.ctrl2[1] + xy[1], op.ctrl2[2] + xy[2])
 end
 
 
 function draw_path_op(img::Image, op::CubicCurveShortAbsPathOp)
     xy = current_point(img)
-    x1, y1 = xy[1].value, xy[2].value
-    x2, y2 = op.to[1].value, op.to[2].value
-
     ctrl1 = img.last_ctrl2_point
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=2*x1 - ctrl1[1].value),
-                      Measure(abs=2*y1 - ctrl1[2].value))
+        ctrl1 = (2*xy[1] - ctrl1[1], 2*xy[2] - ctrl1[2])
     end
-    cx, cy = ctrl1[1].value, ctrl1[2].value
-
     curve_to(img, ctrl1, op.ctrl2, op.to)
     img.last_ctrl2_point = op.ctrl2
 end

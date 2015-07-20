@@ -487,15 +487,13 @@ function drawpart(backend::Backend, container::Container,
     end
 
     if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
-        # TODO: commented out while I search for the real source of the
-        # slowness, cause it it ain't this.
-        bitmapbackend = PNG(box.width, box.height, false)
+        bitmapbackend = PNG(box.a[1], box.a[2], false)
         draw(bitmapbackend, ctx)
         f = bitmap("image/png", takebuf_array(bitmapbackend.out),
                    0, 0, 1w, 1h)
 
-        c = context(ctx.box.x0, ctx.box.y0,
-                    ctx.box.width, ctx.box.height,
+        c = context(ctx.box.x0[1], ctx.box.x0[2],
+                    ctx.box.a[1], ctx.box.a[2],
                     units=UnitBox(),
                     order=ctx.order,
                     clip=ctx.clip)
@@ -535,13 +533,6 @@ function drawpart(backend::Backend, container::Container,
 
     # Order children if needed
     ordered_children = false
-    #for child in ctx.container_children
-        #if order(child) != 0
-            #ordered_children = true
-            #break
-        #end
-    #end
-
     child = ctx.container_children
     while !isa(child, ListNull)
         if order(child.head) != 0
@@ -561,8 +552,8 @@ function drawpart(backend::Backend, container::Container,
         end
 
         sort!(container_children)
-        for (_, _, child) in container_children
-            drawpart(backend, child, transform, units, box)
+        for i in 1:length(container_children)
+            drawpart(backend, container_children[i][3], transform, units, box)
         end
         empty!(container_children)
     else
