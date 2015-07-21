@@ -372,13 +372,10 @@ function draw(img::PGF, prim::LinePrimitive, idx::Int)
     modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
 
-    paths = make_paths(prim.points)
-    for path in paths
-        write(img.buf, join(modifiers))
-        @printf(img.buf, "\\path [%s] ", join(props, ","));
-        print_pgf_path(img.buf, path, true)
-        write(img.buf, ";\n")
-    end
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\path [%s] ", join(props, ","));
+    print_pgf_path(img.buf, prim.points, true)
+    write(img.buf, ";\n")
 end
 
 function draw(img::PGF, prim::RectanglePrimitive, idx::Int)
