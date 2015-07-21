@@ -142,7 +142,7 @@ else
     PDF(args...) = error("Cairo must be installed to use the PDF backend.")
 end
 include("svg.jl")
-#include("pgf_backend.jl")
+include("pgf_backend.jl")
 
 if isinstalled("Patchwork", v"0.1.2")
     include("patchable.jl")
