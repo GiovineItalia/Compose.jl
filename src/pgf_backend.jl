@@ -22,13 +22,13 @@ type PGF <: Backend
     # Fill properties cannot be "cleanly" applied to
     # multiple form primitives.  It must be applied
     # each time an object is drawn
-    fill::Union(Nothing, Color)
+    fill::Nullable{Color}
     fill_opacity::Float64
 
-    stroke::Union(Nothing, Color)
+    stroke::Nullable{Color}
     stroke_opacity::Float64
 
-    fontfamily::Union(Nothing,String)
+    fontfamily::Nullable{String}
     fontsize::Float64
 
     # Current level of indentation.
@@ -52,11 +52,11 @@ type PGF <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, Union(Nothing, Property)}
+    vector_properties::Dict{Type, Nullable{Property}}
 
     # Clip-paths that need to be defined at the end of the document.
     # Not quite sure how to deal with clip paths yet
-    clippath::Union(Nothing,ClipPrimitive)
+    clippath::Nullable{ClipPrimitive}
     # clippaths::Dict{ClipPrimitive, String}
 
     # True when finish has been called and no more drawing should occur
@@ -66,7 +66,7 @@ type PGF <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union(String, Nothing)
+    filename::Nullable{String}
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -94,7 +94,7 @@ type PGF <: Backend
         img.out = out
         img.color_set = Set{Color}([colorant"black"])
         img.property_stack = Array(PGFPropertyFrame, 0)
-        img.vector_properties = Dict{Type, Union(Nothing, Property)}()
+        img.vector_properties = Dict{Type, Nullable{Property}}()
         # img.clippaths = Dict{ClipPrimitive, String}()
         img.visible = true
         img.finished = false
@@ -243,15 +243,15 @@ function get_vector_properties(img::PGF, idx::Int)
         push_property!(props_str, img, property.primitives[idx])
     end
 
-    if img.fill != nothing
-        push!(props_str, string("fill=mycolor",hex(img.fill)))
+    if !isnull(img.fill)
+        push!(props_str, string("fill=mycolor",hex(get(img.fill))))
         if img.fill_opacity < 1.0
             push!(props_str, string("fill opacity=",svg_fmt_float(img.fill_opacity)))
         end
     end
 
-    if img.stroke != nothing
-        push!(props_str, string("draw=mycolor",hex(img.stroke)))
+    if !isnull(img.stroke)
+        push!(props_str, string("draw=mycolor",hex(get(img.stroke))))
         if img.stroke_opacity < 1.0
             push!(props_str, string("draw opacity=",svg_fmt_float(img.stroke_opacity)))
         end
@@ -276,7 +276,7 @@ function push_property!(props_str, img::PGF, property::StrokePrimitive)
         img.stroke = property.color
     end
 
-    if img.stroke != nothing
+    if !isnull(img.stroke)
         push!(img.color_set, convert(RGB, property.color))
     end
 end
@@ -289,7 +289,7 @@ function push_property!(props_str, img::PGF, property::FillPrimitive)
         img.fill = property.color
     end
 
-    if img.fill != nothing
+    if !isnull(img.fill)
         push!(img.color_set, convert(RGB, property.color))
     end
 end
@@ -543,12 +543,12 @@ function push_property_frame(img::PGF, properties::Vector{Property})
     if length(prop_str) > 0
         @printf(img.buf, "[%s]\n", join(prop_str, ","))
     end
-    if img.clippath != nothing
+    if !isnull(img.clippath)
         write(img.buf, "\\clip ")
         print_pgf_path(img.buf, img.clippath.points)
         write(img.buf, ";\n")
     end
-   if img.fontfamily != nothing
+   if !isnull(img.fontfamily)
        @printf(img.buf, "\\fontspec{%s}\n", img.fontfamily)
     end
 end
