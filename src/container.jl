@@ -126,8 +126,8 @@ function context(x0=0.0w,
 
     return Context(BoundingBox(x_measure(x0), y_measure(y0),
                                x_measure(width), y_measure(height)),
-                   isa(units, Nullable) ? units : Nullable(units),
-                   isa(rotation, Nullable) ? rotation : Nullable(rotation),
+                   isa(units, Nullable) ? units : Nullable{UnitBox}(units),
+                   isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
                    mirror, ListNull{Container}(), ListNull{Form}(),
                    ListNull{Property}(), order, clip,
                    withjs, withoutjs, raster, minwidth, minheight, penalty)
