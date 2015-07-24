@@ -297,8 +297,8 @@ function convert(::Type{Transform}, rot::Rotation)
         st = sin(rot.theta)
         x0 = rot.offset[1] - (ct * rot.offset[1] - st * rot.offset[2])
         y0 = rot.offset[2] - (st * rot.offset[1] + ct * rot.offset[2])
-        return MatrixTransform([ct  -st  x0.abs
-                                st   ct  y0.abs
+        return MatrixTransform([ct  -st  x0.value
+                                st   ct  y0.value
                                 0.0 0.0  1.0])
     end
 end
