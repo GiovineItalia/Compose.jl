@@ -234,13 +234,14 @@ function get_vector_properties(img::PGF, idx::Int)
     props_str = ASCIIString[]
     modifiers = ASCIIString[]
     for (propertytype, property) in img.vector_properties
-        if property === nothing
+        if isnull(property)
             continue
         end
-        if idx > length(property.primitives)
+        primitives = get(property).primitives
+        if idx > length(primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
-        push_property!(props_str, img, property.primitives[idx])
+        push_property!(props_str, img, primitives[idx])
     end
 
     if !isnull(img.fill)
@@ -542,7 +543,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
     end
     if !isnull(img.clippath)
         write(img.buf, "\\clip ")
-        print_pgf_path(img.buf, img.clippath.points)
+        print_pgf_path(img.buf, get(img.clippath).points)
         write(img.buf, ";\n")
     end
    if !isnull(img.fontfamily)
