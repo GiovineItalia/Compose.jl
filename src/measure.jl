@@ -69,6 +69,12 @@ x_measure{T}(a::T) = Length{:cx, T}(a)
 y_measure(a::Measure) = a
 y_measure{T}(a::T) = Length{:cy, T}(a)
 
+x_measure{T<:Measure}(a::Vector{T}) = a
+x_measure(a::Vector) = Measure[x_measure(x) for x in a]
+
+y_measure{T<:Measure}(a::Vector{T}) = a
+y_measure(a::Vector) = Measure[y_measure(y) for y in a]
+
 size_measure(a::Measure) = a
 size_measure(a) = a * mm
 

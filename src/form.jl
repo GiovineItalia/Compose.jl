@@ -74,7 +74,7 @@ end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PolygonPrimitive)
     return PolygonPrimitive{AbsoluteVec2}(
-                [resolve(box, units, t, point) for point in p.points])
+                AbsoluteVec2[resolve(box, units, t, point) for point in p.points])
 end
 
 
@@ -131,7 +131,7 @@ end
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                  p::ComplexPolygonPrimitive)
     return ComplexPolygonPrimitive{SimplePoint}(
-                [SimplePoint[resolve(box, units, t, point, t) for point in ring]
+                [AbsoluteVec2[resolve(box, units, t, point, t) for point in ring]
                 for ring in p.rings])
 end
 
@@ -464,7 +464,7 @@ end
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                  p::LinePrimitive)
     return LinePrimitive{AbsoluteVec2}(
-                [resolve(box, units, t, point) for point in p.points])
+                AbsoluteVec2[resolve(box, units, t, point) for point in p.points])
 end
 
 
