@@ -3,7 +3,7 @@
 # Draw lines with various dash styles.
 
 using Compose
-using Color
+using Colors
 
 function draw_lines(joins)
     if length(joins) == 0
@@ -21,5 +21,5 @@ imgs = [SVG("linejoins.svg", 2cm, 3cm),
         PDF("linejoins.pdf", 2cm, 3cm),
         SVGJS("linejoins.js", 2cm, 3cm)]
 for img = imgs
-    draw(img, compose(c, stroke(color("black")), linewidth(2mm), fill(nothing)))
+    draw(img, compose(c, stroke(parse(Color, "black")), linewidth(2mm), fill(nothing)))
 end

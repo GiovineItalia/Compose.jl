@@ -85,7 +85,7 @@ end
 end
 
 # Format a color for SVG.
-svg_fmt_color(c::ColorValue) = string("#", hex(c))
+svg_fmt_color(c::OpaqueColor) = string("#", hex(c))
 svg_fmt_color(c::Nothing) = "none"
 
 
@@ -572,9 +572,9 @@ end
 function print_property(img::SVG, property::StrokePrimitive)
     if property.color.alpha != 1.0
         @printf(img.out, " stroke=\"%s\" stroke-opacity=\"%0.3f\"",
-                svg_fmt_color(property.color.c), property.color.alpha)
+                svg_fmt_color(opaquecolor(property.color)), property.color.alpha)
     else
-        @printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color.c))
+        @printf(img.out, " stroke=\"%s\"", svg_fmt_color(opaquecolor(property.color)))
     end
 end
 
@@ -582,9 +582,9 @@ end
 function print_property(img::SVG, property::FillPrimitive)
     if property.color.alpha != 1.0
         @printf(img.out, " fill=\"%s\" fill-opacity=\"%0.3f\"",
-                svg_fmt_color(property.color.c), property.color.alpha)
+                svg_fmt_color(opaquecolor(property.color)), property.color.alpha)
     else
-        @printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color.c))
+        @printf(img.out, " fill=\"%s\"", svg_fmt_color(opaquecolor(property.color)))
     end
 end
 

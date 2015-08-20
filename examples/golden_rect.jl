@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 
-using Color
+using Colors
 using Compose
 
 function golden_rect(n::Int)
