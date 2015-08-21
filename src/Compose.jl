@@ -20,7 +20,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
-       boundingbox, Patchable
+       boundingbox, Patchable, color
 
 abstract Backend
 
@@ -299,6 +299,8 @@ end
 
 const pad = pad_outer
 
+# Coerce to a Color
+color(c::Color) = c
+color(str::AbstractString) = parse(Color, str)
+
 end # module Compose
-
-
