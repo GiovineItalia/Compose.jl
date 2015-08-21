@@ -1,6 +1,6 @@
 module Compose
 
-using Color
+using Colors
 using Iterators
 using DataStructures
 using Compat
@@ -20,7 +20,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
-       boundingbox, Patchable
+       boundingbox, Patchable, color
 
 abstract Backend
 
@@ -124,7 +124,7 @@ default_font_family = "Helvetica Neue,Helvetica,Arial,sans"
 default_font_size = 11pt
 default_line_width = 0.3mm
 default_stroke_color = nothing
-default_fill_color = color("black")
+default_fill_color = parse(Color, "black")
 
 
 # Use cairo for the PNG, PS, PDF if it's installed.
@@ -299,6 +299,8 @@ end
 
 const pad = pad_outer
 
+# Coerce to a Color
+color(c::Color) = c
+color(str::AbstractString) = parse(Color, str)
+
 end # module Compose
-
-

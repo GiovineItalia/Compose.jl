@@ -54,7 +54,7 @@ function stroke(c::Nothing)
 end
 
 
-function stroke(c::Union(ColorValue, AlphaColorValue, String))
+function stroke(c::Union(OpaqueColor, TransparentColor, String))
 	return Stroke([StrokePrimitive(color(c))])
 end
 
@@ -79,7 +79,7 @@ function fill(c::Nothing)
 end
 
 
-function fill(c::Union(ColorValue, AlphaColorValue, String))
+function fill(c::Union(OpaqueColor, TransparentColor, String))
 	return Fill([FillPrimitive(color(c))])
 end
 
