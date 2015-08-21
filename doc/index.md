@@ -6,7 +6,7 @@ order: 1
 
 
 ```{.julia hide="true"}
-using Compose, Color
+using Compose, Colors
 
 function drawlogo()
     color1 = LCHab(68, 74, 192)
@@ -238,10 +238,10 @@ circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
 ```
 
 The first of these creates only circle centered at `(x, y)` with radius `r`. The
-second form can succinctly create many circles (using the [Color](https://github.com/JuliaLang/Color.jl) package to specify the `LHCab` colorspace):
+second form can succinctly create many circles (using the [Colors](https://github.com/JuliaGraphics/Colors.jl) package to specify the `LHCab` colorspace):
 
 ```julia
-using Color
+using Colors
 compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1, 0.1, 0.1]),
         fill(LCHab(92, 10, 77)))
@@ -305,7 +305,3 @@ compose(sierpinski(6), fill(LCHab(92, 10, 77)))
 There are no safeguards to check for cycles. You can produce a graph with a
 cycle and Compose will run in an infinite loop trying to draw it. In most
 applications, this isn't a concern.
-
-
-
-
