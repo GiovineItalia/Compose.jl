@@ -22,10 +22,10 @@ type PGF <: Backend
     # Fill properties cannot be "cleanly" applied to
     # multiple form primitives.  It must be applied
     # each time an object is drawn
-    fill::Union(Nothing, ColorValue)
+    fill::Union(Nothing, Color)
     fill_opacity::Float64
 
-    stroke::Union(Nothing, ColorValue)
+    stroke::Union(Nothing, Color)
     stroke_opacity::Float64
 
     fontfamily::Union(Nothing,String)
@@ -44,7 +44,7 @@ type PGF <: Backend
     # a draw parameter.  Whenever we encounter a color, we add it to the
     # color_set set.  That way, we can write out all the color
     # definitions at the same time.
-    color_set::Set{ColorValue}
+    color_set::Set{Color}
 
     # Stack of property frames (groups of properties) currently in effect.
     property_stack::Vector{PGFPropertyFrame}
@@ -98,7 +98,7 @@ type PGF <: Backend
         img.fontsize = 12.0
         img.indentation = 0
         img.out = out
-        img.color_set = Set{ColorValue}([color("black")])
+        img.color_set = Set{Color}([colorant"black"])
         img.property_stack = Array(PGFPropertyFrame, 0)
         img.vector_properties = Dict{Type, Union(Nothing, Property)}()
         # img.clippaths = Dict{ClipPrimitive, String}()
@@ -277,8 +277,8 @@ function push_property!(props_str, img::PGF, property::StrokeDashPrimitive)
 end
 
 function push_property!(props_str, img::PGF, property::StrokePrimitive)
-    if isa(property.color, AlphaColorValue)
-        img.stroke = property.color.c
+    if isa(property.color, TransparentColor)
+        img.stroke = color(property.color)
         img.stroke_opacity = property.color.alpha
     else
         img.stroke = property.color
@@ -290,8 +290,8 @@ function push_property!(props_str, img::PGF, property::StrokePrimitive)
 end
 
 function push_property!(props_str, img::PGF, property::FillPrimitive)
-    if isa(property.color, AlphaColorValue)
-        img.fill = property.color.c
+    if isa(property.color, TransparentColor)
+        img.fill = color(property.color)
         img.fill_opacity = property.color.alpha
     else
         img.fill = property.color

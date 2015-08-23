@@ -1,6 +1,6 @@
 module Compose
 
-using Color
+using Colors
 using Iterators
 using DataStructures
 using Compat
@@ -124,7 +124,7 @@ default_font_family = "Helvetica Neue,Helvetica,Arial,sans"
 default_font_size = 11pt
 default_line_width = 0.3mm
 default_stroke_color = nothing
-default_fill_color = color("black")
+default_fill_color = colorant"black"
 
 
 # Use cairo for the PNG, PS, PDF if it's installed.
