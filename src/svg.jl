@@ -8,7 +8,7 @@ const xmlns = Dict()
 
 
 # Format a floating point number into a decimal string of reasonable precision.
-function svg_fmt_float(x::FloatingPoint)
+function svg_fmt_float(x::Fractional)
     # All svg (in our use) coordinates are in millimeters. This number gives the
     # largest deviation from the true position allowed in millimeters.
     const eps = 0.01
@@ -1249,4 +1249,3 @@ function pop_property_frame(img::SVG)
         end
     end
 end
-
