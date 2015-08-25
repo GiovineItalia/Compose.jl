@@ -14,10 +14,25 @@ end
 # Compare with cached output
 cachedout = joinpath(testdir, "data")
 differentfiles = String[]
+const creator_producer = r"(Creator|Producer)"
 for output in readdir(cachedout)
-    cached = open(readall, joinpath(cachedout, output))
-    genned = open(readall, joinpath(testdir, output))
-    if cached != genned
+    cached = open(readlines, joinpath(cachedout, output))
+    genned = open(readlines, joinpath(testdir, output))
+    same = (n=length(cached)) == length(genned)
+    if same
+        lsame = Bool[cached[i] == genned[i] for i = 1:n]
+        if !all(lsame)
+            for idx in find(!lsame)
+                # Don't worry about lines that are due to
+                # Creator/Producer (e.g., Cairo versions)
+                if !isempty(search(cached[idx], creator_producer))
+                    lsame[idx] = true
+                end
+            end
+        end
+        same = same & all(lsame)
+    end
+    if !same
         push!(differentfiles, output)
     else #Delete generated file
         rm(joinpath(testdir, output))

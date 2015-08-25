@@ -3,7 +3,7 @@
 # Draw lines with various dash styles.
 
 using Compose
-using Color
+using Colors
 
 function draw_lines(caps)
     if length(caps) == 0
@@ -20,5 +20,5 @@ c = draw_lines(caps)
 imgs = [SVG("linecaps.svg", 2cm, 3cm),
         PDF("linecaps.pdf", 2cm, 3cm)]
 for img = imgs
-    draw(img, compose(c, stroke(color("black")), linewidth(2mm)))
+    draw(img, compose(c, stroke(colorant"black"), linewidth(2mm)))
 end
