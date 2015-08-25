@@ -173,7 +173,10 @@ type SVG <: Backend
     vector_properties::Dict{Type, Union(Nothing, Property)}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, String}
+    clippaths::Dict{ClipPrimitive, ASCIIString}
+
+    # Batched forms to be included within <def> tags.
+    batches::Vector{Tuple{FormPrimitive, ASCIIString}}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -235,7 +238,8 @@ type SVG <: Backend
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
         img.vector_properties = Dict{Type, Union(Nothing, Property)}()
-        img.clippaths = Dict{ClipPrimitive, String}()
+        img.clippaths = Dict{ClipPrimitive, ASCIIString}()
+        img.batches = Array(Tuple{FormPrimitive, ASCIIString}, 0)
         img.embobj = Set{String}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
@@ -268,6 +272,11 @@ type SVG <: Backend
                  emit_on_finish::Bool=true, jsmode::Symbol=:none)
         return SVG(IOBuffer(), width, height, emit_on_finish, jsmode)
     end
+end
+
+
+function canbatch(img::SVG)
+    return true
 end
 
 
@@ -361,13 +370,31 @@ function finish(img::SVG)
         write(img.out, "\n")
     end
 
-    if length(img.clippaths) > 0
+    # defs
+    if !isempty(img.clippaths) | !isempty(img.batches)
         write(img.out, "<defs>\n")
-        for (clippath, id) in img.clippaths
-            write(img.out, "<clipPath id=\"$(id)\">\n  <path d=\"")
-            print_svg_path(img.out, clippath.points)
-            write(img.out, "\" />\n</clipPath\n>")
-        end
+        img.indentation += 1
+    end
+
+    for (clippath, id) in img.clippaths
+        indent(img)
+        write(img.out, "<clipPath id=\"$(id)\">\n  <path d=\"")
+        print_svg_path(img.out, clippath.points)
+        write(img.out, "\" />\n</clipPath\n>")
+    end
+
+    for (primitive, id) in img.batches
+        indent(img)
+        print(img.out, "<g id=\"", id, "\">\n")
+        img.indentation += 1
+        draw(img, primitive, 1)
+        img.indentation -= 1
+        indent(img)
+        print(img.out, "</g>\n")
+    end
+
+    if !isempty(img.clippaths) | !isempty(img.batches)
+        img.indentation -= 1
         write(img.out, "</defs>\n")
     end
 
@@ -1150,6 +1177,25 @@ function draw(img::SVG, prim::PathPrimitive, idx::Int)
     print(img.out, '"')
     print_vector_properties(img, idx)
     print(img.out, "/>\n")
+end
+
+
+# FormBatch Drawing
+# -----------------
+
+function draw(img::SVG, batch::FormBatch)
+    id = genid(img)
+    push!(img.batches, (batch.primitive, id))
+    for i in 1:length(batch.offsets)
+        indent(img)
+        print(img.out, "<use xlink:href=\"#", id, "\" x=\"")
+        svg_print_float(img.out, batch.offsets[i][1].value)
+        print(img.out, "\" y=\"")
+        svg_print_float(img.out, batch.offsets[i][2].value)
+        print(img.out, "\"")
+        print_vector_properties(img, i)
+        print(img.out, "/>\n")
+    end
 end
 
 

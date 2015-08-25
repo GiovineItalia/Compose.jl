@@ -1,5 +1,19 @@
 
 
+#function all_equal(xs::AbstractArray)
+    #if isempty(xs)
+        #return true
+    #end
+    #x = xs[1]
+    #for i in 2:length(xs)
+        #if xs[i] != x
+            #return false
+        #end
+    #end
+    #return x
+#end
+
+
 function iszero{T}(x::T)
     return x == zero(T)
 end

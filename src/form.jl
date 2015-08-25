@@ -18,10 +18,9 @@ function isscalar(f::Form)
 end
 
 
-function draw(backend::Backend, box::AbsoluteBox, units::UnitBox, t::Transform,
-              form::Form)
-    draw(backend, Form([resolve(box, units, t, primitive)
-                        for primitive in form.primitives]))
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, form::Form)
+    return Form([resolve(box, units, t, primitive)
+                 for primitive in form.primitives])
 end
 
 
@@ -130,7 +129,7 @@ end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                  p::ComplexPolygonPrimitive)
-    return ComplexPolygonPrimitive{SimplePoint}(
+    return ComplexPolygonPrimitive(
                 [AbsoluteVec2[resolve(box, units, t, point, t) for point in ring]
                 for ring in p.rings])
 end
@@ -1082,4 +1081,5 @@ end
 
 
 # TODO: boundingbox
+
 

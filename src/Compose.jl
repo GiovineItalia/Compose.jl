@@ -25,7 +25,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
        boundingbox, Patchable
 
-abstract Backend
+
 
 function isinstalled(pkg, ge=v"0.0.0")
     try
@@ -46,6 +46,18 @@ function isinstalled(pkg, ge=v"0.0.0")
 end
 
 
+abstract Backend
+
+
+"""
+Some backends can more efficiently draw forms by batching. If so, they
+shuld define a similar method that returns true.
+"""
+function canbatch(::Backend)
+    return false
+end
+
+
 include("misc.jl")
 include("measure.jl")
 include("list.jl")
@@ -58,6 +70,7 @@ immutable NullNode <: ComposeNode end
 nullnode = NullNode()
 
 include("form.jl")
+include("batch.jl")
 include("property.jl")
 include("container.jl")
 include("table.jl")
