@@ -230,7 +230,7 @@ type SVG <: Backend
                  jsmode::Symbol=:none)
 
         img = new()
-        img.id = string("fig-", replace(string(Base.Random.uuid4()), "-", ""))
+        img.id = replace(string(Base.Random.uuid4()), "-", "")[1:8]
         img.width  = width
         img.height = height
         img.out = out
@@ -288,7 +288,7 @@ end
 # Return the next unique element ID. Sort of like gensym for SVG elements.
 function genid(img::SVG)
     img.id_count += 1
-    return @sprintf("%s-element-%d", img.id, img.id_count)
+    return @sprintf("%s-%d", img.id, img.id_count)
 end
 
 
