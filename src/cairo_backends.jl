@@ -26,6 +26,7 @@ type ImagePropertyState
     linewidth::AbsoluteLength
     fontsize::AbsoluteLength
     font::String
+    clip::Nullable{ClipPrimitive}
 end
 
 type ImagePropertyFrame
@@ -59,6 +60,7 @@ type Image{B <: ImageBackend} <: Backend
     linewidth::AbsoluteLength
     fontsize::AbsoluteLength
     font::String
+    clip::Nullable{ClipPrimitive}
 
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
@@ -94,6 +96,7 @@ type Image{B <: ImageBackend} <: Backend
         img.height = 0
         img.surface = surface
         img.ctx = ctx
+
         img.stroke = default_stroke_color == nothing ?
                         RGBA{Float64}(0, 0, 0, 0) : convert(RGBA{Float64}, default_stroke_color)
         img.fill   = default_fill_color == nothing ?
@@ -105,6 +108,8 @@ type Image{B <: ImageBackend} <: Backend
         img.linewidth = default_line_width
         img.fontsize = default_font_size
         img.font = default_font_family
+        img.clip = Nullable{ClipPrimitive}()
+
         img.state_stack = Array(ImagePropertyState, 0)
         img.property_stack = Array(ImagePropertyFrame, 0)
         img.vector_properties = Dict{Type, Nullable{Property}}()
@@ -383,7 +388,8 @@ function save_property_state(img::Image)
             img.visible,
             img.linewidth,
             img.fontsize,
-            img.font))
+            img.font,
+            img.clip))
     Cairo.save(img.ctx)
 end
 
@@ -399,6 +405,7 @@ function restore_property_state(img::Image)
     img.linewidth = state.linewidth
     img.fontsize = state.fontsize
     img.font = state.font
+    img.clip = state.clip
     Cairo.restore(img.ctx)
 end
 
@@ -533,6 +540,7 @@ function apply_property(img::Image, property::ClipPrimitive)
     end
     close_path(img)
     Cairo.clip(img.ctx)
+    img.clip = property
 end
 
 
@@ -1177,13 +1185,20 @@ function draw(img::Image, batch::FormBatch)
 
     xt = -bounds.x0[1].value * img.ppmm
     yt = -bounds.x0[2].value * img.ppmm
-    Cairo.translate(img.ctx, xt, yt)
 
+    Cairo.save(img.ctx)
+    Cairo.reset_clip(img.ctx)
+    Cairo.translate(img.ctx, xt, yt)
     Cairo.push_group(img.ctx)
     draw(img, batch.primitive)
     pattern = Cairo.pop_group(img.ctx)
     surface = Cairo.pattern_get_surface(pattern)
-    Cairo.reset_transform(img.ctx)
+    Cairo.restore(img.ctx)
+
+    # reapply the clipping region we just reset
+    if !isnull(img.clip)
+        apply_property(img, get(img.clip))
+    end
 
     Cairo.set_antialias(img.ctx, Cairo.ANTIALIAS_NONE)
     for offset in batch.offsets
