@@ -253,8 +253,8 @@ end
 
 function boundingbox(form::CirclePrimitive, linewidth::Measure,
                      font::String, fontsize::Measure)
-    return BoundingBox(form.center.x - form.radius - linewidth,
-                       form.center.y - form.radius - linewidth,
+    return BoundingBox(form.center[1] - form.radius - linewidth,
+                       form.center[2] - form.radius - linewidth,
                        2 * (form.radius + linewidth),
                        2 * (form.radius + linewidth))
 end

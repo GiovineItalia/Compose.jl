@@ -3,8 +3,9 @@ using Compat
 # Cairo backend for compose
 import Cairo
 
-import Cairo.CairoContext, Cairo.CairoSurface, Cairo.CairoARGBSurface,
-       Cairo.CairoEPSSurface, Cairo.CairoPDFSurface, Cairo.CairoSVGSurface
+using Cairo: CairoContext, CairoSurface, CairoARGBSurface,
+             CairoEPSSurface, CairoPDFSurface, CairoSVGSurface,
+             CairoImageSurface
 
 abstract ImageBackend
 abstract PNGBackend <: ImageBackend
@@ -22,6 +23,9 @@ type ImagePropertyState
     stroke_linecap::LineCap
     stroke_linejoin::LineJoin
     visible::Bool
+    linewidth::AbsoluteLength
+    fontsize::AbsoluteLength
+    font::String
 end
 
 type ImagePropertyFrame
@@ -52,6 +56,9 @@ type Image{B <: ImageBackend} <: Backend
     stroke_linecap::LineCap
     stroke_linejoin::LineJoin
     visible::Bool
+    linewidth::AbsoluteLength
+    fontsize::AbsoluteLength
+    font::String
 
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
@@ -95,6 +102,9 @@ type Image{B <: ImageBackend} <: Backend
         img.stroke_linecap = LineCapButt()
         img.stroke_linejoin = LineJoinMiter()
         img.visible = true
+        img.linewidth = default_line_width
+        img.fontsize = default_font_size
+        img.font = default_font_family
         img.state_stack = Array(ImagePropertyState, 0)
         img.property_stack = Array(ImagePropertyFrame, 0)
         img.vector_properties = Dict{Type, Nullable{Property}}()
@@ -166,10 +176,16 @@ type Image{B <: ImageBackend} <: Backend
     end
 end
 
+
 typealias PNG Image{PNGBackend}
 typealias PDF Image{PDFBackend}
 typealias PS  Image{PSBackend}
 typealias CAIROSURFACE  Image{CairoBackend}
+
+
+function canbatch(img::Image)
+    return true
+end
 
 
 # convert compose absolute units (millimeters) to the absolute units used by the
@@ -364,7 +380,10 @@ function save_property_state(img::Image)
             img.stroke_dash,
             img.stroke_linecap,
             img.stroke_linejoin,
-            img.visible))
+            img.visible,
+            img.linewidth,
+            img.fontsize,
+            img.font))
     Cairo.save(img.ctx)
 end
 
@@ -377,6 +396,9 @@ function restore_property_state(img::Image)
     img.stroke_linecap = state.stroke_linecap
     img.stroke_linejoin = state.stroke_linejoin
     img.visible = state.visible
+    img.linewidth = state.linewidth
+    img.fontsize = state.fontsize
+    img.font = state.font
     Cairo.restore(img.ctx)
 end
 
@@ -458,6 +480,7 @@ end
 
 
 function apply_property(img::Image, property::LineWidthPrimitive)
+    img.linewidth = property.value
     Cairo.set_line_width(
         img.ctx,
         absolute_native_units(img, property.value.value))
@@ -465,6 +488,8 @@ end
 
 
 function apply_property(img::Image, property::FontPrimitive)
+    img.font = property.family
+
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
                       Ptr{Void}, (Ptr{Void},), img.ctx.layout)
 
@@ -481,6 +506,8 @@ end
 
 
 function apply_property(img::Image, property::FontSizePrimitive)
+    img.fontsize = property.value
+
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
                       Ptr{Void}, (Ptr{Void},), img.ctx.layout)
 
@@ -1141,5 +1168,33 @@ function draw_endpoint_arc(img::Image, rx::Float64, ry::Float64, φ::Float64,
     end
     Cairo.restore(img.ctx)
 end
+
+
+function draw(img::Image, batch::FormBatch)
+    bounds = boundingbox(batch.primitive, img.linewidth, img.font, img.fontsize)
+    width = bounds.a[1].value * img.ppmm
+    height = bounds.a[2].value * img.ppmm
+
+    xt = -bounds.x0[1].value * img.ppmm
+    yt = -bounds.x0[2].value * img.ppmm
+    Cairo.translate(img.ctx, xt, yt)
+
+    Cairo.push_group(img.ctx)
+    draw(img, batch.primitive)
+    pattern = Cairo.pop_group(img.ctx)
+    surface = Cairo.pattern_get_surface(pattern)
+    Cairo.reset_transform(img.ctx)
+
+    Cairo.set_antialias(img.ctx, Cairo.ANTIALIAS_NONE)
+    for offset in batch.offsets
+        x = offset[1].value * img.ppmm - xt
+        y = offset[2].value * img.ppmm - yt
+        Cairo.set_source_surface(img.ctx, surface, x, y)
+        Cairo.rectangle(img.ctx, x, y, width, height)
+        Cairo.fill(img.ctx)
+    end
+    Cairo.set_antialias(img.ctx, Cairo.ANTIALIAS_DEFAULT)
+end
+
 
 

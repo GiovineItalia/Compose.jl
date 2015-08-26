@@ -541,6 +541,10 @@ function drawpart(backend::Backend, container::Container,
     child = ctx.form_children
     while !isa(child, ListNull)
         form = resolve(box, units, transform, child.head)
+        if isempty(form.primitives)
+            child = child.tail
+            continue
+        end
 
         if trybatch
             b = batch(form)
