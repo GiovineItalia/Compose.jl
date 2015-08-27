@@ -1184,8 +1184,6 @@ end
 
 
 function draw(img::Image, batch::FormBatch)
-    println("CAIRO BATCH")
-
     bounds = boundingbox(batch.primitive, img.linewidth, img.font, img.fontsize)
     width = bounds.a[1].value * img.ppmm
     height = bounds.a[2].value * img.ppmm

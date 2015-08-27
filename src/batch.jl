@@ -27,6 +27,37 @@ function batch{P}(form::Form{P})
 end
 
 
+# Note: in tests using random data, this optimization wasn't worth it. I'm
+# keeping it around out of hopes I find a more clever version that is
+# worthwhile, or benchmarks using real data show different results.
+
+# maximum distance between offsets to be considered redundand in mm
+const offset_redundancy_threshold = 0.05
+
+"""
+Produce a new array of offsets in which near duplicate values have been removed.
+"""
+function filter_redundant_offsets!(offsets::Vector{AbsoluteVec2})
+    if isempty(offsets)
+        return offsets
+    end
+
+    sort!(offsets)
+    nonredundant_offsets = AbsoluteVec2[offsets[1]]
+    for i in 2:length(offsets)
+        # use l1 distance for perf
+        d = abs(offsets[i-1][1].value - offsets[i][1].value) +
+            abs(offsets[i-1][2].value - offsets[i][2].value)
+        if d > offset_redundancy_threshold
+            push!(nonredundant_offsets, offsets[i])
+        end
+    end
+    @show (length(offsets), length(nonredundant_offsets))
+
+    return nonredundant_offsets
+end
+
+
 function batch{T <: CirclePrimitive}(form::Form{T})
     # circles can be batched if they all have the same radius.
     r = form.primitives[1].radius

@@ -178,39 +178,3 @@ function narrow_polygon_point_types{P <: Tuple}(ring_arrays::Vector{Vector{Vecto
 end
 
 
-function color_isless(a::Color, b::Color)
-    return color_isless(convert(RGB{Float32}, a), convert(RGB{Float32}, b))
-end
-
-
-function color_isless(a::TransparentColor, b::TransparentColor)
-    return color_isless(convert(RGBA{Float32}, a), convert(RGBA{Float32}, b))
-end
-
-
-function color_isless(a::RGB{Float32}, b::RGB{Float32})
-    if a.r < b.r
-        return true
-    elseif a.r == b.r
-        if a.g < b.g
-            return true
-        elseif a.g == b.g
-            return a.b < b.b
-        else
-            return false
-        end
-    else
-        return false
-    end
-end
-
-
-function color_isless(a::RGBA{Float32}, b::RGBA{Float32})
-    if color_isless(color(a), color(b))
-        return true
-    elseif color(a) == color(b)
-        return a.alpha < b.alpha
-    else
-        return false
-    end
-end
