@@ -472,7 +472,7 @@ function drawpart(backend::Backend, container::Container,
         return
     end
 
-    ctx = container
+    ctx = optimize_batching(container)
     box = resolve(parent_box, units, parent_transform, ctx.box)
 
     transform = parent_transform
@@ -525,18 +525,6 @@ function drawpart(backend::Backend, container::Container,
         push_property_frame(backend, properties)
     end
 
-    # batching
-    # 
-    # Two things we need to do:
-    #
-    # 1. Rearrange contexts to remove vector properties when the vector
-    #    properties have a small number of unqiue primtives.
-    #
-    # 2. Batch forms if the backend supports it and there are no vector
-    #    properties (and if the form is longer than some minimum length). These are
-    #    functions we should implement for the backend to test this.
-    # 
-    # Let's get part 2 working first.
     trybatch = canbatch(backend)
     child = ctx.form_children
     while !isa(child, ListNull)

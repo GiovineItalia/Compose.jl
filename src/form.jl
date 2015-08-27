@@ -24,6 +24,11 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, form::Form)
 end
 
 
+function Base.similar{T}(f::Form{T})
+    return Form{T}(T[])
+end
+
+
 # Polygon
 # -------
 

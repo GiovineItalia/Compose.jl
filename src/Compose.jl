@@ -70,9 +70,9 @@ immutable NullNode <: ComposeNode end
 nullnode = NullNode()
 
 include("form.jl")
-include("batch.jl")
 include("property.jl")
 include("container.jl")
+include("batch.jl")
 include("table.jl")
 include("stack.jl")
 

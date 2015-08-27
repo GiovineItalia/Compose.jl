@@ -9,7 +9,7 @@ immutable ListNull{T} <: List{T} end
 copy{T}(l::ListNull{T}) = l
 
 
-immutable ListNode{T} <: List{T}
+type ListNode{T} <: List{T}
     head::T
     tail::List{T}
 end

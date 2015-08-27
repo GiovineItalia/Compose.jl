@@ -3,6 +3,29 @@
 abstract PropertyPrimitive
 
 
+# Meaningless isless function used to sort in optimize_batching
+function Base.isless{T <: PropertyPrimitive}(a::T, b::T)
+    for field in fieldnames(T)
+        x = getfield(a, field)
+        y = getfield(b, field)
+        if isa(x, Colorant)
+            if color_isless(x, y)
+                return true
+            elseif color_isless(y, x)
+                return false
+            end
+        else
+            if x < y
+                return true
+            elseif x > y
+                return false
+            end
+        end
+    end
+    return false
+end
+
+
 immutable Property{P <: PropertyPrimitive} <: ComposeNode
 	primitives::Vector{P}
 end
@@ -358,6 +381,16 @@ function font(families::AbstractArray)
 end
 
 
+function Base.hash(primitive::FontPrimitive, h::UInt64)
+    return hash(primitive.family, h)
+end
+
+
+function Base.(:(==))(a::FontPrimitive, b::FontPrimitive)
+    return a.family == b.family
+end
+
+
 # FontSize
 # --------
 
@@ -408,11 +441,21 @@ function svgid(values::AbstractArray)
 end
 
 
+function Base.hash(primitive::SVGIDPrimitive, h::UInt64)
+    return hash(primitive.value, h)
+end
+
+
+function Base.(:(==))(a::SVGIDPrimitive, b::SVGIDPrimitive)
+    return a.value == b.value
+end
+
+
 # SVGClass
 # --------
 
 immutable SVGClassPrimitive <: PropertyPrimitive
-    value::String
+    value::ASCIIString
 end
 
 typealias SVGClass Property{SVGClassPrimitive}
@@ -422,8 +465,19 @@ function svgclass(value::String)
     return SVGClass([SVGClassPrimitive(value)])
 end
 
+
 function svgclass(values::AbstractArray)
     return SVGClass([SVGClassPrimitive(value) for value in values])
+end
+
+
+function Base.hash(primitive::SVGClassPrimitive, h::UInt64)
+    return hash(primitive.value, h)
+end
+
+
+function Base.(:(==))(a::SVGClassPrimitive, b::SVGClassPrimitive)
+    return a.value == b.value
 end
 
 
@@ -431,8 +485,8 @@ end
 # ------------
 
 immutable SVGAttributePrimitive <: PropertyPrimitive
-    attribute::String
-    value::String
+    attribute::ASCIIString
+    value::ASCIIString
 end
 
 typealias SVGAttribute Property{SVGAttributePrimitive}
@@ -454,6 +508,18 @@ function svgattribute(attributes::AbstractArray, values::AbstractArray)
         @makeprimitives SVGAttributePrimitive,
             (attribute in attributes, value in values),
             SVGAttributePrimitive(attribute, string(value)))
+end
+
+
+function Base.hash(primitive::SVGAttributePrimitive, h::UInt64)
+    h = hash(primitive.attribute, h)
+    h = hash(primitive.value, h)
+    return h
+end
+
+
+function Base.(:(==))(a::SVGAttributePrimitive, b::SVGAttributePrimitive)
+    return a.attribute == b.attribute && a.value == b.value
 end
 
 
@@ -549,6 +615,15 @@ end
 
 function isrepeatable(p::JSCall)
     return true
+end
+
+
+function Base.isless(a::FillPrimitive, b::FillPrimitive)
+    return color_isless(a.color, b.color)
+end
+
+function Base.isless(a::StrokePrimitive, b::StrokePrimitive)
+    return color_isless(a.color, b.color)
 end
 
 

@@ -189,6 +189,11 @@ typealias CAIROSURFACE  Image{CairoBackend}
 
 
 function canbatch(img::Image)
+    for vp in values(img.vector_properties)
+        if !isnull(vp)
+            return false
+        end
+    end
     return true
 end
 
@@ -1179,6 +1184,8 @@ end
 
 
 function draw(img::Image, batch::FormBatch)
+    println("CAIRO BATCH")
+
     bounds = boundingbox(batch.primitive, img.linewidth, img.font, img.fontsize)
     width = bounds.a[1].value * img.ppmm
     height = bounds.a[2].value * img.ppmm
