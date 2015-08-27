@@ -93,12 +93,11 @@ const batch_length_threshold = 100
 Count the number of unique primitives in a property, stopping when max_count is
 exceeded.
 """
-function count_unqiue_primitives(property::Property, max_count::Int)
+function count_unique_primitives(property::Property, max_count::Int)
     unique_primitives = Set{eltype(property.primitives)}()
     for primitive in property.primitives
         push!(unique_primitives, primitive)
         if length(unique_primitives) > max_count
-            @show collect(unique_primitives)[1:10]
             break
         end
     end
@@ -157,7 +156,7 @@ batched.
 
 What this does is look for patterns in which a long vector form is accompanied
 by a large vector property that has a relatively small number of unique values.
-If there are n unqiue values, we can split it into n contexts, each with a
+If there are n unique values, we can split it into n contexts, each with a
 shorter vector form and only scalar properties.
 """
 function optimize_batching(ctx::Context)
@@ -182,7 +181,7 @@ function optimize_batching(ctx::Context)
         if length(prop_child.head.primitives) > 1
             max_unique_primitives =
                 max(max_unique_primitives,
-                    count_unqiue_primitives(prop_child.head, max_count))
+                    count_unique_primitives(prop_child.head, max_count))
         end
         prop_child = prop_child.tail
     end
