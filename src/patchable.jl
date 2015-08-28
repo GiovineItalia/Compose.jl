@@ -294,10 +294,10 @@ draw(img::Patchable, prim::FillOpacityPrimitive) =
     :opacity, prim.value
 
 function draw!(img::Patchable, prim::FillPrimitive, props)
-    if isa(prim.color, AlphaColorValue)
-        props[:fill] = svg_fmt_color(prim.color.c)
+    if isa(prim.color, TransparentColor)
+        props[:fill] = svg_fmt_color(color(prim.color))
         props["fill-opacity"] = prim.color.alpha
-    elseif isa(prim.color, ColorValue)
+    elseif isa(prim.color, Color)
         props[:fill] = svg_fmt_color(prim.color)
     else
         props[:fill] = "none"
@@ -352,8 +352,8 @@ draw(img::Patchable, prim::StrokeOpacityPrimitive) =
     "stroke-opacity", prim.value
 
 function draw!(img::Patchable, prim::StrokePrimitive, dict)
-    if isa(prim.color, AlphaColorValue)
-        dict[:stroke] = svg_fmt_color(prim.color.c)
+    if isa(prim.color, TransparentColor)
+        dict[:stroke] = svg_fmt_color(color(prim.color))
         dict["stroke-opacity"] = prim.color.alpha
     else
         dict[:stroke] = svg_fmt_color(prim.color)

@@ -427,12 +427,12 @@ end
 
 
 function apply_property(img::Image, p::FillOpacityPrimitive)
-    img.fill = RGBA{Float64}(img.fill.c, p.value)
+    img.fill = RGBA{Float64}(color(img.fill), p.value)
 end
 
 
 function apply_property(img::Image, p::StrokeOpacityPrimitive)
-    img.stroke = RGBA{Float64}(img.stroke.c, p.value)
+    img.stroke = RGBA{Float64}(color(img.stroke), p.value)
 end
 
 
@@ -695,7 +695,7 @@ function fillstroke(img::Image, strokeonly::Bool=false)
     end
 
     if img.fill.alpha > 0.0 && !strokeonly
-        Cairo.set_source_rgba(img.ctx, img.fill.c.r, img.fill.c.g, img.fill.c.b,
+        Cairo.set_source_rgba(img.ctx, img.fill.r, img.fill.g, img.fill.b,
                               img.fill.alpha)
 
         if img.stroke.alpha > 0.0
@@ -706,8 +706,8 @@ function fillstroke(img::Image, strokeonly::Bool=false)
     end
 
     if img.stroke.alpha > 0.0
-        Cairo.set_source_rgba(img.ctx, img.stroke.c.r, img.stroke.c.g,
-                                     img.stroke.c.b, img.stroke.alpha)
+        Cairo.set_source_rgba(img.ctx, img.stroke.r, img.stroke.g,
+                                     img.stroke.b, img.stroke.alpha)
         Cairo.set_dash(img.ctx, img.stroke_dash)
         Cairo.set_line_cap(img.ctx, cairo_linecap(img.stroke_linecap))
         Cairo.set_line_join(img.ctx, cairo_linejoin(img.stroke_linejoin))
@@ -857,7 +857,7 @@ function draw(img::Image, prim::TextPrimitive)
         end
     end
 
-    Cairo.set_source_rgba(img.ctx, img.fill.c.r, img.fill.c.g, img.fill.c.b,
+    Cairo.set_source_rgba(img.ctx, img.fill.r, img.fill.g, img.fill.b,
                           img.fill.alpha)
 
     if prim.rot.theta != 0.0

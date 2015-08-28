@@ -1,6 +1,6 @@
 module Compose
 
-using Color
+using Colors
 using Iterators
 using DataStructures
 using Compat
@@ -124,7 +124,7 @@ default_font_family = "Helvetica Neue,Helvetica,Arial,sans"
 default_font_size = 11pt
 default_line_width = 0.3mm
 default_stroke_color = nothing
-default_fill_color = color("black")
+default_fill_color = colorant"black"
 
 
 # Use cairo for the PNG, PS, PDF if it's installed.
@@ -134,9 +134,12 @@ else
     global PNG
     global PS
     global PDF
-    PNG(args...) = error("Cairo must be installed to use the PNG backend.")
-    PS(args...) = error("Cairo must be installed to use the PS backend.")
-    PDF(args...) = error("Cairo must be installed to use the PDF backend.")
+
+    msg1 = "Install Cairo to use the "
+    msg2 = " backend. You may need to delete your cache files (usually in ~/.julia/lib/v0.4) afterwards."
+    PNG(args...) = error(string(msg1, "PNG", msg2))
+    PS(args...) = error(string(msg1, "PS", msg2))
+    PDF(args...) = error(string(msg1, "PDF", msg2))
 end
 include("svg.jl")
 include("pgf_backend.jl")

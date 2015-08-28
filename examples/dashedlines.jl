@@ -3,7 +3,7 @@
 # Draw lines with various dash styles.
 
 using Compose
-using Color
+using Colors
 
 function draw_lines(dash_patterns)
     if length(dash_patterns) == 0
@@ -30,4 +30,4 @@ patterns = Array[
 c = draw_lines(patterns)
 
 img = PDF("dash.pdf", 4inch, 4(sqrt(3)/2)inch)
-draw(img, compose(c, stroke(color("black")), linewidth(1mm)))
+draw(img, compose(c, stroke(colorant"black"), linewidth(1mm)))
