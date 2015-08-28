@@ -556,6 +556,49 @@ function boundingbox(form::BitmapPrimitive, linewidth::Measure,
     return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
 end
 
+# Image, as this interferes with the Image backends, here as ImageMatrix
+# ------
+
+immutable ImageMatrixPrimitive{P <: Point, XM <: Measure, YM <: Measure} <: FormPrimitive
+    data::Array{Uint32}
+    corner::P
+    width::XM
+    height::YM
+end
+
+typealias ImageMatrix Form{ImageMatrixPrimitive}
+
+
+function image(data::Array{Uint32}, x0, y0, width, height)
+    corner = Point(x0, y0)
+    width = x_measure(width)
+    height = y_measure(height)
+    return ImageMatrix([ImageMatrixPrimitive(data, corner, width, height)])
+end
+
+function image(data::Array{Uint32})
+    corner = Point(0.0, 0.0)
+    width = x_measure(1.0)
+    height = y_measure(1.0)
+    return ImageMatrix([ImageMatrixPrimitive(data, corner, width, height)])
+end
+
+
+function absolute_units(p::ImageMatrixPrimitive, t::Transform, units::UnitBox,
+                        box::AbsoluteBoundingBox)
+    return ImageMatrixPrimitive{SimplePoint, SimpleMeasure, SimpleMeasure}(
+                       p.data,
+                       absolute_units(p.corner, t, units, box),
+                       Measure(absolute_units(p.width, t, units, box)),
+                       Measure(absolute_units(p.height, t, units, box)))
+end
+
+
+function boundingbox(form::ImageMatrixPrimitive, linewidth::Measure,
+                     font::String, fontsize::Measure)
+    return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
+end
+
 # Path
 # ----
 

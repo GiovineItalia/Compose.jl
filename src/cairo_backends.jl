@@ -884,6 +884,20 @@ function draw(img::Image, prim::BitmapPrimitive)
     error("Embedding bitmaps in Cairo backends (i.e. PNG, PDF, PS) is not supported.")
 end
 
+function draw(img::Image, prim::ImageMatrixPrimitive)
+
+    rectangle(img, prim.corner, prim.width, prim.height)
+    s = Cairo.CairoRGBSurface(prim.data);
+    p = Cairo.CairoPattern(s)
+    w = absolute_native_units(img,prim.width.abs)
+    h = absolute_native_units(img,prim.height.abs)
+    m = Cairo.CairoMatrix(s.width/w,0,0,s.height/h,0,0)
+    Cairo.set_matrix(p,m)
+    Cairo.pattern_set_filter(p,Cairo.FILTER_NEAREST)        
+    Cairo.set_source(img.ctx,p)
+    Cairo.fill(img.ctx)
+
+end
 
 function draw(img::Image, prim::PathPrimitive)
     for op in prim.ops
