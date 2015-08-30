@@ -631,14 +631,14 @@ end
 #   A Context giving a tree diagram.
 #
 function introspect(root::Context)
-    positions = Dict{ComposeNode, (Float64, Float64)}()
+    positions = Dict{ComposeNode, @compat(Tuple{Float64, Float64})}()
     level_count = Int[]
     max_level = 0
 
     # TODO: It would be nice if we can try to do a better job of positioning
     # nodes within their levels
 
-    q = Queue((ComposeNode, Int))
+    q = Queue(@compat(Tuple{ComposeNode, Int}))
     enqueue!(q, (root, 1))
     figs = compose!(context(), stroke("#333"), linewidth(0.5mm))
     figsize = 6mm
@@ -704,8 +704,3 @@ function introspect(root::Context)
                     (context(order=-2), rectangle(), fill("#333")),
                     lines_ctx, figs)
 end
-
-
-
-
-
