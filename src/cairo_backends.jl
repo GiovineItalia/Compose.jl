@@ -881,7 +881,9 @@ function draw(img::Image, prim::CurvePrimitive)
 end
 
 function draw(img::Image, prim::BitmapPrimitive)
+
     error("Embedding bitmaps in Cairo backends (i.e. PNG, PDF, PS) is not supported.")
+    # here we should find a call to Cairo read_from_png stream    
 end
 
 function draw(img::Image, prim::ImageMatrixPrimitive)
