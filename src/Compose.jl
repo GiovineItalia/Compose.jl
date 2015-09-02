@@ -9,7 +9,7 @@ using Compat
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!,
-             display, writemime, convert, zero, isless, max, fill, size, copy,
+             display, writemime, showcompact, convert, zero, isless, max, fill, size, copy,
              min, max, abs, +, -, *, /
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
