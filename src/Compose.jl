@@ -302,6 +302,9 @@ end
 
 const pad = pad_outer
 
+if VERSION >= v"0.4.0-dev+5512"
+    include("precompile.jl")
+    _precompile_()
+end
+
 end # module Compose
-
-
