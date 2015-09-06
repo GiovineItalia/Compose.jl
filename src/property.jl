@@ -433,7 +433,13 @@ function svgclass(values::AbstractArray)
     return SVGClass([SVGClassPrimitive(value) for value in values])
 end
 
-prop_string(::SVGClass) = "svgc"
+function prop_string(svgc::SVGClass)
+    if isscalar(svgc)
+        return string("svgc(", svgc.primitives[1].value, ")")
+    else
+        return string("svgc(", svgc.primitives[1].value, "...)")
+    end
+end
 
 # SVGAttribute
 # ------------
