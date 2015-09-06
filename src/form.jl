@@ -106,6 +106,8 @@ function boundingbox(form::PolygonPrimitive, linewidth::Measure,
                        y1 - y0 + linewidth)
 end
 
+form_string(::SimplePolygon) = "SP"
+
 immutable ComplexPolygonPrimitive{P <: Point} <: FormPrimitive
     rings::Vector{Vector{P}}
 end
@@ -130,6 +132,9 @@ function absolute_units(p::ComplexPolygonPrimitive, t::Transform, units::UnitBox
                 [SimplePoint[absolute_units(point, t, units, box) for point in ring]
                 for ring in p.rings])
 end
+
+form_string(::ComplexPolygon) = "CP"
+
 
 
 # Rectangle
@@ -199,6 +204,8 @@ function boundingbox(form::RectanglePrimitive, linewidth::Measure,
                        form.height + 2*linewidth)
 end
 
+form_string(::Rectangle) = "R"
+
 # Circle
 # ------
 
@@ -255,6 +262,7 @@ function boundingbox(form::CirclePrimitive, linewidth::Measure,
                        2 * (form.radius + linewidth))
 end
 
+form_string(::Circle) = "C"
 
 # Ellipse
 # -------
@@ -314,7 +322,7 @@ function boundingbox(form::EllipsePrimitive, linewidth::Measure,
                        2 * (yr + linewidth))
 end
 
-
+form_string(::Ellipse) = "E"
 
 # Text
 # ----
@@ -417,6 +425,8 @@ function boundingbox(form::TextPrimitive, linewidth::Measure,
                        height + linewidth)
 end
 
+form_string(::Text) = "T"
+
 # Line
 # ----
 
@@ -473,6 +483,8 @@ function boundingbox(form::LinePrimitive, linewidth::Measure,
                        y1 - y0 + linewidth)
 end
 
+form_string(::Line) = "L"
+
 # Curve
 # -----
 
@@ -510,6 +522,7 @@ function absolute_units(p::CurvePrimitive, t::Transform, units::UnitBox,
                       absolute_units(p.anchor1, t, units, box))
 end
 
+form_string(::Curve) = "CV"
 
 # Bitmap
 # ------
@@ -555,6 +568,8 @@ function boundingbox(form::BitmapPrimitive, linewidth::Measure,
                      font::String, fontsize::Measure)
     return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
 end
+
+form_string(::Bitmap) = "B"
 
 # Image, as this interferes with the Image backends, here as ImageMatrix
 # ------
@@ -1080,4 +1095,3 @@ end
 
 
 # TODO: boundingbox
-
