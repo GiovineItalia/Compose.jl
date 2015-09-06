@@ -964,6 +964,19 @@ function draw(img::SVG, prim::ImageMatrixPrimitive, idx::Int)
 
     # prepare png data first
     s = Cairo.CairoRGBSurface(prim.data);
+
+
+    # s = Cairo.CairoRGBSurface(prim.data);
+    # p = Cairo.CairoPattern(s)
+    # w = absolute_native_units(img,prim.width.abs)
+    # h = absolute_native_units(img,prim.height.abs)
+    # m = Cairo.CairoMatrix(s.width/w,0,0,s.height/h,0,0)
+    # Cairo.set_matrix(p,m)
+    # Cairo.pattern_set_filter(p,Cairo.FILTER_NEAREST)        
+    # Cairo.set_source(img.ctx,p)
+    # Cairo.fill(img.ctx)
+
+
     fd = IOBuffer();
     Cairo.write_to_png(s,fd);
     d = takebuf_string(fd);
