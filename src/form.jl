@@ -69,7 +69,7 @@ end
 
 
 function narrow_polygon_point_types(point_arrays::AbstractArray)
-    type_params{XM, YM}(p::Point{XM, YM}) = (XM, YM)
+    type_params{XM, YM}(::Type{Point{XM, YM}}) = (XM, YM)
 
     if !isempty(point_arrays) && all([eltype(arr) <: Point for arr in point_arrays])
         xm, ym = type_params(eltype(point_arrays[1]))
