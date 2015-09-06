@@ -23,6 +23,14 @@ r = Compose.image(m,0.0,0.0,1.0,1.0)
 c = compose(compose(context(), r))
 draw(output,c);
 
+# insert image (Uint32) into SVG
+output = Compose.SVG("t2h.svg",400px,300px);
+m = rand(Uint32,4,8);        
+r = Compose.image(m,0.0,0.0,1.0,0.5)    
+c = compose(compose(context(), r))
+draw(output,c);
+
+
 # bitmap (png) into cairo backend needs more conversion
 #output = Compose.PNG("t3.png",400px,300px);
 #r = bitmap("image/png",inline_png2,0,0,1.0,1.0)
