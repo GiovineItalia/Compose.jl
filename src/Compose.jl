@@ -1,3 +1,5 @@
+VERSION >= v"0.4.0-dev+6521" && __precompile__()
+
 module Compose
 
 using Colors
@@ -150,9 +152,12 @@ else
     global PNG
     global PS
     global PDF
-    PNG(args...) = error("Cairo must be installed to use the PNG backend.")
-    PS(args...) = error("Cairo must be installed to use the PS backend.")
-    PDF(args...) = error("Cairo must be installed to use the PDF backend.")
+
+    msg1 = "Install Cairo to use the "
+    msg2 = " backend. You may need to delete your cache files (usually in ~/.julia/lib/v0.4) afterwards."
+    PNG(args...) = error(string(msg1, "PNG", msg2))
+    PS(args...) = error(string(msg1, "PS", msg2))
+    PDF(args...) = error(string(msg1, "PDF", msg2))
 end
 include("svg.jl")
 include("pgf_backend.jl")
@@ -314,6 +319,9 @@ end
 
 const pad = pad_outer
 
+if VERSION >= v"0.4.0-dev+5512"
+    include("precompile.jl")
+    _precompile_()
+end
+
 end # module Compose
-
-
