@@ -454,9 +454,6 @@ function drawpart(backend::Backend, container::Container,
                   parent_transform::Transform, units::UnitBox,
                   parent_box::Absolute2DBox)
 
-    # used to collect property children
-    properties = Array(Property, 0)
-
     if (iswithjs(container) && !iswithjs(backend)) ||
        (iswithoutjs(container) && iswithjs(backend))
         return
@@ -505,23 +502,27 @@ function drawpart(backend::Backend, container::Container,
         units = resolve(box, units, transform, get(ctx.units))
     end
 
-    child = ctx.property_children
-    while !isa(child, ListNull)
-        push!(properties, resolve(parent_box, units, parent_transform, child.head))
-        child = child.tail
-    end
+    has_properties = false
+    if !isa(ctx.property_children, ListNull) || ctx.clip
+        has_properties = true
+        properties = Array(Property, 0)
 
-    if ctx.clip
-        x0 = ctx.box.x0[1]
-        y0 = ctx.box.x0[2]
-        x1 = x0 + ctx.box.a[1]
-        y1 = y0 + ctx.box.a[2]
-        push!(properties,
-              resolve(parent_box, units, parent_transform,
-                      clip([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])))
-    end
+        child = ctx.property_children
+        while !isa(child, ListNull)
+            push!(properties, resolve(parent_box, units, parent_transform, child.head))
+            child = child.tail
+        end
 
-    if !isempty(properties)
+        if ctx.clip
+            x0 = ctx.box.x0[1]
+            y0 = ctx.box.x0[2]
+            x1 = x0 + ctx.box.a[1]
+            y1 = y0 + ctx.box.a[2]
+            push!(properties,
+            resolve(parent_box, units, parent_transform,
+            clip([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])))
+        end
+
         push_property_frame(backend, properties)
     end
 
@@ -580,7 +581,7 @@ function drawpart(backend::Backend, container::Container,
         end
     end
 
-    if !isempty(properties)
+    if has_properties
         pop_property_frame(backend)
     end
 end

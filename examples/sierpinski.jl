@@ -1,4 +1,4 @@
-using Compose
+using Compose, Colors
 
 const padding = 0.5mm
 
@@ -18,8 +18,8 @@ img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
 draw(img, compose(sierpinski(2), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
 
 img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
-@time draw(img, compose(sierpinski(10), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
+@time draw(img, compose(sierpinski(11), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
 
-img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
-@profile draw(img, compose(sierpinski(10), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
-Profile.print()
+#img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
+#@profile draw(img, compose(sierpinski(10), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
+#Profile.print()
