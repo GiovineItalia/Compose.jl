@@ -53,6 +53,24 @@ crv = curve(pnts, pnts, pnts, pnts, :manycurve)
 bm = bitmap("fake", rand(Uint8,10), 0, 1, 0.8, 0.7, :image)
 @test bm.tag == :image
 
-# type definitions
-c = Compose.circle(rand(5), rand(5), rand(5))
-@test isa(c, Compose.Circle)
+# type definitions & constructors (issue #149)
+@test isa(Compose.polygon(), Compose.Polygon)
+@test isa(Compose.polygon([(1,2),(3,5),(4,2)]), Compose.Polygon)
+
+@test isa(Compose.rectangle(), Compose.Rectangle)
+@test isa(Compose.rectangle(0,1,0.3,0.8), Compose.Rectangle)
+@test isa(Compose.rectangle(rand(5),rand(5),rand(5),rand(5)), Compose.Rectangle)
+
+@test isa(Compose.circle(), Compose.Circle)
+@test isa(Compose.circle(3.2,1.4,0.8), Compose.Circle)
+@test isa(Compose.circle(rand(5), rand(5), rand(5)), Compose.Circle)
+
+@test isa(Compose.ellipse(), Compose.Ellipse)
+@test isa(Compose.ellipse(0.5,0.5,0.3,0.2), Compose.Ellipse)
+@test isa(Compose.ellipse(rand(5), rand(5), rand(5), rand(5)), Compose.Ellipse)
+
+@test isa(Compose.text(0.5,0.4,"hello"), Compose.Text)
+@test isa(Compose.text(rand(5),rand(5),["hello","there"]), Compose.Text)
+
+@test isa(Compose.line(), Compose.Line)
+@test isa(Compose.line([(1,2),(3,5),(4,2)]), Compose.Line)
