@@ -3,10 +3,20 @@
 
 abstract FormPrimitive
 
+const empty_tag = symbol("")
+
 immutable Form{P <: FormPrimitive} <: ComposeNode
     primitives::Vector{P}
+    tag::Symbol
+
+    function Form(prim, tag::Symbol=empty_tag)
+        new(prim, tag)
+    end
 end
 
+function Form{P<:FormPrimitive}(primitives::Vector{P}, tag::Symbol=empty_tag)
+    Form{P}(primitives, tag)
+end
 
 function isempty(f::Form)
     return isempty(f.primitives)
@@ -44,11 +54,11 @@ function polygon()
 end
 
 
-function polygon{T <: XYTupleOrPoint}(points::AbstractArray{T})
+function polygon{T <: XYTupleOrPoint}(points::AbstractArray{T}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(Vector[points];)
     PointType = XM == YM == Any ? Point : Point{XM, YM}
     return Polygon([PolygonPrimitive(PointType[convert(PointType, point)
-                                               for point in points])])
+                                               for point in points])], tag)
 end
 
 
@@ -59,7 +69,7 @@ end
 
 
 function narrow_polygon_point_types(point_arrays::AbstractArray)
-    type_params{XM, YM}(p::Point{XM, YM}) = (XM, YM)
+    type_params{XM, YM}(::Type{Point{XM, YM}}) = (XM, YM)
 
     if !isempty(point_arrays) && all([eltype(arr) <: Point for arr in point_arrays])
         xm, ym = type_params(eltype(point_arrays[1]))
@@ -75,7 +85,7 @@ function narrow_polygon_point_types(point_arrays::AbstractArray)
 end
 
 
-function polygon(point_arrays::AbstractArray)
+function polygon(point_arrays::AbstractArray, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(point_arrays)
     PointType = XM == YM == Any ? Point : Point{XM, YM}
     PrimType = XM == YM == Any ? PolygonPrimitive : PolygonPrimitive{PointType}
@@ -85,7 +95,7 @@ function polygon(point_arrays::AbstractArray)
         polyprims[i] = PrimType(PointType[convert(Point, point)
                                           for point in point_array])
     end
-    return Form{PrimType}(polyprims)
+    return Form{PrimType}(polyprims, tag)
 end
 
 
@@ -119,12 +129,12 @@ function complexpolygon()
     return ComplexPolygon([ComplexPolygonPrimitive(Point[])])
 end
 
-function complexpolygon{T <: Real}(coords::Vector{Vector{Vector{T}}})
-    return ComplexPolygon([ComplexPolygonPrimitive(Vector{Point}[Point[Point(i,j) for (i,j) in ring] for ring in coords])])
+function complexpolygon{T <: Real}(coords::Vector{Vector{Vector{T}}}, tag=empty_tag)
+    return ComplexPolygon([ComplexPolygonPrimitive(Vector{Point}[Point[Point(i,j) for (i,j) in ring] for ring in coords])], tag)
 end
 
-function complexpolygon{P <: Point}(rings::Vector{Vector{P}})
-    return ComplexPolygon([ComplexPolygonPrimitive(rings)])
+function complexpolygon{P <: Point}(rings::Vector{Vector{P}}, tag=empty_tag)
+    return ComplexPolygon([ComplexPolygonPrimitive(rings)], tag)
 end
 
 function absolute_units(p::ComplexPolygonPrimitive, t::Transform, units::UnitBox,
@@ -155,19 +165,19 @@ function rectangle()
 end
 
 
-function rectangle(x0, y0, width, height)
+function rectangle(x0, y0, width, height, tag=empty_tag)
     corner = Point(x0, y0)
     width = x_measure(width)
     height = y_measure(height)
-    return Rectangle([RectanglePrimitive(corner, width, height)])
+    return Rectangle([RectanglePrimitive(corner, width, height)], tag)
 end
 
 
 function rectangle(x0s::AbstractArray, y0s::AbstractArray,
-                   widths::AbstractArray, heights::AbstractArray)
+                   widths::AbstractArray, heights::AbstractArray, tag=empty_tag)
     return @makeform (x0 in x0s, y0 in y0s, width in widths, height in heights),
                      RectanglePrimitive(Point(x0, y0),
-                                        x_measure(width), y_measure(height))
+                                        x_measure(width), y_measure(height)) tag
 end
 
 
@@ -234,17 +244,17 @@ function circle()
 end
 
 
-function circle(x, y, r)
-    return Circle([CirclePrimitive(x, y, r)])
+function circle(x, y, r, tag=empty_tag)
+    return Circle([CirclePrimitive(x, y, r)], tag)
 end
 
 
-function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
+function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray, tag=empty_tag)
     if isempty(xs) || isempty(ys) || isempty(rs)
-        return Circle(CirclePrimitive[])
+        return Circle(CirclePrimitive[], tag)
     end
 
-    return @makeform (x in xs, y in ys, r in rs), CirclePrimitive(x, y, r)
+    return @makeform (x in xs, y in ys, r in rs), CirclePrimitive(x, y, r) tag
 end
 
 
@@ -285,19 +295,19 @@ function ellipse()
 end
 
 
-function ellipse(x, y, x_radius, y_radius)
+function ellipse(x, y, x_radius, y_radius, tag=empty_tag)
     return Ellipse([EllipsePrimitive(Point(x, y),
                                      Point(x_measure(x) + x_measure(x_radius), y),
-                                     Point(x, y_measure(y) + y_measure(y_radius)))])
+                                     Point(x, y_measure(y) + y_measure(y_radius)))], tag)
 end
 
 
 function ellipse(xs::AbstractArray, ys::AbstractArray,
-                 x_radiuses::AbstractArray, y_radiuses::AbstractArray)
+                 x_radiuses::AbstractArray, y_radiuses::AbstractArray, tag=empty_tag)
     return @makeform (x in xs, y in ys, x_radius in x_radiuses, y_radius in y_radiuses),
             EllipsePrimitive(Point(x, y),
                              Point(x_measure(x) + x_measure(x_radius), y),
-                             Point(x, y_measure(y) + y_measure(y_radius)))
+                             Point(x, y_measure(y) + y_measure(y_radius))) tag
 end
 
 
@@ -363,31 +373,31 @@ typealias Text Form{TextPrimitive}
 
 function text(x, y, value::String,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
-              rot=Rotation())
-    return Text([TextPrimitive(Point(x, y), value, halign, valign, rot)])
+              rot=Rotation(); tag::Symbol=empty_tag)
+    return Text([TextPrimitive(Point(x, y), value, halign, valign, rot)], tag)
 end
 
 
 function text(x, y, value,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
-              rot=Rotation())
-    return Text([TextPrimitive(Point(x, y), string(value), halign, valign, rot)])
+              rot=Rotation(); tag::Symbol=empty_tag)
+    return Text([TextPrimitive(Point(x, y), string(value), halign, valign, rot), tag])
 end
 
 
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{String},
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
-              rots::AbstractArray=[Rotation()])
+              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag)
     return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-            TextPrimitive(Point(x, y), value, halign, valign, rot)
+            TextPrimitive(Point(x, y), value, halign, valign, rot) tag
 end
 
 
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
-              rots::AbstractArray=[Rotation()])
+              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag)
     return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-            TextPrimitive(Point(x, y), value, halign, valign, rot)
+            TextPrimitive(Point(x, y), value, halign, valign, rot) tag
 end
 
 
@@ -443,14 +453,14 @@ function line()
 end
 
 
-function line{T <: XYTupleOrPoint}(points::AbstractArray{T})
+function line{T <: XYTupleOrPoint}(points::AbstractArray{T}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(Vector[points])
     PointType = XM == YM == Any ? Point : Point{XM, YM}
-    return Line([LinePrimitive(PointType[convert(PointType, point) for point in points])])
+    return Line([LinePrimitive(PointType[convert(PointType, point) for point in points])], tag)
 end
 
 
-function line(point_arrays::AbstractArray)
+function line(point_arrays::AbstractArray, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(point_arrays)
     PointType = XM == YM == Any ? Point : Point{XM, YM}
     PrimType = XM == YM == Any ? LinePrimitive : LinePrimitive{PointType}
@@ -461,7 +471,7 @@ function line(point_arrays::AbstractArray)
         lineprims[i] = PrimType(PointType[convert(Point, point)
                                           for point in point_array])
     end
-    return Form{PrimType}(lineprims)
+    return Form{PrimType}(lineprims, tag)
 end
 
 
@@ -500,17 +510,17 @@ typealias Curve Form{CurvePrimitive}
 
 
 function curve(anchor0::XYTupleOrPoint, ctrl0::XYTupleOrPoint,
-               ctrl1::XYTupleOrPoint, anchor1::XYTupleOrPoint)
+               ctrl1::XYTupleOrPoint, anchor1::XYTupleOrPoint, tag=empty_tag)
     return Curve([CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
-                                 convert(Point, ctrl1), convert(Point, anchor1))])
+                                 convert(Point, ctrl1), convert(Point, anchor1))], tag)
 end
 
 
 function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
-               ctrl1s::AbstractArray, anchor1s::AbstractArray)
+               ctrl1s::AbstractArray, anchor1s::AbstractArray, tag=empty_tag)
     return @makeform (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
             CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
-                           convert(Point, ctrl1), convert(Point, anchor1))
+                           convert(Point, ctrl1), convert(Point, anchor1)) tag
 end
 
 
@@ -539,19 +549,19 @@ end
 typealias Bitmap Form{BitmapPrimitive}
 
 
-function bitmap(mime::String, data::Vector{Uint8}, x0, y0, width, height)
+function bitmap(mime::String, data::Vector{Uint8}, x0, y0, width, height, tag=empty_tag)
     corner = Point(x0, y0)
     width = x_measure(width)
     height = y_measure(height)
-    return Bitmap([BitmapPrimitive(mime, data, corner, width, height)])
+    return Bitmap([BitmapPrimitive(mime, data, corner, width, height)], tag)
 end
 
 
 function bitmap(mimes::AbstractArray, datas::AbstractArray,
                 x0s::AbstractArray, y0s::AbstractArray,
-                widths::AbstractArray, heights::AbstractArray)
+                widths::AbstractArray, heights::AbstractArray, tag=empty_tag)
     return @makeform (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heigths),
-            BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height))
+            BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height)) tag
 end
 
 
@@ -1036,13 +1046,13 @@ end
 typealias Path Form{PathPrimitive}
 
 
-function path(tokens::AbstractArray)
-    return Path([PathPrimitive(parsepath(tokens))])
+function path(tokens::AbstractArray, tag=empty_tag)
+    return Path([PathPrimitive(parsepath(tokens))], tag)
 end
 
 
-function path{T <: AbstractArray}(tokens::AbstractArray{T})
-    return Path([PathPrimitive(parsepath(ts)) for ts in tokens])
+function path{T <: AbstractArray}(tokens::AbstractArray{T}, tag=empty_tag)
+    return Path([PathPrimitive(parsepath(ts)) for ts in tokens], tag)
 end
 
 

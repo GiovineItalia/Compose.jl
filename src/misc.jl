@@ -32,7 +32,10 @@ end
 #                    CirclePrimitive(Point(x, y), x_measure(r)))
 #
 # but much more efficiently.
-macro makeform(args)
+macro makeform(args...)
+    @assert 1 <= length(args) <= 2
+    tag = length(args) == 2 ? args[2] : empty_tag
+    args = args[1]
     @assert args.head == :tuple
     @assert length(args.args) == 2
     iterators, constructor = args.args
@@ -78,7 +81,7 @@ macro makeform(args)
             $(iter_ex)
             primitives[i] = $(constructor)::T
         end
-        Form{T}(primitives)
+        Form{T}(primitives, $(tag))
     end)
 end
 
