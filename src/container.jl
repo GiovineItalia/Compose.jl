@@ -708,3 +708,32 @@ function introspect(root::Context)
                     (context(order=-2), rectangle(), fill("#333")),
                     lines_ctx, figs)
 end
+
+
+function showcompact(io::IO, ctx::Context)
+    print(io, "Context(")
+    first = true
+    for c in ctx.children
+        first || print(io, ",")
+        first = false
+        showcompact(io, c)
+    end
+    print(io, ")")
+end
+
+function showcompact(io::IO, a::AbstractArray)
+    print(io, "[")
+    first = true
+    for c in a
+        first || print(io, ",")
+        first = false
+        showcompact(io, c)
+    end
+    print(io, "]")
+end
+
+showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
+
+showcompact(io::IO, p::Compose.Property) = print(io, Compose.prop_string(p))
+
+showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)

@@ -24,6 +24,7 @@ function draw(backend::Backend, t::Transform, units::UnitBox,
                         for primitive in form.primitives]))
 end
 
+form_string(::Form) = "FORM"  # fallback definition
 
 # Polygon
 # -------
@@ -1049,6 +1050,8 @@ function absolute_units(p::PathPrimitive, t::Transform, units::UnitBox,
                         box::AbsoluteBoundingBox)
     return PathPrimitive([absolute_units(op, t, units, box) for op in p.ops])
 end
+
+
 
 
 # TODO: boundingbox

@@ -63,6 +63,7 @@ function stroke(cs::AbstractArray)
 	return Stroke([StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : color(c)) for c in cs])
 end
 
+prop_string(::Stroke) = "s"
 
 # Fill
 # ----
@@ -88,6 +89,7 @@ function fill(cs::AbstractArray)
 	return Fill([FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : color(c)) for c in cs])
 end
 
+prop_string(::Fill) = "f"
 
 
 # StrokeDash
@@ -115,6 +117,8 @@ function absolute_units(primitive::StrokeDashPrimitive, t::Transform,
     return StrokeDashPrimitive([Measure(absolute_units(v, t, units, box))
                                 for v in primitive.value])
 end
+
+prop_string(::StrokeDash) = "sd"
 
 # StrokeLineCap
 # -------------
@@ -150,6 +154,7 @@ function strokelinecap(values::AbstractArray)
     return StrokeLineCap([StrokeLineCapPrimitive(value) for value in values])
 end
 
+prop_string(::StrokeLineCap) = "slc"
 
 # StrokeLineJoin
 # --------------
@@ -184,6 +189,7 @@ function strokelinejoin(values::AbstractArray)
     return StrokeLineJoin([StrokeLineJoinPrimitive(value) for value in values])
 end
 
+prop_string(::StrokeLineJoin) = "slj"
 
 # LineWidth
 # ---------
@@ -214,6 +220,7 @@ function absolute_units(primitive::LineWidthPrimitive, t::Transform,
     return LineWidthPrimitive(Measure(absolute_units(primitive.value, t, units, box)))
 end
 
+prop_string(::LineWidth) = "lw"
 
 # Visible
 # -------
@@ -233,6 +240,8 @@ end
 function visible(values::AbstractArray)
     return Visible([VisiblePrimitive(value) for value in values])
 end
+
+prop_string(::Visible) = "v"
 
 
 # FillOpacity
@@ -262,6 +271,8 @@ function fillopacity(values::AbstractArray)
     return FillOpacity([FillOpacityPrimitive(value) for value in values])
 end
 
+prop_string(::FillOpacity) = "fo"
+
 
 # StrokeOpacity
 # -------------
@@ -290,6 +301,7 @@ function strokeopacity(values::AbstractArray)
     return StrokeOpacity([StrokeOpacityPrimitive(value) for value in values])
 end
 
+prop_string(::StrokeOpacity) = "so"
 
 # Clip
 # ----
@@ -327,6 +339,7 @@ function absolute_units(primitive::ClipPrimitive, t::Transform, units::UnitBox,
                                      for point in primitive.points])
 end
 
+prop_string(::Clip) = "clp"
 
 # Font
 # ----
@@ -347,6 +360,7 @@ function font(families::AbstractArray)
     return Font([FontPrimitive(family) for family in families])
 end
 
+prop_string(::Font) = "fnt"
 
 # FontSize
 # --------
@@ -377,6 +391,7 @@ function absolue_units(primitive::FontSizePrimitive, t::Transform,
     return FontSizePrimitive(Measure(absolute_units(primitive.value, t, units, box)))
 end
 
+prop_string(::FontSize) = "fsz"
 
 # SVGID
 # -----
@@ -397,6 +412,8 @@ function svgid(values::AbstractArray)
     return SVGID([SVGIDPrimitive(value) for value in values])
 end
 
+prop_string(::SVGID) = "svgid"
+
 
 # SVGClass
 # --------
@@ -416,6 +433,13 @@ function svgclass(values::AbstractArray)
     return SVGClass([SVGClassPrimitive(value) for value in values])
 end
 
+function prop_string(svgc::SVGClass)
+    if isscalar(svgc)
+        return string("svgc(", svgc.primitives[1].value, ")")
+    else
+        return string("svgc(", svgc.primitives[1].value, "...)")
+    end
+end
 
 # SVGAttribute
 # ------------
@@ -446,6 +470,7 @@ function svgattribute(attributes::AbstractArray, values::AbstractArray)
             SVGAttributePrimitive(attribute, string(value)))
 end
 
+prop_string(::SVGAttribute) = "svga"
 
 # JSInclude
 # ---------
@@ -465,6 +490,7 @@ end
 # Don't bother with a vectorized version of this. It wouldn't really make #
 # sense.
 
+prop_string(::JSInclude) = "jsip"
 
 # JSCall
 # ------
@@ -541,4 +567,4 @@ function isrepeatable(p::JSCall)
     return true
 end
 
-
+prop_string(::JSCall) = "jsc"
