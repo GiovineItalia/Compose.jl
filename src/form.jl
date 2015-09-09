@@ -50,15 +50,17 @@ typealias PolygonPrimitive SimplePolygonPrimitive
 
 
 function polygon()
-    return Polygon([PolygonPrimitive(Point[])])
+    prim = PolygonPrimitive(Point[])
+    return Polygon{typeof(prim)}([prim])
 end
 
 
 function polygon{T <: XYTupleOrPoint}(points::AbstractArray{T}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(Vector[points];)
     PointType = XM == YM == Any ? Point : Point{XM, YM}
-    return Polygon([PolygonPrimitive(PointType[convert(PointType, point)
-                                               for point in points])], tag)
+    prim = PolygonPrimitive(PointType[convert(PointType, point)
+                                      for point in points])
+    return Polygon{typeof(prim)}([prim], tag)
 end
 
 
@@ -126,15 +128,18 @@ end
 typealias ComplexPolygon{P<:ComplexPolygonPrimitive} Form{P}
 
 function complexpolygon()
-    return ComplexPolygon([ComplexPolygonPrimitive(Point[])])
+    prim = ComplexPolygonPrimitive(Point[])
+    return ComplexPolygon{typeof(prim)}([prim])
 end
 
 function complexpolygon{T <: Real}(coords::Vector{Vector{Vector{T}}}, tag=empty_tag)
-    return ComplexPolygon([ComplexPolygonPrimitive(Vector{Point}[Point[Point(i,j) for (i,j) in ring] for ring in coords])], tag)
+    prim = ComplexPolygonPrimitive(Vector{Point}[Point[Point(i,j) for (i,j) in ring] for ring in coords])
+    return ComplexPolygon{typeof(prim)}([prim], tag)
 end
 
 function complexpolygon{P <: Point}(rings::Vector{Vector{P}}, tag=empty_tag)
-    return ComplexPolygon([ComplexPolygonPrimitive(rings)], tag)
+    prim = ComplexPolygonPrimitive(rings)
+    return ComplexPolygon{typeof(prim)}([prim], tag)
 end
 
 function absolute_units(p::ComplexPolygonPrimitive, t::Transform, units::UnitBox,
@@ -161,7 +166,8 @@ typealias Rectangle{P<:RectanglePrimitive} Form{P}
 
 
 function rectangle()
-    return Rectangle([RectanglePrimitive(Point(0.0w, 0.0h), 1.0w, 1.0h)])
+    prim = RectanglePrimitive(Point(0.0w, 0.0h), 1.0w, 1.0h)
+    return Rectangle{typeof(prim)}([prim])
 end
 
 
@@ -169,7 +175,8 @@ function rectangle(x0, y0, width, height, tag=empty_tag)
     corner = Point(x0, y0)
     width = x_measure(width)
     height = y_measure(height)
-    return Rectangle([RectanglePrimitive(corner, width, height)], tag)
+    prim = RectanglePrimitive(corner, width, height)
+    return Rectangle{typeof(prim)}([prim], tag)
 end
 
 
@@ -240,18 +247,21 @@ typealias Circle{P<:CirclePrimitive} Form{P}
 
 
 function circle()
-    return Circle([CirclePrimitive(Point(0.5w, 0.5h), 0.5w)])
+    prim = CirclePrimitive(Point(0.5w, 0.5h), 0.5w)
+    return Circle{typeof(prim)}([prim])
 end
 
 
 function circle(x, y, r, tag=empty_tag)
-    return Circle([CirclePrimitive(x, y, r)], tag)
+    prim = CirclePrimitive(x, y, r)
+    return Circle{typeof(prim)}([prim], tag)
 end
 
 
 function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray, tag=empty_tag)
     if isempty(xs) || isempty(ys) || isempty(rs)
-        return Circle(CirclePrimitive[], tag)
+        prima = CirclePrimitive[]
+        return Circle{eltype(prima)}(prima, tag)
     end
 
     return @makeform (x in xs, y in ys, r in rs), CirclePrimitive(x, y, r) tag
@@ -289,16 +299,18 @@ typealias Ellipse{P<:EllipsePrimitive} Form{P}
 
 
 function ellipse()
-    return Ellipse([EllipsePrimitive(Point(0.5w, 0.5h),
+    prim = EllipsePrimitive(Point(0.5w, 0.5h),
                                      Point(1.0w, 0.5h),
-                                     Point(0.5w, 1.0h))])
+                                     Point(0.5w, 1.0h))
+    return Ellipse{typeof(prim)}([prim])
 end
 
 
 function ellipse(x, y, x_radius, y_radius, tag=empty_tag)
-    return Ellipse([EllipsePrimitive(Point(x, y),
-                                     Point(x_measure(x) + x_measure(x_radius), y),
-                                     Point(x, y_measure(y) + y_measure(y_radius)))], tag)
+    prim = EllipsePrimitive(Point(x, y),
+                            Point(x_measure(x) + x_measure(x_radius), y),
+                            Point(x, y_measure(y) + y_measure(y_radius)))
+    return Ellipse{typeof(prim)}([prim], tag)
 end
 
 
@@ -374,14 +386,16 @@ typealias Text{P<:TextPrimitive} Form{P}
 function text(x, y, value::String,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation(); tag::Symbol=empty_tag)
-    return Text([TextPrimitive(Point(x, y), value, halign, valign, rot)], tag)
+    prim = TextPrimitive(Point(x, y), value, halign, valign, rot)
+    return Text{typeof(prim)}([prim], tag)
 end
 
 
 function text(x, y, value,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation(); tag::Symbol=empty_tag)
-    return Text([TextPrimitive(Point(x, y), string(value), halign, valign, rot), tag])
+    prim = TextPrimitive(Point(x, y), string(value), halign, valign, rot)
+    return Text{typeof(prim)}([prim], tag)
 end
 
 
@@ -449,14 +463,16 @@ typealias Line{P<:LinePrimitive} Form{P}
 
 
 function line()
-    return Line([LinePrimitive(Point[])])
+    prim = LinePrimitive(Point[])
+    return Line{typeof(prim)}([prim])
 end
 
 
 function line{T <: XYTupleOrPoint}(points::AbstractArray{T}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(Vector[points])
     PointType = XM == YM == Any ? Point : Point{XM, YM}
-    return Line([LinePrimitive(PointType[convert(PointType, point) for point in points])], tag)
+    prim = LinePrimitive(PointType[convert(PointType, point) for point in points])
+    return Line{typeof(prim)}([prim], tag)
 end
 
 
@@ -511,8 +527,9 @@ typealias Curve{P<:CurvePrimitive} Form{P}
 
 function curve(anchor0::XYTupleOrPoint, ctrl0::XYTupleOrPoint,
                ctrl1::XYTupleOrPoint, anchor1::XYTupleOrPoint, tag=empty_tag)
-    return Curve([CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
-                                 convert(Point, ctrl1), convert(Point, anchor1))], tag)
+    prim = CurvePrimitive(convert(Point, anchor0), convert(Point, ctrl0),
+                          convert(Point, ctrl1), convert(Point, anchor1))
+    return Curve{typeof(prim)}([prim], tag)
 end
 
 
@@ -553,7 +570,8 @@ function bitmap(mime::String, data::Vector{Uint8}, x0, y0, width, height, tag=em
     corner = Point(x0, y0)
     width = x_measure(width)
     height = y_measure(height)
-    return Bitmap([BitmapPrimitive(mime, data, corner, width, height)], tag)
+    prim = BitmapPrimitive(mime, data, corner, width, height)
+    return Bitmap{typeof(prim)}([prim], tag)
 end
 
 
