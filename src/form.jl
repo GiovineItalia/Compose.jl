@@ -43,7 +43,7 @@ immutable SimplePolygonPrimitive{P <: Point} <: FormPrimitive
     points::Vector{P}
 end
 
-typealias SimplePolygon Form{SimplePolygonPrimitive}
+typealias SimplePolygon{P<:SimplePolygonPrimitive} Form{P}
 
 typealias Polygon SimplePolygon
 typealias PolygonPrimitive SimplePolygonPrimitive
@@ -123,7 +123,7 @@ immutable ComplexPolygonPrimitive{P <: Point} <: FormPrimitive
     rings::Vector{Vector{P}}
 end
 
-typealias ComplexPolygon Form{ComplexPolygonPrimitive}
+typealias ComplexPolygon{P<:ComplexPolygonPrimitive} Form{P}
 
 function complexpolygon()
     return ComplexPolygon([ComplexPolygonPrimitive(Point[])])
@@ -157,7 +157,7 @@ immutable RectanglePrimitive{P <: Point, M1 <: Measure, M2 <: Measure} <: FormPr
     height::M2
 end
 
-typealias Rectangle Form{RectanglePrimitive}
+typealias Rectangle{P<:RectanglePrimitive} Form{P}
 
 
 function rectangle()
@@ -236,7 +236,7 @@ function CirclePrimitive(x, y, r)
 end
 
 
-typealias Circle Form{CirclePrimitive}
+typealias Circle{P<:CirclePrimitive} Form{P}
 
 
 function circle()
@@ -285,7 +285,7 @@ immutable EllipsePrimitive{P1 <: Point, P2 <: Point, P3 <: Point} <: FormPrimiti
     y_point::P3
 end
 
-typealias Ellipse Form{EllipsePrimitive}
+typealias Ellipse{P<:EllipsePrimitive} Form{P}
 
 
 function ellipse()
@@ -368,7 +368,7 @@ immutable TextPrimitive{P <: Point, R <: Rotation} <: FormPrimitive
     rot::R
 end
 
-typealias Text Form{TextPrimitive}
+typealias Text{P<:TextPrimitive} Form{P}
 
 
 function text(x, y, value::String,
@@ -445,7 +445,7 @@ immutable LinePrimitive{P <: Point} <: FormPrimitive
     points::Vector{P}
 end
 
-typealias Line Form{LinePrimitive}
+typealias Line{P<:LinePrimitive} Form{P}
 
 
 function line()
@@ -506,7 +506,7 @@ immutable CurvePrimitive{P1 <: Point, P2 <: Point, P3 <: Point, P4 <: Point} <: 
     anchor1::P4
 end
 
-typealias Curve Form{CurvePrimitive}
+typealias Curve{P<:CurvePrimitive} Form{P}
 
 
 function curve(anchor0::XYTupleOrPoint, ctrl0::XYTupleOrPoint,
@@ -546,7 +546,7 @@ immutable BitmapPrimitive{P <: Point, XM <: Measure, YM <: Measure} <: FormPrimi
     height::YM
 end
 
-typealias Bitmap Form{BitmapPrimitive}
+typealias Bitmap{P<:BitmapPrimitive} Form{P}
 
 
 function bitmap(mime::String, data::Vector{Uint8}, x0, y0, width, height, tag=empty_tag)
