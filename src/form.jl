@@ -606,14 +606,14 @@ end
 
 function parsepathop(::Type{MoveAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(MoveAbsPathOp, tokens, i, 2)
-    op = MoveAbsPathOp((tokens[i], tokens[i + 1]))
+    op = MoveAbsPathOp((x_measure(tokens[i]), y_measure(tokens[i + 1])))
     return (op, i + 2)
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                  p::MoveAbsPathOp)
-    return MoveAbsPathOp(resolve(box, unit, t, p.to))
+    return MoveAbsPathOp(resolve(box, units, t, p.to))
 end
 
 
@@ -634,7 +634,7 @@ function resolve_offset(box::AbsoluteBox, units::UnitBox, t::Transform,
 
     absp = resolve(box, units, t, p)
     zer0 = resolve(box, units, t, (0w, 0h))
-    return (absp.x - zer0.x, absp.y - zer0.y)
+    return (absp[1] - zer0[1], absp[2] - zer0[2])
 end
 
 
@@ -666,7 +666,7 @@ end
 
 function parsepathop(::Type{LineAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(LineAbsPathOp, tokens, i, 2)
-    op = LineAbsPathOp((tokens[i], tokens[i + 1]))
+    op = LineAbsPathOp((x_measure(tokens[i]), y_measure(tokens[i + 1])))
     return (op, i + 2)
 end
 
@@ -684,7 +684,7 @@ end
 
 function parsepathop(::Type{LineRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(LineRelPathOp, tokens, i, 2)
-    op = LineRelPathOp((tokens[i], tokens[i + 1]))
+    op = LineRelPathOp((x_measure(tokens[i]), y_measure(tokens[i + 1])))
     return (op, i + 2)
 end
 
@@ -825,8 +825,8 @@ end
 
 function parsepathop(::Type{CubicCurveShortAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(CubicCurveShortAbsPathOp, tokens, i, 4)
-    op = CubicCurveShortAbsPathOp((tokens[i],     tokens[i + 1]),
-                                  (tokens[i + 2], tokens[i + 3]))
+    op = CubicCurveShortAbsPathOp((x_measure(tokens[i]),     y_measure(tokens[i + 1])),
+                                  (x_measure(tokens[i + 2]), y_measure(tokens[i + 3])))
     return (op, i + 4)
 end
 
@@ -847,8 +847,8 @@ end
 
 function parsepathop(::Type{CubicCurveShortRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(CubicCurveShortRelPathOp, tokens, i, 4)
-    op = CubicCurveShortRelPathOp((tokens[i],     tokens[i + 1]),
-                                  (tokens[i + 2], tokens[i + 3]))
+    op = CubicCurveShortRelPathOp((x_measure(tokens[i]),     y_measure(tokens[i + 1])),
+                                  (x_measure(tokens[i + 2]), y_measure(tokens[i + 3])))
     return (op, i + 4)
 end
 
@@ -1008,7 +1008,7 @@ function parsepathop{T <: Union(ArcAbsPathOp, ArcRelPathOp)}(::Type{T}, tokens::
            y_measure(tokens[i + 1]),
            convert(Float64, tokens[i + 2]),
            largearc, sweep,
-           (tokens[i + 5], tokens[i + 6]))
+           (x_measure(tokens[i + 5]), y_measure(tokens[i + 6])))
 
     return (op, i + 7)
 end

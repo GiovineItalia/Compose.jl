@@ -981,9 +981,9 @@ end
 
 function svg_print_path_op(io::IO, op::MoveAbsPathOp)
     print(io, 'M')
-    svg_print_float(io, op.to[1].abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to[2].abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
@@ -1002,7 +1002,7 @@ end
 
 function svg_print_path_op(io::IO, op::LineAbsPathOp)
     print(io, 'L')
-    svg_print_float(io, op.to.x[1].value)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
     svg_print_float(io, op.to[2].value)
 end
