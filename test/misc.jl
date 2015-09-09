@@ -53,3 +53,6 @@ crv = curve(pnts, pnts, pnts, pnts, :manycurve)
 bm = bitmap("fake", rand(Uint8,10), 0, 1, 0.8, 0.7, :image)
 @test bm.tag == :image
 
+# type definitions
+c = Compose.circle(rand(5), rand(5), rand(5))
+@test isa(c, Compose.Circle)
