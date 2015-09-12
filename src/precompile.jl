@@ -759,4 +759,6 @@ function _precompile_()
     precompile(Compose.pad_inner, (Compose.Context, Compose.Measure{Compose.MeasureNil, Compose.MeasureNil},))
     precompile(Compose.compose!, (Compose.Context,))
     precompile(Compose.print_pgf_path, (Base.AbstractIOBuffer{Array{UInt8, 1}}, Array{Compose.Point{Compose.Measure{Compose.MeasureNil, Compose.MeasureNil}, Compose.Measure{Compose.MeasureNil, Compose.MeasureNil}}, 1},))
+    precompile(Compose.parse_colorant, (ASCIIString,))
+    precompile(Compose.parse_colorant_vec, (ASCIIString, Vararg{ASCIIString},))
 end

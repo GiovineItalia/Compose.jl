@@ -54,13 +54,13 @@ function stroke(c::Nothing)
 end
 
 
-function stroke(c::Union(Color, TransparentColor, String))
-	return Stroke([StrokePrimitive(color(c))])
+function stroke(c::Union(Colorant, String))
+	return Stroke([StrokePrimitive(parse_colorant(c))])
 end
 
 
 function stroke(cs::AbstractArray)
-	return Stroke([StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : color(c)) for c in cs])
+	return Stroke([StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : parse_colorant(c)) for c in cs])
 end
 
 prop_string(::Stroke) = "s"
@@ -80,13 +80,13 @@ function fill(c::Nothing)
 end
 
 
-function fill(c::Union(Color, TransparentColor, String))
-	return Fill([FillPrimitive(color(c))])
+function fill(c::Union(Colorant, String))
+	return Fill([FillPrimitive(parse_colorant(c))])
 end
 
 
 function fill(cs::AbstractArray)
-	return Fill([FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : color(c)) for c in cs])
+	return Fill([FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs])
 end
 
 prop_string(::Fill) = "f"
