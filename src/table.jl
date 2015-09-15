@@ -379,4 +379,16 @@ end
     end
 #end
 
-
+function showcompact(io::IO, t::Table)
+    println(io,"$(size(t.children,1))x$(size(t.children,2)) Table:")
+    for i = 1:size(t.children,1)
+        print(io, "  ")
+        first = true
+        for j = 1:size(t.children,2)
+            first || print(io, ",")
+            first = false
+            showcompact(io, t.children[i,j])
+        end
+        println(io)
+    end
+end

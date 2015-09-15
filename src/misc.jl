@@ -20,7 +20,7 @@ function cyclezip(xs::AbstractArray...)
 end
 
 
-# This generates optimized code for a reoccuring pattern in forms and patters
+# This generates optimized code for a reoccuring pattern in forms and patterns
 # that looks like:
 #
 #   return Circle([CirclePrimitive(Point(x, y), x_measure(r))
@@ -32,7 +32,10 @@ end
 #                    CirclePrimitive(Point(x, y), x_measure(r)))
 #
 # but much more efficiently.
-macro makeform(args)
+macro makeform(args...)
+    @assert 1 <= length(args) <= 2
+    tag = length(args) == 2 ? args[2] : empty_tag
+    args = args[1]
     @assert args.head == :tuple
     @assert length(args.args) == 2
     iterators, constructor = args.args
@@ -45,6 +48,7 @@ macro makeform(args)
         @assert iterator.head == :in
         var = iterator.args[1]
         arr = iterator.args[2]
+        ivar = symbol(string("i_", var))
 
         push!(maxlen_ex.args,
             quote
@@ -53,18 +57,23 @@ macro makeform(args)
                     error("Form cannot be constructed from an empty array")
                 end
             end)
-        push!(type_ex.args, quote $(var) = $(arr)[1] end)
+        push!(type_ex.args, quote
+              $(ivar) = 1
+              $(var) = $(arr)[1]
+              end)
         push!(iter_ex.args, quote
-            $(var) = $(arr)[((i - 1) % length($(arr))) + 1]
+              $(ivar) += 1
+              $(ivar) = $(ivar) > length($(arr)) ? 1 : $(ivar)
+              $(var) = $(arr)[$(ivar)]
         end)
     end
 
-    quote
+    esc(quote
+        $(maxlen_ex)
+
         $(type_ex)
         prim1 = $(constructor)
         T = typeof(prim1)
-
-        $(maxlen_ex)
 
         primitives = Array(T, n)
         primitives[1] = prim1
@@ -72,8 +81,8 @@ macro makeform(args)
             $(iter_ex)
             primitives[i] = $(constructor)::T
         end
-        Form{T}(primitives)
-    end
+        Form{T}(primitives, $(tag))
+    end)
 end
 
 

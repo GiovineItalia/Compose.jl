@@ -1,5 +1,7 @@
 using Compose
 
+include("misc.jl")
+
 # Run the examples
 const testdir = dirname(@__FILE__)
 cd(testdir)
