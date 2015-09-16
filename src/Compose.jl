@@ -45,6 +45,12 @@ function isinstalled(pkg, ge=v"0.0.0")
 end
 
 
+# Allow users to supply strings without deprecation warnings
+parse_colorant(c::Colorant) = c
+parse_colorant(str::AbstractString) = parse(Colorant, str)
+parse_colorant_vec(c...) = to_vec(map(parse_colorant, c)...)
+@noinline to_vec(c...) = [c...]
+
 include("misc.jl")
 include("measure.jl")
 include("list.jl")
