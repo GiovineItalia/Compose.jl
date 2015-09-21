@@ -154,7 +154,7 @@ type SVG <: Backend
     out::IO
 
     # Save output from IOBuffers to allow multiple calls to writemime
-    cached_out::Union(AbstractString, (@compat Void))
+    cached_out::(@compat Union{AbstractString, (@compat Void)})
 
     # Unique ID for the figure.
     id::AbstractString
@@ -168,7 +168,7 @@ type SVG <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, Union((@compat Void), Property)}
+    vector_properties::Dict{Type, (@compat Union{(@compat Void), Property})}
 
     # Clip-paths that need to be defined at the end of the document.
     clippaths::Dict{ClipPrimitive, AbstractString}
@@ -184,7 +184,7 @@ type SVG <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union(AbstractString, (@compat Void))
+    filename::(@compat Union{AbstractString, (@compat Void)})
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -237,7 +237,7 @@ type SVG <: Backend
         img.cached_out = nothing
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
-        img.vector_properties = Dict{Type, Union((@compat Void), Property)}()
+        img.vector_properties = Dict{Type, (@compat Union{(@compat Void), Property})}()
         img.clippaths = Dict{ClipPrimitive, AbstractString}()
         img.embobj = Set{AbstractString}()
         img.finished = false

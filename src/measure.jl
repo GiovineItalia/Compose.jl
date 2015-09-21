@@ -33,7 +33,7 @@ immutable Measure{S, T}
 end
 
 
-typealias MeasureOrNumber Union(Measure, Number)
+typealias MeasureOrNumber @compat(Union{Measure, Number})
 
 typealias SimpleMeasure Measure{MeasureNil, MeasureNil}
 
@@ -449,7 +449,7 @@ function isabsolute(point::Point)
 end
 
 
-typealias XYTupleOrPoint Union(NTuple{2}, Point)
+typealias XYTupleOrPoint @compat(Union{NTuple{2}, Point})
 
 
 function convert(::Type{Point}, xy::NTuple{2})

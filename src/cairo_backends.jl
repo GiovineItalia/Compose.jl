@@ -56,7 +56,7 @@ type Image{B <: ImageBackend} <: Backend
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
     property_stack::Vector{ImagePropertyFrame}
-    vector_properties::Dict{Type, Union((@compat Void), Property)}
+    vector_properties::Dict{Type, (@compat Union{(@compat Void), Property})}
 
     # Close the surface when finished
     owns_surface::Bool
@@ -65,7 +65,7 @@ type Image{B <: ImageBackend} <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union(AbstractString, (@compat Void))
+    filename::(@compat Union{AbstractString, (@compat Void)})
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -77,8 +77,8 @@ type Image{B <: ImageBackend} <: Backend
     ppmm::Float64
 
     # For use with the t/T and s/S commands in SVG-style paths
-    last_ctrl1_point::Union(Point, (@compat Void))
-    last_ctrl2_point::Union(Point, (@compat Void))
+    last_ctrl1_point::(@compat Union{Point, (@compat Void)})
+    last_ctrl2_point::(@compat Union{Point, (@compat Void)})
 
     function Image(surface::CairoSurface, ctx::CairoContext, out::IO)
         img = new()

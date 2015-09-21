@@ -54,7 +54,7 @@ function stroke(c::(@compat Void))
 end
 
 
-function stroke(c::Union(Colorant, AbstractString))
+function stroke(c::(@compat Union{Colorant, AbstractString}))
 	return Stroke([StrokePrimitive(parse_colorant(c))])
 end
 
@@ -80,7 +80,7 @@ function fill(c::(@compat Void))
 end
 
 
-function fill(c::Union(Colorant, AbstractString))
+function fill(c::(@compat Union{Colorant, AbstractString}))
 	return Fill([FillPrimitive(parse_colorant(c))])
 end
 
@@ -145,7 +145,7 @@ end
 typealias StrokeLineCap Property{StrokeLineCapPrimitive}
 
 
-function strokelinecap(value::Union(LineCap, Type{LineCap}))
+function strokelinecap(value::(@compat Union{LineCap, Type{LineCap}}))
     return StrokeLineCap([StrokeLineCapPrimitive(value)])
 end
 
@@ -180,7 +180,7 @@ end
 typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
 
 
-function strokelinejoin(value::Union(LineJoin, Type{LineJoin}))
+function strokelinejoin(value::(@compat Union{LineJoin, Type{LineJoin}}))
     return StrokeLineJoin([StrokeLineJoinPrimitive(value)])
 end
 
@@ -205,7 +205,7 @@ end
 typealias LineWidth Property{LineWidthPrimitive}
 
 
-function linewidth(value::Union(Measure, Number))
+function linewidth(value::(@compat Union{Measure, Number}))
     return LineWidth([LineWidthPrimitive(value)])
 end
 
@@ -376,7 +376,7 @@ end
 typealias FontSize Property{FontSizePrimitive}
 
 
-function fontsize(value::Union(Number, Measure))
+function fontsize(value::(@compat Union{Number, Measure}))
     return FontSize([FontSizePrimitive(value)])
 end
 
@@ -477,7 +477,7 @@ prop_string(::SVGAttribute) = "svga"
 
 immutable JSIncludePrimitive <: PropertyPrimitive
     value::AbstractString
-    jsmodule::Union((@compat Void), @compat Tuple{AbstractString, AbstractString})
+    jsmodule::(@compat Union{(@compat Void), @compat Tuple{AbstractString, AbstractString}})
 end
 
 typealias JSInclude Property{JSIncludePrimitive}
