@@ -28,7 +28,7 @@ end
 
 # A much faster version of svg_fmt_float. This does not allocate any
 # temporary buffers, because it writes directly to the output.
-function svg_print_float(io::IO, x::FloatingPoint)
+function svg_print_float(io::IO, x::AbstractFloat)
     const ndig = 2
     const eps = 1.0/10^ndig
     if isfinite(x)
@@ -37,13 +37,13 @@ function svg_print_float(io::IO, x::FloatingPoint)
             x = abs(x)
         end
         x = round(x/eps)*eps
-        xt = trunc(Uint, x)
+        xt = trunc(UInt, x)
         dx = x - convert(Float64, xt)
         if !(0 <= dx < 1)
             error("Formatting overflow")
         end
         svg_print_uint(io, xt, 1)  # width=1 prints 0.2 instead of .2
-        dxi = round(Uint, dx/eps)
+        dxi = round(UInt, dx/eps)
         if dxi != 0
             write(io, '.')
             svg_print_uint(io, dxi, ndig, true)
@@ -57,7 +57,7 @@ function svg_print_float(io::IO, x::FloatingPoint)
     end
 end
 
-let a = Array(Uint8, 20)
+let a = Array(UInt8, 20)
 global svg_print_uint
 function svg_print_uint(io::IO, x::Unsigned, width = 0, drop = false)
     n = length(a)
@@ -86,11 +86,11 @@ end
 
 # Format a color for SVG.
 svg_fmt_color(c::Color) = string("#", hex(c))
-svg_fmt_color(c::Nothing) = "none"
+svg_fmt_color(c::(@compat Void)) = "none"
 
 
 # Replace newlines in a string with the appropriate SVG tspan tags.
-function svg_newlines(input::String, x::Float64)
+function svg_newlines(input::AbstractString, x::Float64)
     xpos = svg_fmt_float(x)
     newline_count = 0
     output = IOBuffer()
@@ -111,12 +111,12 @@ end
 
 
 # Javascript in a <script> tag in SVG needs to escape '"' and '<'.
-#=function escape_script(js::String)=#
+#=function escape_script(js::AbstractString)=#
     #=return replace(replace(js, "&", "&amp;"), "<", "&lt;")=#
 #=end=#
 
 # Javascript contained to CDATA block needs to avoid ']]'
-function escape_script(js::String)
+function escape_script(js::AbstractString)
     return replace(js, "]]", "] ]")
 end
 
@@ -154,10 +154,10 @@ type SVG <: Backend
     out::IO
 
     # Save output from IOBuffers to allow multiple calls to writemime
-    cached_out::Union(String, Nothing)
+    cached_out::(@compat Union{AbstractString, (@compat Void)})
 
     # Unique ID for the figure.
-    id::String
+    id::AbstractString
 
     # Current level of indentation.
     indentation::Int
@@ -168,14 +168,14 @@ type SVG <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, Union(Nothing, Property)}
+    vector_properties::Dict{Type, (@compat Union{(@compat Void), Property})}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, String}
+    clippaths::Dict{ClipPrimitive, AbstractString}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
-    embobj::Set{String}
+    embobj::Set{AbstractString}
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -184,27 +184,27 @@ type SVG <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union(String, Nothing)
+    filename::(@compat Union{AbstractString, (@compat Void)})
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
     # IDs of the SVG element currently being generated. `has_current_id` is
     # false if the element being drawn does not have an id.
-    current_id::String
+    current_id::AbstractString
     has_current_id::Bool
 
     # A counter used to generate unique IDs
     id_count::Int
 
     # Filenames of javsacript to include before any JSCall code.
-    jsheader::Vector{String}
+    jsheader::Vector{AbstractString}
 
     # (Name, binding) pairs of javascript modules the embedded code depends on
-    jsmodules::Vector{@compat Tuple{String, String}}
+    jsmodules::Vector{@compat Tuple{AbstractString, AbstractString}}
 
     # User javascript from JSCall attributes
-    scripts::Vector{String}
+    scripts::Vector{AbstractString}
 
     # Use javascript extensions to add interactivity, etc.
     withjs::Bool
@@ -237,18 +237,18 @@ type SVG <: Backend
         img.cached_out = nothing
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
-        img.vector_properties = Dict{Type, Union(Nothing, Property)}()
-        img.clippaths = Dict{ClipPrimitive, String}()
-        img.embobj = Set{String}()
+        img.vector_properties = Dict{Type, (@compat Union{(@compat Void), Property})}()
+        img.clippaths = Dict{ClipPrimitive, AbstractString}()
+        img.embobj = Set{AbstractString}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
         img.current_id = ""
         img.has_current_id = false
         img.id_count = 0
-        img.jsheader = String[]
-        img.jsmodules = Array((@compat Tuple{String, String}), 1)
+        img.jsheader = AbstractString[]
+        img.jsmodules = Array((@compat Tuple{AbstractString, AbstractString}), 1)
         img.jsmodules[1] = ("Snap.svg", "Snap")
-        img.scripts = String[]
+        img.scripts = AbstractString[]
         img.withjs = jsmode != :none
         img.jsmode = jsmode
         img.ownedfile = false
@@ -258,7 +258,7 @@ type SVG <: Backend
     end
 
     # Write to a file.
-    function SVG(filename::String, width, height, jsmode::Symbol=:none)
+    function SVG(filename::AbstractString, width, height, jsmode::Symbol=:none)
         out = open(filename, "w")
         img = SVG(out, width, height, true, jsmode)
         img.ownedfile = true
@@ -293,7 +293,7 @@ function SVGJS(out::IO, width, height, emit_on_finish::Bool=true;
 end
 
 
-function SVGJS(filename::String, width, height; jsmode::Symbol=:embed)
+function SVGJS(filename::AbstractString, width, height; jsmode::Symbol=:embed)
     return SVG(filename, width, height, jsmode)
 end
 
@@ -954,7 +954,7 @@ function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
     print_vector_properties(img, idx)
 
     print(img.out, " xlink:href=\"data:", prim.mime, ";base64,")
-    b64pipe = Base64Pipe(img.out)
+    b64pipe = @compat Base64EncodePipe(img.out)
     write(b64pipe, prim.data)
     close(b64pipe)
     print(img.out, "\"></image>\n")

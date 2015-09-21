@@ -10,9 +10,9 @@ type Patchable <: Backend
     width::Float64
     height::Float64
 
-    jsheader::Vector{String}
-    jsmodules::Vector{(@compat Tuple{String, String})}
-    clip_paths::Dict{ClipPrimitive, String}
+    jsheader::Vector{AbstractString}
+    jsmodules::Vector{(@compat Tuple{AbstractString, AbstractString})}
+    clip_paths::Dict{ClipPrimitive, AbstractString}
     vector_properties::Vector
     function Patchable(width, height, absolute_elems=Elem[])
         width = size_measure(width)
@@ -22,9 +22,9 @@ type Patchable <: Backend
         end
         new(width.abs,
             height.abs,
-            String[],
-            (@compat Tuple{String, String})[],
-            Dict{ClipPrimitive, String}(),
+            AbstractString[],
+            (@compat Tuple{AbstractString, AbstractString})[],
+            Dict{ClipPrimitive, AbstractString}(),
             Any[])
     end
 end
@@ -76,14 +76,14 @@ root_box(img::Patchable) =
 
 init_context(::Patchable, ::Context) = Elem(:svg, :g)
 
-typealias SVGPart Union(Elem, Dict, Nothing)
+typealias SVGPart (@compat Union{Elem, Dict, (@compat Void)})
 
-addto(::Patchable, acc::Nothing, child::Nothing) = nothing
-addto(::Patchable, acc::Nothing, child::SVGPart) = child
-addto(::Patchable, acc::SVGPart, child::Nothing) = acc
+addto(::Patchable, acc::(@compat Void), child::(@compat Void)) = nothing
+addto(::Patchable, acc::(@compat Void), child::SVGPart) = child
+addto(::Patchable, acc::SVGPart, child::(@compat Void)) = acc
 addto(::Patchable, acc::Elem{:svg, :g}, child::Elem) = acc << child
 
-addto(p::Patchable, acc::Nothing, child::Array) = addto(p, Elem(:svg, :g), child)
+addto(p::Patchable, acc::(@compat Void), child::Array) = addto(p, Elem(:svg, :g), child)
 function addto(p::Patchable, acc::Elem{:svg, :g}, child::Array)
     for i=1:length(child)
         @inbounds acc = addto(p, acc, child[i])
@@ -93,7 +93,7 @@ end
 
 addto(::Patchable, acc::Elem, child::Elem) = Elem(:svg, :g, acc, child)
 addto(::Patchable, acc::Elem, child::Dict) = acc & child
-addto(::Patchable, acc::Nothing, child::Dict) = Elem(:svg, :g) & child
+addto(::Patchable, acc::(@compat Void), child::Dict) = Elem(:svg, :g) & child
 
 function push_property_frame(img::Patchable, vector_props)
     push!(img.vector_properties, vector_props)
@@ -360,7 +360,7 @@ draw(img::Patchable, prim::VisiblePrimitive) =
     :visibility, prim.value ? "visible" : "hidden"
 
 # Pango markup to Patchwork
-function pango_to_elems(text::String)
+function pango_to_elems(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
     input = text
     output = Elem[Elem(:svg, :text)] # Stack

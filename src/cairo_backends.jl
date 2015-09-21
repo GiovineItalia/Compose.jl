@@ -56,7 +56,7 @@ type Image{B <: ImageBackend} <: Backend
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
     property_stack::Vector{ImagePropertyFrame}
-    vector_properties::Dict{Type, Union(Nothing, Property)}
+    vector_properties::Dict{Type, (@compat Union{(@compat Void), Property})}
 
     # Close the surface when finished
     owns_surface::Bool
@@ -65,7 +65,7 @@ type Image{B <: ImageBackend} <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union(String, Nothing)
+    filename::(@compat Union{AbstractString, (@compat Void)})
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -77,8 +77,8 @@ type Image{B <: ImageBackend} <: Backend
     ppmm::Float64
 
     # For use with the t/T and s/S commands in SVG-style paths
-    last_ctrl1_point::Union(Point, Nothing)
-    last_ctrl2_point::Union(Point, Nothing)
+    last_ctrl1_point::(@compat Union{Point, (@compat Void)})
+    last_ctrl2_point::(@compat Union{Point, (@compat Void)})
 
     function Image(surface::CairoSurface, ctx::CairoContext, out::IO)
         img = new()
@@ -97,7 +97,7 @@ type Image{B <: ImageBackend} <: Backend
         img.visible = true
         img.state_stack = Array(ImagePropertyState, 0)
         img.property_stack = Array(ImagePropertyFrame, 0)
-        img.vector_properties = Dict{Type, Union(Nothing, Property)}()
+        img.vector_properties = Dict{Type, (@compat Union{(@compat Void), Property})}()
         img.owns_surface = false
         img.ownedfile = false
         img.filename = nothing
@@ -143,7 +143,7 @@ type Image{B <: ImageBackend} <: Backend
         img
     end
 
-    function Image(filename::String,
+    function Image(filename::AbstractString,
                    width::MeasureOrNumber,
                    height::MeasureOrNumber;
                    dpi = (B == PNGBackend ? 96 : 72))
@@ -487,7 +487,7 @@ function apply_property(img::Image, property::FontSizePrimitive)
         family = "sans"
     else
         family = ccall((:pango_font_description_get_family, Cairo._jl_libpango),
-                       Ptr{Uint8}, (Ptr{Void},), font_desc)
+                       Ptr{UInt8}, (Ptr{Void},), font_desc)
         family = bytestring(family)
     end
 

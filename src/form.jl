@@ -108,7 +108,7 @@ function absolute_units(p::PolygonPrimitive, t::Transform, units::UnitBox,
 end
 
 function boundingbox(form::PolygonPrimitive, linewidth::Measure,
-                     font::String, fontsize::Measure)
+                     font::AbstractString, fontsize::Measure)
     x0 = minimum([p.x for p in form.points])
     x1 = maximum([p.x for p in form.points])
     y0 = minimum([p.y for p in form.points])
@@ -214,7 +214,7 @@ end
 
 
 function boundingbox(form::RectanglePrimitive, linewidth::Measure,
-                     font::String, fontsize::Measure)
+                     font::AbstractString, fontsize::Measure)
 
     return BoundingBox(form.corner.x - linewidth,
                        form.corner.y - linewidth,
@@ -276,7 +276,7 @@ function absolute_units(p::CirclePrimitive, t::Transform, units::UnitBox,
 end
 
 function boundingbox(form::CirclePrimitive, linewidth::Measure,
-                     font::String, fontsize::Measure)
+                     font::AbstractString, fontsize::Measure)
     return BoundingBox(form.center.x - form.radius - linewidth,
                        form.center.y - form.radius - linewidth,
                        2 * (form.radius + linewidth),
@@ -332,7 +332,7 @@ function absolute_units(p::EllipsePrimitive, t::Transform, units::UnitBox,
 end
 
 function boundingbox(form::EllipsePrimitive, linewidth::Measure,
-                     font::String, fontsize::Measure)
+                     font::AbstractString, fontsize::Measure)
     x0 = min(form.x_point.x, form.y_point.x)
     x1 = max(form.x_point.x, form.y_point.x)
     y0 = min(form.x_point.y, form.y_point.y)
@@ -371,7 +371,7 @@ const vbottom = VBottom()
 
 immutable TextPrimitive{P <: Point, R <: Rotation} <: FormPrimitive
     position::P
-    value::String
+    value::AbstractString
     halign::HAlignment
     valign::VAlignment
 
@@ -383,7 +383,7 @@ end
 typealias Text{P<:TextPrimitive} Form{P}
 
 
-function text(x, y, value::String,
+function text(x, y, value::AbstractString,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation(); tag::Symbol=empty_tag)
     prim = TextPrimitive(Point(x, y), value, halign, valign, rot)
@@ -399,7 +399,7 @@ function text(x, y, value,
 end
 
 
-function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{String},
+function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{AbstractString},
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
               rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag)
     return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
@@ -424,7 +424,7 @@ function absolute_units(p::TextPrimitive, t::Transform, units::UnitBox,
 end
 
 function boundingbox(form::TextPrimitive, linewidth::Measure,
-                     font::String, fontsize::Measure)
+                     font::AbstractString, fontsize::Measure)
 
     width, height = text_extents(font, fontsize, form.value)[1]
 
@@ -499,7 +499,7 @@ end
 
 
 function boundingbox(form::LinePrimitive, linewidth::Measure,
-                     font::String, fontsize::Measure)
+                     font::AbstractString, fontsize::Measure)
     x0 = minimum([p.x for p in form.points])
     x1 = maximum([p.x for p in form.points])
     y0 = minimum([p.y for p in form.points])
@@ -556,8 +556,8 @@ form_string(::Curve) = "CV"
 # ------
 
 immutable BitmapPrimitive{P <: Point, XM <: Measure, YM <: Measure} <: FormPrimitive
-    mime::String
-    data::Vector{Uint8}
+    mime::AbstractString
+    data::Vector{UInt8}
     corner::P
     width::XM
     height::YM
@@ -566,7 +566,7 @@ end
 typealias Bitmap{P<:BitmapPrimitive} Form{P}
 
 
-function bitmap(mime::String, data::Vector{Uint8}, x0, y0, width, height, tag=empty_tag)
+function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height, tag=empty_tag)
     corner = Point(x0, y0)
     width = x_measure(width)
     height = y_measure(height)
@@ -594,7 +594,7 @@ end
 
 
 function boundingbox(form::BitmapPrimitive, linewidth::Measure,
-                     font::String, fontsize::Measure)
+                     font::AbstractString, fontsize::Measure)
     return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
 end
 
@@ -956,7 +956,7 @@ immutable ArcRelPathOp <: PathOp
     to::Point
 end
 
-function parsepathop{T <: Union(ArcAbsPathOp, ArcRelPathOp)}(::Type{T}, tokens::AbstractArray, i)
+function parsepathop{T <: (@compat Union{ArcAbsPathOp, ArcRelPathOp})}(::Type{T}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(T, tokens, i, 7)
 
     if isa(tokens[i + 3], Bool)
