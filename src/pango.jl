@@ -33,7 +33,7 @@ end
 # Returns:
 #   A pointer to a PangoFontDescription with the closest match.
 #
-let available_font_families = Set{String}()
+let available_font_families = Set{AbstractString}()
     for font_pattern in Fontconfig.list()
         push!(available_font_families, lowercase(Fontconfig.format(font_pattern, "%{family}")))
     end
@@ -42,7 +42,7 @@ let available_font_families = Set{String}()
                                "cursive", "fantasy"])
 
     global match_font
-    function match_font(families::String, size::Float64)
+    function match_font(families::AbstractString, size::Float64)
         matched_family = "sans-serif"
         for family in [lowercase(strip(family, [' ', '"', '\''])) for family in split(families, ',')]
             if family in available_font_families || family in meta_families
@@ -53,7 +53,7 @@ let available_font_families = Set{String}()
         family = Fontconfig.format(match(Fontconfig.Pattern(family=family)), "%{family}")
         desc = @sprintf("%s %fpx", family, size)
         fd = ccall((:pango_font_description_from_string, libpango),
-                   Ptr{Void}, (Ptr{Uint8},), bytestring(desc))
+                   Ptr{Void}, (Ptr{UInt8},), bytestring(desc))
         return fd
     end
 end
@@ -73,7 +73,7 @@ type PangoLayout
 end
 
 # Set the layout's font.
-function pango_set_font(pangolayout::PangoLayout, family::String, pts::Number)
+function pango_set_font(pangolayout::PangoLayout, family::AbstractString, pts::Number)
     fd = match_font(family, pts)
     ccall((:pango_layout_set_font_description, libpango),
           Void, (Ptr{Void}, Ptr{Void}), pangolayout.layout, fd)
@@ -89,10 +89,10 @@ end
 # Returns:
 #   A (width, height) tuple in absolute units.
 #
-function pango_text_extents(pangolayout::PangoLayout, text::String)
-    textarray = convert(Vector{Uint8}, bytestring(text))
+function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
+    textarray = convert(Vector{UInt8}, bytestring(text))
     ccall((:pango_layout_set_markup, libpango),
-          Void, (Ptr{Void}, Ptr{Uint8}, Int32),
+          Void, (Ptr{Void}, Ptr{UInt8}, Int32),
           pangolayout.layout, textarray, length(textarray))
 
     extents = Array(Int32, 4)
@@ -116,7 +116,7 @@ end
 # Returns:
 #   A (width, height) tuple in absolute units.
 #
-function max_text_extents(font_family::String, pts::Float64, texts::String...)
+function max_text_extents(font_family::AbstractString, pts::Float64, texts::AbstractString...)
     pango_set_font(pangolayout::PangoLayout, font_family, pts)
     max_width  = 0mm
     max_height = 0mm
@@ -129,8 +129,8 @@ function max_text_extents(font_family::String, pts::Float64, texts::String...)
 end
 
 # Same as max_text_extents but with font_size in arbitrary absolute units.
-function max_text_extents(font_family::String, size::Measure,
-                      texts::String...)
+function max_text_extents(font_family::AbstractString, size::Measure,
+                      texts::AbstractString...)
     if !isabsolute(size)
         error("text_extents requries font size be in absolute units")
     end
@@ -139,14 +139,14 @@ end
 
 
 # Return an array with the extents of each element
-function text_extents(font_family::String, pts::Float64, texts::String...)
+function text_extents(font_family::AbstractString, pts::Float64, texts::AbstractString...)
     pango_set_font(pangolayout::PangoLayout, font_family, pts)
     return [pango_text_extents(pangolayout::PangoLayout, text)
             for text in texts]
 end
 
 
-function text_extents(font_family::String, size::Measure, texts::String...)
+function text_extents(font_family::AbstractString, size::Measure, texts::AbstractString...)
     return text_extents(font_family, size/pt, texts...)
 end
 
@@ -252,9 +252,9 @@ end
 #
 function unpack_pango_attr(ptr::Ptr{Void}, t::Symbol)
     ptr += sizeof(Ptr{Void}) # skip `klass` pointer
-    ptr = convert(Ptr{Uint32}, ptr)
+    ptr = convert(Ptr{UInt32}, ptr)
     idx = pointer_to_array(ptr, (2,))
-    ptr += 2 * sizeof(Uint32)
+    ptr += 2 * sizeof(UInt32)
     ptr = convert(Ptr{Void}, ptr)
 
     if t == :PangoAttrInt
@@ -291,7 +291,7 @@ end
 #function unpack_pango_size(ptr::Ptr{Void})
     #ptr = convert(Ptr{Int32}, ptr)
     #size = point_to_array(ptr, (1,))[1]
-    #ptr = convert(Ptr{Uint32}, ptr)
+    #ptr = convert(Ptr{UInt32}, ptr)
     #absolute = point_to_array(ptr, (1,))[1] & 0x1
 
     #println(size, absolute)
@@ -360,13 +360,13 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
 end
 
 
-function pango_to_svg(text::String)
-    c_stripped_text = Array(Ptr{Uint8}, 1)
+function pango_to_svg(text::AbstractString)
+    c_stripped_text = Array(Ptr{UInt8}, 1)
     c_attr_list = Array(Ptr{Void}, 1)
 
     ret = ccall((:pango_parse_markup, libpango),
-                Int32, (Ptr{Uint8}, Int32, Uint32, Ptr{Ptr{Void}},
-                        Ptr{Ptr{Uint8}}, Ptr{Uint32}, Ptr{Void}),
+                Int32, (Ptr{UInt8}, Int32, UInt32, Ptr{Ptr{Void}},
+                        Ptr{Ptr{UInt8}}, Ptr{UInt32}, Ptr{Void}),
                 bytestring(text), -1, 0, c_attr_list, c_stripped_text,
                 C_NULL, C_NULL)
 
@@ -376,7 +376,7 @@ function pango_to_svg(text::String)
 
     # TODO: do c_stripped_text and c_attr_list need to be freed?
 
-    bytearray =  str -> convert(Array{Uint8, 1}, str)
+    bytearray =  str -> convert(Array{UInt8, 1}, str)
 
     text = bytearray(bytestring(c_stripped_text[1]))
 

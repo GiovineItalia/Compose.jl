@@ -49,12 +49,12 @@ end
 typealias Stroke Property{StrokePrimitive}
 
 
-function stroke(c::Nothing)
+function stroke(c::(@compat Void))
     return Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
 end
 
 
-function stroke(c::Union(Colorant, String))
+function stroke(c::Union(Colorant, AbstractString))
 	return Stroke([StrokePrimitive(parse_colorant(c))])
 end
 
@@ -75,12 +75,12 @@ end
 typealias Fill Property{FillPrimitive}
 
 
-function fill(c::Nothing)
+function fill(c::(@compat Void))
     return Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
 end
 
 
-function fill(c::Union(Colorant, String))
+function fill(c::Union(Colorant, AbstractString))
 	return Fill([FillPrimitive(parse_colorant(c))])
 end
 
@@ -345,13 +345,13 @@ prop_string(::Clip) = "clp"
 # ----
 
 immutable FontPrimitive <: PropertyPrimitive
-    family::String
+    family::AbstractString
 end
 
 typealias Font Property{FontPrimitive}
 
 
-function font(family::String)
+function font(family::AbstractString)
     return Font([FontPrimitive(family)])
 end
 
@@ -397,13 +397,13 @@ prop_string(::FontSize) = "fsz"
 # -----
 
 immutable SVGIDPrimitive <: PropertyPrimitive
-    value::String
+    value::AbstractString
 end
 
 typealias SVGID Property{SVGIDPrimitive}
 
 
-function svgid(value::String)
+function svgid(value::AbstractString)
     return SVGID([SVGIDPrimitive(value)])
 end
 
@@ -419,13 +419,13 @@ prop_string(::SVGID) = "svgid"
 # --------
 
 immutable SVGClassPrimitive <: PropertyPrimitive
-    value::String
+    value::AbstractString
 end
 
 typealias SVGClass Property{SVGClassPrimitive}
 
 
-function svgclass(value::String)
+function svgclass(value::AbstractString)
     return SVGClass([SVGClassPrimitive(value)])
 end
 
@@ -445,19 +445,19 @@ end
 # ------------
 
 immutable SVGAttributePrimitive <: PropertyPrimitive
-    attribute::String
-    value::String
+    attribute::AbstractString
+    value::AbstractString
 end
 
 typealias SVGAttribute Property{SVGAttributePrimitive}
 
 
-function svgattribute(attribute::String, value)
+function svgattribute(attribute::AbstractString, value)
     return SVGAttribute([SVGAttributePrimitive(attribute, string(value))])
 end
 
 
-function svgattribute(attribute::String, values::AbstractArray)
+function svgattribute(attribute::AbstractString, values::AbstractArray)
     return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
                          for value in values])
 end
@@ -476,14 +476,14 @@ prop_string(::SVGAttribute) = "svga"
 # ---------
 
 immutable JSIncludePrimitive <: PropertyPrimitive
-    value::String
-    jsmodule::Union(Nothing, @compat Tuple{String, String})
+    value::AbstractString
+    jsmodule::Union((@compat Void), @compat Tuple{AbstractString, AbstractString})
 end
 
 typealias JSInclude Property{JSIncludePrimitive}
 
 
-function jsinclude(value::String, module_name=nothing)
+function jsinclude(value::AbstractString, module_name=nothing)
     return JSInclude([JSIncludePrimitive(value, module_name)])
 end
 
@@ -496,14 +496,14 @@ prop_string(::JSInclude) = "jsip"
 # ------
 
 immutable JSCallPrimitive <: PropertyPrimitive
-    code::String
+    code::AbstractString
     args::Vector{Measure}
 end
 
 typealias JSCall Property{JSCallPrimitive}
 
 
-function jscall(code::String, arg::Vector{Measure}=Measure[])
+function jscall(code::AbstractString, arg::Vector{Measure}=Measure[])
     return JSCall([JSCallPrimitive(code, arg)])
 end
 

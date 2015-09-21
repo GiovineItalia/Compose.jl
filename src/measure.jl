@@ -1,4 +1,5 @@
 
+using Compat
 
 # Measures without Canvas Units
 # -----------------------------
@@ -639,7 +640,7 @@ end
 
 
 function NilUnitBox()
-    return UnitBox{Nothing, Nothing, Nothing, Nothing}(
+    return UnitBox{(@compat Void), (@compat Void), (@compat Void), (@compat Void)}(
                 nothing, nothing, nothing, nothing)
 end
 

@@ -6,7 +6,7 @@ end
 
 
 function Maybe(T::Type)
-    return Union(T, Nothing)
+    return Union(T, (@compat Void))
 end
 
 

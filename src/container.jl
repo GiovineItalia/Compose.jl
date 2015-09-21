@@ -195,7 +195,7 @@ function transformcoordinates(from::Measure, ctx::Context)
 end
 
 function boundingbox(c::Context,linewidth::Measure=default_line_width,
-                     font::String=default_font_family,
+                     font::AbstractString=default_font_family,
                      fontsize::Measure=default_font_size,
                      parent_abs_width = nothing,
                      parent_abs_height = nothing)
@@ -378,17 +378,17 @@ function compose(a::Context)
 end
 
 
-function compose(a, b::Nothing)
+function compose(a, b::(@compat Void))
     return a
 end
 
 
-for (f, S, T) in [(:compose!, Property, Nothing),
-                  (:compose!, Form, Nothing),
+for (f, S, T) in [(:compose!, Property, (@compat Void)),
+                  (:compose!, Form, (@compat Void)),
                   (:compose!, Property, Any),
                   (:compose!, Form, Any),
-                  (:compose, Property, Nothing),
-                  (:compose, Form, Nothing),
+                  (:compose, Property, (@compat Void)),
+                  (:compose, Form, (@compat Void)),
                   (:compose, Property, Any),
                   (:compose, Form, Any)]
     eval(
