@@ -33,7 +33,7 @@ function isinstalled(pkg, ge=v"0.0.0")
         ver = Pkg.installed(pkg)
         ver == nothing && try
             # Assume the version is new enough if the package is in LOAD_PATH
-            require(pkg)
+            eval(:(using $pkg))
             return true
         catch
             return false

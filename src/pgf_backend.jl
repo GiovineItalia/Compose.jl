@@ -22,13 +22,13 @@ type PGF <: Backend
     # Fill properties cannot be "cleanly" applied to
     # multiple form primitives.  It must be applied
     # each time an object is drawn
-    fill::Union((@compat Void), Color)
+    fill::(@compat Union{(@compat Void), Color})
     fill_opacity::Float64
 
-    stroke::Union((@compat Void), Color)
+    stroke::(@compat Union{(@compat Void), Color})
     stroke_opacity::Float64
 
-    fontfamily::Union((@compat Void),AbstractString)
+    fontfamily::(@compat Union{(@compat Void),AbstractString})
     fontsize::Float64
 
     # Current level of indentation.
@@ -52,11 +52,11 @@ type PGF <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, Union((@compat Void), Property)}
+    vector_properties::Dict{Type, (@compat Union{(@compat Void), Property})}
 
     # Clip-paths that need to be defined at the end of the document.
     # Not quite sure how to deal with clip paths yet
-    clippath::Union((@compat Void),ClipPrimitive)
+    clippath::(@compat Union{(@compat Void),ClipPrimitive})
     # clippaths::Dict{ClipPrimitive, AbstractString}
 
     # True when finish has been called and no more drawing should occur
@@ -66,7 +66,7 @@ type PGF <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union(AbstractString, (@compat Void))
+    filename::(@compat Union{AbstractString, (@compat Void)})
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -100,7 +100,7 @@ type PGF <: Backend
         img.out = out
         img.color_set = Set{Color}([colorant"black"])
         img.property_stack = Array(PGFPropertyFrame, 0)
-        img.vector_properties = Dict{Type, Union((@compat Void), Property)}()
+        img.vector_properties = Dict{Type, (@compat Union{(@compat Void), Property})}()
         # img.clippaths = Dict{ClipPrimitive, AbstractString}()
         img.visible = true
         img.finished = false
