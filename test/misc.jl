@@ -50,7 +50,7 @@ crv = curve((0,0), (1,0.5), (0.2,0.3), (0.7,-2.4), :curve)
 crv = curve(pnts, pnts, pnts, pnts, :manycurve)
 @test crv.tag == :manycurve
 
-bm = bitmap("fake", rand(Uint8,10), 0, 1, 0.8, 0.7, :image)
+bm = bitmap("fake", rand(UInt8,10), 0, 1, 0.8, 0.7, :image)
 @test bm.tag == :image
 
 # type definitions & constructors (issue #149)

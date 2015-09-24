@@ -76,7 +76,7 @@ root_box(img::Patchable) =
 
 init_context(::Patchable, ::Context) = Elem(:svg, :g)
 
-typealias SVGPart Union(Elem, Dict, (@compat Void))
+typealias SVGPart @compat(Union{Elem, Dict, (@compat Void)})
 
 addto(::Patchable, acc::(@compat Void), child::(@compat Void)) = nothing
 addto(::Patchable, acc::(@compat Void), child::SVGPart) = child
