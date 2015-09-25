@@ -956,7 +956,7 @@ immutable ArcRelPathOp <: PathOp
     to::Point
 end
 
-function parsepathop{T <: Union(ArcAbsPathOp, ArcRelPathOp)}(::Type{T}, tokens::AbstractArray, i)
+function parsepathop{T <: @compat(Union{ArcAbsPathOp, ArcRelPathOp})}(::Type{T}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(T, tokens, i, 7)
 
     if isa(tokens[i + 3], Bool)
