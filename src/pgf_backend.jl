@@ -22,13 +22,13 @@ type PGF <: Backend
     # Fill properties cannot be "cleanly" applied to
     # multiple form primitives.  It must be applied
     # each time an object is drawn
-    fill::Union(Nothing, Color)
+    fill::@compat(Union{(@compat Void), Color})
     fill_opacity::Float64
 
-    stroke::Union(Nothing, Color)
+    stroke::@compat(Union{(@compat Void), Color})
     stroke_opacity::Float64
 
-    fontfamily::Union(Nothing,String)
+    fontfamily::@compat(Union{(@compat Void),AbstractString})
     fontsize::Float64
 
     # Current level of indentation.
@@ -52,12 +52,12 @@ type PGF <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, Union(Nothing, Property)}
+    vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
 
     # Clip-paths that need to be defined at the end of the document.
     # Not quite sure how to deal with clip paths yet
-    clippath::Union(Nothing,ClipPrimitive)
-    # clippaths::Dict{ClipPrimitive, String}
+    clippath::@compat(Union{(@compat Void),ClipPrimitive})
+    # clippaths::Dict{ClipPrimitive, AbstractString}
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -66,7 +66,7 @@ type PGF <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union(String, Nothing)
+    filename::@compat(Union{AbstractString, (@compat Void)})
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -100,8 +100,8 @@ type PGF <: Backend
         img.out = out
         img.color_set = Set{Color}([colorant"black"])
         img.property_stack = Array(PGFPropertyFrame, 0)
-        img.vector_properties = Dict{Type, Union(Nothing, Property)}()
-        # img.clippaths = Dict{ClipPrimitive, String}()
+        img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
+        # img.clippaths = Dict{ClipPrimitive, AbstractString}()
         img.visible = true
         img.finished = false
         img.emit_on_finish = emit_on_finish
@@ -112,7 +112,7 @@ type PGF <: Backend
     end
 
     # Write to a file.
-    function PGF(filename::String, width, height, only_tikz = false)
+    function PGF(filename::AbstractString, width, height, only_tikz = false)
         out = open(filename, "w")
         img = PGF(out, width, height, true, only_tikz)
         img.ownedfile = true
@@ -548,7 +548,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
     end
 
     write(img.buf, "\\begin{scope}\n")
-    prop_str = String[]
+    prop_str = AbstractString[]
     for property in scalar_properties
         push_property!(prop_str, img, property.primitives[1])
     end
@@ -599,9 +599,9 @@ end
 # Horrible abuse of Latex inline math mode just to
 # get something working first.
 # FIX ME!
-function pango_to_pgf(text::String)
+function pango_to_pgf(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
-    input = convert(Array{Uint8}, text)
+    input = convert(Array{UInt8}, text)
     output = IOBuffer()
     lastpos = 1
     for mat in eachmatch(pat, text)

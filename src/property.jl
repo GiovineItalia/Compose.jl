@@ -49,18 +49,18 @@ end
 typealias Stroke Property{StrokePrimitive}
 
 
-function stroke(c::Nothing)
+function stroke(c::(@compat Void))
     return Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
 end
 
 
-function stroke(c::Union(Color, TransparentColor, String))
-	return Stroke([StrokePrimitive(color(c))])
+function stroke(c::@compat(Union{Colorant, AbstractString}))
+	return Stroke([StrokePrimitive(parse_colorant(c))])
 end
 
 
 function stroke(cs::AbstractArray)
-	return Stroke([StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : color(c)) for c in cs])
+	return Stroke([StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : parse_colorant(c)) for c in cs])
 end
 
 prop_string(::Stroke) = "s"
@@ -75,18 +75,18 @@ end
 typealias Fill Property{FillPrimitive}
 
 
-function fill(c::Nothing)
+function fill(c::(@compat Void))
     return Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
 end
 
 
-function fill(c::Union(Color, TransparentColor, String))
-	return Fill([FillPrimitive(color(c))])
+function fill(c::@compat(Union{Colorant, AbstractString}))
+	return Fill([FillPrimitive(parse_colorant(c))])
 end
 
 
 function fill(cs::AbstractArray)
-	return Fill([FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : color(c)) for c in cs])
+	return Fill([FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs])
 end
 
 prop_string(::Fill) = "f"
@@ -145,7 +145,7 @@ end
 typealias StrokeLineCap Property{StrokeLineCapPrimitive}
 
 
-function strokelinecap(value::Union(LineCap, Type{LineCap}))
+function strokelinecap(value::@compat(Union{LineCap, Type{LineCap}}))
     return StrokeLineCap([StrokeLineCapPrimitive(value)])
 end
 
@@ -180,7 +180,7 @@ end
 typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
 
 
-function strokelinejoin(value::Union(LineJoin, Type{LineJoin}))
+function strokelinejoin(value::@compat(Union{LineJoin, Type{LineJoin}}))
     return StrokeLineJoin([StrokeLineJoinPrimitive(value)])
 end
 
@@ -205,7 +205,7 @@ end
 typealias LineWidth Property{LineWidthPrimitive}
 
 
-function linewidth(value::Union(Measure, Number))
+function linewidth(value::@compat(Union{Measure, Number}))
     return LineWidth([LineWidthPrimitive(value)])
 end
 
@@ -345,13 +345,13 @@ prop_string(::Clip) = "clp"
 # ----
 
 immutable FontPrimitive <: PropertyPrimitive
-    family::String
+    family::AbstractString
 end
 
 typealias Font Property{FontPrimitive}
 
 
-function font(family::String)
+function font(family::AbstractString)
     return Font([FontPrimitive(family)])
 end
 
@@ -376,7 +376,7 @@ end
 typealias FontSize Property{FontSizePrimitive}
 
 
-function fontsize(value::Union(Number, Measure))
+function fontsize(value::@compat(Union{Number, Measure}))
     return FontSize([FontSizePrimitive(value)])
 end
 
@@ -397,13 +397,13 @@ prop_string(::FontSize) = "fsz"
 # -----
 
 immutable SVGIDPrimitive <: PropertyPrimitive
-    value::String
+    value::AbstractString
 end
 
 typealias SVGID Property{SVGIDPrimitive}
 
 
-function svgid(value::String)
+function svgid(value::AbstractString)
     return SVGID([SVGIDPrimitive(value)])
 end
 
@@ -419,13 +419,13 @@ prop_string(::SVGID) = "svgid"
 # --------
 
 immutable SVGClassPrimitive <: PropertyPrimitive
-    value::String
+    value::AbstractString
 end
 
 typealias SVGClass Property{SVGClassPrimitive}
 
 
-function svgclass(value::String)
+function svgclass(value::AbstractString)
     return SVGClass([SVGClassPrimitive(value)])
 end
 
@@ -445,19 +445,19 @@ end
 # ------------
 
 immutable SVGAttributePrimitive <: PropertyPrimitive
-    attribute::String
-    value::String
+    attribute::AbstractString
+    value::AbstractString
 end
 
 typealias SVGAttribute Property{SVGAttributePrimitive}
 
 
-function svgattribute(attribute::String, value)
+function svgattribute(attribute::AbstractString, value)
     return SVGAttribute([SVGAttributePrimitive(attribute, string(value))])
 end
 
 
-function svgattribute(attribute::String, values::AbstractArray)
+function svgattribute(attribute::AbstractString, values::AbstractArray)
     return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
                          for value in values])
 end
@@ -476,14 +476,14 @@ prop_string(::SVGAttribute) = "svga"
 # ---------
 
 immutable JSIncludePrimitive <: PropertyPrimitive
-    value::String
-    jsmodule::Union(Nothing, @compat Tuple{String, String})
+    value::AbstractString
+    jsmodule::@compat(Union{(@compat Void), @compat Tuple{AbstractString, AbstractString}})
 end
 
 typealias JSInclude Property{JSIncludePrimitive}
 
 
-function jsinclude(value::String, module_name=nothing)
+function jsinclude(value::AbstractString, module_name=nothing)
     return JSInclude([JSIncludePrimitive(value, module_name)])
 end
 
@@ -496,14 +496,14 @@ prop_string(::JSInclude) = "jsip"
 # ------
 
 immutable JSCallPrimitive <: PropertyPrimitive
-    code::String
+    code::AbstractString
     args::Vector{Measure}
 end
 
 typealias JSCall Property{JSCallPrimitive}
 
 
-function jscall(code::String, arg::Vector{Measure}=Measure[])
+function jscall(code::AbstractString, arg::Vector{Measure}=Measure[])
     return JSCall([JSCallPrimitive(code, arg)])
 end
 

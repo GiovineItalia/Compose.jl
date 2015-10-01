@@ -45,6 +45,12 @@ function isinstalled(pkg, ge=v"0.0.0")
 end
 
 
+# Allow users to supply strings without deprecation warnings
+parse_colorant(c::Colorant) = c
+parse_colorant(str::AbstractString) = parse(Colorant, str)
+parse_colorant_vec(c...) = to_vec(map(parse_colorant, c)...)
+@noinline to_vec(c...) = [c...]
+
 include("misc.jl")
 include("measure.jl")
 include("list.jl")
@@ -137,8 +143,8 @@ else
     global PS
     global PDF
 
-    msg1 = "Install Cairo to use the "
-    msg2 = " backend. You may need to delete your cache files (usually in ~/.julia/lib/v0.4) afterwards."
+    msg1 = "Install Cairo.jl to use the "
+    msg2 = " backend. You may need to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji")) afterwards."
     PNG(args...) = error(string(msg1, "PNG", msg2))
     PS(args...) = error(string(msg1, "PS", msg2))
     PDF(args...) = error(string(msg1, "PDF", msg2))

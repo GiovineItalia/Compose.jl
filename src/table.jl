@@ -16,11 +16,11 @@ type Table <: ContainerPromise
 
     # If non-nothing, constrain the focused cells to have a proportional
     # relationship.
-    x_prop::Union(Nothing, Vector{Float64})
-    y_prop::Union(Nothing, Vector{Float64})
+    x_prop::@compat(Union{(@compat Void), Vector{Float64}})
+    y_prop::@compat(Union{(@compat Void), Vector{Float64}})
 
     # If non-nothing, constrain the focused cells to have a fixed aspect ratio.
-    aspect_ratio::Union(Nothing, Float64)
+    aspect_ratio::@compat(Union{(@compat Void), Float64})
 
     # fixed configuration
     fixed_configs::Vector
