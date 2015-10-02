@@ -962,23 +962,25 @@ end
 
 function draw(img::SVG, prim::ImageMatrixPrimitive, idx::Int)
 
-    # prepare png data first
+    # prepare png data first, scale up
     s = Cairo.CairoRGBSurface(prim.data);
 
+    w = prim.width.abs;
+    h = prim.height.abs;
 
-    # s = Cairo.CairoRGBSurface(prim.data);
-    # p = Cairo.CairoPattern(s)
-    # w = absolute_native_units(img,prim.width.abs)
-    # h = absolute_native_units(img,prim.height.abs)
-    # m = Cairo.CairoMatrix(s.width/w,0,0,s.height/h,0,0)
-    # Cairo.set_matrix(p,m)
-    # Cairo.pattern_set_filter(p,Cairo.FILTER_NEAREST)        
-    # Cairo.set_source(img.ctx,p)
-    # Cairo.fill(img.ctx)
+    s_scaled = Cairo.CairoRGBSurface(int(ceil(w)),int(ceil(h)));
 
+    p = Cairo.CairoPattern(s);
+    m = Cairo.CairoMatrix(s.width/w,0,0,s.height/h,0,0)
+    Cairo.set_matrix(p,m);
+    Cairo.pattern_set_filter(p,Cairo.FILTER_NEAREST);
+    c = Cairo.CairoContext(s_scaled);
+    Cairo.set_source(c,p)
+    Cairo.rectangle(c,0,0,s_scaled.width,s_scaled.height)
+    Cairo.fill(c)
 
     fd = IOBuffer();
-    Cairo.write_to_png(s,fd);
+    Cairo.write_to_png(s_scaled,fd);
     d = takebuf_string(fd);
     
     indent(img)
