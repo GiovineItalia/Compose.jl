@@ -145,7 +145,12 @@ else
     global PDF
 
     msg1 = "Install Cairo.jl to use the "
-    msg2 = " backend. You may need to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji")) afterwards."
+    msg2 = " backend."
+    if VERSION >= v"0.4.0-dev+6521"
+        msg2 = string(msg2,
+            " You may need to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji")) afterwards.")
+    end
+
     PNG(args...) = error(string(msg1, "PNG", msg2))
     PS(args...) = error(string(msg1, "PS", msg2))
     PDF(args...) = error(string(msg1, "PDF", msg2))
