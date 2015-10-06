@@ -20,9 +20,12 @@ function hstack(x0, y0, height, aligned_contexts::(@compat Tuple{Context, VAlign
     # fits.
     total_width_units = sum(Float64[context.box.width.cw
                                     for (context, _) in aligned_contexts])
+    total_width_mm = sum(Float64[context.box.width.abs
+                                    for (context, _) in aligned_contexts])
     width = sum(Measure[context.box.width
                         for (context, _) in aligned_contexts])
     width = Measure(width,
+                    abs=total_width_units == 0.0 ? total_width_mm : 0.0,
                     cw=total_width_units > 0.0 ?
                         width.cw / total_width_units : 0.0)
 
@@ -38,7 +41,8 @@ function hstack(x0, y0, height, aligned_contexts::(@compat Tuple{Context, VAlign
             context.box =
                 BoundingBox(context.box,
                     width=Measure(context.box.width,
-                        cw=context.box.width.cw / total_width_units))
+                        cw=context.box.width.cw / total_width_units,
+                        abs = -total_width_mm* context.box.width.cw / total_width_units))
         end
 
         # Should we interpret vbottom to mean 0?
