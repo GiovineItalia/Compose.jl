@@ -74,11 +74,14 @@ type PGF <: Backend
     # Emit only the tikzpicture environment
     only_tikz :: Bool
 
+    # Use default TeX fonts instead of fonts specified by the theme.
+    texfonts::Bool
     function PGF(out::IO,
                  width,
                  height,
                  emit_on_finish::Bool=true,
-                 only_tikz = false)
+                 only_tikz = false;
+                 texfonts = false;)
         width = size_measure(width)
         height = size_measure(height)
         if !isabsolute(width) || !isabsolute(height)
@@ -108,13 +111,14 @@ type PGF <: Backend
         img.ownedfile = false
         img.filename = nothing
         img.only_tikz = only_tikz
+        img.texfonts = texfonts
         return img
     end
 
     # Write to a file.
-    function PGF(filename::AbstractString, width, height, only_tikz = false)
+    function PGF(filename::AbstractString, width, height, only_tikz = false; texfonts = false)
         out = open(filename, "w")
-        img = PGF(out, width, height, true, only_tikz)
+        img = PGF(out, width, height, true, only_tikz, texfonts = texfonts)
         img.ownedfile = true
         img.filename = filename
         return img
@@ -122,8 +126,8 @@ type PGF <: Backend
 
     # Write to buffer.
     function PGF(width::MeasureOrNumber, height::MeasureOrNumber,
-                 emit_on_finish::Bool=true, only_tikz = false)
-        return PGF(IOBuffer(), width, height, emit_on_finish, only_tikz)
+                 emit_on_finish::Bool=true, only_tikz = false; texfonts = false)
+        return PGF(IOBuffer(), width, height, emit_on_finish, only_tikz, texfonts = texfonts)
     end
 end
 
@@ -190,7 +194,7 @@ function writeheader(img::PGF)
         """
         \\documentclass{minimal}
         \\usepackage{pgfplots}
-        \\usepackage{fontspec}
+        $(img.texfonts ? "" : "\\usepackage{fontspec}")
         \\usepackage{amsmath}
         \\usepackage[active,tightpage]{preview}
         \\PreviewEnvironment{tikzpicture}
@@ -560,7 +564,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
         print_pgf_path(img.buf, img.clippath.points)
         write(img.buf, ";\n")
     end
-   if img.fontfamily != nothing
+   if (img.fontfamily != nothing) && (! img.texfonts)
        @printf(img.buf, "\\fontspec{%s}\n", img.fontfamily)
     end
 end
