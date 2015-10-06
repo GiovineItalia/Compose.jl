@@ -81,7 +81,7 @@ type PGF <: Backend
                  height,
                  emit_on_finish::Bool=true,
                  only_tikz = false;
-                 texfonts = false;)
+                 texfonts = false)
         width = size_measure(width)
         height = size_measure(height)
         if !isabsolute(width) || !isabsolute(height)
