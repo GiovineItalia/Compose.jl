@@ -26,7 +26,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
 
 abstract Backend
 
-function isinstalled(pkg, ge=v"0.0.0")
+function isinstalled(pkg, ge=v"0.0.0-")
     try
         # Pkg.installed might throw an error,
         # we need to account for it to be able to precompile
