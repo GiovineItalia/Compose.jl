@@ -75,10 +75,7 @@ hstack() = context()
 # contexts will be centered vertically.
 #
 function hstack(contexts::Context...; x0::MeasureOrNumber=0,
-                y0::MeasureOrNumber=0, height=0)
-    if height == 0
-        height = maximum([context.box.height for context in contexts])
-    end
+                y0::MeasureOrNumber=0, height=1h)
     return hstack(x0, y0, height, [(context, vcenter) for context in contexts]...)
 end
 
@@ -155,10 +152,7 @@ vstack() = context()
 # be centered horizontally..
 #
 function vstack(contexts::Context...; x0::MeasureOrNumber=0,
-                y0::MeasureOrNumber=0, width::MeasureOrNumber=0)
-    if width == 0
-        width = max([context.box.width for context in contexts]...)
-    end
+                y0::MeasureOrNumber=0, width::MeasureOrNumber=1w)
     return vstack(x0, y0, width, [(context, hcenter) for context in contexts]...)
 end
 
