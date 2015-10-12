@@ -20,9 +20,12 @@ function hstack(x0, y0, height, aligned_contexts::(@compat Tuple{Context, VAlign
     # fits.
     total_width_units = sum(Float64[context.box.width.cw
                                     for (context, _) in aligned_contexts])
+    total_width_mm = sum(Float64[context.box.width.abs
+                                    for (context, _) in aligned_contexts])
     width = sum(Measure[context.box.width
                         for (context, _) in aligned_contexts])
     width = Measure(width,
+                    abs=total_width_units == 0.0 ? total_width_mm : 0.0,
                     cw=total_width_units > 0.0 ?
                         width.cw / total_width_units : 0.0)
 
@@ -38,7 +41,8 @@ function hstack(x0, y0, height, aligned_contexts::(@compat Tuple{Context, VAlign
             context.box =
                 BoundingBox(context.box,
                     width=Measure(context.box.width,
-                        cw=context.box.width.cw / total_width_units))
+                        cw=context.box.width.cw / total_width_units,
+                        abs = -total_width_mm * context.box.width.cw / total_width_units))
         end
 
         # Should we interpret vbottom to mean 0?
@@ -71,10 +75,7 @@ hstack() = context()
 # contexts will be centered vertically.
 #
 function hstack(contexts::Context...; x0::MeasureOrNumber=0,
-                y0::MeasureOrNumber=0, height=0)
-    if height == 0
-        height = maximum([context.box.height for context in contexts])
-    end
+                y0::MeasureOrNumber=0, height=1h)
     return hstack(x0, y0, height, [(context, vcenter) for context in contexts]...)
 end
 
@@ -97,9 +98,12 @@ function vstack(x0, y0, width, aligned_contexts::(@compat Tuple{Context, HAlignm
     # Scale height units
     total_height_units = sum(Float64[context.box.height.ch
                                      for (context, _) in aligned_contexts])
+    total_height_mm = sum(Float64[context.box.height.abs
+                                     for (context, _) in aligned_contexts])
     height = sum(Measure[context.box.height
                          for (context, _) in aligned_contexts])
     height = Measure(height,
+                     abs=total_height_units == 0.0 ? total_height_mm : 0.0,
                      ch=total_height_units > 0.0 ?
                           height.ch / total_height_units : 0.0)
 
@@ -115,7 +119,8 @@ function vstack(x0, y0, width, aligned_contexts::(@compat Tuple{Context, HAlignm
             context.box =
                 BoundingBox(context.box,
                     height=Measure(context.box.height,
-                        ch=context.box.height.ch / total_height_units))
+                        ch=context.box.height.ch / total_height_units,
+                        abs=-total_height_mm * context.box.height.ch / total_height_units))
         end
 
         context.box = BoundingBox(context.box, y0=y)
@@ -147,10 +152,7 @@ vstack() = context()
 # be centered horizontally..
 #
 function vstack(contexts::Context...; x0::MeasureOrNumber=0,
-                y0::MeasureOrNumber=0, width::MeasureOrNumber=0)
-    if width == 0
-        width = max([context.box.width for context in contexts]...)
-    end
+                y0::MeasureOrNumber=0, width::MeasureOrNumber=1w)
     return vstack(x0, y0, width, [(context, hcenter) for context in contexts]...)
 end
 
