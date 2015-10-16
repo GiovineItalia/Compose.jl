@@ -18,12 +18,12 @@ const text_extents_scale_y = 1.0
 
 
 # Normalized Levenshtein distance between two strings.
-function levenshtein(a::String, b::String)
+function levenshtein(a::AbstractString, b::AbstractString)
     a = replace(lowercase(a), r"\s+", "")
     b = replace(lowercase(b), r"\s+", "")
     n = length(a)
     m = length(b)
-    D = zeros(Uint, n + 1, m + 1)
+    D = zeros(UInt, n + 1, m + 1)
 
     D[:,1] = 0:n
     D[1,:] = 0:m
@@ -42,10 +42,10 @@ end
 
 # Find the nearst typeface from the glyph size table.
 let
-    matched_font_cache = Dict{String, String}()
+    matched_font_cache = Dict{AbstractString, AbstractString}()
     global match_font
 
-    function match_font(families::String)
+    function match_font(families::AbstractString)
         if haskey(matched_font_cache, families)
             return matched_font_cache[families]
         end
@@ -77,7 +77,7 @@ end
 # Returns:
 #   Approximate text width in millimeters.
 #
-function text_width(widths::Dict, text::String, size::Float64)
+function text_width(widths::Dict, text::AbstractString, size::Float64)
     stripped_text = replace(text, r"<[^>]*>", "")
     width = 0
     for c in stripped_text
@@ -87,8 +87,8 @@ function text_width(widths::Dict, text::String, size::Float64)
 end
 
 
-function max_text_extents(font_family::String, size::Measure,
-                          texts::String...)
+function max_text_extents(font_family::AbstractString, size::Measure,
+                          texts::AbstractString...)
     if !isa(size, AbsoluteLength)
         error("text_extents requries font size be in absolute units")
     end
@@ -120,7 +120,7 @@ function max_text_extents(font_family::String, size::Measure,
 end
 
 
-function text_extents(font_family::String, size::Measure, texts::String...)
+function text_extents(font_family::AbstractString, size::Measure, texts::AbstractString...)
     scale = size / 12pt
     font_family = match_font(font_family)
     height = glyphsizes[font_family]["height"]
@@ -140,9 +140,9 @@ end
 
 
 # Amazingly crude fallback to parse pango markup into svg.
-function pango_to_svg(text::String)
+function pango_to_svg(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
-    input = convert(Array{Uint8}, text)
+    input = convert(Array{UInt8}, text)
     output = IOBuffer()
     lastpos = 1
 

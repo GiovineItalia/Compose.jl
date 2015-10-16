@@ -10,7 +10,7 @@ using Measures
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!,
-             display, writemime, convert, zero, isless, max, fill, size, copy,
+             display, writemime, showcompact, convert, zero, isless, max, fill, size, copy,
              min, max, abs, +, -, *, /
 
 import Measures: resolve, w, h
@@ -29,14 +29,15 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
 
 
 
-function isinstalled(pkg, ge=v"0.0.0")
+function isinstalled(pkg, ge=v"0.0.0-")
     try
         # Pkg.installed might throw an error,
         # we need to account for it to be able to precompile
         ver = Pkg.installed(pkg)
         ver == nothing && try
             # Assume the version is new enough if the package is in LOAD_PATH
-            require(pkg)
+            ex = Expr(:import, symbol(pkg))
+            @eval $ex
             return true
         catch
             return false
@@ -59,6 +60,11 @@ function canbatch(::Backend)
     return false
 end
 
+# Allow users to supply strings without deprecation warnings
+parse_colorant(c::Colorant) = c
+parse_colorant(str::AbstractString) = parse(Colorant, str)
+parse_colorant_vec(c...) = to_vec(map(parse_colorant, c)...)
+@noinline to_vec(c...) = [c...]
 
 include("misc.jl")
 include("measure.jl")
@@ -153,8 +159,13 @@ else
     global PS
     global PDF
 
-    msg1 = "Install Cairo to use the "
-    msg2 = " backend. You may need to delete your cache files (usually in ~/.julia/lib/v0.4) afterwards."
+    msg1 = "Install Cairo.jl to use the "
+    msg2 = " backend."
+    if VERSION >= v"0.4.0-dev+6521"
+        msg2 = string(msg2,
+            " You may need to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji")) afterwards.")
+    end
+
     PNG(args...) = error(string(msg1, "PNG", msg2))
     PS(args...) = error(string(msg1, "PS", msg2))
     PDF(args...) = error(string(msg1, "PDF", msg2))

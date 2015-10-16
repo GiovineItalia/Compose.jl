@@ -1,5 +1,7 @@
 using Compose
 
+include("misc.jl")
+
 # Run the examples
 const testdir = dirname(@__FILE__)
 cd(testdir)
@@ -13,7 +15,7 @@ end
 
 # Compare with cached output
 cachedout = joinpath(testdir, "data")
-differentfiles = String[]
+differentfiles = AbstractString[]
 const creator_producer = r"(Creator|Producer)"
 for output in readdir(cachedout)
     cached = open(readlines, joinpath(cachedout, output))

@@ -50,6 +50,8 @@ type Context <: Container
     # is preferable to another.
     penalty::Float64
 
+    tag::Symbol
+
     function Context(x0=0.0w,
                      y0=0.0h,
                      width=1.0w,
@@ -64,10 +66,11 @@ type Context <: Container
                      raster=false,
                      minwidth=nothing,
                      minheight=nothing,
-                     penalty=0.0)
+                     penalty=0.0,
+                     tag=empty_tag)
         return new(BoundingBox(x0, y0, width, height), units, rotation, mirror,
                    ListNull{ComposeNode}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty)
+                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
     end
 
     function Context(box::BoundingBox,
@@ -83,7 +86,7 @@ type Context <: Container
                      withoutjs::Bool,
                      raster::Bool,
                      minwidth, minheight,
-                     penalty)
+                     penalty, tag)
         if isa(minwidth, AbsoluteLength)
             minwidth = minwidth.value
         end
@@ -95,7 +98,7 @@ type Context <: Container
         return new(box, units, rotation, mirror, container_children,
                    form_children, property_children, order,
                    clip, withjs, withoutjs, raster, minwidth, minheight,
-                   penalty)
+                   penalty, tag)
     end
 
     function Context(ctx::Context)
@@ -103,7 +106,7 @@ type Context <: Container
                    ctx.container_children, ctx.form_children,
                    ctx.property_children, ctx.order,
                    ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
-                   ctx.minwidth, ctx.minheight, ctx.penalty)
+                   ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
     end
 end
 
@@ -122,7 +125,8 @@ function context(x0=0.0w,
                  raster=false,
                  minwidth=nothing,
                  minheight=nothing,
-                 penalty=0.0)
+                 penalty=0.0,
+                 tag=empty_tag)
 
     return Context(BoundingBox(x_measure(x0), y_measure(y0),
                                x_measure(width), y_measure(height)),
@@ -130,7 +134,7 @@ function context(x0=0.0w,
                    isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
                    mirror, ListNull{Container}(), ListNull{Form}(),
                    ListNull{Property}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty)
+                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
 end
 
 
@@ -208,7 +212,7 @@ function transformcoordinates(from::Measure, ctx::Context)
 end
 
 function boundingbox(c::Context,linewidth::Measure=default_line_width,
-                     font::String=default_font_family,
+                     font::AbstractString=default_font_family,
                      fontsize::Measure=default_font_size,
                      parent_abs_width = nothing,
                      parent_abs_height = nothing)
@@ -400,17 +404,17 @@ function compose(a::Context)
 end
 
 
-function compose(a, b::Nothing)
+function compose(a, b::(@compat Void))
     return a
 end
 
 
-for (f, S, T) in [(:compose!, Property, Nothing),
-                  (:compose!, Form, Nothing),
+for (f, S, T) in [(:compose!, Property, (@compat Void)),
+                  (:compose!, Form, (@compat Void)),
                   (:compose!, Property, Any),
                   (:compose!, Form, Any),
-                  (:compose, Property, Nothing),
-                  (:compose, Form, Nothing),
+                  (:compose, Property, (@compat Void)),
+                  (:compose, Form, (@compat Void)),
                   (:compose, Property, Any),
                   (:compose, Form, Any)]
     eval(
@@ -673,3 +677,32 @@ function introspect(root::Context)
                     (context(order=-2), rectangle(), fill("#333")),
                     lines_ctx, figs)
 end
+
+
+function showcompact(io::IO, ctx::Context)
+    print(io, "Context(")
+    first = true
+    for c in ctx.children
+        first || print(io, ",")
+        first = false
+        showcompact(io, c)
+    end
+    print(io, ")")
+end
+
+function showcompact(io::IO, a::AbstractArray)
+    print(io, "[")
+    first = true
+    for c in a
+        first || print(io, ",")
+        first = false
+        showcompact(io, c)
+    end
+    print(io, "]")
+end
+
+showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
+
+showcompact(io::IO, p::Compose.Property) = print(io, Compose.prop_string(p))
+
+showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)

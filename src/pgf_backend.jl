@@ -28,7 +28,7 @@ type PGF <: Backend
     stroke::Nullable{Color}
     stroke_opacity::Float64
 
-    fontfamily::Nullable{String}
+    fontfamily::Nullable{AbstractString}
     fontsize::Float64
 
     # Current level of indentation.
@@ -66,7 +66,7 @@ type PGF <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Nullable{String}
+    filename::Nullable{AbstractString}
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -74,11 +74,20 @@ type PGF <: Backend
     # Emit only the tikzpicture environment
     only_tikz :: Bool
 
+    # Use default TeX fonts instead of fonts specified by the theme.
+    texfonts::Bool
     function PGF(out::IO,
                  width::AbsoluteLength,
                  height::AbsoluteLength,
                  emit_on_finish::Bool=true,
-                 only_tikz = false)
+                 only_tikz = false;
+                 texfonts = false)
+        width = size_measure(width)
+        height = size_measure(height)
+        if !isabsolute(width) || !isabsolute(height)
+            error("PGF image size must be specified in absolute units.")
+        end
+
         img = new()
         img.buf = IOBuffer()
         img.fill = default_fill_color
@@ -102,13 +111,14 @@ type PGF <: Backend
         img.ownedfile = false
         img.filename = nothing
         img.only_tikz = only_tikz
+        img.texfonts = texfonts
         return img
     end
 
     # Write to a file.
-    function PGF(filename::String, width, height, only_tikz = false)
+    function PGF(filename::AbstractString, width, height, only_tikz = false; texfonts = false)
         out = open(filename, "w")
-        img = PGF(out, width, height, true, only_tikz)
+        img = PGF(out, width, height, true, only_tikz, texfonts = texfonts)
         img.ownedfile = true
         img.filename = filename
         return img
@@ -116,8 +126,8 @@ type PGF <: Backend
 
     # Write to buffer.
     function PGF(width::MeasureOrNumber, height::MeasureOrNumber,
-                 emit_on_finish::Bool=true, only_tikz = false)
-        return PGF(IOBuffer(), width, height, emit_on_finish, only_tikz)
+                 emit_on_finish::Bool=true, only_tikz = false; texfonts = false)
+        return PGF(IOBuffer(), width, height, emit_on_finish, only_tikz, texfonts = texfonts)
     end
 end
 
@@ -184,7 +194,7 @@ function writeheader(img::PGF)
         """
         \\documentclass{minimal}
         \\usepackage{pgfplots}
-        \\usepackage{fontspec}
+        $(img.texfonts ? "" : "\\usepackage{fontspec}")
         \\usepackage{amsmath}
         \\usepackage[active,tightpage]{preview}
         \\PreviewEnvironment{tikzpicture}
@@ -534,7 +544,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
     end
 
     write(img.buf, "\\begin{scope}\n")
-    prop_str = String[]
+    prop_str = AbstractString[]
     for property in scalar_properties
         push_property!(prop_str, img, property.primitives[1])
     end
@@ -546,7 +556,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
         print_pgf_path(img.buf, get(img.clippath).points)
         write(img.buf, ";\n")
     end
-   if !isnull(img.fontfamily)
+   if !isnull(img.fontfamily) && !img.texfonts
        @printf(img.buf, "\\fontspec{%s}\n", img.fontfamily)
     end
 end
@@ -585,9 +595,9 @@ end
 # Horrible abuse of Latex inline math mode just to
 # get something working first.
 # FIX ME!
-function pango_to_pgf(text::String)
+function pango_to_pgf(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
-    input = convert(Array{Uint8}, text)
+    input = convert(Array{UInt8}, text)
     output = IOBuffer()
     lastpos = 1
     for mat in eachmatch(pat, text)

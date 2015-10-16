@@ -10,9 +10,9 @@ type Patchable <: Backend
     width::Length{:mm}
     height::Length{:mm}
 
-    jsheader::Vector{String}
-    jsmodules::Vector{(@compat Tuple{String, String})}
-    clip_paths::Dict{ClipPrimitive, String}
+    jsheader::Vector{AbstractString}
+    jsmodules::Vector{(@compat Tuple{AbstractString, AbstractString})}
+    clip_paths::Dict{ClipPrimitive, AbstractString}
     parent_stack::Vector
     property_stack::Vector
     function Patchable(width, height)
@@ -22,8 +22,8 @@ type Patchable <: Backend
             width,
             height,
             String[],
-            (@compat Tuple{String, String})[],
-            Dict{ClipPrimitive, String}(),
+            (@compat Tuple{AbstractString, AbstractString})[],
+            Dict{ClipPrimitive, AbstractString}(),
             Elem[Elem(:svg, :svg)],
             Any[])
     end
@@ -124,7 +124,7 @@ root_box(img::Patchable) =
 
 init_context(::Patchable, ::Context) = Elem(:svg, :g)
 
-typealias SVGPart Union(Elem, Dict, Nothing)
+typealias SVGPart @compat(Union{Elem, Dict, (@compat Void)})
 
 function properties_at_index(img, prop_vecs, i)
     props = Dict()
@@ -373,7 +373,7 @@ draw(img::Patchable, prim::VisiblePrimitive) =
     :visibility, prim.value ? "visible" : "hidden"
 
 # Pango markup to Patchwork
-function pango_to_elems(text::String)
+function pango_to_elems(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
     input = text
     output = Elem[Elem(:svg, :text)] # Stack

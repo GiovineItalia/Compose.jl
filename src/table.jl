@@ -16,11 +16,11 @@ type Table <: ContainerPromise
 
     # If non-nothing, constrain the focused cells to have a proportional
     # relationship.
-    x_prop::Union(Nothing, Vector{Float64})
-    y_prop::Union(Nothing, Vector{Float64})
+    x_prop::@compat(Union{(@compat Void), Vector{Float64}})
+    y_prop::@compat(Union{(@compat Void), Vector{Float64}})
 
     # If non-nothing, constrain the focused cells to have a fixed aspect ratio.
-    aspect_ratio::Union(Nothing, Float64)
+    aspect_ratio::@compat(Union{(@compat Void), Float64})
 
     # fixed configuration
     fixed_configs::Vector
@@ -379,4 +379,16 @@ end
     end
 #end
 
-
+function showcompact(io::IO, t::Table)
+    println(io,"$(size(t.children,1))x$(size(t.children,2)) Table:")
+    for i = 1:size(t.children,1)
+        print(io, "  ")
+        first = true
+        for j = 1:size(t.children,2)
+            first || print(io, ",")
+            first = false
+            showcompact(io, t.children[i,j])
+        end
+        println(io)
+    end
+end

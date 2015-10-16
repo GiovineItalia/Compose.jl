@@ -1,4 +1,5 @@
 
+using Compat
 
 using Measures: Add, Min, Max, Div, Mul, Neg
 
@@ -20,8 +21,8 @@ Base.(:*){T}(a::T, b::Type{cy}) = y_measure(a)
 const assumed_ppmm = 3.78 # equivalent to 96 DPI
 const px = mm/assumed_ppmm
 
-typealias XYTupleOrVec Union(NTuple{2}, Vec)
-typealias MeasureOrNumber Union(Measure, Number)
+typealias XYTupleOrVec Union{NTuple{2}, Vec}
+typealias MeasureOrNumber Union{Measure, Number}
 
 
 # Scaling w and h components
@@ -57,7 +58,6 @@ end
 function scale_component{T <: Length}(::Type{T}, scale, l::Add)
     return scale_component(T, scale, l.a) + scale_component(T, scale, l.b)
 end
-
 
 
 # Interpretation of bare numbers
@@ -464,4 +464,3 @@ resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a) = resolve(bo
 function resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, op::Add)
     return resolve_position(box, units, t, op.a) + resolve_position(box, units, t, op.b)
 end
-

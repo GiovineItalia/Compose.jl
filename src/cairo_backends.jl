@@ -25,7 +25,7 @@ type ImagePropertyState
     visible::Bool
     linewidth::AbsoluteLength
     fontsize::AbsoluteLength
-    font::String
+    font::AbstractString
     clip::Nullable{ClipPrimitive}
 end
 
@@ -59,7 +59,7 @@ type Image{B <: ImageBackend} <: Backend
     visible::Bool
     linewidth::AbsoluteLength
     fontsize::AbsoluteLength
-    font::String
+    font::AbstractString
     clip::Nullable{ClipPrimitive}
 
     # Keep track of property
@@ -74,7 +74,7 @@ type Image{B <: ImageBackend} <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union(String, Nothing)
+    filename::@compat(Union{AbstractString, (@compat Void)})
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -158,7 +158,7 @@ type Image{B <: ImageBackend} <: Backend
         img
     end
 
-    function Image(filename::String,
+    function Image(filename::AbstractString,
                    width::MeasureOrNumber,
                    height::MeasureOrNumber;
                    dpi = (B == PNGBackend ? 96 : 72))
@@ -527,7 +527,7 @@ function apply_property(img::Image, property::FontSizePrimitive)
         family = "sans"
     else
         family = ccall((:pango_font_description_get_family, Cairo._jl_libpango),
-                       Ptr{Uint8}, (Ptr{Void},), font_desc)
+                       Ptr{UInt8}, (Ptr{Void},), font_desc)
         family = bytestring(family)
     end
 
