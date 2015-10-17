@@ -76,17 +76,13 @@ type PGF <: Backend
 
     # Use default TeX fonts instead of fonts specified by the theme.
     texfonts::Bool
+
     function PGF(out::IO,
                  width::AbsoluteLength,
                  height::AbsoluteLength,
                  emit_on_finish::Bool=true,
                  only_tikz = false;
                  texfonts = false)
-        width = size_measure(width)
-        height = size_measure(height)
-        if !isabsolute(width) || !isabsolute(height)
-            error("PGF image size must be specified in absolute units.")
-        end
 
         img = new()
         img.buf = IOBuffer()

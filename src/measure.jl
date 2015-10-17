@@ -211,6 +211,15 @@ function ispadded(units::UnitBox)
 end
 
 
+function isxflipped{S, T, U, V}(units::UnitBox{S, T, U, V})
+    return units.width < zero(U)
+end
+
+
+function isyflipped{S, T, U, V}(units::UnitBox{S, T, U, V})
+    return units.height < zero(V)
+end
+
 
 # Canvas Transforms
 # -----------------
@@ -369,7 +378,7 @@ end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cx})
-    return (a.value / width(units)) * box.a[1]
+    return abs(a.value / width(units)) * box.a[1]
 end
 
 
@@ -379,7 +388,7 @@ end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy})
-    return (a.value / height(units)) * box.a[2]
+    return abs(a.value / height(units)) * box.a[2]
 end
 
 

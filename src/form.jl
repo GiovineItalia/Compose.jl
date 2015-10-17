@@ -171,7 +171,7 @@ typealias Rectangle{P<:RectanglePrimitive} Form{P}
 
 
 function rectangle()
-    prim = RectanglePrimitive(Point(0.0w, 0.0h), 1.0w, 1.0h)
+    prim = RectanglePrimitive((0.0w, 0.0h), 1.0w, 1.0h)
     return Rectangle{typeof(prim)}([prim])
 end
 
@@ -200,15 +200,13 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
     width = resolve(box, units, t, p.width)
     height = resolve(box, units, t, p.height)
 
-    if width < 0mm
-        width = abs(width)
+    if isxflipped(units)
         x = corner[1] - width
     else
         x = corner[1]
     end
 
-    if height < 0mm
-        height = abs(height)
+    if isyflipped(units)
         y = corner[2] - height
     else
         y = corner[2]
