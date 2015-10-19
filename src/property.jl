@@ -70,17 +70,17 @@ typealias Stroke Property{StrokePrimitive}
 
 
 function stroke(c::(@compat Void))
-    return Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
+    return StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))
 end
 
 
 function stroke(c::@compat(Union{Colorant, AbstractString}))
-	return Stroke([StrokePrimitive(parse_colorant(c))])
+	return StrokePrimitive(parse_colorant(c))
 end
 
 
 function stroke(cs::AbstractArray)
-	return Stroke([StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : parse_colorant(c)) for c in cs])
+	return [StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : parse_colorant(c)) for c in cs]
 end
 
 prop_string(::Stroke) = "s"
@@ -96,17 +96,17 @@ typealias Fill Property{FillPrimitive}
 
 
 function fill(c::(@compat Void))
-    return Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
+    return FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))
 end
 
 
 function fill(c::@compat(Union{Colorant, AbstractString}))
-	return Fill([FillPrimitive(parse_colorant(c))])
+	return FillPrimitive(parse_colorant(c))
 end
 
 
 function fill(cs::AbstractArray)
-	return Fill([FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs])
+	return [FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs]
 end
 
 prop_string(::Fill) = "f"
@@ -123,19 +123,19 @@ typealias StrokeDash Property{StrokeDashPrimitive}
 
 
 function strokedash(values::AbstractArray)
-    return StrokeDash([StrokeDashPrimitive(collect(Measure, values))])
+    return StrokeDashPrimitive(collect(Measure, values))
 end
 
 
 function strokedash(values::AbstractArray{AbstractArray})
-    return StrokeDash([StrokeDashPrimitive(collect(Measure, value)) for value in values])
+    return [StrokeDashPrimitive(collect(Measure, value)) for value in values]
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                  primitive::StrokeDashPrimitive)
-    return StrokeDashPrimitive([resolve(box, units, t, v)
-                                for v in primitive.value])
+    return [resolve(box, units, t, v)
+                for v in primitive.value]
 end
 
 prop_string(::StrokeDash) = "sd"
@@ -166,12 +166,12 @@ typealias StrokeLineCap Property{StrokeLineCapPrimitive}
 
 
 function strokelinecap(value::@compat(Union{LineCap, Type{LineCap}}))
-    return StrokeLineCap([StrokeLineCapPrimitive(value)])
+    return StrokeLineCapPrimitive(value)
 end
 
 
 function strokelinecap(values::AbstractArray)
-    return StrokeLineCap([StrokeLineCapPrimitive(value) for value in values])
+    return [StrokeLineCapPrimitive(value) for value in values]
 end
 
 prop_string(::StrokeLineCap) = "slc"
@@ -201,12 +201,12 @@ typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
 
 
 function strokelinejoin(value::@compat(Union{LineJoin, Type{LineJoin}}))
-    return StrokeLineJoin([StrokeLineJoinPrimitive(value)])
+    return StrokeLineJoinPrimitive(value)
 end
 
 
 function strokelinejoin(values::AbstractArray)
-    return StrokeLineJoin([StrokeLineJoinPrimitive(value) for value in values])
+    return [StrokeLineJoinPrimitive(value) for value in values]
 end
 
 prop_string(::StrokeLineJoin) = "slj"
@@ -226,12 +226,12 @@ typealias LineWidth Property{LineWidthPrimitive}
 
 
 function linewidth(value::@compat(Union{Measure, Number}))
-    return LineWidth([LineWidthPrimitive(value)])
+    return LineWidthPrimitive(value)
 end
 
 
 function linewidth(values::AbstractArray)
-    return LineWidth([LineWidthPrimitive(value) for value in values])
+    return [LineWidthPrimitive(value) for value in values]
 end
 
 
@@ -253,12 +253,12 @@ typealias Visible Property{VisiblePrimitive}
 
 
 function visible(value::Bool)
-    return Visible([VisiblePrimitive(value)])
+    return VisiblePrimitive(value)
 end
 
 
 function visible(values::AbstractArray)
-    return Visible([VisiblePrimitive(value) for value in values])
+    return [VisiblePrimitive(value) for value in values]
 end
 
 prop_string(::Visible) = "v"
@@ -283,12 +283,12 @@ typealias FillOpacity Property{FillOpacityPrimitive}
 
 
 function fillopacity(value::Float64)
-    return FillOpacity([FillOpacityPrimitive(value)])
+    return FillOpacityPrimitive(value)
 end
 
 
 function fillopacity(values::AbstractArray)
-    return FillOpacity([FillOpacityPrimitive(value) for value in values])
+    return [FillOpacityPrimitive(value) for value in values]
 end
 
 prop_string(::FillOpacity) = "fo"
@@ -313,12 +313,12 @@ typealias StrokeOpacity Property{StrokeOpacityPrimitive}
 
 
 function strokeopacity(value::Float64)
-    return StrokeOpacity([StrokeOpacityPrimitive(value)])
+    return StrokeOpacityPrimitive(value)
 end
 
 
 function strokeopacity(values::AbstractArray)
-    return StrokeOpacity([StrokeOpacityPrimitive(value) for value in values])
+    return [StrokeOpacityPrimitive(value) for value in values]
 end
 
 prop_string(::StrokeOpacity) = "so"
@@ -334,7 +334,7 @@ typealias Clip Property{ClipPrimitive}
 
 
 function clip()
-    return Clip([ClipPrimitive(Array(Vec, 0))])
+    return ClipPrimitive(Array(Vec, 0))
 end
 
 
@@ -348,7 +348,7 @@ function clip{T <: XYTupleOrVec}(points::AbstractArray{T})
     end
     VecType = Tuple{XM, YM}
 
-    return Clip([ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])])
+    return [ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])]
 end
 
 
@@ -362,7 +362,7 @@ function clip(point_arrays::AbstractArray...)
         clipprims[i] = ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
                                              for point in point_array])
     end
-    return Property{PrimType}(clipprims)
+    return clipprims
 end
 
 
@@ -479,12 +479,12 @@ typealias SVGClass Property{SVGClassPrimitive}
 
 
 function svgclass(value::AbstractString)
-    return SVGClass([SVGClassPrimitive(value)])
+    return SVGClassPrimitive(value)
 end
 
 
 function svgclass(values::AbstractArray)
-    return SVGClass([SVGClassPrimitive(value) for value in values])
+    return [SVGClassPrimitive(value) for value in values]
 end
 
 function prop_string(svgc::SVGClass)
@@ -517,21 +517,20 @@ typealias SVGAttribute Property{SVGAttributePrimitive}
 
 
 function svgattribute(attribute::AbstractString, value)
-    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))])
+    return [SVGAttributePrimitive(attribute, string(value))]
 end
 
 
 function svgattribute(attribute::AbstractString, values::AbstractArray)
-    return SVGAttribute([SVGAttributePrimitive(attribute, string(value))
-                         for value in values])
+    return [SVGAttributePrimitive(attribute, string(value))
+             for value in values]
 end
 
 
 function svgattribute(attributes::AbstractArray, values::AbstractArray)
-    return SVGAttribute(
-        @makeprimitives SVGAttributePrimitive,
+    return @makeprimitives SVGAttributePrimitive,
             (attribute in attributes, value in values),
-            SVGAttributePrimitive(attribute, string(value)))
+            SVGAttributePrimitive(attribute, string(value))
 end
 
 prop_string(::SVGAttribute) = "svga"
@@ -560,7 +559,7 @@ typealias JSInclude Property{JSIncludePrimitive}
 
 
 function jsinclude(value::AbstractString, module_name=nothing)
-    return JSInclude([JSIncludePrimitive(value, module_name)])
+    return JSIncludePrimitive(value, module_name)
 end
 
 # Don't bother with a vectorized version of this. It wouldn't really make #
@@ -580,16 +579,15 @@ typealias JSCall Property{JSCallPrimitive}
 
 
 function jscall(code::AbstractString, arg::Vector{Measure}=Measure[])
-    return JSCall([JSCallPrimitive(code, arg)])
+    return JSCallPrimitive(code, arg)
 end
 
 
 function jscall(codes::AbstractArray,
                 args::AbstractArray{Vector{Measure}}=Vector{Measure}[Measure[]])
-    return JSCall(
-        @makeprimitives JSCallPrimitive,
+    return @makeprimitives JSCallPrimitive,
             (code in codes, arg in args),
-            JSCallPrimitive(code, arg))
+            JSCallPrimitive(code, arg)
 end
 
 
@@ -635,7 +633,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
         i = j + 2
     end
 
-    return JSCallPrimitive(takebuf_string(newcode), Measure[])
+    return takebuf_string(newcode), Measure[]
 end
 
 
