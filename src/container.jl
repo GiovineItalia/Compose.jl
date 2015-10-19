@@ -50,8 +50,6 @@ type Context <: Container
     # is preferable to another.
     penalty::Float64
 
-    tag::Symbol
-
     function Context(x0=0.0w,
                      y0=0.0h,
                      width=1.0w,
@@ -66,11 +64,10 @@ type Context <: Container
                      raster=false,
                      minwidth=nothing,
                      minheight=nothing,
-                     penalty=0.0,
-                     tag=empty_tag)
+                     penalty=0.0)
         return new(BoundingBox(x0, y0, width, height), units, rotation, mirror,
                    ListNull{ComposeNode}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
+                   withjs, withoutjs, raster, minwidth, minheight, penalty)
     end
 
     function Context(box::BoundingBox,
@@ -86,7 +83,7 @@ type Context <: Container
                      withoutjs::Bool,
                      raster::Bool,
                      minwidth, minheight,
-                     penalty, tag)
+                     penalty)
         if isa(minwidth, AbsoluteLength)
             minwidth = minwidth.value
         end
@@ -98,7 +95,7 @@ type Context <: Container
         return new(box, units, rotation, mirror, container_children,
                    form_children, property_children, order,
                    clip, withjs, withoutjs, raster, minwidth, minheight,
-                   penalty, tag)
+                   penalty)
     end
 
     function Context(ctx::Context)
@@ -106,7 +103,7 @@ type Context <: Container
                    ctx.container_children, ctx.form_children,
                    ctx.property_children, ctx.order,
                    ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
-                   ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
+                   ctx.minwidth, ctx.minheight, ctx.penalty)
     end
 end
 
@@ -125,8 +122,7 @@ function context(x0=0.0w,
                  raster=false,
                  minwidth=nothing,
                  minheight=nothing,
-                 penalty=0.0,
-                 tag=empty_tag)
+                 penalty=0.0)
 
     return Context(BoundingBox(x_measure(x0), y_measure(y0),
                                x_measure(width), y_measure(height)),
@@ -134,7 +130,7 @@ function context(x0=0.0w,
                    isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
                    mirror, ListNull{Container}(), ListNull{Form}(),
                    ListNull{Property}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
+                   withjs, withoutjs, raster, minwidth, minheight, penalty)
 end
 
 
