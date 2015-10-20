@@ -772,7 +772,7 @@ end
 # Form Drawing
 # ------------
 
-function draw{T<:FormPrimitive}(img::SVG, form::Union{AbstractArray{T}, FormPrimitive})
+function draw{T<:FormPrimitive}(img::SVG, form::AbstractArray{T})
     for i in 1:length(form)
         draw(img, form[i], i)
     end
@@ -1252,10 +1252,10 @@ function push_property_frame(img::SVG, properties::Vector)
         return
     end
 
-    id_needed = any([isa(property, JSCall) for property in scalar_properties])
+    id_needed = any([proptype(property) === JSCallPrimitive for property in scalar_properties])
     for property in scalar_properties
-        if isa(property, SVGID)
-            img.current_id = property[1].value
+        if proptype(property) === SVGIDPrimitive
+            img.current_id = property.value
             img.has_current_id = true
         end
     end
