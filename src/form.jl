@@ -1,32 +1,31 @@
 
+
+typealias OneOrMore{T} Union{T, AbstractArray}
+abstract Primitive <: ComposeNode
+
+Base.length(::Primitive) = 1
+Base.isempty(x::Primitive) = false
+Base.start(::Primitive) = false
+Base.next(x::Primitive, state) = (x, true)
+Base.done(::Primitive, state) = state
+Base.in(x::Primitive, y::Primitive) = x == y
+Base.map(f, x::Primitive) = f(x)
+
 # A form is something that ends up as geometry in the graphic.
 
-abstract FormPrimitive
+abstract FormPrimitive <: Primitive
 
-immutable Form{P <: FormPrimitive} <: ComposeNode
-    primitives::Vector{P}
+abstract Form{T} <: ComposeNode
+
+function resolve(
+             box::AbsoluteBox,
+             units::UnitBox,
+             t::Transform,
+             xs::AbstractArray)
+
+    return [resolve(box, units, t, x) for x in xs]
 end
 
-
-function isempty(f::Form)
-    return isempty(f.primitives)
-end
-
-
-function isscalar(f::Form)
-    return length(f.primitives) == 1
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, form::Form)
-    return Form([resolve(box, units, t, primitive)
-                 for primitive in form.primitives])
-end
-
-
-function Base.similar{T}(f::Form{T})
-    return Form{T}(T[])
-end
 
 form_string(::Form) = "FORM"  # fallback definition
 
@@ -44,7 +43,7 @@ typealias PolygonPrimitive SimplePolygonPrimitive
 
 
 function polygon()
-    return Polygon([PolygonPrimitive(Vec[])])
+    return PolygonPrimitive(Vec[])
 end
 
 function polygon{T <: XYTupleOrVec}(points::AbstractArray{T})
@@ -57,8 +56,8 @@ function polygon{T <: XYTupleOrVec}(points::AbstractArray{T})
     end
     VecType = Tuple{XM, YM}
 
-    return Polygon([PolygonPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
-                    for point in points])])
+    return [PolygonPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
+                    for point in points])]
 end
 
 
@@ -72,7 +71,7 @@ function polygon(point_arrays::AbstractArray)
         polyprims[i] = PrimType(VecType[(x_measure(point[1]), y_measure(point[2]))
                                         for point in point_array])
     end
-    return Form{PrimType}(polyprims)
+    return PrimType[polyprims]
 end
 
 
@@ -106,7 +105,7 @@ typealias ComplexPolygon{P<:ComplexPolygonPrimitive} Form{P}
 
 
 function complexpolygon()
-    return ComplexPolygon([ComplexPolygonPrimitive(Vec[])])
+    return ComplexPolygonPrimitive(Vec[])
 end
 
 function complexpolygon(rings::Vector{Vector})
@@ -119,9 +118,8 @@ function complexpolygon(rings::Vector{Vector})
     end
     VecType = Tuple{XM, YM}
 
-    return ComplexPolygon([
-        ComplexPolygonPrimitive([VecType[(x_measure(point[1]), y_measure(point[2]))
-                                         for point in points]])])
+    return ComplexPolygonPrimitive([VecType[(x_measure(point[1]), y_measure(point[2]))
+                                 for point in points]])
 end
 
 
@@ -130,8 +128,8 @@ function complexpolygon(ring_arrays::Vector{Vector{Vector}})
     VecType = XM == YM == Any ? Vec : Tuple{XM, YM}
     PrimType = XM == YM == Any ? ComplexPolygonPrimitive : ComplexPolygonPrimitive{VecType}
 
-    ComplexPolygon([PrimType[[(x_measure(x), y_measure(y)) for (x, y) in ring]
-                    for ring in ring_array] for ring_array in ring_arrays])
+    [PrimType[[(x_measure(x), y_measure(y)) for (x, y) in ring]
+                for ring in ring_array] for ring_array in ring_arrays]
 end
 
 
@@ -160,7 +158,7 @@ typealias Rectangle{P<:RectanglePrimitive} Form{P}
 
 function rectangle()
     prim = RectanglePrimitive((0.0w, 0.0h), 1.0w, 1.0h)
-    return Rectangle{typeof(prim)}([prim])
+    return prim
 end
 
 
@@ -168,8 +166,7 @@ function rectangle(x0, y0, width, height)
     corner = (x_measure(x0), y_measure(y0))
     width = x_measure(width)
     height = y_measure(height)
-    prim = RectanglePrimitive(corner, width, height)
-    return Rectangle{typeof(prim)}([prim])
+    return RectanglePrimitive(corner, width, height)
 end
 
 
@@ -239,24 +236,21 @@ typealias Circle{P<:CirclePrimitive} Form{P}
 
 
 function circle()
-    prim = CirclePrimitive((0.5w, 0.5h), 0.5w)
-    return Circle{typeof(prim)}([prim])
+    return CirclePrimitive((0.5w, 0.5h), 0.5w)
 end
 
 
 function circle(x, y, r)
-    prim = CirclePrimitive(x, y, r)
-    return Circle{typeof(prim)}([prim])
+    return CirclePrimitive(x, y, r)
 end
 
 
 function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
     if isempty(xs) || isempty(ys) || isempty(rs)
-        prima = CirclePrimitive[]
-        return Circle{eltype(prima)}(prima)
+        return CirclePrimitive[]
+    else 
+        return @makeform (x in xs, y in ys, r in rs), CirclePrimitive(x, y, r)
     end
-
-    return @makeform (x in xs, y in ys, r in rs), CirclePrimitive(x, y, r)
 end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
@@ -291,18 +285,16 @@ typealias Ellipse{P<:EllipsePrimitive} Form{P}
 
 
 function ellipse()
-    prim = EllipsePrimitive((0.5w, 0.5h),
+    return EllipsePrimitive((0.5w, 0.5h),
                             (1.0w, 0.5h),
                             (0.5w, 1.0h))
-    return Ellipse{typeof(prim)}([prim])
 end
 
 
 function ellipse(x, y, x_radius, y_radius)
-    prim = EllipsePrimitive((x, y),
+    return EllipsePrimitive((x, y),
                             (x_measure(x) + x_measure(x_radius), y),
                             (x, y_measure(y) + y_measure(y_radius)))
-    return Ellipse{typeof(prim)}([prim])
 end
 
 
@@ -379,16 +371,14 @@ typealias Text{P<:TextPrimitive} Form{P}
 function text(x, y, value::AbstractString,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation())
-    prim = TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot)
-    return Text{typeof(prim)}([prim])
+    return TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot)
 end
 
 
 function text(x, y, value,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation())
-    prim = TextPrimitive((x_measure(x), y_measure(y)), string(value), halign, valign, rot)
-    return Text{typeof(prim)}([prim])
+    return TextPrimitive((x_measure(x), y_measure(y)), string(value), halign, valign, rot)
 end
 
 
@@ -456,15 +446,13 @@ typealias Line{P<:LinePrimitive} Form{P}
 
 
 function line()
-    prim = LinePrimitive(Vec[])
-    return Line{typeof(prim)}([prim])
+    return LinePrimitive(Vec[])
 end
 
 function line{T <: XYTupleOrVec}(points::AbstractArray{T})
     XM, YM = narrow_polygon_point_types(Vector[points])
     VecType = XM == YM == Any ? Vec2 : Tuple{XM, YM}
-    prim = LinePrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])
-    return Line{typeof(prim)}([prim])
+    return LinePrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])
 end
 
 
@@ -479,7 +467,7 @@ function line(point_arrays::AbstractArray)
                              for point in point_array])
         lineprims[i] = p
     end
-    return Form{PrimType}(lineprims)
+    return lineprims
 end
 
 
@@ -519,8 +507,8 @@ typealias Curve{P<:CurvePrimitive} Form{P}
 
 function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
                ctrl1::XYTupleOrVec, anchor1::XYTupleOrVec)
-    return Curve([CurvePrimitive(convert(Vec, anchor0), convert(Vec, ctrl0),
-                                 convert(Vec, ctrl1), convert(Vec, anchor1))])
+    return CurvePrimitive(convert(Vec, anchor0), convert(Vec, ctrl0),
+                          convert(Vec, ctrl1), convert(Vec, anchor1))
 end
 
 
@@ -561,8 +549,7 @@ function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height
     corner = (x_measure(x0), y_measure(y0))
     width = x_measure(width)
     height = y_measure(height)
-    prim = BitmapPrimitive(mime, data, corner, width, height)
-    return Bitmap{typeof(prim)}([prim])
+    return BitmapPrimitive(mime, data, corner, width, height)
 end
 
 
@@ -1095,12 +1082,12 @@ typealias Path Form{PathPrimitive}
 
 
 function path(tokens::AbstractArray)
-    return Path([PathPrimitive(parsepath(tokens))])
+    return PathPrimitive(parsepath(tokens))
 end
 
 
 function path{T <: AbstractArray}(tokens::AbstractArray{T})
-    return Path([PathPrimitive(parsepath(ts)) for ts in tokens])
+    return [PathPrimitive(parsepath(ts)) for ts in tokens]
 end
 
 

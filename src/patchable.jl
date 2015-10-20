@@ -60,7 +60,7 @@ function push_property_frame(img::Patchable, properties)
 
     props = Dict()
     for p in scalar_properties
-        draw!(img, p.primitives[1], props)
+        draw!(img, p[1], props)
     end
     push!(img.parent_stack, Elem(:svg, :g) & props)
 end
@@ -87,9 +87,9 @@ clip_path_id(img, path) =
 
 # Specialize absolute form drawing method for Patchwork backend
 function draw(backend::Patchable, box::AbsoluteBox, units::UnitBox, t::Transform,
-              form::Form)
-    absform = Form([resolve(box, units, t, primitive)
-                  for primitive in form.primitives])
+              prims::AbstractArray)
+    absform = [resolve(box, units, t, primitive)
+                  for prim in prims]
     backend.parent_stack[end] <<= draw(backend, absform)
 end
 
@@ -129,10 +129,10 @@ typealias SVGPart @compat(Union{Elem, Dict, (@compat Void)})
 function properties_at_index(img, prop_vecs, i)
     props = Dict()
     for (proptype, property) in prop_vecs
-        if i > length(property.primitives)
+        if i > length(property)
             error("Vector of properties and vector of forms have different length")
         end
-        draw!(img, property.primitives[i], props)
+        draw!(img, property[i], props)
     end
     props
 end
@@ -140,12 +140,12 @@ end
 # Form Drawing
 # ------------
 
-function draw(img::Patchable, form::Form)
-    acc = Array(Any, length(form.primitives))
+function draw{F<:FormPrimitive}(img::Patchable, form::Union{AbstractArray{F}, AbstractArray{FormPrimitive}})
+    acc = Array(Any, length(form))
     properties = vector_properties(img)
 
-    for i in 1:length(form.primitives)
-        elem = draw(img, form.primitives[i])
+    for i in 1:length(form)
+        elem = draw(img, form[i])
         if properties !== nothing && !isempty(properties)
             props = properties_at_index(img, properties, i)
             elem &= props
@@ -277,9 +277,9 @@ end
 
 # Property Primitives
 # -------------------
-function draw(img::Patchable, prop::Property)
+function draw{P<:PropertyPrimitive}(img::Patchable, prop::AbstractArray{P, PropertyPrimitive})
     dict = Dict()
-    for prim in prop.primitives
+    for prim in prop
         draw!(img, prim, dict)
     end
     dict

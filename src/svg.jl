@@ -127,7 +127,7 @@ end
 # in the form of a property frame.
 type SVGPropertyFrame
     # Vector properties in this frame.
-    vector_properties::Dict{Type, Property}
+    vector_properties::Dict{Type, Any}
 
     # True if this property frame has scalar properties. Scalar properties are
     # emitted as a group (<g> tag) that must be closed when the frame is popped.
@@ -156,7 +156,7 @@ type SVG <: Backend
     out::IO
 
     # Save output from IOBuffers to allow multiple calls to writemime
-    cached_out::@compat(Union{AbstractString, (@compat Void)})
+    cached_out::Union{AbstractString, Void}
 
     # Unique ID for the figure.
     id::AbstractString
@@ -170,7 +170,7 @@ type SVG <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
+    vector_properties::Dict{Type, Union{Void, Any}}
 
     # Clip-paths that need to be defined at the end of the document.
     clippaths::Dict{ClipPrimitive, ASCIIString}
@@ -189,7 +189,7 @@ type SVG <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::@compat(Union{AbstractString, (@compat Void)})
+    filename::Union{AbstractString, Void}
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -206,7 +206,7 @@ type SVG <: Backend
     jsheader::Vector{AbstractString}
 
     # (Name, binding) pairs of javascript modules the embedded code depends on
-    jsmodules::Vector{@compat Tuple{AbstractString, AbstractString}}
+    jsmodules::Vector{Tuple{AbstractString, AbstractString}}
 
     # User javascript from JSCall attributes
     scripts::Vector{AbstractString}
@@ -734,7 +734,7 @@ end
 function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
     if haskey(img.vector_properties, JSCall)
         if haskey(img.vector_properties, SVGID)
-            img.current_id = img.vector_properties[SVGID].primitives[idx].value
+            img.current_id = img.vector_properties[SVGID][idx].value
         else
             img.current_id = genid(img)
             print_property(img, SVGIDPrimitive(img.current_id))
@@ -751,17 +751,17 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
             continue
         end
 
-        if idx > length(property.primitives)
+        if idx > length(property)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
 
         # let the opacity primitives clobber the alpha value in fill and stroke
         if propertytype == Fill && has_fill_opacity
-           print_property(img, FillPrimitive(RGBA{Float64}(property.primitives[idx].color, 1.0)))
+           print_property(img, FillPrimitive(RGBA{Float64}(property[idx].color, 1.0)))
         elseif propertytype == Stroke && has_stroke_opacity
-           print_property(img, StrokePrimitive(RGBA{Float64}(property.primitives[idx].color, 1.0)))
+           print_property(img, StrokePrimitive(RGBA{Float64}(property[idx].color, 1.0)))
         else
-            print_property(img, property.primitives[idx])
+            print_property(img, property[idx])
         end
     end
 
@@ -772,10 +772,14 @@ end
 # Form Drawing
 # ------------
 
-function draw{T}(img::SVG, form::Form{T})
-    for i in 1:length(form.primitives)
-        draw(img, form.primitives[i], i)
+function draw{T<:FormPrimitive}(img::SVG, form::Union{AbstractArray{T}, FormPrimitive})
+    for i in 1:length(form)
+        draw(img, form[i], i)
     end
+end
+
+function draw(img::SVG, form::FormPrimitive)
+    draw(img, form, 1)
 end
 
 
@@ -1208,27 +1212,41 @@ function clippathurl(img::SVG, property::ClipPrimitive)
     return get!(() -> genid(img), img.clippaths, property)
 end
 
+proptype{P <: PropertyPrimitive}(x::P) = P
+proptype{P <: PropertyPrimitive}(x::Array{P}) = P
 
-function push_property_frame(img::SVG, properties::Vector{Property})
+function add_to_frame{P<:PropertyPrimitive}(property::P, frame, img, scalar_properties, applied_properties)
+    push!(scalar_properties, property)
+    push!(applied_properties, P)
+    frame.has_scalar_properties = true
+end
+
+function add_to_frame{P<:PropertyPrimitive}(property::AbstractArray{P}, frame, img, scalar_properties, applied_properties)
+    frame.vector_properties[P] = property
+    img.vector_properties[P] = property
+end
+
+proptype{P<:PropertyPrimitive}(p::P) = P
+proptype{P<:PropertyPrimitive}(p::AbstractArray{P}) = P
+
+function push_property_frame(img::SVG, properties::Vector)
     if isempty(properties)
         return
     end
 
     frame = SVGPropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
+    scalar_properties = Array(Any, 0)
     for property in properties
-        if !isrepeatable(property) && (typeof(property) in applied_properties)
+        # e.g. if given two fill properties, this check makes sure
+        # the first one wins.
+        if !isrepeatable(proptype(property)) && (proptype(property) in applied_properties)
             continue
-        elseif isscalar(property)
-            push!(scalar_properties, property)
-            push!(applied_properties, typeof(property))
-            frame.has_scalar_properties = true
         else
-            frame.vector_properties[typeof(property)] = property
-            img.vector_properties[typeof(property)] = property
+            add_to_frame(property, frame, img, scalar_properties, applied_properties)
         end
     end
+
     push!(img.property_stack, frame)
     if isempty(scalar_properties)
         return
@@ -1237,7 +1255,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     id_needed = any([isa(property, JSCall) for property in scalar_properties])
     for property in scalar_properties
         if isa(property, SVGID)
-            img.current_id = property.primitives[1].value
+            img.current_id = property[1].value
             img.has_current_id = true
         end
     end
@@ -1251,7 +1269,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     indent(img)
     write(img.out, "<g")
     for property in scalar_properties
-        print_property(img, property.primitives[1])
+        print_property(img, property)
     end
     write(img.out, ">\n");
     img.has_current_id = false

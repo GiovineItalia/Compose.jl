@@ -1,7 +1,6 @@
 
 
-abstract PropertyPrimitive
-
+abstract PropertyPrimitive <: Primitive
 
 # Meaningless isless function used to sort in optimize_batching
 function Base.isless{T <: PropertyPrimitive}(a::T, b::T)
@@ -25,31 +24,12 @@ function Base.isless{T <: PropertyPrimitive}(a::T, b::T)
     return false
 end
 
-
-immutable Property{P <: PropertyPrimitive} <: ComposeNode
-	primitives::Vector{P}
-end
-
-
-function isempty(p::Property)
-    return isempty(p.primitives)
-end
-
-
-function isscalar(p::Property)
-    return length(p.primitives) == 1
-end
-
-
 # Some properties can be applied multiple times, most cannot.
-function isrepeatable(p::Property)
+function isrepeatable{P<:PropertyPrimitive}(p::Type{P})
     return false
 end
 
-
-function resolve{T}(box::AbsoluteBox, units::UnitBox, t::Transform, p::Property{T})
-    return Property{T}([resolve(box, units, t, primitive) for primitive in p.primitives])
-end
+abstract Property{T}
 
 
 # Property primitive catchall: most properties don't need measure transforms
@@ -385,12 +365,12 @@ typealias Font Property{FontPrimitive}
 
 
 function font(family::AbstractString)
-    return Font([FontPrimitive(family)])
+    return FontPrimitive(family)
 end
 
 
 function font(families::AbstractArray)
-    return Font([FontPrimitive(family) for family in families])
+    return [FontPrimitive(family) for family in families]
 end
 
 prop_string(::Font) = "fnt"
@@ -420,12 +400,12 @@ typealias FontSize Property{FontSizePrimitive}
 
 
 function fontsize(value::@compat(Union{Number, Measure}))
-    return FontSize([FontSizePrimitive(value)])
+    return FontSizePrimitive(value)
 end
 
 
 function fontsize(values::AbstractArray)
-    return FontSize([FontSizePrimitive(value) for value in values])
+    return [FontSizePrimitive(value) for value in values]
 end
 
 
@@ -447,12 +427,12 @@ typealias SVGID Property{SVGIDPrimitive}
 
 
 function svgid(value::AbstractString)
-    return SVGID([SVGIDPrimitive(value)])
+    return SVGIDPrimitive(value)
 end
 
 
 function svgid(values::AbstractArray)
-    return SVGID([SVGIDPrimitive(value) for value in values])
+    return [SVGIDPrimitive(value) for value in values]
 end
 
 prop_string(::SVGID) = "svgid"
@@ -637,7 +617,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
 end
 
 
-function isrepeatable(p::JSCall)
+function isrepeatable(p::Type{JSCall})
     return true
 end
 

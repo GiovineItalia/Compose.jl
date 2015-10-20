@@ -20,8 +20,8 @@ type Context <: Container
 
     # Container children
     container_children::List{Container}
-    form_children::List{Form}
-    property_children::List{Property}
+    form_children::List{Any}
+    property_children::List{Any}
 
     # Z-order of this context relative to its siblings.
     order::Int
@@ -75,8 +75,8 @@ type Context <: Container
                      rotation::Nullable{Rotation},
                      mirror,
                      container_children::List{Container},
-                     form_children::List{Form},
-                     property_children::List{Property},
+                     form_children::List{Any},
+                     property_children::List{Any},
                      order::Int,
                      clip::Bool,
                      withjs::Bool,
@@ -128,8 +128,7 @@ function context(x0=0.0w,
                                x_measure(width), y_measure(height)),
                    isa(units, Nullable) ? units : Nullable{UnitBox}(units),
                    isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
-                   mirror, ListNull{Container}(), ListNull{Form}(),
-                   ListNull{Property}(), order, clip,
+                   mirror, ListNull{Container}(), ListNull{Any}(), ListNull{Any}(), order, clip,
                    withjs, withoutjs, raster, minwidth, minheight, penalty)
 end
 
@@ -261,7 +260,7 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
     end
 
     for child in c.form_children
-        for prim in child.primitives
+        for prim in child
             newbb = boundingbox(prim, linewidth, font, fontsize)
             nextbb = union(bb, newbb, c.units, c_abs_height, c_abs_height)
             bb = nextbb
@@ -270,7 +269,6 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
 
     return bb
 end
-
 
 # Frequently we can't compute the contents of a container without knowing its
 # absolute size, or it is one many possible layout that we want to decide
@@ -340,17 +338,47 @@ function compose!(a::Context, b::Container)
 end
 
 
-function compose!(a::Context, b::Form)
+# Possible example API
+#
+# @compose rotated(30deg) a,b,c
+# @compose move(2,3) [a for a in foo(xs)]
+
+
+# Note: this only matches homogenous arrays maybe broaden?
+function compose!(a::Context, b::FormPrimitive)
     a.form_children = cons(b, a.form_children)
     return a
 end
 
-
-function compose!(a::Context, b::Property)
+function compose!(a::Context, b::PropertyPrimitive)
     a.property_children = cons(b, a.property_children)
     return a
 end
 
+function compose!{P<:FormPrimitive}(a::Context, b::AbstractArray{P})
+    a.form_children = cons(b, a.form_children)
+    return a
+end
+
+function compose!{P<:PropertyPrimitive}(a::Context, b::AbstractArray{P})
+    a.property_children = cons(b, a.property_children)
+    return a
+end
+
+function compose{P <: Primitive}(
+        a::Context,
+        b::AbstractArray{P}
+    )
+    a = copy(a)
+    compose!(a, b)
+    return a
+end
+
+function compose(a::Context, b::Primitive)
+    a = copy(a)
+    compose!(a, b)
+    return a
+end
 
 function compose(a::Context, b::ComposeNode)
     a = copy(a)
@@ -365,6 +393,7 @@ function compose!(a::Context, b, c, ds...)
 end
 
 
+# FIXME: Maybe remove this??
 function compose!(a::Context, bs::AbstractArray)
     compose!(a, compose!(bs...))
 end
@@ -385,6 +414,7 @@ function compose(a::Context, b, c, ds...)
 end
 
 
+# FIXME: Maybe remove this??
 function compose(a::Context, bs::AbstractArray)
     compose(a, compose(bs...))
 end
@@ -405,14 +435,14 @@ function compose(a, b::(@compat Void))
 end
 
 
-for (f, S, T) in [(:compose!, Property, (@compat Void)),
-                  (:compose!, Form, (@compat Void)),
-                  (:compose!, Property, Any),
-                  (:compose!, Form, Any),
-                  (:compose, Property, (@compat Void)),
-                  (:compose, Form, (@compat Void)),
-                  (:compose, Property, Any),
-                  (:compose, Form, Any)]
+for (f, S, T) in [(:compose!, PropertyPrimitive, (@compat Void)),
+                  (:compose!, FormPrimitive, (@compat Void)),
+                  (:compose!, PropertyPrimitive, Any),
+                  (:compose!, FormPrimitive, Any),
+                  (:compose, PropertyPrimitive, (@compat Void)),
+                  (:compose, FormPrimitive, (@compat Void)),
+                  (:compose, PropertyPrimitive, Any),
+                  (:compose, FormPrimitive, Any)]
     eval(
         quote
             function $(f)(a::$(S), b::$(T))
@@ -505,7 +535,7 @@ function drawpart(backend::Backend, container::Container,
     has_properties = false
     if !isa(ctx.property_children, ListNull) || ctx.clip
         has_properties = true
-        properties = Array(Property, 0)
+        properties = Array(Any, 0)
 
         child = ctx.property_children
         while !isa(child, ListNull)
@@ -530,7 +560,7 @@ function drawpart(backend::Backend, container::Container,
     child = ctx.form_children
     while !isa(child, ListNull)
         form = resolve(box, units, transform, child.head)
-        if isempty(form.primitives)
+        if isempty(form)
             child = child.tail
             continue
         end

@@ -92,7 +92,7 @@ macro makeform(args)
             $(iter_ex)
             primitives[i] = $(constructor)::T
         end
-        Form{T}(primitives)
+        primitives
     end)
 end
 
