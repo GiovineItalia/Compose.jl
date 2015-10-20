@@ -1,4 +1,5 @@
 using Compat
+using Debug
 
 # Cairo backend for compose
 import Cairo
@@ -31,14 +32,14 @@ end
 
 type ImagePropertyFrame
     # Vector properties in this frame.
-    vector_properties::Dict{Type, Property}
+    vector_properties::Dict{Type, Any}
 
     # True if this property frame has scalar properties. Scalar properties are
     # emitted as a group (<g> tag) that must be closed when the frame is popped.
     has_scalar_properties::Bool
 
     function ImagePropertyFrame()
-        return new(Dict{Type, Property}(), false)
+        return new(Dict{Type, Any}(), false)
     end
 end
 
@@ -65,7 +66,7 @@ type Image{B <: ImageBackend} <: Backend
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
     property_stack::Vector{ImagePropertyFrame}
-    vector_properties::Dict{Type, Nullable{Property}}
+    vector_properties::Dict{Type, Nullable{PropertyNode}}
 
     # Close the surface when finished
     owns_surface::Bool
@@ -112,7 +113,7 @@ type Image{B <: ImageBackend} <: Backend
 
         img.state_stack = Array(ImagePropertyState, 0)
         img.property_stack = Array(ImagePropertyFrame, 0)
-        img.vector_properties = Dict{Type, Nullable{Property}}()
+        img.vector_properties = Dict{Type, Nullable{PropertyNode}}()
         img.owns_surface = false
         img.ownedfile = false
         img.filename = nothing
@@ -332,22 +333,28 @@ end
 # Applying Properties
 # -------------------
 
-function push_property_frame(img::Image, properties::Vector{Property})
+function add_to_frame{P<:PropertyPrimitive}(img::Image, property::P, frame, scalar_properties, applied_properties)
+    push!(scalar_properties, property)
+    push!(applied_properties, P)
+    frame.has_scalar_properties = true
+end
+
+function add_to_frame{P<:PropertyPrimitive}(img::Image, property::AbstractArray{P}, frame, scalar_properties, applied_properties)
+    frame.vector_properties[P] = property
+    img.vector_properties[P] = property
+end
+
+function push_property_frame(img::Image, properties::Vector)
     if isempty(properties)
         return
     end
 
     frame = ImagePropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
+    scalar_properties = Array(PropertyNode, 0)
     for property in properties
-        if isscalar(property) && !(typeof(property) in applied_properties)
-            push!(scalar_properties, property)
-            push!(applied_properties, typeof(property))
-            frame.has_scalar_properties = true
-        elseif !isscalar(property)
-            frame.vector_properties[typeof(property)] = property
-            img.vector_properties[typeof(property)] = property
+        if !(proptype(property) in applied_properties)
+            add_to_frame(img, property, frame, scalar_properties, applied_properties)
         end
     end
     push!(img.property_stack, frame)
@@ -357,7 +364,7 @@ function push_property_frame(img::Image, properties::Vector{Property})
 
     save_property_state(img)
     for property in scalar_properties
-        apply_property(img, property.primitives[1])
+        apply_property(img, property)
     end
 end
 
@@ -371,7 +378,7 @@ function pop_property_frame(img::Image)
     end
 
     for (propertytype, property) in frame.vector_properties
-        img.vector_properties[propertytype] = Nullable{Property}()
+        img.vector_properties[propertytype] = Nullable{PropertyNode}()
         for i in length(img.property_stack):-1:1
             if haskey(img.property_stack[i].vector_properties, propertytype)
                 img.vector_properties[propertytype] =
@@ -420,10 +427,9 @@ end
 # than simply applied.
 function vector_properties_require_push_pop(img::Image)
     for (propertytype, property) in img.vector_properties
-        propertytype
-        if in(propertytype, [Property{FontPrimitive},
-                             Property{FontSizePrimitive},
-                             Property{ClipPrimitive}])
+        if in(propertytype, [FontPrimitive,
+                             FontSizePrimitive,
+                             ClipPrimitive])
             return true
         end
     end
@@ -437,7 +443,7 @@ function push_vector_properties(img::Image, idx::Int)
         if isnull(property)
             continue
         end
-        primitives = get(property).primitives
+        primitives = get(property)
         if idx > length(primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
@@ -766,20 +772,20 @@ end
 # ------------
 
 
-function draw(img::Image, form::Form)
+function draw(img::Image, form::FormNode)
     if vector_properties_require_push_pop(img)
-        for (idx, primitive) in enumerate(form.primitives)
+        for (idx, primitive) in enumerate(form)
             push_vector_properties(img, idx)
             draw(img, primitive)
             pop_vector_properties(img)
         end
     else
-        for (idx, primitive) in enumerate(form.primitives)
+        for (idx, primitive) in enumerate(form)
             for (propertytype, property) in img.vector_properties
                 if isnull(property)
                     continue
                 end
-                primitives = get(property).primitives
+                primitives = get(property)
                 if idx > length(primitives)
                     error("Vector form and vector property differ in length. Can't distribute.")
                 end

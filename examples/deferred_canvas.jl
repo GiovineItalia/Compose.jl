@@ -1,4 +1,5 @@
 #!/usr/bin/env julia
+using Colors
 
 # A trivial example of deferred contexts.
 using Compose

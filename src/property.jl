@@ -1,6 +1,6 @@
 
-
 abstract PropertyPrimitive <: Primitive
+typealias PropertyNode{T<:PropertyPrimitive} Union{T,AbstractArray{T}}
 
 # Meaningless isless function used to sort in optimize_batching
 function Base.isless{T <: PropertyPrimitive}(a::T, b::T)
@@ -97,19 +97,19 @@ end
 
 
 function strokedash(values::AbstractArray)
-    return StrokeDashPrimitive(collect(Measure, values))
+    return StrokeDashPrimitive(values)
 end
 
 
 function strokedash(values::AbstractArray{AbstractArray})
-    return [StrokeDashPrimitive(collect(Measure, value)) for value in values]
+    return StrokeDashPrimitive[StrokeDashPrimitive(value) for value in values]
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                  primitive::StrokeDashPrimitive)
-    return [resolve(box, units, t, v)
-                for v in primitive.value]
+    StrokeDashPrimitive([resolve(box, units, t, v)
+                    for v in primitive.value])
 end
 
 prop_string(::Type{StrokeDashPrimitive}) = "sd"

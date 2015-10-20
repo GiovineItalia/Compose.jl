@@ -1,13 +1,13 @@
 type PGFPropertyFrame
     # Vector properties in this frame.
-    vector_properties::Dict{Type, Property}
+    vector_properties::Dict{Type, Any}
 
     # True if this property frame has scalar properties. Scalar properties are
     # emitted as a group {scope} that must be closed when the frame is popped.
     has_scalar_properties::Bool
 
     function PGFPropertyFrame()
-        return new(Dict{Type, Property}(), false)
+        return new(Dict{Type, Any}(), false)
     end
 end
 
@@ -52,7 +52,7 @@ type PGF <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, Nullable{Property}}
+    vector_properties::Dict{Type, Nullable{PropertyNode}}
 
     # Clip-paths that need to be defined at the end of the document.
     # Not quite sure how to deal with clip paths yet
@@ -99,7 +99,7 @@ type PGF <: Backend
         img.out = out
         img.color_set = Set{Color}([colorant"black"])
         img.property_stack = Array(PGFPropertyFrame, 0)
-        img.vector_properties = Dict{Type, Nullable{Property}}()
+        img.vector_properties = Dict{Type, Nullable{PropertyNode}}()
         # img.clippaths = Dict{ClipPrimitive, String}()
         img.visible = true
         img.finished = false
@@ -365,10 +365,14 @@ function iswithousjs(img::PGF)
     return true
 end
 
-function draw(img::PGF, form::Form)
+function draw{F<:FormPrimitive}(img::PGF, form::AbstractArray{F})
     for (idx, primitive) in enumerate(form.primitives)
         draw(img, primitive, idx)
     end
+end
+
+function draw(img::PGF, form::FormPrimitive)
+    draw(img, primitive, 1)
 end
 
 function draw(img::PGF, prim::LinePrimitive, idx::Int)
@@ -513,25 +517,31 @@ function indent(img::PGF)
 end
 
 
+function add_to_frame{P<:PropertyPrimitive}(img::PGF, property::P, frame, scalar_properties, applied_properties)
+    push!(scalar_properties, property)
+    push!(applied_properties, P)
+    frame.has_scalar_properties = true
+end
 
-function push_property_frame(img::PGF, properties::Vector{Property})
+function add_to_frame{P<:PropertyPrimitive}(img::PGF, property::AbstractArray{P}, frame, scalar_properties, applied_properties)
+    frame.vector_properties[P] = property
+    img.vector_properties[P] = property
+end
+
+
+function push_property_frame(img::PGF, properties::Vector)
     if isempty(properties)
         return
     end
 
     frame = PGFPropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
+    scalar_properties = Array(PropertyNode, 0)
     for property in properties
-        if !isrepeatable(property) && (typeof(property) in applied_properties)
+        if !isrepeatable(property) && (proptype(property) in applied_properties)
             continue
         elseif isscalar(property)
-            push!(scalar_properties, property)
-            push!(applied_properties, typeof(property))
-            frame.has_scalar_properties = true
-        else
-            frame.vector_properties[typeof(property)] = property
-            img.vector_properties[typeof(property)] = property
+            add_to_frame(img, property, frame, scalar_properties, applied_properties)
         end
     end
     push!(img.property_stack, frame)

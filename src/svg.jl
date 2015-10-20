@@ -1215,19 +1215,16 @@ end
 proptype{P <: PropertyPrimitive}(x::P) = P
 proptype{P <: PropertyPrimitive}(x::Array{P}) = P
 
-function add_to_frame{P<:PropertyPrimitive}(property::P, frame, img, scalar_properties, applied_properties)
+function add_to_frame{P<:PropertyPrimitive}(img::SVG, property::P, frame, scalar_properties, applied_properties)
     push!(scalar_properties, property)
     push!(applied_properties, P)
     frame.has_scalar_properties = true
 end
 
-function add_to_frame{P<:PropertyPrimitive}(property::AbstractArray{P}, frame, img, scalar_properties, applied_properties)
+function add_to_frame{P<:PropertyPrimitive}(img::SVG, property::AbstractArray{P}, frame, scalar_properties, applied_properties)
     frame.vector_properties[P] = property
     img.vector_properties[P] = property
 end
-
-proptype{P<:PropertyPrimitive}(p::P) = P
-proptype{P<:PropertyPrimitive}(p::AbstractArray{P}) = P
 
 function push_property_frame(img::SVG, properties::Vector)
     if isempty(properties)
@@ -1236,14 +1233,14 @@ function push_property_frame(img::SVG, properties::Vector)
 
     frame = SVGPropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Any, 0)
+    scalar_properties = Array(PropertyNode, 0)
     for property in properties
         # e.g. if given two fill properties, this check makes sure
         # the first one wins.
         if !isrepeatable(proptype(property)) && (proptype(property) in applied_properties)
             continue
         else
-            add_to_frame(property, frame, img, scalar_properties, applied_properties)
+            add_to_frame(img, property, frame, scalar_properties, applied_properties)
         end
     end
 

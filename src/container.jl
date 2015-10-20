@@ -20,8 +20,8 @@ type Context <: Container
 
     # Container children
     container_children::List{Container}
-    form_children::List{Any}
-    property_children::List{Any}
+    form_children::List{FormNode}
+    property_children::List{PropertyNode}
 
     # Z-order of this context relative to its siblings.
     order::Int
@@ -75,8 +75,8 @@ type Context <: Container
                      rotation::Nullable{Rotation},
                      mirror,
                      container_children::List{Container},
-                     form_children::List{Any},
-                     property_children::List{Any},
+                     form_children::List{FormNode},
+                     property_children::List{PropertyNode},
                      order::Int,
                      clip::Bool,
                      withjs::Bool,
@@ -128,7 +128,7 @@ function context(x0=0.0w,
                                x_measure(width), y_measure(height)),
                    isa(units, Nullable) ? units : Nullable{UnitBox}(units),
                    isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
-                   mirror, ListNull{Container}(), ListNull{Any}(), ListNull{Any}(), order, clip,
+                   mirror, ListNull{Container}(), ListNull{FormNode}(), ListNull{PropertyNode}(), order, clip,
                    withjs, withoutjs, raster, minwidth, minheight, penalty)
 end
 
@@ -343,24 +343,12 @@ end
 # @compose rotated(30deg) a,b,c
 # @compose move(2,3) [a for a in foo(xs)]
 
-
-# Note: this only matches homogenous arrays maybe broaden?
-function compose!(a::Context, b::FormPrimitive)
+function compose!(a::Context, b::FormNode)
     a.form_children = cons(b, a.form_children)
     return a
 end
 
-function compose!(a::Context, b::PropertyPrimitive)
-    a.property_children = cons(b, a.property_children)
-    return a
-end
-
-function compose!{P<:FormPrimitive}(a::Context, b::AbstractArray{P})
-    a.form_children = cons(b, a.form_children)
-    return a
-end
-
-function compose!{P<:PropertyPrimitive}(a::Context, b::AbstractArray{P})
+function compose!(a::Context, b::PropertyNode)
     a.property_children = cons(b, a.property_children)
     return a
 end
@@ -394,7 +382,7 @@ end
 
 
 # FIXME: Maybe remove this??
-function compose!(a::Context, bs::AbstractArray)
+function compose!(a::Context, bs::AbstractArray{Context})
     compose!(a, compose!(bs...))
 end
 
@@ -535,7 +523,7 @@ function drawpart(backend::Backend, container::Container,
     has_properties = false
     if !isa(ctx.property_children, ListNull) || ctx.clip
         has_properties = true
-        properties = Array(Any, 0)
+        properties = Array(PropertyNode, 0)
 
         child = ctx.property_children
         while !isa(child, ListNull)
@@ -708,7 +696,7 @@ end
 function showcompact(io::IO, ctx::Context)
     print(io, "Context(")
     first = true
-    for c in ctx.children
+    for c in chain(ctx.container_children, ctx.form_children, ctx.property_children)
         first || print(io, ",")
         first = false
         showcompact(io, c)
@@ -727,8 +715,8 @@ function showcompact(io::IO, a::AbstractArray)
     print(io, "]")
 end
 
-showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
+showcompact{F<:FormPrimitive}(io::IO, f::F) = print(io, Compose.form_string(F))
 
-showcompact(io::IO, p::Compose.Property) = print(io, Compose.prop_string(p))
+showcompact{P<:PropertyPrimitive}(io::IO, p::P) = print(io, Compose.prop_string(P))
 
 showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)

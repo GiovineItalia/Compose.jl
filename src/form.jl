@@ -12,8 +12,7 @@ Base.map(f, x::Primitive) = f(x)
 # A form is something that ends up as geometry in the graphic.
 
 abstract FormPrimitive <: Primitive
-
-abstract Form{T} <: ComposeNode
+typealias FormNode{T<:FormPrimitive} Union{T, AbstractArray{T}}
 
 function resolve(
              box::AbsoluteBox,
