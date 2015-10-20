@@ -732,9 +732,9 @@ end
 
 # Print the property at the given index in each vector property
 function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
-    if haskey(img.vector_properties, JSCall)
-        if haskey(img.vector_properties, SVGID)
-            img.current_id = img.vector_properties[SVGID][idx].value
+    if haskey(img.vector_properties, JSCallPrimitive)
+        if haskey(img.vector_properties, SVGIDPrimitive)
+            img.current_id = img.vector_properties[SVGIDPrimitive][idx].value
         else
             img.current_id = genid(img)
             print_property(img, SVGIDPrimitive(img.current_id))
@@ -742,12 +742,12 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
         img.has_current_id = true
     end
 
-    has_stroke_opacity = haskey(img.vector_properties, StrokeOpacity)
-    has_fill_opacity = haskey(img.vector_properties, FillOpacity)
+    has_stroke_opacity = haskey(img.vector_properties, StrokeOpacityPrimitive)
+    has_fill_opacity = haskey(img.vector_properties, FillOpacityPrimitive)
 
     for (propertytype, property) in img.vector_properties
         if property === nothing ||
-           (propertytype == Fill && supress_fill)
+           (propertytype == FillPrimitive && supress_fill)
             continue
         end
 
@@ -756,9 +756,9 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
         end
 
         # let the opacity primitives clobber the alpha value in fill and stroke
-        if propertytype == Fill && has_fill_opacity
+        if propertytype == FillPrimitive && has_fill_opacity
            print_property(img, FillPrimitive(RGBA{Float64}(property[idx].color, 1.0)))
-        elseif propertytype == Stroke && has_stroke_opacity
+        elseif propertytype == StrokePrimitive && has_stroke_opacity
            print_property(img, StrokePrimitive(RGBA{Float64}(property[idx].color, 1.0)))
         else
             print_property(img, property[idx])

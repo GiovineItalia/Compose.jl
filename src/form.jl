@@ -1,6 +1,4 @@
 
-
-typealias OneOrMore{T} Union{T, AbstractArray}
 abstract Primitive <: ComposeNode
 
 Base.length(::Primitive) = 1
@@ -27,7 +25,7 @@ function resolve(
 end
 
 
-form_string(::Form) = "FORM"  # fallback definition
+form_string(::Type{FormPrimitive}) = "FORM"  # fallback definition
 
 # Polygon
 # -------
@@ -36,9 +34,6 @@ immutable SimplePolygonPrimitive{P <: Vec} <: FormPrimitive
     points::Vector{P}
 end
 
-typealias SimplePolygon{P<:SimplePolygonPrimitive} Form{P}
-
-typealias Polygon SimplePolygon
 typealias PolygonPrimitive SimplePolygonPrimitive
 
 
@@ -94,14 +89,12 @@ function boundingbox(form::PolygonPrimitive, linewidth::Measure,
 end
 
 
-form_string(::SimplePolygon) = "SP"
+form_string(::Type{SimplePolygonPrimitive}) = "SP"
 
 
 immutable ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
     rings::Vector{Vector{P}}
 end
-
-typealias ComplexPolygon{P<:ComplexPolygonPrimitive} Form{P}
 
 
 function complexpolygon()
@@ -140,7 +133,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                 for ring in p.rings])
 end
 
-form_string(::ComplexPolygon) = "CP"
+form_string(::Type{ComplexPolygonPrimitive}) = "CP"
 
 
 
@@ -152,8 +145,6 @@ immutable RectanglePrimitive{P <: Vec, M1 <: Measure, M2 <: Measure} <: FormPrim
     width::M1
     height::M2
 end
-
-typealias Rectangle{P<:RectanglePrimitive} Form{P}
 
 
 function rectangle()
@@ -211,7 +202,7 @@ function boundingbox(form::RectanglePrimitive, linewidth::Measure,
                        form.height + 2*linewidth)
 end
 
-form_string(::Rectangle) = "R"
+form_string(::Type{RectanglePrimitive}) = "R"
 
 # Circle
 # ------
@@ -231,8 +222,6 @@ function CirclePrimitive(x, y, r)
     return CirclePrimitive((x_measure(x), y_measure(y)), x_measure(r))
 end
 
-
-typealias Circle{P<:CirclePrimitive} Form{P}
 
 
 function circle()
@@ -269,7 +258,7 @@ function boundingbox(form::CirclePrimitive, linewidth::Measure,
                        2 * (form.radius + linewidth))
 end
 
-form_string(::Circle) = "C"
+form_string(::Type{CirclePrimitive}) = "C"
 
 # Ellipse
 # -------
@@ -280,8 +269,6 @@ immutable EllipsePrimitive{P1 <: Vec, P2 <: Vec, P3 <: Vec} <: FormPrimitive
     x_point::P2
     y_point::P3
 end
-
-typealias Ellipse{P<:EllipsePrimitive} Form{P}
 
 
 function ellipse()
@@ -330,7 +317,7 @@ function boundingbox(form::EllipsePrimitive, linewidth::Measure,
                        2 * (yr + linewidth))
 end
 
-form_string(::Ellipse) = "E"
+form_string(::Type{EllipsePrimitive}) = "E"
 
 # Text
 # ----
@@ -364,8 +351,6 @@ immutable TextPrimitive{P <: Vec, R <: Rotation} <: FormPrimitive
     # way to give orientation with just a position point.
     rot::R
 end
-
-typealias Text{P<:TextPrimitive} Form{P}
 
 
 function text(x, y, value::AbstractString,
@@ -433,7 +418,7 @@ function boundingbox(form::TextPrimitive, linewidth::Measure,
                        height + linewidth)
 end
 
-form_string(::Text) = "T"
+form_string(::Type{TextPrimitive}) = "T"
 
 # Line
 # ----
@@ -441,8 +426,6 @@ form_string(::Text) = "T"
 immutable LinePrimitive{P <: Vec} <: FormPrimitive
     points::Vector{P}
 end
-
-typealias Line{P<:LinePrimitive} Form{P}
 
 
 function line()
@@ -490,7 +473,7 @@ function boundingbox(form::LinePrimitive, linewidth::Measure,
                        y1 - y0 + linewidth)
 end
 
-form_string(::Line) = "L"
+form_string(::Type{LinePrimitive}) = "L"
 
 # Curve
 # -----
@@ -501,8 +484,6 @@ immutable CurvePrimitive{P1 <: Vec, P2 <: Vec, P3 <: Vec, P4 <: Vec} <: FormPrim
     ctrl1::P3
     anchor1::P4
 end
-
-typealias Curve{P<:CurvePrimitive} Form{P}
 
 
 function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
@@ -529,7 +510,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                 resolve(box, units, t, p.anchor1))
 end
 
-form_string(::Curve) = "CV"
+form_string(::Type{CurvePrimitive}) = "CV"
 
 # Bitmap
 # ------
@@ -541,8 +522,6 @@ immutable BitmapPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimiti
     width::XM
     height::YM
 end
-
-typealias Bitmap{P<:BitmapPrimitive} Form{P}
 
 
 function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height)
@@ -576,7 +555,7 @@ function boundingbox(form::BitmapPrimitive, linewidth::Measure,
     return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
 end
 
-form_string(::Bitmap) = "B"
+form_string(::Type{BitmapPrimitive}) = "B"
 
 # Path
 # ----
@@ -1077,8 +1056,6 @@ end
 immutable PathPrimitive <: FormPrimitive
     ops::Vector{PathOp}
 end
-
-typealias Path Form{PathPrimitive}
 
 
 function path(tokens::AbstractArray)

@@ -95,7 +95,7 @@ const batch_length_threshold = 100
 Count the number of unique primitives in a property, stopping when max_count is
 exceeded.
 """
-function count_unique_primitives(property::OneOrMore{PropertyPrimitive}, max_count::Int)
+function count_unique_primitives(property::AbstractArray{PropertyPrimitive}, max_count::Int)
     unique_primitives = Set{eltype(property)}()
     for primitive in property
         push!(unique_primitives, primitive)
@@ -107,6 +107,7 @@ function count_unique_primitives(property::OneOrMore{PropertyPrimitive}, max_cou
     return length(unique_primitives)
 end
 
+count_unique_primitives(property::PropertyPrimitive, max_count::Int) = 1
 
 """
 Remove and return vector forms and vector properties from the Context.

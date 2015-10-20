@@ -46,8 +46,6 @@ immutable StrokePrimitive <: PropertyPrimitive
 	color::RGBA{Float64}
 end
 
-typealias Stroke Property{StrokePrimitive}
-
 
 function stroke(c::(@compat Void))
     return StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))
@@ -63,7 +61,7 @@ function stroke(cs::AbstractArray)
 	return [StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : parse_colorant(c)) for c in cs]
 end
 
-prop_string(::Stroke) = "s"
+prop_string(::Type{StrokePrimitive}) = "s"
 
 # Fill
 # ----
@@ -71,8 +69,6 @@ prop_string(::Stroke) = "s"
 immutable FillPrimitive <: PropertyPrimitive
 	color::RGBA{Float64}
 end
-
-typealias Fill Property{FillPrimitive}
 
 
 function fill(c::(@compat Void))
@@ -89,7 +85,7 @@ function fill(cs::AbstractArray)
 	return [FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs]
 end
 
-prop_string(::Fill) = "f"
+prop_string(::Type{FillPrimitive}) = "f"
 
 
 # StrokeDash
@@ -98,8 +94,6 @@ prop_string(::Fill) = "f"
 immutable StrokeDashPrimitive <: PropertyPrimitive
     value::Vector{Measure}
 end
-
-typealias StrokeDash Property{StrokeDashPrimitive}
 
 
 function strokedash(values::AbstractArray)
@@ -118,7 +112,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                 for v in primitive.value]
 end
 
-prop_string(::StrokeDash) = "sd"
+prop_string(::Type{StrokeDashPrimitive}) = "sd"
 
 # StrokeLineCap
 # -------------
@@ -142,8 +136,6 @@ immutable StrokeLineCapPrimitive <: PropertyPrimitive
     end
 end
 
-typealias StrokeLineCap Property{StrokeLineCapPrimitive}
-
 
 function strokelinecap(value::@compat(Union{LineCap, Type{LineCap}}))
     return StrokeLineCapPrimitive(value)
@@ -154,7 +146,7 @@ function strokelinecap(values::AbstractArray)
     return [StrokeLineCapPrimitive(value) for value in values]
 end
 
-prop_string(::StrokeLineCap) = "slc"
+prop_string(::Type{StrokeLineCapPrimitive}) = "slc"
 
 # StrokeLineJoin
 # --------------
@@ -177,8 +169,6 @@ immutable StrokeLineJoinPrimitive <: PropertyPrimitive
     end
 end
 
-typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
-
 
 function strokelinejoin(value::@compat(Union{LineJoin, Type{LineJoin}}))
     return StrokeLineJoinPrimitive(value)
@@ -189,7 +179,7 @@ function strokelinejoin(values::AbstractArray)
     return [StrokeLineJoinPrimitive(value) for value in values]
 end
 
-prop_string(::StrokeLineJoin) = "slj"
+prop_string(::Type{StrokeLineJoinPrimitive}) = "slj"
 
 # LineWidth
 # ---------
@@ -201,8 +191,6 @@ immutable LineWidthPrimitive <: PropertyPrimitive
         return new(size_measure(value))
     end
 end
-
-typealias LineWidth Property{LineWidthPrimitive}
 
 
 function linewidth(value::@compat(Union{Measure, Number}))
@@ -220,7 +208,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
     return LineWidthPrimitive(resolve(box, units, t, primitive.value))
 end
 
-prop_string(::LineWidth) = "lw"
+prop_string(::Type{LineWidthPrimitive}) = "lw"
 
 # Visible
 # -------
@@ -228,9 +216,6 @@ prop_string(::LineWidth) = "lw"
 immutable VisiblePrimitive <: PropertyPrimitive
     value::Bool
 end
-
-typealias Visible Property{VisiblePrimitive}
-
 
 function visible(value::Bool)
     return VisiblePrimitive(value)
@@ -241,7 +226,7 @@ function visible(values::AbstractArray)
     return [VisiblePrimitive(value) for value in values]
 end
 
-prop_string(::Visible) = "v"
+prop_string(::Type{VisiblePrimitive}) = "v"
 
 
 # FillOpacity
@@ -259,9 +244,6 @@ immutable FillOpacityPrimitive <: PropertyPrimitive
     end
 end
 
-typealias FillOpacity Property{FillOpacityPrimitive}
-
-
 function fillopacity(value::Float64)
     return FillOpacityPrimitive(value)
 end
@@ -271,7 +253,7 @@ function fillopacity(values::AbstractArray)
     return [FillOpacityPrimitive(value) for value in values]
 end
 
-prop_string(::FillOpacity) = "fo"
+prop_string(::Type{FillOpacityPrimitive}) = "fo"
 
 
 # StrokeOpacity
@@ -289,8 +271,6 @@ immutable StrokeOpacityPrimitive <: PropertyPrimitive
     end
 end
 
-typealias StrokeOpacity Property{StrokeOpacityPrimitive}
-
 
 function strokeopacity(value::Float64)
     return StrokeOpacityPrimitive(value)
@@ -301,7 +281,7 @@ function strokeopacity(values::AbstractArray)
     return [StrokeOpacityPrimitive(value) for value in values]
 end
 
-prop_string(::StrokeOpacity) = "so"
+prop_string(::Type{StrokeOpacityPrimitive}) = "so"
 
 # Clip
 # ----
@@ -309,8 +289,6 @@ prop_string(::StrokeOpacity) = "so"
 immutable ClipPrimitive{P <: Vec} <: PropertyPrimitive
     points::Vector{P}
 end
-
-typealias Clip Property{ClipPrimitive}
 
 
 function clip()
@@ -352,7 +330,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
         AbsoluteVec2[resolve(box, units, t, point) for point in primitive.points])
 end
 
-prop_string(::Clip) = "clp"
+prop_string(::Type{ClipPrimitive}) = "clp"
 
 # Font
 # ----
@@ -360,8 +338,6 @@ prop_string(::Clip) = "clp"
 immutable FontPrimitive <: PropertyPrimitive
     family::AbstractString
 end
-
-typealias Font Property{FontPrimitive}
 
 
 function font(family::AbstractString)
@@ -373,7 +349,7 @@ function font(families::AbstractArray)
     return [FontPrimitive(family) for family in families]
 end
 
-prop_string(::Font) = "fnt"
+prop_string(::Type{FontPrimitive}) = "fnt"
 
 function Base.hash(primitive::FontPrimitive, h::UInt64)
     return hash(primitive.family, h)
@@ -396,8 +372,6 @@ immutable FontSizePrimitive <: PropertyPrimitive
     end
 end
 
-typealias FontSize Property{FontSizePrimitive}
-
 
 function fontsize(value::@compat(Union{Number, Measure}))
     return FontSizePrimitive(value)
@@ -414,7 +388,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
     return FontSizePrimitive(resolve(box, units, t, primitive.value))
 end
 
-prop_string(::FontSize) = "fsz"
+prop_string(::Type{FontSizePrimitive}) = "fsz"
 
 # SVGID
 # -----
@@ -422,8 +396,6 @@ prop_string(::FontSize) = "fsz"
 immutable SVGIDPrimitive <: PropertyPrimitive
     value::AbstractString
 end
-
-typealias SVGID Property{SVGIDPrimitive}
 
 
 function svgid(value::AbstractString)
@@ -435,7 +407,7 @@ function svgid(values::AbstractArray)
     return [SVGIDPrimitive(value) for value in values]
 end
 
-prop_string(::SVGID) = "svgid"
+prop_string(::Type{SVGIDPrimitive}) = "svgid"
 
 
 function Base.hash(primitive::SVGIDPrimitive, h::UInt64)
@@ -455,8 +427,6 @@ immutable SVGClassPrimitive <: PropertyPrimitive
     value::ASCIIString
 end
 
-typealias SVGClass Property{SVGClassPrimitive}
-
 
 function svgclass(value::AbstractString)
     return SVGClassPrimitive(value)
@@ -467,7 +437,7 @@ function svgclass(values::AbstractArray)
     return [SVGClassPrimitive(value) for value in values]
 end
 
-function prop_string(svgc::SVGClass)
+function prop_string(svgc::Type{SVGClassPrimitive})
     if isscalar(svgc)
         return string("svgc(", svgc.primitives[1].value, ")")
     else
@@ -493,8 +463,6 @@ immutable SVGAttributePrimitive <: PropertyPrimitive
     value::ASCIIString
 end
 
-typealias SVGAttribute Property{SVGAttributePrimitive}
-
 
 function svgattribute(attribute::AbstractString, value)
     return [SVGAttributePrimitive(attribute, string(value))]
@@ -513,7 +481,7 @@ function svgattribute(attributes::AbstractArray, values::AbstractArray)
             SVGAttributePrimitive(attribute, string(value))
 end
 
-prop_string(::SVGAttribute) = "svga"
+prop_string(::Type{SVGAttributePrimitive}) = "svga"
 
 function Base.hash(primitive::SVGAttributePrimitive, h::UInt64)
     h = hash(primitive.attribute, h)
@@ -535,8 +503,6 @@ immutable JSIncludePrimitive <: PropertyPrimitive
     jsmodule::@compat(Union{(@compat Void), @compat Tuple{AbstractString, AbstractString}})
 end
 
-typealias JSInclude Property{JSIncludePrimitive}
-
 
 function jsinclude(value::AbstractString, module_name=nothing)
     return JSIncludePrimitive(value, module_name)
@@ -545,7 +511,7 @@ end
 # Don't bother with a vectorized version of this. It wouldn't really make #
 # sense.
 
-prop_string(::JSInclude) = "jsip"
+prop_string(::Type{JSIncludePrimitive}) = "jsip"
 
 # JSCall
 # ------
@@ -554,8 +520,6 @@ immutable JSCallPrimitive <: PropertyPrimitive
     code::AbstractString
     args::Vector{Measure}
 end
-
-typealias JSCall Property{JSCallPrimitive}
 
 
 function jscall(code::AbstractString, arg::Vector{Measure}=Measure[])
@@ -617,7 +581,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
 end
 
 
-function isrepeatable(p::Type{JSCall})
+function isrepeatable(p::Type{JSCallPrimitive})
     return true
 end
 
@@ -631,4 +595,4 @@ function Base.isless(a::StrokePrimitive, b::StrokePrimitive)
 end
 
 
-prop_string(::JSCall) = "jsc"
+prop_string(::Type{JSCallPrimitive}) = "jsc"
