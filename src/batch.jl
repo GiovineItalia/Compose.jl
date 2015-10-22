@@ -11,7 +11,7 @@ Batching is an optimization transform that happens at draw time. There's
 currently no mechanism to manually batch. E.g. contexts cannot have FormBatch
 children.
 """
-immutable FormBatch{P <: FormPrimitive}
+immutable FormBatch{P <: Form}
     primitive::P
     offsets::Vector{AbsoluteVec2}
 end
@@ -22,7 +22,7 @@ Attempt to batch a form. Return a Nullable{FormBatch} which is null if the Form
 could not be batched, and non-null if the original form can be replaced with teh
 resulting FormBatch.
 """
-function batch{P<:FormPrimitive}(form::AbstractArray{P})
+function batch{P<:Form}(form::AbstractArray{P})
     return Nullable{FormBatch{P}}()
 end
 
@@ -60,17 +60,17 @@ end
 
 batch(x::Primitive) = Nullable(x)
 
-function batch{T <: CirclePrimitive}(form::AbstractArray{T})
+function batch{T <: Circle}(form::AbstractArray{T})
     # circles can be batched if they all have the same radius.
     r = form[1].radius
     n = length(form)
     for i in 2:n
         if form[i].radius != r
-            return Nullable{FormBatch{CirclePrimitive}}()
+            return Nullable{FormBatch{Circle}}()
         end
     end
 
-    prim = CirclePrimitive((0mm, 0mm), r)
+    prim = Circle((0mm, 0mm), r)
     offsets = Array(AbsoluteVec2, n)
     for i in 1:n
         offsets[i] = form[i].center
@@ -95,7 +95,7 @@ const batch_length_threshold = 100
 Count the number of unique primitives in a property, stopping when max_count is
 exceeded.
 """
-function count_unique_primitives(property::AbstractArray{PropertyPrimitive}, max_count::Int)
+function count_unique_primitives(property::AbstractArray{Property}, max_count::Int)
     unique_primitives = Set{eltype(property)}()
     for primitive in property
         push!(unique_primitives, primitive)
@@ -107,7 +107,7 @@ function count_unique_primitives(property::AbstractArray{PropertyPrimitive}, max
     return length(unique_primitives)
 end
 
-count_unique_primitives(property::PropertyPrimitive, max_count::Int) = 1
+count_unique_primitives(property::Property, max_count::Int) = 1
 
 """
 Remove and return vector forms and vector properties from the Context.

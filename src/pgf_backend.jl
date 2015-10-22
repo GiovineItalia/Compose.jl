@@ -56,8 +56,8 @@ type PGF <: Backend
 
     # Clip-paths that need to be defined at the end of the document.
     # Not quite sure how to deal with clip paths yet
-    clippath::Nullable{ClipPrimitive}
-    # clippaths::Dict{ClipPrimitive, String}
+    clippath::Nullable{Clip}
+    # clippaths::Dict{Clip, String}
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -100,7 +100,7 @@ type PGF <: Backend
         img.color_set = Set{Color}([colorant"black"])
         img.property_stack = Array(PGFPropertyFrame, 0)
         img.vector_properties = Dict{Type, Nullable{PropertyNode}}()
-        # img.clippaths = Dict{ClipPrimitive, String}()
+        # img.clippaths = Dict{Clip, String}()
         img.visible = true
         img.finished = false
         img.emit_on_finish = emit_on_finish
@@ -267,7 +267,7 @@ function get_vector_properties(img::PGF, idx::Int)
     return modifiers, props_str
 end
 
-function push_property!(props_str, img::PGF, property::StrokeDashPrimitive)
+function push_property!(props_str, img::PGF, property::StrokeDash)
     if isempty(property.value)
         return
     else
@@ -275,7 +275,7 @@ function push_property!(props_str, img::PGF, property::StrokeDashPrimitive)
     end
 end
 
-function push_property!(props_str, img::PGF, property::StrokePrimitive)
+function push_property!(props_str, img::PGF, property::Stroke)
     if isa(property.color, TransparentColor)
         img.stroke = color(property.color)
         img.stroke_opacity = property.color.alpha
@@ -288,7 +288,7 @@ function push_property!(props_str, img::PGF, property::StrokePrimitive)
     end
 end
 
-function push_property!(props_str, img::PGF, property::FillPrimitive)
+function push_property!(props_str, img::PGF, property::Fill)
     if isa(property.color, TransparentColor)
         img.fill = color(property.color)
         img.fill_opacity = property.color.alpha
@@ -301,11 +301,11 @@ function push_property!(props_str, img::PGF, property::FillPrimitive)
     end
 end
 
-function push_property!(props_str, img::PGF, property::VisiblePrimitive)
+function push_property!(props_str, img::PGF, property::Visible)
     img.visible = property.value
 end
 
-function push_property!(props_str, img::PGF, property::LineWidthPrimitive)
+function push_property!(props_str, img::PGF, property::LineWidth)
     push!(props_str, string("line width=", svg_fmt_float(property.value.value), "mm"))
 end
 
@@ -313,48 +313,48 @@ pgf_fmt_linecap(::LineCapButt) = "butt"
 pgf_fmt_linecap(::LineCapSquare) = "rect"
 pgf_fmt_linecap(::LineCapRound) = "round"
 
-function push_property!(props_str, img::PGF, property::StrokeLineCapPrimitive)
+function push_property!(props_str, img::PGF, property::StrokeLineCap)
     push!(props_str, string("line cap=", pgf_fmt_linecap(property.value)))
 end
 
-function push_property!(props_str, img::PGF, property::StrokeLineJoinPrimitive)
+function push_property!(props_str, img::PGF, property::StrokeLineJoin)
     push!(props_str, string("line join=", svg_fmt_linejoin(property.value)))
 end
 
-function push_property!(props_str, img::PGF, property::FillOpacityPrimitive)
+function push_property!(props_str, img::PGF, property::FillOpacity)
     img.fill_opacity = property.value
 end
 
-function push_property!(props_str, img::PGF, property::StrokeOpacityPrimitive)
+function push_property!(props_str, img::PGF, property::StrokeOpacity)
     img.stroke_opacity = property.value
 end
 
-function push_property!(props_str, img::PGF, property::FontPrimitive)
+function push_property!(props_str, img::PGF, property::Font)
     # Can only only work with one font family for now
 
     img.fontfamily = strip(split(escape_string(property.family),',')[1],'\'')
 end
 
-function push_property!(props_str, img::PGF, property::FontSizePrimitive)
+function push_property!(props_str, img::PGF, property::FontSize)
     img.fontsize = property.value.value
 end
 
-function push_property!(props_str, img::PGF, property::ClipPrimitive)
+function push_property!(props_str, img::PGF, property::Clip)
     img.clippath = property
     # Not quite sure how to handle clipping yet, stub for now
 end
 
 # Stubs for SVG and JS specific properties
-function push_property!(props_str, img::PGF, property::JSIncludePrimitive)
+function push_property!(props_str, img::PGF, property::JSInclude)
 end
 
-function push_property!(props_str, img::PGF, property::JSCallPrimitive)
+function push_property!(props_str, img::PGF, property::JSCall)
 end
 
-function push_property!(props_str, img::PGF, property::SVGClassPrimitive)
+function push_property!(props_str, img::PGF, property::SVGClass)
 end
 
-function push_property!(props_str, img::PGF, property::SVGAttributePrimitive)
+function push_property!(props_str, img::PGF, property::SVGAttribute)
 end
 
 function iswithjs(img::PGF)
@@ -365,17 +365,17 @@ function iswithousjs(img::PGF)
     return true
 end
 
-function draw{F<:FormPrimitive}(img::PGF, form::AbstractArray{F})
+function draw{F<:Form}(img::PGF, form::AbstractArray{F})
     for (idx, primitive) in enumerate(form.primitives)
         draw(img, primitive, idx)
     end
 end
 
-function draw(img::PGF, form::FormPrimitive)
+function draw(img::PGF, form::Form)
     draw(img, primitive, 1)
 end
 
-function draw(img::PGF, prim::LinePrimitive, idx::Int)
+function draw(img::PGF, prim::Line, idx::Int)
 
     n = length(prim.points)
     if n <= 1; return; end
@@ -389,7 +389,7 @@ function draw(img::PGF, prim::LinePrimitive, idx::Int)
     write(img.buf, ";\n")
 end
 
-function draw(img::PGF, prim::RectanglePrimitive, idx::Int)
+function draw(img::PGF, prim::Rectangle, idx::Int)
     width = max(prim.width.value, 0.01)
     height = max(prim.height.value, 0.01)
 
@@ -405,7 +405,7 @@ function draw(img::PGF, prim::RectanglePrimitive, idx::Int)
             svg_fmt_float(height))
 end
 
-function draw(img::PGF, prim::PolygonPrimitive, idx::Int)
+function draw(img::PGF, prim::Polygon, idx::Int)
     n = length(prim.points)
     if n <= 1; return; end
 
@@ -418,7 +418,7 @@ function draw(img::PGF, prim::PolygonPrimitive, idx::Int)
     write(img.buf, " -- cycle;\n")
 end
 
-function draw(img::PGF, prim::CirclePrimitive, idx::Int)
+function draw(img::PGF, prim::Circle, idx::Int)
     modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
     write(img.buf, join(modifiers))
@@ -429,7 +429,7 @@ function draw(img::PGF, prim::CirclePrimitive, idx::Int)
         svg_fmt_float(prim.radius.value))
 end
 
-function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
+function draw(img::PGF, prim::Ellipse, idx::Int)
 
     modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
@@ -462,7 +462,7 @@ function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
     write(img.buf, "];\n")
 end
 
-function draw(img::PGF, prim::CurvePrimitive, idx::Int)
+function draw(img::PGF, prim::Curve, idx::Int)
     modifiers, props = get_vector_properties(img, idx)
     if !img.visible; return; end
     write(img.buf, join(modifiers))
@@ -478,7 +478,7 @@ function draw(img::PGF, prim::CurvePrimitive, idx::Int)
         svg_fmt_float(prim.anchor1[2].value))
 end
 
-function draw(img::PGF, prim::TextPrimitive, idx::Int)
+function draw(img::PGF, prim::Text, idx::Int)
 
     # Rotation direction is reversed!
     modifiers, props = get_vector_properties(img, idx)
@@ -517,13 +517,13 @@ function indent(img::PGF)
 end
 
 
-function add_to_frame{P<:PropertyPrimitive}(img::PGF, property::P, frame, scalar_properties, applied_properties)
+function add_to_frame{P<:Property}(img::PGF, property::P, frame, scalar_properties, applied_properties)
     push!(scalar_properties, property)
     push!(applied_properties, P)
     frame.has_scalar_properties = true
 end
 
-function add_to_frame{P<:PropertyPrimitive}(img::PGF, property::AbstractArray{P}, frame, scalar_properties, applied_properties)
+function add_to_frame{P<:Property}(img::PGF, property::AbstractArray{P}, frame, scalar_properties, applied_properties)
     frame.vector_properties[P] = property
     img.vector_properties[P] = property
 end

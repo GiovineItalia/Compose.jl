@@ -213,11 +213,11 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
                      parent_abs_height = nothing)
     for child in c.property_children
         for p in child
-            if isa(p, LineWidthPrimitive)
+            if isa(p, LineWidth)
                 linewidth = p.value
-            elseif isa(p, FontSizePrimitive)
+            elseif isa(p, FontSize)
                 fontsize = p.value
-            elseif isa(p, FontPrimitive)
+            elseif isa(p, Font)
                 font = p.family
             end
         end
@@ -423,14 +423,14 @@ function compose(a, b::(@compat Void))
 end
 
 
-for (f, S, T) in [(:compose!, PropertyPrimitive, (@compat Void)),
-                  (:compose!, FormPrimitive, (@compat Void)),
-                  (:compose!, PropertyPrimitive, Any),
-                  (:compose!, FormPrimitive, Any),
-                  (:compose, PropertyPrimitive, (@compat Void)),
-                  (:compose, FormPrimitive, (@compat Void)),
-                  (:compose, PropertyPrimitive, Any),
-                  (:compose, FormPrimitive, Any)]
+for (f, S, T) in [(:compose!, Property, (@compat Void)),
+                  (:compose!, Form, (@compat Void)),
+                  (:compose!, Property, Any),
+                  (:compose!, Form, Any),
+                  (:compose, Property, (@compat Void)),
+                  (:compose, Form, (@compat Void)),
+                  (:compose, Property, Any),
+                  (:compose, Form, Any)]
     eval(
         quote
             function $(f)(a::$(S), b::$(T))
@@ -715,7 +715,7 @@ function showcompact(io::IO, a::AbstractArray)
     print(io, "]")
 end
 
-showcompact(io::IO, f::FormPrimitive) = print(io, Compose.form_string(f))
-showcompact(io::IO, p::PropertyPrimitive) = print(io, Compose.prop_string(p))
+showcompact(io::IO, f::Form) = print(io, Compose.form_string(f))
+showcompact(io::IO, p::Property) = print(io, Compose.prop_string(p))
 
 showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)

@@ -12,7 +12,7 @@ type Patchable <: Backend
 
     jsheader::Vector{AbstractString}
     jsmodules::Vector{Tuple{AbstractString, AbstractString}}
-    clip_paths::Dict{ClipPrimitive, AbstractString}
+    clip_paths::Dict{Clip, AbstractString}
     parent_stack::Vector
     property_stack::Vector
     function Patchable(width, height)
@@ -23,7 +23,7 @@ type Patchable <: Backend
             height,
             AbstractString[],
             Tuple{AbstractString, AbstractString}[],
-            Dict{ClipPrimitive, AbstractString}(),
+            Dict{Clip, AbstractString}(),
             Elem[Elem(:svg, :svg)],
             Any[])
     end
@@ -38,13 +38,13 @@ type PatchablePropertyFrame
     vector_properties::Dict
 end
 
-function add_to_frame{P<:PropertyPrimitive}(img::Patchable, property::P, frame, scalar_properties, applied_properties)
+function add_to_frame{P<:Property}(img::Patchable, property::P, frame, scalar_properties, applied_properties)
     push!(scalar_properties, property)
     push!(applied_properties, P)
     frame.has_scalar_properties = true
 end
 
-function add_to_frame{P<:PropertyPrimitive}(img::Patchable, property::AbstractArray{P}, frame, scalar_properties, applied_properties)
+function add_to_frame{P<:Property}(img::Patchable, property::AbstractArray{P}, frame, scalar_properties, applied_properties)
     frame.vector_properties[P] = property
     img.vector_properties[P] = property
 end
@@ -148,7 +148,7 @@ end
 # Form Drawing
 # ------------
 
-function draw{F<:FormPrimitive}(img::Patchable, form::F)
+function draw{F<:Form}(img::Patchable, form::F)
     acc = Array(Any, length(form))
     properties = vector_properties(img)
 
@@ -160,7 +160,7 @@ function draw{F<:FormPrimitive}(img::Patchable, form::F)
     img.parent_stack[end] <<= elem
 end
 
-function draw{F<:FormPrimitive}(img::Patchable, form::AbstractArray{F})
+function draw{F<:Form}(img::Patchable, form::AbstractArray{F})
     img.parent_stack[end] <<= make_elems(img, form)
 end
 
@@ -179,18 +179,18 @@ function make_elems(img::Patchable, form)
     acc
 end
 
-function make_elem(img::Patchable, prim::BitmapPrimitive)
+function make_elem(img::Patchable, prim::Bitmap)
     warn("Patchable backend does not yet support bitmap primitives")
     nothing
 end
 
-make_elem(img::Patchable, prim::CirclePrimitive) =
+make_elem(img::Patchable, prim::Circle) =
     Elem(:svg, :circle,
          cx=prim.center[1].value,
          cy=prim.center[2].value,
          r=prim.radius.value)
 
-make_elem(img::Patchable, prim::CurvePrimitive) =
+make_elem(img::Patchable, prim::Curve) =
     Elem(:svg, :path,
          fill="none",
          path=string("M"
@@ -203,7 +203,7 @@ make_elem(img::Patchable, prim::CurvePrimitive) =
                      , prim.anchor1[1].value, ','
                      , prim.anchor1[2].value))
 
-function make_elem(img::Patchable, prim::EllipsePrimitive)
+function make_elem(img::Patchable, prim::Ellipse)
     cx = prim.center[1].value
     cy = prim.center[2].value
     rx = sqrt((prim.x_point[1].value - cx)^2 +
@@ -233,7 +233,7 @@ function svg_fmt_path(points::Vector, bridge_gaps::Bool=false)
     takebuf_string(io)
 end
 
-function make_elem(img::Patchable, prim::LinePrimitive)
+function make_elem(img::Patchable, prim::Line)
     n = length(prim.points)
     if n <= 1; return; end
 
@@ -248,21 +248,21 @@ function svg_fmt_path_ops(ops)
     takebuf_string(io)
 end
 
-make_elem(img::Patchable, prim::PathPrimitive) =
+make_elem(img::Patchable, prim::Path) =
     Elem(:svg, :path, d=svg_fmt_path_ops(prim.ops))
 
-function make_elem(img::Patchable, prim::PolygonPrimitive)
+function make_elem(img::Patchable, prim::Polygon)
      n = length(prim.points)
      if n <= 1; return; end
 
      Elem(:svg, :path, d=svg_fmt_path(prim.points, true) * " z")
 end
 
-function make_elem(img::Patchable, prim::ComplexPolygonPrimitive)
+function make_elem(img::Patchable, prim::ComplexPolygon)
     Elem(:svg, :path, d=join(map(r -> svg_fmt_path(r, true), prim.rings), "") * " z")
 end
 
-function make_elem(img::Patchable, prim::RectanglePrimitive)
+function make_elem(img::Patchable, prim::Rectangle)
     width = max(prim.width.value, 0.01)
     height = max(prim.height.value, 0.01)
 
@@ -273,7 +273,7 @@ function make_elem(img::Patchable, prim::RectanglePrimitive)
          height=height)
 end
 
-function make_elem(img::Patchable, prim::TextPrimitive)
+function make_elem(img::Patchable, prim::Text)
     el = pango_to_elems(prim.value) & @compat Dict(
             :x=>prim.position[1].value,
             :y=>prim.position[2].value)
@@ -298,9 +298,9 @@ function make_elem(img::Patchable, prim::TextPrimitive)
 
 end
 
-# Property Primitives
+# Property s
 # -------------------
-function make_prop{P<:PropertyPrimitive}(img::Patchable, prop::AbstractArray{P, PropertyPrimitive})
+function make_prop{P<:Property}(img::Patchable, prop::AbstractArray{P, Property})
     dict = Dict()
     for prim in prop
         make_prop!(img, prim, dict)
@@ -308,7 +308,7 @@ function make_prop{P<:PropertyPrimitive}(img::Patchable, prop::AbstractArray{P, 
     dict
 end
 
-function make_prop!(img::Patchable, prim::PropertyPrimitive, dict)
+function make_prop!(img::Patchable, prim::Property, dict)
     item = make_prop(img, prim)
     if !is(item, nothing)
         k, v = item
@@ -317,15 +317,15 @@ function make_prop!(img::Patchable, prim::PropertyPrimitive, dict)
     end
 end
 
-function make_prop(img::Patchable, prim::ClipPrimitive)
+function make_prop(img::Patchable, prim::Clip)
     id = clip_path_id(img, prim)
     "clip-path", "url(#$id)"
 end
 
-make_prop(img::Patchable, prim::FillOpacityPrimitive) =
+make_prop(img::Patchable, prim::FillOpacity) =
     :opacity, prim.value
 
-function make_prop!(img::Patchable, prim::FillPrimitive, props)
+function make_prop!(img::Patchable, prim::Fill, props)
     if isa(prim.color, TransparentColor)
         props[:fill] = svg_fmt_color(color(prim.color))
         props["fill-opacity"] = prim.color.alpha
@@ -336,17 +336,17 @@ function make_prop!(img::Patchable, prim::FillPrimitive, props)
     end
 end
 
-make_prop(img::Patchable, prim::FontPrimitive) =
+make_prop(img::Patchable, prim::Font) =
     "font-family", escape_string(prim.family)
 
-make_prop(img::Patchable, prim::FontSizePrimitive) =
+make_prop(img::Patchable, prim::FontSize) =
     "font-size", prim.value.value
 
-function make_prop(img::Patchable, prim::JSCallPrimitive)
+function make_prop(img::Patchable, prim::JSCall)
     nothing
 end
 
-function make_prop(img::Patchable, prim::JSIncludePrimitive)
+function make_prop(img::Patchable, prim::JSInclude)
     push!(img.jsheader, prim.value)
     if prim.jsmodule != nothing
         push!(img.jsmodules, prim.jsmodule)
@@ -354,19 +354,19 @@ function make_prop(img::Patchable, prim::JSIncludePrimitive)
     nothing
 end
 
-make_prop(img::Patchable, prim::LineWidthPrimitive) =
+make_prop(img::Patchable, prim::LineWidth) =
     "stroke-width", prim.value.value
 
-make_prop(img::Patchable, prim::SVGAttributePrimitive) = nothing
+make_prop(img::Patchable, prim::SVGAttribute) = nothing
     #prim.attribute, escape_string(prim.value)
 
-make_prop(img::Patchable, prim::SVGClassPrimitive) =
+make_prop(img::Patchable, prim::SVGClass) =
     :class, escape_string(prim.value)
 
-make_prop(img::Patchable, prim::SVGIDPrimitive) =
+make_prop(img::Patchable, prim::SVGID) =
     :id, escape_string(prim.value)
 
-function make_prop(img::Patchable, prim::StrokeDashPrimitive)
+function make_prop(img::Patchable, prim::StrokeDash)
     if isempty(prim.value)
         "stroke-dasharray", :none
     else
@@ -374,16 +374,16 @@ function make_prop(img::Patchable, prim::StrokeDashPrimitive)
     end
 end
 
-make_prop(img::Patchable, prim::StrokeLineCapPrimitive) =
+make_prop(img::Patchable, prim::StrokeLineCap) =
     "stroke-linecap", svg_fmt_linecap(prim.value)
 
-make_prop(img::Patchable, prim::StrokeLineJoinPrimitive) =
+make_prop(img::Patchable, prim::StrokeLineJoin) =
     "stroke-linejoin", svg_fmt_linejoin(prim.value)
 
-make_prop(img::Patchable, prim::StrokeOpacityPrimitive) =
+make_prop(img::Patchable, prim::StrokeOpacity) =
     "stroke-opacity", prim.value
 
-function make_prop!(img::Patchable, prim::StrokePrimitive, dict)
+function make_prop!(img::Patchable, prim::Stroke, dict)
     if isa(prim.color, TransparentColor)
         dict[:stroke] = svg_fmt_color(color(prim.color))
         dict["stroke-opacity"] = prim.color.alpha
@@ -392,7 +392,7 @@ function make_prop!(img::Patchable, prim::StrokePrimitive, dict)
     end
 end
 
-make_prop(img::Patchable, prim::VisiblePrimitive) =
+make_prop(img::Patchable, prim::Visible) =
     :visibility, prim.value ? "visible" : "hidden"
 
 # Pango markup to Patchwork
