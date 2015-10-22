@@ -59,7 +59,7 @@ function stroke(cs::AbstractArray)
 	return [StrokePrimitive(c == nothing ? RGBA{Float64}(0, 0, 0, 0) : parse_colorant(c)) for c in cs]
 end
 
-prop_string(::Type{StrokePrimitive}) = "s"
+prop_string(::PropertyNode{StrokePrimitive}) = "s"
 
 # Fill
 # ----
@@ -83,7 +83,7 @@ function fill(cs::AbstractArray)
 	return [FillPrimitive(c == nothing ? RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs]
 end
 
-prop_string(::Type{FillPrimitive}) = "f"
+prop_string(::PropertyNode{FillPrimitive}) = "f"
 
 
 # StrokeDash
@@ -110,7 +110,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                     for v in primitive.value])
 end
 
-prop_string(::Type{StrokeDashPrimitive}) = "sd"
+prop_string(::PropertyNode{StrokeDashPrimitive}) = "sd"
 
 # StrokeLineCap
 # -------------
@@ -144,7 +144,7 @@ function strokelinecap(values::AbstractArray)
     return [StrokeLineCapPrimitive(value) for value in values]
 end
 
-prop_string(::Type{StrokeLineCapPrimitive}) = "slc"
+prop_string(::PropertyNode{StrokeLineCapPrimitive}) = "slc"
 
 # StrokeLineJoin
 # --------------
@@ -177,7 +177,7 @@ function strokelinejoin(values::AbstractArray)
     return [StrokeLineJoinPrimitive(value) for value in values]
 end
 
-prop_string(::Type{StrokeLineJoinPrimitive}) = "slj"
+prop_string(::PropertyNode{StrokeLineJoinPrimitive}) = "slj"
 
 # LineWidth
 # ---------
@@ -206,7 +206,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
     return LineWidthPrimitive(resolve(box, units, t, primitive.value))
 end
 
-prop_string(::Type{LineWidthPrimitive}) = "lw"
+prop_string(::PropertyNode{LineWidthPrimitive}) = "lw"
 
 # Visible
 # -------
@@ -224,7 +224,7 @@ function visible(values::AbstractArray)
     return [VisiblePrimitive(value) for value in values]
 end
 
-prop_string(::Type{VisiblePrimitive}) = "v"
+prop_string(::PropertyNode{VisiblePrimitive}) = "v"
 
 
 # FillOpacity
@@ -251,7 +251,7 @@ function fillopacity(values::AbstractArray)
     return [FillOpacityPrimitive(value) for value in values]
 end
 
-prop_string(::Type{FillOpacityPrimitive}) = "fo"
+prop_string(::PropertyNode{FillOpacityPrimitive}) = "fo"
 
 
 # StrokeOpacity
@@ -279,7 +279,7 @@ function strokeopacity(values::AbstractArray)
     return [StrokeOpacityPrimitive(value) for value in values]
 end
 
-prop_string(::Type{StrokeOpacityPrimitive}) = "so"
+prop_string(::PropertyNode{StrokeOpacityPrimitive}) = "so"
 
 # Clip
 # ----
@@ -328,7 +328,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
         AbsoluteVec2[resolve(box, units, t, point) for point in primitive.points])
 end
 
-prop_string(::Type{ClipPrimitive}) = "clp"
+prop_string(::PropertyNode{ClipPrimitive}) = "clp"
 
 # Font
 # ----
@@ -347,7 +347,7 @@ function font(families::AbstractArray)
     return [FontPrimitive(family) for family in families]
 end
 
-prop_string(::Type{FontPrimitive}) = "fnt"
+prop_string(::PropertyNode{FontPrimitive}) = "fnt"
 
 function Base.hash(primitive::FontPrimitive, h::UInt64)
     return hash(primitive.family, h)
@@ -386,7 +386,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
     return FontSizePrimitive(resolve(box, units, t, primitive.value))
 end
 
-prop_string(::Type{FontSizePrimitive}) = "fsz"
+prop_string(::PropertyNode{FontSizePrimitive}) = "fsz"
 
 # SVGID
 # -----
@@ -405,7 +405,7 @@ function svgid(values::AbstractArray)
     return [SVGIDPrimitive(value) for value in values]
 end
 
-prop_string(::Type{SVGIDPrimitive}) = "svgid"
+prop_string(::PropertyNode{SVGIDPrimitive}) = "svgid"
 
 
 function Base.hash(primitive::SVGIDPrimitive, h::UInt64)
@@ -435,11 +435,11 @@ function svgclass(values::AbstractArray)
     return [SVGClassPrimitive(value) for value in values]
 end
 
-function prop_string(svgc::Type{SVGClassPrimitive})
+function prop_string(svgc::PropertyNode{SVGClassPrimitive})
     if isscalar(svgc)
-        return string("svgc(", svgc.primitives[1].value, ")")
+        return string("svgc(", svgc.value, ")")
     else
-        return string("svgc(", svgc.primitives[1].value, "...)")
+        return string("svgc(", svgc.value, "...)")
     end
 end
 
@@ -479,7 +479,7 @@ function svgattribute(attributes::AbstractArray, values::AbstractArray)
             SVGAttributePrimitive(attribute, string(value))
 end
 
-prop_string(::Type{SVGAttributePrimitive}) = "svga"
+prop_string(::PropertyNode{SVGAttributePrimitive}) = "svga"
 
 function Base.hash(primitive::SVGAttributePrimitive, h::UInt64)
     h = hash(primitive.attribute, h)
@@ -509,7 +509,7 @@ end
 # Don't bother with a vectorized version of this. It wouldn't really make #
 # sense.
 
-prop_string(::Type{JSIncludePrimitive}) = "jsip"
+prop_string(::PropertyNode{JSIncludePrimitive}) = "jsip"
 
 # JSCall
 # ------
@@ -579,7 +579,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
 end
 
 
-function isrepeatable(p::Type{JSCallPrimitive})
+function isrepeatable(p::PropertyNode{JSCallPrimitive})
     return true
 end
 
@@ -593,4 +593,4 @@ function Base.isless(a::StrokePrimitive, b::StrokePrimitive)
 end
 
 
-prop_string(::Type{JSCallPrimitive}) = "jsc"
+prop_string(::PropertyNode{JSCallPrimitive}) = "jsc"

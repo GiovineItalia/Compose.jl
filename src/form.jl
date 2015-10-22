@@ -24,7 +24,7 @@ function resolve(
 end
 
 
-form_string(::Type{FormPrimitive}) = "FORM"  # fallback definition
+form_string(::FormNode{FormPrimitive}) = "FORM"  # fallback definition
 
 # Polygon
 # -------
@@ -88,7 +88,7 @@ function boundingbox(form::PolygonPrimitive, linewidth::Measure,
 end
 
 
-form_string(::Type{SimplePolygonPrimitive}) = "SP"
+form_string(::FormNode{SimplePolygonPrimitive}) = "SP"
 
 
 immutable ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
@@ -132,7 +132,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                 for ring in p.rings])
 end
 
-form_string(::Type{ComplexPolygonPrimitive}) = "CP"
+form_string(::FormNode{ComplexPolygonPrimitive}) = "CP"
 
 
 
@@ -201,7 +201,7 @@ function boundingbox(form::RectanglePrimitive, linewidth::Measure,
                        form.height + 2*linewidth)
 end
 
-form_string(::Type{RectanglePrimitive}) = "R"
+form_string(::FormNode{RectanglePrimitive}) = "R"
 
 # Circle
 # ------
@@ -257,7 +257,7 @@ function boundingbox(form::CirclePrimitive, linewidth::Measure,
                        2 * (form.radius + linewidth))
 end
 
-form_string(::Type{CirclePrimitive}) = "C"
+form_string(::FormNode{CirclePrimitive}) = "C"
 
 # Ellipse
 # -------
@@ -316,7 +316,7 @@ function boundingbox(form::EllipsePrimitive, linewidth::Measure,
                        2 * (yr + linewidth))
 end
 
-form_string(::Type{EllipsePrimitive}) = "E"
+form_string(::FormNode{EllipsePrimitive}) = "E"
 
 # Text
 # ----
@@ -417,7 +417,7 @@ function boundingbox(form::TextPrimitive, linewidth::Measure,
                        height + linewidth)
 end
 
-form_string(::Type{TextPrimitive}) = "T"
+form_string(::FormNode{TextPrimitive}) = "T"
 
 # Line
 # ----
@@ -472,7 +472,7 @@ function boundingbox(form::LinePrimitive, linewidth::Measure,
                        y1 - y0 + linewidth)
 end
 
-form_string(::Type{LinePrimitive}) = "L"
+form_string(::FormNode{LinePrimitive}) = "L"
 
 # Curve
 # -----
@@ -509,7 +509,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                 resolve(box, units, t, p.anchor1))
 end
 
-form_string(::Type{CurvePrimitive}) = "CV"
+form_string(::FormNode{CurvePrimitive}) = "CV"
 
 # Bitmap
 # ------
@@ -554,7 +554,7 @@ function boundingbox(form::BitmapPrimitive, linewidth::Measure,
     return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
 end
 
-form_string(::Type{BitmapPrimitive}) = "B"
+form_string(::FormNode{BitmapPrimitive}) = "B"
 
 # Path
 # ----

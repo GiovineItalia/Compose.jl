@@ -212,7 +212,7 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
                      parent_abs_width = nothing,
                      parent_abs_height = nothing)
     for child in c.property_children
-        for p in child.primitives
+        for p in child
             if isa(p, LineWidthPrimitive)
                 linewidth = p.value
             elseif isa(p, FontSizePrimitive)
@@ -715,8 +715,7 @@ function showcompact(io::IO, a::AbstractArray)
     print(io, "]")
 end
 
-showcompact{F<:FormPrimitive}(io::IO, f::F) = print(io, Compose.form_string(F))
-
-showcompact{P<:PropertyPrimitive}(io::IO, p::P) = print(io, Compose.prop_string(P))
+showcompact(io::IO, f::FormPrimitive) = print(io, Compose.form_string(f))
+showcompact(io::IO, p::PropertyPrimitive) = print(io, Compose.prop_string(p))
 
 showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)
