@@ -142,7 +142,7 @@ type SVGPropertyFrame
     has_mask::Bool
 
     function SVGPropertyFrame()
-        return new(Dict{Type, Property}(), false, false, false)
+        return new(Dict{Type, PropertyNode}(), false, false, false)
     end
 end
 
@@ -237,7 +237,7 @@ type SVG <: Backend
         img.cached_out = nothing
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
-        img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
+        img.vector_properties = Dict{Type, @compat(Union{(@compat Void), PropertyNode})}()
         img.clippaths = Dict{ClipPrimitive, ASCIIString}()
         img.batches = Array(Tuple{FormPrimitive, ASCIIString}, 0)
         img.embobj = Set{AbstractString}()

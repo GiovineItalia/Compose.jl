@@ -115,7 +115,7 @@ Remove and return vector forms and vector properties from the Context.
 function excise_vector_children!(ctx::Context)
     # excise vector forms
     prev_form_child = form_child = ctx.form_children
-    forms = Form[]
+    forms = FormNode[]
     while !isa(form_child, ListNull)
         if length(form_child.head) > 1
             push!(forms, form_child.head)
@@ -205,7 +205,7 @@ function optimize_batching(ctx::Context)
     # step 2: split primitives into groups on the cross product of property
     # primives
     n = length(forms[1])
-    grouped_forms = Dict{UInt64, Vector{Form}}()
+    grouped_forms = Dict{UInt64, Vector{FormNode}}()
     grouped_properties = Dict{UInt64, Vector{Any}}()
     for i in 1:n
         h = UInt64(0)
@@ -214,7 +214,7 @@ function optimize_batching(ctx::Context)
         end
 
         if !haskey(grouped_forms, h)
-            grouped_forms[h] = Form[similar(form) for form in forms]
+            grouped_forms[h] = FormNode[similar(form) for form in forms]
             group_prop = Array(Any, length(properties))
             for j in 1:length(properties)
                 group_prop[j] = Any[properties[j][i]]

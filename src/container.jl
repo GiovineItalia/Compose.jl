@@ -645,7 +645,7 @@ function introspect(root::Context)
         elseif isa(node, Container)
             # TODO: should be slightly different than Context...
             compose!(fig, circle(0.5, 0.5, figsize/2), fill(LCHab(92, 10, 77)))
-        elseif isa(node, Form)
+        elseif isa(node, FormNode)
             compose!(fig,
                 (context(),
                  text(0.5cx, 0.5cy, form_string(node), hcenter, vcenter),
@@ -653,7 +653,7 @@ function introspect(root::Context)
                 (context(),
                  rectangle(0.5cx - figsize/2, 0.5cy - figsize/2, figsize, figsize),
                  fill(LCHab(68, 74, 192))))
-        elseif isa(node, Property)
+        elseif isa(node, PropertyNode)
             # TODO: what should the third color be?
             compose!(fig,
                 polygon([(0.5cx - figsize/2, 0.5cy - figsize/2),
