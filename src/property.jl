@@ -29,8 +29,6 @@ function isrepeatable{P<:PropertyPrimitive}(p::Type{P})
     return false
 end
 
-abstract Property{T}
-
 
 # Property primitive catchall: most properties don't need measure transforms
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
