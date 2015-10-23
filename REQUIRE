@@ -1,6 +1,7 @@
 julia 0.4
 Colors
+Compat 0.2.3
 DataStructures
 Iterators 0.1.5
 JSON
-Compat 0.2.3
+Measures
