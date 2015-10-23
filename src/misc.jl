@@ -187,3 +187,55 @@ function narrow_polygon_point_types{P <: Tuple}(ring_arrays::Vector{Vector{Vecto
 end
 
 
+# Hacks to make Dates time work as coordinates
+
+if !method_exists(/, (Dates.Day, Dates.Day))
+    /(a::Dates.Day, b::Dates.Day) = a.value / b.value
+end
+
+if !method_exists(/, (Dates.Day, Real))
+    /(a::Dates.Day, b::Real) = Dates.Day(round(Integer, (a.value / b)))
+end
+/(a::Dates.Day, b::AbstractFloat) = convert(Dates.Millisecond, a) / b
+
+if !method_exists(/, (Dates.Millisecond, Dates.Millisecond))
+    /(a::Dates.Millisecond, b::Dates.Millisecond) = a.value / b.value
+end
+
+if !method_exists(/, (Dates.Millisecond, Real))
+    /(a::Dates.Millisecond, b::Real) = Dates.Millisecond(round(Integer, (a.value / b)))
+end
+/(a::Dates.Millisecond, b::AbstractFloat) = Dates.Millisecond(round(Integer, (a.value / b)))
+
+
+if !method_exists(-, (Dates.Date, Dates.DateTime))
+    -(a::Dates.Date, b::Dates.DateTime) = convert(Dates.DateTime, a) - b
+end
+
++(a::Dates.Date, b::Dates.Millisecond) = convert(Dates.DateTime, a) + b
+
+if !method_exists(-, (Dates.DateTime, Dates.Date))
+    -(a::Dates.DateTime, b::Dates.Date) = a - convert(Dates.DateTime, b)
+end
+
+
+if !method_exists(/, (Dates.Day, Dates.Millisecond))
+    /(a::Dates.Day, b::Dates.Millisecond) = convert(Dates.Millisecond, a) / b
+end
+
+for T in [Dates.Hour, Dates.Minute, Dates.Second, Dates.Millisecond]
+    if !method_exists(-, (Dates.Date, T))
+        @eval begin
+            -(a::Dates.Date, b::$(T)) = convert(Dates.DateTime, a) - b
+        end
+    end
+end
+
+
+#if !method_exists(*, (AbstractFloat, Dates.Day))
+    *(a::AbstractFloat, b::Dates.Day) = Dates.Day(round(Integer, (a * b.value)))
+    *(a::Dates.Day, b::AbstractFloat) = b * a
+    *(a::AbstractFloat, b::Dates.Millisecond) = Dates.Millisecond(round(Integer, (a * b.value)))
+    *(a::Dates.Millisecond, b::AbstractFloat) = b * a
+#end
+

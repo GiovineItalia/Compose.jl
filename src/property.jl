@@ -348,7 +348,8 @@ function clip{T <: XYTupleOrVec}(points::AbstractArray{T})
     end
     VecType = Tuple{XM, YM}
 
-    return Clip([ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])])
+    prim = ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])
+    return Clip(typeof(prim)[prim])
 end
 
 
