@@ -20,9 +20,18 @@ end
 
 
 function Maybe(T::Type)
-    return @compat(Union{T, (@compat Void)})
+    return @compat(Union{T,Void})
 end
 
+function in_expr_args(ex::Expr)
+    if ex.head === :in
+        return ex.args[1], ex.args[2]
+    elseif (ex.head === :comparison && length(ex.args) == 3 &&
+            ex.args[2] === :in)
+        return ex.args[1], ex.args[3]
+    end
+    error("Not an `in` expression")
+end
 
 # Cycle-zip. Zip two or more arrays, cycling the short ones.
 function cyclezip(xs::AbstractArray...)
@@ -59,9 +68,7 @@ macro makeform(args...)
     iter_ex = quote begin end end
 
     for iterator in iterators.args
-        @assert iterator.head == :in
-        var = iterator.args[1]
-        arr = iterator.args[2]
+        var, arr = in_expr_args(iterator::Expr)
         ivar = symbol(string("i_", var))
 
         push!(maxlen_ex.args,
@@ -110,9 +117,7 @@ macro makeprimitives(args)
     iter_ex = quote begin end end
 
     for iterator in iterators.args
-        @assert iterator.head == :in
-        var = iterator.args[1]
-        arr = iterator.args[2]
+        var, arr = in_expr_args(iterator::Expr)
 
         push!(maxlen_ex.args, quote
             if isempty($(arr))
