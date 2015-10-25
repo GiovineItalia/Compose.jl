@@ -46,13 +46,13 @@ end
 # This generates optimized code for a reoccuring pattern in forms and patterns
 # that looks like:
 #
-#   return Circle([CirclePrimitive(Point(x, y), x_measure(r))
+#   return Circle([CirclePrimitive((x, y), x_measure(r))
 #                  for (x, y, r) in cyclezip(xs, ys, rs)])
 #
 # This macro does the equivalent with
 #
 #   return @makeform (x in xs, y in ys, r in rs),
-#                    CirclePrimitive(Point(x, y), x_measure(r)))
+#                    CirclePrimitive((x, y), x_measure(r)))
 #
 # but much more efficiently.
 macro makeform(args...)

@@ -58,7 +58,7 @@ function polygon()
 end
 
 
-function polygon{T <: XYTupleOrVec}(points::AbstractArray{T})
+function polygon{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(Vector[points])
     if XM == Any
         XM = Length{:cx, Float64}
@@ -69,7 +69,7 @@ function polygon{T <: XYTupleOrVec}(points::AbstractArray{T})
     VecType = Tuple{XM, YM}
 
     return Polygon([PolygonPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
-                    for point in points])])
+                    for point in points])], tag)
 end
 
 
@@ -311,9 +311,11 @@ end
 
 
 function ellipse(x, y, x_radius, y_radius, tag=empty_tag)
-    prim = EllipsePrimitive((x, y),
-                            (x_measure(x) + x_measure(x_radius), y),
-                            (x, y_measure(y) + y_measure(y_radius)))
+    xm = x_measure(x)
+    ym = y_measure(y)
+    prim = EllipsePrimitive((xm, ym),
+                            (xm + x_measure(x_radius), ym),
+                            (xm, ym + y_measure(y_radius)))
     return Ellipse{typeof(prim)}([prim], tag)
 end
 
@@ -321,9 +323,9 @@ end
 function ellipse(xs::AbstractArray, ys::AbstractArray,
                  x_radiuses::AbstractArray, y_radiuses::AbstractArray, tag=empty_tag)
     return @makeform (x in xs, y in ys, x_radius in x_radiuses, y_radius in y_radiuses),
-            EllipsePrimitive((x, y),
-                             (x_measure(x) + x_measure(x_radius), y),
-                             (x, y_measure(y) + y_measure(y_radius))) tag
+    EllipsePrimitive((x_measure(x), y_measure(y)),
+                     (x_measure(x) + x_measure(x_radius), y_measure(y)),
+                     (x_measure(x), y_measure(y) + y_measure(y_radius))) tag
 end
 
 
@@ -532,16 +534,20 @@ typealias Curve{P<:CurvePrimitive} Form{P}
 
 function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
                ctrl1::XYTupleOrVec, anchor1::XYTupleOrVec, tag=empty_tag)
-    return Curve([CurvePrimitive(convert(Vec, anchor0), convert(Vec, ctrl0),
-                                 convert(Vec, ctrl1), convert(Vec, anchor1))], tag)
+    return Curve([CurvePrimitive((x_measure(anchor0[1]), y_measure(anchor0[2])),
+                                 (x_measure(ctrl0[1]), y_measure(ctrl0[2])),
+                                 (x_measure(ctrl1[1]), y_measure(ctrl1[2])),
+                                 (x_measure(anchor1[1]), y_measure(anchor1[2])))], tag)
 end
 
 
 function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
                ctrl1s::AbstractArray, anchor1s::AbstractArray, tag=empty_tag)
     return @makeform (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
-            CurvePrimitive(convert(Vec, anchor0), convert(Vec, ctrl0),
-                           convert(Vec, ctrl1), convert(Vec, anchor1)) tag
+    CurvePrimitive((x_measure(anchor0[1]), y_measure(anchor0[2])),
+                   (x_measure(ctrl0[1]), y_measure(ctrl0[2])),
+                   (x_measure(ctrl1[1]), y_measure(ctrl1[2])),
+                   (x_measure(anchor1[1]), y_measure(anchor1[2]))) tag
 end
 
 
