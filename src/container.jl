@@ -20,8 +20,8 @@ type Context <: Container
 
     # Container children
     container_children::List{Container}
-    form_children::List{Form}
-    property_children::List{Property}
+    form_children::List{FormNode}
+    property_children::List{PropertyNode}
 
     # Z-order of this context relative to its siblings.
     order::Int
@@ -50,8 +50,6 @@ type Context <: Container
     # is preferable to another.
     penalty::Float64
 
-    tag::Symbol
-
     function Context(x0=0.0w,
                      y0=0.0h,
                      width=1.0w,
@@ -66,11 +64,10 @@ type Context <: Container
                      raster=false,
                      minwidth=nothing,
                      minheight=nothing,
-                     penalty=0.0,
-                     tag=empty_tag)
+                     penalty=0.0)
         return new(BoundingBox(x0, y0, width, height), units, rotation, mirror,
                    ListNull{ComposeNode}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
+                   withjs, withoutjs, raster, minwidth, minheight, penalty)
     end
 
     function Context(box::BoundingBox,
@@ -78,15 +75,15 @@ type Context <: Container
                      rotation::Nullable{Rotation},
                      mirror,
                      container_children::List{Container},
-                     form_children::List{Form},
-                     property_children::List{Property},
+                     form_children::List{FormNode},
+                     property_children::List{PropertyNode},
                      order::Int,
                      clip::Bool,
                      withjs::Bool,
                      withoutjs::Bool,
                      raster::Bool,
                      minwidth, minheight,
-                     penalty, tag)
+                     penalty)
         if isa(minwidth, AbsoluteLength)
             minwidth = minwidth.value
         end
@@ -98,7 +95,7 @@ type Context <: Container
         return new(box, units, rotation, mirror, container_children,
                    form_children, property_children, order,
                    clip, withjs, withoutjs, raster, minwidth, minheight,
-                   penalty, tag)
+                   penalty)
     end
 
     function Context(ctx::Context)
@@ -106,7 +103,7 @@ type Context <: Container
                    ctx.container_children, ctx.form_children,
                    ctx.property_children, ctx.order,
                    ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
-                   ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
+                   ctx.minwidth, ctx.minheight, ctx.penalty)
     end
 end
 
@@ -125,16 +122,14 @@ function context(x0=0.0w,
                  raster=false,
                  minwidth=nothing,
                  minheight=nothing,
-                 penalty=0.0,
-                 tag=empty_tag)
+                 penalty=0.0)
 
     return Context(BoundingBox(x_measure(x0), y_measure(y0),
                                x_measure(width), y_measure(height)),
                    isa(units, Nullable) ? units : Nullable{UnitBox}(units),
                    isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
-                   mirror, ListNull{Container}(), ListNull{Form}(),
-                   ListNull{Property}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
+                   mirror, ListNull{Container}(), ListNull{FormNode}(), ListNull{PropertyNode}(), order, clip,
+                   withjs, withoutjs, raster, minwidth, minheight, penalty)
 end
 
 
@@ -217,12 +212,12 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
                      parent_abs_width = nothing,
                      parent_abs_height = nothing)
     for child in c.property_children
-        for p in child.primitives
-            if isa(p, LineWidthPrimitive)
+        for p in child
+            if isa(p, LineWidth)
                 linewidth = p.value
-            elseif isa(p, FontSizePrimitive)
+            elseif isa(p, FontSize)
                 fontsize = p.value
-            elseif isa(p, FontPrimitive)
+            elseif isa(p, Font)
                 font = p.family
             end
         end
@@ -265,7 +260,7 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
     end
 
     for child in c.form_children
-        for prim in child.primitives
+        for prim in child
             newbb = boundingbox(prim, linewidth, font, fontsize)
             nextbb = union(bb, newbb, c.units, c_abs_height, c_abs_height)
             bb = nextbb
@@ -274,7 +269,6 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
 
     return bb
 end
-
 
 # Frequently we can't compute the contents of a container without knowing its
 # absolute size, or it is one many possible layout that we want to decide
@@ -344,17 +338,35 @@ function compose!(a::Context, b::Container)
 end
 
 
-function compose!(a::Context, b::Form)
+# Possible example API
+#
+# @compose rotated(30deg) a,b,c
+# @compose move(2,3) [a for a in foo(xs)]
+
+function compose!(a::Context, b::FormNode)
     a.form_children = cons(b, a.form_children)
     return a
 end
 
-
-function compose!(a::Context, b::Property)
+function compose!(a::Context, b::PropertyNode)
     a.property_children = cons(b, a.property_children)
     return a
 end
 
+function compose{P <: Primitive}(
+        a::Context,
+        b::AbstractArray{P}
+    )
+    a = copy(a)
+    compose!(a, b)
+    return a
+end
+
+function compose(a::Context, b::Primitive)
+    a = copy(a)
+    compose!(a, b)
+    return a
+end
 
 function compose(a::Context, b::ComposeNode)
     a = copy(a)
@@ -369,7 +381,8 @@ function compose!(a::Context, b, c, ds...)
 end
 
 
-function compose!(a::Context, bs::AbstractArray)
+# FIXME: Maybe remove this??
+function compose!(a::Context, bs::AbstractArray{Context})
     compose!(a, compose!(bs...))
 end
 
@@ -389,6 +402,7 @@ function compose(a::Context, b, c, ds...)
 end
 
 
+# FIXME: Maybe remove this??
 function compose(a::Context, bs::AbstractArray)
     compose(a, compose(bs...))
 end
@@ -509,7 +523,7 @@ function drawpart(backend::Backend, container::Container,
     has_properties = false
     if !isa(ctx.property_children, ListNull) || ctx.clip
         has_properties = true
-        properties = Array(Property, 0)
+        properties = Array(PropertyNode, 0)
 
         child = ctx.property_children
         while !isa(child, ListNull)
@@ -534,7 +548,7 @@ function drawpart(backend::Backend, container::Container,
     child = ctx.form_children
     while !isa(child, ListNull)
         form = resolve(box, units, transform, child.head)
-        if isempty(form.primitives)
+        if isempty(form)
             child = child.tail
             continue
         end
@@ -631,7 +645,7 @@ function introspect(root::Context)
         elseif isa(node, Container)
             # TODO: should be slightly different than Context...
             compose!(fig, circle(0.5, 0.5, figsize/2), fill(LCHab(92, 10, 77)))
-        elseif isa(node, Form)
+        elseif isa(node, FormNode)
             compose!(fig,
                 (context(),
                  text(0.5cx, 0.5cy, form_string(node), hcenter, vcenter),
@@ -639,7 +653,7 @@ function introspect(root::Context)
                 (context(),
                  rectangle(0.5cx - figsize/2, 0.5cy - figsize/2, figsize, figsize),
                  fill(LCHab(68, 74, 192))))
-        elseif isa(node, Property)
+        elseif isa(node, PropertyNode)
             # TODO: what should the third color be?
             compose!(fig,
                 polygon([(0.5cx - figsize/2, 0.5cy - figsize/2),
@@ -682,7 +696,7 @@ end
 function showcompact(io::IO, ctx::Context)
     print(io, "Context(")
     first = true
-    for c in ctx.children
+    for c in chain(ctx.container_children, ctx.form_children, ctx.property_children)
         first || print(io, ",")
         first = false
         showcompact(io, c)
@@ -701,8 +715,7 @@ function showcompact(io::IO, a::AbstractArray)
     print(io, "]")
 end
 
-showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
-
-showcompact(io::IO, p::Compose.Property) = print(io, Compose.prop_string(p))
+showcompact(io::IO, f::Form) = print(io, Compose.form_string(f))
+showcompact(io::IO, p::Property) = print(io, Compose.prop_string(p))
 
 showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)

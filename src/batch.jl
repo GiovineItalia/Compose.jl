@@ -11,7 +11,7 @@ Batching is an optimization transform that happens at draw time. There's
 currently no mechanism to manually batch. E.g. contexts cannot have FormBatch
 children.
 """
-immutable FormBatch{P <: FormPrimitive}
+immutable FormBatch{P <: Form}
     primitive::P
     offsets::Vector{AbsoluteVec2}
 end
@@ -22,7 +22,7 @@ Attempt to batch a form. Return a Nullable{FormBatch} which is null if the Form
 could not be batched, and non-null if the original form can be replaced with teh
 resulting FormBatch.
 """
-function batch{P}(form::Form{P})
+function batch{P<:Form}(form::AbstractArray{P})
     return Nullable{FormBatch{P}}()
 end
 
@@ -58,20 +58,22 @@ function filter_redundant_offsets!(offsets::Vector{AbsoluteVec2})
 end
 
 
-function batch{T <: CirclePrimitive}(form::Form{T})
+batch(x::Primitive) = Nullable(x)
+
+function batch{T <: Circle}(form::AbstractArray{T})
     # circles can be batched if they all have the same radius.
-    r = form.primitives[1].radius
-    n = length(form.primitives)
+    r = form[1].radius
+    n = length(form)
     for i in 2:n
-        if form.primitives[i].radius != r
-            return Nullable{FormBatch{CirclePrimitive}}()
+        if form[i].radius != r
+            return Nullable{FormBatch{Circle}}()
         end
     end
 
-    prim = CirclePrimitive((0mm, 0mm), r)
+    prim = Circle((0mm, 0mm), r)
     offsets = Array(AbsoluteVec2, n)
     for i in 1:n
-        offsets[i] = form.primitives[i].center
+        offsets[i] = form[i].center
     end
 
     return Nullable(FormBatch(prim, offsets))
@@ -93,9 +95,9 @@ const batch_length_threshold = 100
 Count the number of unique primitives in a property, stopping when max_count is
 exceeded.
 """
-function count_unique_primitives(property::Property, max_count::Int)
-    unique_primitives = Set{eltype(property.primitives)}()
-    for primitive in property.primitives
+function count_unique_primitives(property::AbstractArray{Property}, max_count::Int)
+    unique_primitives = Set{eltype(property)}()
+    for primitive in property
         push!(unique_primitives, primitive)
         if length(unique_primitives) > max_count
             break
@@ -105,6 +107,7 @@ function count_unique_primitives(property::Property, max_count::Int)
     return length(unique_primitives)
 end
 
+count_unique_primitives(property::Property, max_count::Int) = 1
 
 """
 Remove and return vector forms and vector properties from the Context.
@@ -112,9 +115,9 @@ Remove and return vector forms and vector properties from the Context.
 function excise_vector_children!(ctx::Context)
     # excise vector forms
     prev_form_child = form_child = ctx.form_children
-    forms = Form[]
+    forms = FormNode[]
     while !isa(form_child, ListNull)
-        if length(form_child.head.primitives) > 1
+        if length(form_child.head) > 1
             push!(forms, form_child.head)
             if prev_form_child == form_child
                 prev_form_child = ctx.form_children = form_child.tail
@@ -130,9 +133,9 @@ function excise_vector_children!(ctx::Context)
 
     # excise vector properties
     prev_property_child = property_child = ctx.property_children
-    properties = Property[]
+    properties = Any[]
     while !isa(property_child, ListNull)
-        if length(property_child.head.primitives) > 1
+        if length(property_child.head) > 1
             push!(properties, property_child.head)
             if prev_property_child == property_child
                 prev_property_child = ctx.property_children = property_child.tail
@@ -164,7 +167,7 @@ function optimize_batching(ctx::Context)
     max_form_length = 0
     form_child = ctx.form_children
     while !isa(form_child, ListNull)
-        max_form_length = max(max_form_length, length(form_child.head.primitives))
+        max_form_length = max(max_form_length, length(form_child.head))
         form_child = form_child.tail
     end
 
@@ -178,7 +181,7 @@ function optimize_batching(ctx::Context)
     max_unique_primitives = 0
     prop_child = ctx.property_children
     while !isa(prop_child, ListNull)
-        if length(prop_child.head.primitives) > 1
+        if length(prop_child.head) > 1
             max_unique_primitives =
                 max(max_unique_primitives,
                     count_unique_primitives(prop_child.head, max_count))
@@ -201,26 +204,26 @@ function optimize_batching(ctx::Context)
 
     # step 2: split primitives into groups on the cross product of property
     # primives
-    n = length(forms[1].primitives)
-    grouped_forms = Dict{UInt64, Vector{Form}}()
-    grouped_properties = Dict{UInt64, Vector{Property}}()
+    n = length(forms[1])
+    grouped_forms = Dict{UInt64, Vector{FormNode}}()
+    grouped_properties = Dict{UInt64, Vector{Any}}()
     for i in 1:n
         h = UInt64(0)
         for property in properties
-            h = hash(property.primitives[i], h)
+            h = hash(property[i], h)
         end
 
         if !haskey(grouped_forms, h)
-            grouped_forms[h] = Form[similar(form) for form in forms]
-            group_prop = Array(Property, length(properties))
+            grouped_forms[h] = FormNode[similar(form) for form in forms]
+            group_prop = Array(Any, length(properties))
             for j in 1:length(properties)
-                group_prop[j] = Property([properties[j].primitives[i]])
+                group_prop[j] = Any[properties[j][i]]
             end
             grouped_properties[h] = group_prop
         end
 
         for j in 1:length(forms)
-            push!(grouped_forms[h][j].primitives, forms[j].primitives[i])
+            push!(grouped_forms[h][j], forms[j][i])
         end
     end
 

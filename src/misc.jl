@@ -37,19 +37,16 @@ end
 # This generates optimized code for a reoccuring pattern in forms and patterns
 # that looks like:
 #
-#   return Circle([CirclePrimitive(Point(x, y), x_measure(r))
-#                  for (x, y, r) in cyclezip(xs, ys, rs)])
+#   return [Circle((x, y), x_measure(r))
+#              for (x, y, r) in cyclezip(xs, ys, rs)]
 #
 # This macro does the equivalent with
 #
 #   return @makeform (x in xs, y in ys, r in rs),
-#                    CirclePrimitive(Point(x, y), x_measure(r)))
+#                    Circle((x, y), x_measure(r))
 #
 # but much more efficiently.
-macro makeform(args...)
-    @assert 1 <= length(args) <= 2
-    tag = length(args) == 2 ? args[2] : empty_tag
-    args = args[1]
+macro makeform(args)
     @assert args.head == :tuple
     @assert length(args.args) == 2
     iterators, constructor = args.args
@@ -95,7 +92,7 @@ macro makeform(args...)
             $(iter_ex)
             primitives[i] = $(constructor)::T
         end
-        Form{T}(primitives, $(tag))
+        primitives
     end)
 end
 

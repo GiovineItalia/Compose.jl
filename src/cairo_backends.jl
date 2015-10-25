@@ -1,4 +1,5 @@
 using Compat
+using Debug
 
 # Cairo backend for compose
 import Cairo
@@ -26,19 +27,19 @@ type ImagePropertyState
     linewidth::AbsoluteLength
     fontsize::AbsoluteLength
     font::AbstractString
-    clip::Nullable{ClipPrimitive}
+    clip::Nullable{Clip}
 end
 
 type ImagePropertyFrame
     # Vector properties in this frame.
-    vector_properties::Dict{Type, Property}
+    vector_properties::Dict{Type, Any}
 
     # True if this property frame has scalar properties. Scalar properties are
     # emitted as a group (<g> tag) that must be closed when the frame is popped.
     has_scalar_properties::Bool
 
     function ImagePropertyFrame()
-        return new(Dict{Type, Property}(), false)
+        return new(Dict{Type, Any}(), false)
     end
 end
 
@@ -60,12 +61,12 @@ type Image{B <: ImageBackend} <: Backend
     linewidth::AbsoluteLength
     fontsize::AbsoluteLength
     font::AbstractString
-    clip::Nullable{ClipPrimitive}
+    clip::Nullable{Clip}
 
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
     property_stack::Vector{ImagePropertyFrame}
-    vector_properties::Dict{Type, Nullable{Property}}
+    vector_properties::Dict{Type, Nullable{PropertyNode}}
 
     # Close the surface when finished
     owns_surface::Bool
@@ -108,11 +109,11 @@ type Image{B <: ImageBackend} <: Backend
         img.linewidth = default_line_width
         img.fontsize = default_font_size
         img.font = default_font_family
-        img.clip = Nullable{ClipPrimitive}()
+        img.clip = Nullable{Clip}()
 
         img.state_stack = Array(ImagePropertyState, 0)
         img.property_stack = Array(ImagePropertyFrame, 0)
-        img.vector_properties = Dict{Type, Nullable{Property}}()
+        img.vector_properties = Dict{Type, Nullable{PropertyNode}}()
         img.owns_surface = false
         img.ownedfile = false
         img.filename = nothing
@@ -332,22 +333,28 @@ end
 # Applying Properties
 # -------------------
 
-function push_property_frame(img::Image, properties::Vector{Property})
+function add_to_frame{P<:Property}(img::Image, property::P, frame, scalar_properties, applied_properties)
+    push!(scalar_properties, property)
+    push!(applied_properties, P)
+    frame.has_scalar_properties = true
+end
+
+function add_to_frame{P<:Property}(img::Image, property::AbstractArray{P}, frame, scalar_properties, applied_properties)
+    frame.vector_properties[P] = property
+    img.vector_properties[P] = property
+end
+
+function push_property_frame(img::Image, properties::Vector)
     if isempty(properties)
         return
     end
 
     frame = ImagePropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
+    scalar_properties = Array(PropertyNode, 0)
     for property in properties
-        if isscalar(property) && !(typeof(property) in applied_properties)
-            push!(scalar_properties, property)
-            push!(applied_properties, typeof(property))
-            frame.has_scalar_properties = true
-        elseif !isscalar(property)
-            frame.vector_properties[typeof(property)] = property
-            img.vector_properties[typeof(property)] = property
+        if !(proptype(property) in applied_properties)
+            add_to_frame(img, property, frame, scalar_properties, applied_properties)
         end
     end
     push!(img.property_stack, frame)
@@ -357,7 +364,7 @@ function push_property_frame(img::Image, properties::Vector{Property})
 
     save_property_state(img)
     for property in scalar_properties
-        apply_property(img, property.primitives[1])
+        apply_property(img, property)
     end
 end
 
@@ -371,7 +378,7 @@ function pop_property_frame(img::Image)
     end
 
     for (propertytype, property) in frame.vector_properties
-        img.vector_properties[propertytype] = Nullable{Property}()
+        img.vector_properties[propertytype] = Nullable{PropertyNode}()
         for i in length(img.property_stack):-1:1
             if haskey(img.property_stack[i].vector_properties, propertytype)
                 img.vector_properties[propertytype] =
@@ -420,10 +427,9 @@ end
 # than simply applied.
 function vector_properties_require_push_pop(img::Image)
     for (propertytype, property) in img.vector_properties
-        propertytype
-        if in(propertytype, [Property{FontPrimitive},
-                             Property{FontSizePrimitive},
-                             Property{ClipPrimitive}])
+        if in(propertytype, [Font,
+                             FontSize,
+                             Clip])
             return true
         end
     end
@@ -437,7 +443,7 @@ function push_vector_properties(img::Image, idx::Int)
         if isnull(property)
             continue
         end
-        primitives = get(property).primitives
+        primitives = get(property)
         if idx > length(primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
@@ -451,47 +457,47 @@ function pop_vector_properties(img::Image)
 end
 
 
-function apply_property(img::Image, p::StrokePrimitive)
+function apply_property(img::Image, p::Stroke)
     img.stroke = p.color
 end
 
 
-function apply_property(img::Image, p::FillPrimitive)
+function apply_property(img::Image, p::Fill)
     img.fill = p.color
 end
 
 
-function apply_property(img::Image, p::FillOpacityPrimitive)
+function apply_property(img::Image, p::FillOpacity)
     img.fill = RGBA{Float64}(color(img.fill), p.value)
 end
 
 
-function apply_property(img::Image, p::StrokeOpacityPrimitive)
+function apply_property(img::Image, p::StrokeOpacity)
     img.stroke = RGBA{Float64}(color(img.stroke), p.value)
 end
 
 
-function apply_property(img::Image, p::StrokeDashPrimitive)
+function apply_property(img::Image, p::StrokeDash)
     img.stroke_dash = map(v -> absolute_native_units(img, v.value), p.value)
 end
 
 
-function apply_property(img::Image, p::StrokeLineCapPrimitive)
+function apply_property(img::Image, p::StrokeLineCap)
     img.stroke_linecap = p.value
 end
 
 
-function apply_property(img::Image, p::StrokeLineJoinPrimitive)
+function apply_property(img::Image, p::StrokeLineJoin)
     img.stroke_linejoin = p.value
 end
 
 
-function apply_property(img::Image, p::VisiblePrimitive)
+function apply_property(img::Image, p::Visible)
     img.visible = p.value
 end
 
 
-function apply_property(img::Image, property::LineWidthPrimitive)
+function apply_property(img::Image, property::LineWidth)
     img.linewidth = property.value
     Cairo.set_line_width(
         img.ctx,
@@ -499,7 +505,7 @@ function apply_property(img::Image, property::LineWidthPrimitive)
 end
 
 
-function apply_property(img::Image, property::FontPrimitive)
+function apply_property(img::Image, property::Font)
     img.font = property.family
 
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
@@ -517,7 +523,7 @@ function apply_property(img::Image, property::FontPrimitive)
 end
 
 
-function apply_property(img::Image, property::FontSizePrimitive)
+function apply_property(img::Image, property::FontSize)
     img.fontsize = property.value
 
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
@@ -537,7 +543,7 @@ function apply_property(img::Image, property::FontSizePrimitive)
 end
 
 
-function apply_property(img::Image, property::ClipPrimitive)
+function apply_property(img::Image, property::Clip)
     if isempty(property.points); return; end
     move_to(img, property.points[1])
     for point in property.points[2:end]
@@ -550,19 +556,19 @@ end
 
 
 # No-op SVG+JS only properties
-function apply_property(img::Image, property::JSIncludePrimitive)
+function apply_property(img::Image, property::JSInclude)
 end
 
-function apply_property(img::Image, property::JSCallPrimitive)
+function apply_property(img::Image, property::JSCall)
 end
 
-function apply_property(img::Image, property::SVGIDPrimitive)
+function apply_property(img::Image, property::SVGID)
 end
 
-function apply_property(img::Image, property::SVGClassPrimitive)
+function apply_property(img::Image, property::SVGClass)
 end
 
-function apply_property(img::Image, property::SVGAttributePrimitive)
+function apply_property(img::Image, property::SVGAttribute)
 end
 
 
@@ -766,20 +772,20 @@ end
 # ------------
 
 
-function draw(img::Image, form::Form)
+function draw(img::Image, form::FormNode)
     if vector_properties_require_push_pop(img)
-        for (idx, primitive) in enumerate(form.primitives)
+        for (idx, primitive) in enumerate(form)
             push_vector_properties(img, idx)
             draw(img, primitive)
             pop_vector_properties(img)
         end
     else
-        for (idx, primitive) in enumerate(form.primitives)
+        for (idx, primitive) in enumerate(form)
             for (propertytype, property) in img.vector_properties
                 if isnull(property)
                     continue
                 end
-                primitives = get(property).primitives
+                primitives = get(property)
                 if idx > length(primitives)
                     error("Vector form and vector property differ in length. Can't distribute.")
                 end
@@ -791,13 +797,13 @@ function draw(img::Image, form::Form)
 end
 
 
-function draw(img::Image, prim::RectanglePrimitive)
+function draw(img::Image, prim::Rectangle)
     rectangle(img, prim.corner, prim.width, prim.height)
     fillstroke(img)
 end
 
 
-function draw(img::Image, prim::PolygonPrimitive)
+function draw(img::Image, prim::Polygon)
     n = length(prim.points)
     if n <= 1
         return
@@ -812,7 +818,7 @@ function draw(img::Image, prim::PolygonPrimitive)
 end
 
 
-function draw(img::Image, prim::Compose.ComplexPolygonPrimitive)
+function draw(img::Image, prim::Compose.ComplexPolygon)
     if isempty(prim.rings); return; end
 
     for ring in prim.rings
@@ -826,13 +832,13 @@ function draw(img::Image, prim::Compose.ComplexPolygonPrimitive)
 end
 
 
-function draw(img::Image, prim::CirclePrimitive)
+function draw(img::Image, prim::Circle)
     circle(img, prim.center, prim.radius)
     fillstroke(img)
 end
 
 
-function draw(img::Image, prim::EllipsePrimitive)
+function draw(img::Image, prim::Ellipse)
     cx = prim.center[1].value
     cy = prim.center[2].value
     rx = sqrt((prim.x_point[1].value - cx)^2 +
@@ -857,7 +863,7 @@ function draw(img::Image, prim::EllipsePrimitive)
 end
 
 
-function draw(img::Image, prim::LinePrimitive)
+function draw(img::Image, prim::Line)
     if length(prim.points) <= 1; return; end
     move_to(img, prim.points[1])
     for i in 2:length(prim.points)
@@ -873,7 +879,7 @@ function get_layout_size(img::Image)
 end
 
 
-function draw(img::Image, prim::TextPrimitive)
+function draw(img::Image, prim::Text)
     if !img.visible || (img.fill.alpha == 0.0 && img.stroke.alpha == 0.0)
         return
     end
@@ -915,19 +921,19 @@ function draw(img::Image, prim::TextPrimitive)
 end
 
 
-function draw(img::Image, prim::CurvePrimitive)
+function draw(img::Image, prim::Curve)
     move_to(img, prim.anchor0)
     curve_to(img, prim.ctrl0, prim.ctrl1, prim.anchor1)
     fillstroke(img, true)
 end
 
 
-function draw(img::Image, prim::BitmapPrimitive)
+function draw(img::Image, prim::Bitmap)
     error("Embedding bitmaps in Cairo backends (i.e. PNG, PDF, PS) is not supported.")
 end
 
 
-function draw(img::Image, prim::PathPrimitive)
+function draw(img::Image, prim::Path)
     for op in prim.ops
         draw_path_op(img, op)
     end

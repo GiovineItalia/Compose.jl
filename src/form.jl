@@ -1,62 +1,50 @@
 
-# A form is something that ends up as geometry in the graphic.
+abstract Primitive <: ComposeNode
 
-abstract FormPrimitive
+Base.length(::Primitive) = 1
+Base.isempty(x::Primitive) = false
+Base.start(::Primitive) = false
+Base.next(x::Primitive, state) = (x, true)
+Base.done(::Primitive, state) = state
+Base.in(x::Primitive, y::Primitive) = x == y
+Base.map(f, x::Primitive) = f(x)
+
 
 const empty_tag = symbol("")
+const tag_dict = ObjectIdDict()
+settag!(c, tag) = (tag_dict[tag] = c)
+gettag(c,default...) = get(tag_dict, tag, default...)
 
-immutable Form{P <: FormPrimitive} <: ComposeNode
-    primitives::Vector{P}
-    tag::Symbol
+# A form is something that ends up as geometry in the graphic.
 
-    function Form(prim, tag::Symbol=empty_tag)
-        new(prim, tag)
-    end
-end
+abstract Form <: Primitive
+typealias FormNode{T<:Form} Union{T, AbstractArray{T}}
 
-function Form{P<:FormPrimitive}(primitives::Vector{P}, tag::Symbol=empty_tag)
-    Form{P}(primitives, tag)
-end
+function resolve(
+             box::AbsoluteBox,
+             units::UnitBox,
+             t::Transform,
+             xs::AbstractArray)
 
-function isempty(f::Form)
-    return isempty(f.primitives)
-end
-
-
-function isscalar(f::Form)
-    return length(f.primitives) == 1
+    return [resolve(box, units, t, x) for x in xs]
 end
 
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, form::Form)
-    return Form([resolve(box, units, t, primitive)
-                 for primitive in form.primitives])
-end
-
-
-function Base.similar{T}(f::Form{T})
-    return Form{T}(T[])
-end
-
-form_string(::Form) = "FORM"  # fallback definition
+form_string(::FormNode{Form}) = "FORM"  # fallback definition
 
 # Polygon
 # -------
 
-immutable SimplePolygonPrimitive{P <: Vec} <: FormPrimitive
+immutable SimplePolygon{P <: Vec} <: Form
     points::Vector{P}
 end
 
-typealias SimplePolygon{P<:SimplePolygonPrimitive} Form{P}
-
 typealias Polygon SimplePolygon
-typealias PolygonPrimitive SimplePolygonPrimitive
 
 
 function polygon()
-    return Polygon([PolygonPrimitive(Vec[])])
+    return Polygon(Vec[])
 end
-
 
 function polygon{T <: XYTupleOrVec}(points::AbstractArray{T})
     XM, YM = narrow_polygon_point_types(Vector[points])
@@ -68,32 +56,32 @@ function polygon{T <: XYTupleOrVec}(points::AbstractArray{T})
     end
     VecType = Tuple{XM, YM}
 
-    return Polygon([PolygonPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
-                    for point in points])])
+    return [Polygon(VecType[(x_measure(point[1]), y_measure(point[2]))
+                    for point in points])]
 end
 
 
-function polygon(point_arrays::AbstractArray, tag=empty_tag)
+function polygon(point_arrays::AbstractArray)
     XM, YM = narrow_polygon_point_types(point_arrays)
     VecType = XM == YM == Any ? Vec : Tuple{XM, YM}
-    PrimType = XM == YM == Any ? PolygonPrimitive : PolygonPrimitive{VecType}
+    PrimType = XM == YM == Any ? Polygon : Polygon{VecType}
 
     polyprims = Array(PrimType, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
         polyprims[i] = PrimType(VecType[(x_measure(point[1]), y_measure(point[2]))
                                         for point in point_array])
     end
-    return Form{PrimType}(polyprims, tag)
+    return PrimType[polyprims]
 end
 
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PolygonPrimitive)
-    return PolygonPrimitive{AbsoluteVec2}(
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Polygon)
+    return Polygon{AbsoluteVec2}(
                 AbsoluteVec2[resolve(box, units, t, point) for point in p.points])
 end
 
 
-function boundingbox(form::PolygonPrimitive, linewidth::Measure,
+function boundingbox(form::Polygon, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
     x0 = minimum([p[1] for p in form.points])
     x1 = maximum([p[1] for p in form.points])
@@ -106,22 +94,19 @@ function boundingbox(form::PolygonPrimitive, linewidth::Measure,
 end
 
 
-form_string(::SimplePolygon) = "SP"
+form_string(::FormNode{SimplePolygon}) = "SP"
 
 
-immutable ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
+immutable ComplexPolygon{P <: Vec} <: Form
     rings::Vector{Vector{P}}
 end
 
-typealias ComplexPolygon{P<:ComplexPolygonPrimitive} Form{P}
-
 
 function complexpolygon()
-    return ComplexPolygon([ComplexPolygonPrimitive(Vec[])])
+    return ComplexPolygon(Vec[])
 end
 
-
-function complexpolygon(rings::Vector{Vector}, tag=empty_tag)
+function complexpolygon(rings::Vector{Vector})
     XM, YM = narrow_polygon_point_types(rings)
     if XM == Any
         XM = Length{:cx, Float64}
@@ -131,70 +116,66 @@ function complexpolygon(rings::Vector{Vector}, tag=empty_tag)
     end
     VecType = Tuple{XM, YM}
 
-    return ComplexPolygon([
-        ComplexPolygonPrimitive([VecType[(x_measure(point[1]), y_measure(point[2]))
-                                         for point in points]])], tag)
+    return ComplexPolygon([VecType[(x_measure(point[1]), y_measure(point[2]))
+                                 for point in points]])
 end
 
 
-function complexpolygon(ring_arrays::Vector{Vector{Vector}}, tag=empty_tag)
+function complexpolygon(ring_arrays::Vector{Vector{Vector}})
     XM, YM = narrow_polygon_point_types(coords)
     VecType = XM == YM == Any ? Vec : Tuple{XM, YM}
-    PrimType = XM == YM == Any ? ComplexPolygonPrimitive : ComplexPolygonPrimitive{VecType}
+    PrimType = XM == YM == Any ? ComplexPolygon : ComplexPolygon{VecType}
 
-    ComplexPolygon([PrimType[[(x_measure(x), y_measure(y)) for (x, y) in ring]
-                    for ring in ring_array] for ring_array in ring_arrays], tag)
+    [PrimType[[(x_measure(x), y_measure(y)) for (x, y) in ring]
+                for ring in ring_array] for ring_array in ring_arrays]
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::ComplexPolygonPrimitive)
-    return ComplexPolygonPrimitive(
+                 p::ComplexPolygon)
+    return ComplexPolygon(
                 [AbsoluteVec2[resolve(box, units, t, point, t) for point in ring]
                 for ring in p.rings])
 end
 
-form_string(::ComplexPolygon) = "CP"
+form_string(::FormNode{ComplexPolygon}) = "CP"
 
 
 
 # Rectangle
 # ---------
 
-immutable RectanglePrimitive{P <: Vec, M1 <: Measure, M2 <: Measure} <: FormPrimitive
+immutable Rectangle{P <: Vec, M1 <: Measure, M2 <: Measure} <: Form
     corner::P
     width::M1
     height::M2
 end
 
-typealias Rectangle{P<:RectanglePrimitive} Form{P}
-
 
 function rectangle()
-    prim = RectanglePrimitive((0.0w, 0.0h), 1.0w, 1.0h)
-    return Rectangle{typeof(prim)}([prim])
+    prim = Rectangle((0.0w, 0.0h), 1.0w, 1.0h)
+    return prim
 end
 
 
-function rectangle(x0, y0, width, height, tag=empty_tag)
+function rectangle(x0, y0, width, height)
     corner = (x_measure(x0), y_measure(y0))
     width = x_measure(width)
     height = y_measure(height)
-    prim = RectanglePrimitive(corner, width, height)
-    return Rectangle{typeof(prim)}([prim], tag)
+    return Rectangle(corner, width, height)
 end
 
 
 function rectangle(x0s::AbstractArray, y0s::AbstractArray,
-                   widths::AbstractArray, heights::AbstractArray, tag=empty_tag)
+                   widths::AbstractArray, heights::AbstractArray)
     return @makeform (x0 in x0s, y0 in y0s, width in widths, height in heights),
-        RectanglePrimitive{Vec2, Measure, Measure}((x_measure(x0), y_measure(y0)),
-                                                    x_measure(width), y_measure(height)) tag
+        Rectangle{Vec2, Measure, Measure}((x_measure(x0), y_measure(y0)),
+                                                    x_measure(width), y_measure(height))
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::RectanglePrimitive)
+                 p::Rectangle)
 
     corner = resolve(box, units, t, p.corner)
     width = resolve(box, units, t, p.width)
@@ -212,12 +193,12 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
         y = corner[2]
     end
 
-    return RectanglePrimitive{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
+    return Rectangle{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
         (x, y), width, height)
 end
 
 
-function boundingbox(form::RectanglePrimitive, linewidth::Measure,
+function boundingbox(form::Rectangle, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
 
     return BoundingBox(form.corner.x - linewidth,
@@ -226,60 +207,55 @@ function boundingbox(form::RectanglePrimitive, linewidth::Measure,
                        form.height + 2*linewidth)
 end
 
-form_string(::Rectangle) = "R"
+form_string(::FormNode{Rectangle}) = "R"
 
 # Circle
 # ------
 
-immutable CirclePrimitive{P <: Vec, M <: Measure} <: FormPrimitive
+immutable Circle{P <: Vec, M <: Measure} <: Form
     center::P
     radius::M
 end
 
 
-function CirclePrimitive{P, M}(center::P, radius::M)
-    return CirclePrimitive{P, M}(center, radius)
+function Circle{P, M}(center::P, radius::M)
+    return Circle{P, M}(center, radius)
 end
 
 
-function CirclePrimitive(x, y, r)
-    return CirclePrimitive((x_measure(x), y_measure(y)), x_measure(r))
+function Circle(x, y, r)
+    return Circle((x_measure(x), y_measure(y)), x_measure(r))
 end
 
-
-typealias Circle{P<:CirclePrimitive} Form{P}
 
 
 function circle()
-    prim = CirclePrimitive((0.5w, 0.5h), 0.5w)
-    return Circle{typeof(prim)}([prim])
+    return Circle((0.5w, 0.5h), 0.5w)
 end
 
 
-function circle(x, y, r, tag=empty_tag)
-    prim = CirclePrimitive(x, y, r)
-    return Circle{typeof(prim)}([prim], tag)
+function circle(x, y, r)
+    return Circle(x, y, r)
 end
 
 
-function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray, tag=empty_tag)
+function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
     if isempty(xs) || isempty(ys) || isempty(rs)
-        prima = CirclePrimitive[]
-        return Circle{eltype(prima)}(prima, tag)
+        return Circle[]
+    else 
+        return @makeform (x in xs, y in ys, r in rs), Circle(x, y, r)
     end
-
-    return @makeform (x in xs, y in ys, r in rs), CirclePrimitive(x, y, r) tag
 end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::CirclePrimitive)
-    return CirclePrimitive{AbsoluteVec2, AbsoluteLength}(
+                 p::Circle)
+    return Circle{AbsoluteVec2, AbsoluteLength}(
         resolve(box, units, t, p.center),
         resolve(box, units, t, p.radius))
 end
 
 
-function boundingbox(form::CirclePrimitive, linewidth::Measure,
+function boundingbox(form::Circle, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
     return BoundingBox(form.center[1] - form.radius - linewidth,
                        form.center[2] - form.radius - linewidth,
@@ -287,56 +263,52 @@ function boundingbox(form::CirclePrimitive, linewidth::Measure,
                        2 * (form.radius + linewidth))
 end
 
-form_string(::Circle) = "C"
+form_string(::FormNode{Circle}) = "C"
 
 # Ellipse
 # -------
 
 
-immutable EllipsePrimitive{P1 <: Vec, P2 <: Vec, P3 <: Vec} <: FormPrimitive
+immutable Ellipse{P1 <: Vec, P2 <: Vec, P3 <: Vec} <: Form
     center::P1
     x_point::P2
     y_point::P3
 end
 
-typealias Ellipse{P<:EllipsePrimitive} Form{P}
-
 
 function ellipse()
-    prim = EllipsePrimitive((0.5w, 0.5h),
+    return Ellipse((0.5w, 0.5h),
                             (1.0w, 0.5h),
                             (0.5w, 1.0h))
-    return Ellipse{typeof(prim)}([prim])
 end
 
 
-function ellipse(x, y, x_radius, y_radius, tag=empty_tag)
-    prim = EllipsePrimitive((x, y),
+function ellipse(x, y, x_radius, y_radius)
+    return Ellipse((x, y),
                             (x_measure(x) + x_measure(x_radius), y),
                             (x, y_measure(y) + y_measure(y_radius)))
-    return Ellipse{typeof(prim)}([prim], tag)
 end
 
 
 function ellipse(xs::AbstractArray, ys::AbstractArray,
-                 x_radiuses::AbstractArray, y_radiuses::AbstractArray, tag=empty_tag)
+                 x_radiuses::AbstractArray, y_radiuses::AbstractArray)
     return @makeform (x in xs, y in ys, x_radius in x_radiuses, y_radius in y_radiuses),
-            EllipsePrimitive((x, y),
+            Ellipse((x, y),
                              (x_measure(x) + x_measure(x_radius), y),
-                             (x, y_measure(y) + y_measure(y_radius))) tag
+                             (x, y_measure(y) + y_measure(y_radius)))
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::EllipsePrimitive)
-    return EllipsePrimitive{AbsoluteVec2, AbsoluteVec2, AbsoluteVec2}(
+                 p::Ellipse)
+    return Ellipse{AbsoluteVec2, AbsoluteVec2, AbsoluteVec2}(
                    resolve(box, units, t, p.center),
                    resolve(box, units, t, p.x_point),
                    resolve(box, units, t, p.y_point))
 end
 
 
-function boundingbox(form::EllipsePrimitive, linewidth::Measure,
+function boundingbox(form::Ellipse, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
     x0 = min(form.x_point.x, form.y_point.x)
     x1 = max(form.x_point.x, form.y_point.x)
@@ -350,7 +322,7 @@ function boundingbox(form::EllipsePrimitive, linewidth::Measure,
                        2 * (yr + linewidth))
 end
 
-form_string(::Ellipse) = "E"
+form_string(::FormNode{Ellipse}) = "E"
 
 # Text
 # ----
@@ -374,7 +346,7 @@ const vcenter = VCenter()
 const vbottom = VBottom()
 
 
-immutable TextPrimitive{P <: Vec, R <: Rotation} <: FormPrimitive
+immutable Text{P <: Vec, R <: Rotation} <: Form
     position::P
     value::AbstractString
     halign::HAlignment
@@ -385,50 +357,46 @@ immutable TextPrimitive{P <: Vec, R <: Rotation} <: FormPrimitive
     rot::R
 end
 
-typealias Text{P<:TextPrimitive} Form{P}
-
 
 function text(x, y, value::AbstractString,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
-              rot=Rotation(); tag::Symbol=empty_tag)
-    prim = TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot)
-    return Text{typeof(prim)}([prim], tag)
+              rot=Rotation())
+    return Text((x_measure(x), y_measure(y)), value, halign, valign, rot)
 end
 
 
 function text(x, y, value,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
-              rot=Rotation(); tag::Symbol=empty_tag)
-    prim = TextPrimitive((x_measure(x), y_measure(y)), string(value), halign, valign, rot)
-    return Text{typeof(prim)}([prim], tag)
+              rot=Rotation())
+    return Text((x_measure(x), y_measure(y)), string(value), halign, valign, rot)
 end
 
 
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{AbstractString},
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
-              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag)
+              rots::AbstractArray=[Rotation()])
     return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-            TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot) tag
+            Text((x_measure(x), y_measure(y)), value, halign, valign, rot)
 end
 
 
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
-              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag)
+              rots::AbstractArray=[Rotation()])
     return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-            TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot) tag
+            Text((x_measure(x), y_measure(y)), value, halign, valign, rot)
 end
 
 
 function resolve{P, R}(box::AbsoluteBox, units::UnitBox, t::Transform,
-                       p::TextPrimitive{P, R})
+                       p::Text{P, R})
     rot = resolve(box, units, t, p.rot)
-    return TextPrimitive{AbsoluteVec2, typeof(rot)}(
+    return Text{AbsoluteVec2, typeof(rot)}(
                 resolve(box, units, t, p.position),
                 p.value, p.halign, p.valign, rot)
 end
 
-function boundingbox(form::TextPrimitive, linewidth::Measure,
+function boundingbox(form::Text, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
 
     width, height = text_extents(font, fontsize, form.value)[1]
@@ -455,36 +423,31 @@ function boundingbox(form::TextPrimitive, linewidth::Measure,
                        height + linewidth)
 end
 
-form_string(::Text) = "T"
+form_string(::FormNode{Text}) = "T"
 
 # Line
 # ----
 
-immutable LinePrimitive{P <: Vec} <: FormPrimitive
+immutable Line{P <: Vec} <: Form
     points::Vector{P}
 end
 
-typealias Line{P<:LinePrimitive} Form{P}
-
 
 function line()
-    prim = LinePrimitive(Vec[])
-    return Line{typeof(prim)}([prim])
+    return Line(Vec[])
 end
 
-
-function line{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
+function line{T <: XYTupleOrVec}(points::AbstractArray{T})
     XM, YM = narrow_polygon_point_types(Vector[points])
     VecType = XM == YM == Any ? Vec2 : Tuple{XM, YM}
-    prim = LinePrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])
-    return Line{typeof(prim)}([prim], tag)
+    return Line(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])
 end
 
 
-function line(point_arrays::AbstractArray, tag=empty_tag)
+function line(point_arrays::AbstractArray)
     XM, YM = narrow_polygon_point_types(point_arrays)
     VecType = XM == YM == Any ? Vec2 : Tuple{XM, YM}
-    PrimType = XM == YM == Any ? LinePrimitive : LinePrimitive{VecType}
+    PrimType = XM == YM == Any ? Line : Line{VecType}
 
     lineprims = Array(PrimType, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
@@ -492,18 +455,18 @@ function line(point_arrays::AbstractArray, tag=empty_tag)
                              for point in point_array])
         lineprims[i] = p
     end
-    return Form{PrimType}(lineprims, tag)
+    return lineprims
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::LinePrimitive)
-    return LinePrimitive{AbsoluteVec2}(
+                 p::Line)
+    return Line{AbsoluteVec2}(
                 AbsoluteVec2[resolve(box, units, t, point) for point in p.points])
 end
 
 
-function boundingbox(form::LinePrimitive, linewidth::Measure,
+function boundingbox(form::Line, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
     x0 = minimum([p.x for p in form.points])
     x1 = maximum([p.x for p in form.points])
@@ -515,51 +478,49 @@ function boundingbox(form::LinePrimitive, linewidth::Measure,
                        y1 - y0 + linewidth)
 end
 
-form_string(::Line) = "L"
+form_string(::FormNode{Line}) = "L"
 
 # Curve
 # -----
 
-immutable CurvePrimitive{P1 <: Vec, P2 <: Vec, P3 <: Vec, P4 <: Vec} <: FormPrimitive
+immutable Curve{P1 <: Vec, P2 <: Vec, P3 <: Vec, P4 <: Vec} <: Form
     anchor0::P1
     ctrl0::P2
     ctrl1::P3
     anchor1::P4
 end
 
-typealias Curve{P<:CurvePrimitive} Form{P}
-
 
 function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
-               ctrl1::XYTupleOrVec, anchor1::XYTupleOrVec, tag=empty_tag)
-    return Curve([CurvePrimitive(convert(Vec, anchor0), convert(Vec, ctrl0),
-                                 convert(Vec, ctrl1), convert(Vec, anchor1))], tag)
+               ctrl1::XYTupleOrVec, anchor1::XYTupleOrVec)
+    return Curve(convert(Vec, anchor0), convert(Vec, ctrl0),
+                          convert(Vec, ctrl1), convert(Vec, anchor1))
 end
 
 
 function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
-               ctrl1s::AbstractArray, anchor1s::AbstractArray, tag=empty_tag)
+               ctrl1s::AbstractArray, anchor1s::AbstractArray)
     return @makeform (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
-            CurvePrimitive(convert(Vec, anchor0), convert(Vec, ctrl0),
-                           convert(Vec, ctrl1), convert(Vec, anchor1)) tag
+            Curve(convert(Vec, anchor0), convert(Vec, ctrl0),
+                           convert(Vec, ctrl1), convert(Vec, anchor1))
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::CurvePrimitive)
-    return CurvePrimitive{AbsoluteVec2, AbsoluteVec2, AbsoluteVec2, AbsoluteVec2}(
+                 p::Curve)
+    return Curve{AbsoluteVec2, AbsoluteVec2, AbsoluteVec2, AbsoluteVec2}(
                 resolve(box, units, t, p.anchor0),
                 resolve(box, units, t, p.ctrl0),
                 resolve(box, units, t, p.ctrl1),
                 resolve(box, units, t, p.anchor1))
 end
 
-form_string(::Curve) = "CV"
+form_string(::FormNode{Curve}) = "CV"
 
 # Bitmap
 # ------
 
-immutable BitmapPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimitive
+immutable Bitmap{P <: Vec, XM <: Measure, YM <: Measure} <: Form
     mime::AbstractString
     data::Vector{UInt8}
     corner::P
@@ -567,29 +528,26 @@ immutable BitmapPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimiti
     height::YM
 end
 
-typealias Bitmap{P<:BitmapPrimitive} Form{P}
 
-
-function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height, tag=empty_tag)
+function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height)
     corner = (x_measure(x0), y_measure(y0))
     width = x_measure(width)
     height = y_measure(height)
-    prim = BitmapPrimitive(mime, data, corner, width, height)
-    return Bitmap{typeof(prim)}([prim], tag)
+    return Bitmap(mime, data, corner, width, height)
 end
 
 
 function bitmap(mimes::AbstractArray, datas::AbstractArray,
                 x0s::AbstractArray, y0s::AbstractArray,
-                widths::AbstractArray, heights::AbstractArray, tag=empty_tag)
+                widths::AbstractArray, heights::AbstractArray)
     return @makeform (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heigths),
-            BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height)) tag
+            Bitmap(mime, data, x0, y0, x_measure(width), y_measure(height))
 end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::BitmapPrimitive)
-    return BitmapPrimitive{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
+                 p::Bitmap)
+    return Bitmap{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
                 p.mime, p.data,
                 resolve(box, units, t, p.corner),
                 resolve(box, units, t, p.width),
@@ -597,12 +555,12 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
 end
 
 
-function boundingbox(form::BitmapPrimitive, linewidth::Measure,
+function boundingbox(form::Bitmap, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
     return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
 end
 
-form_string(::Bitmap) = "B"
+form_string(::FormNode{Bitmap}) = "B"
 
 # Path
 # ----
@@ -1100,25 +1058,23 @@ function parsepath(tokens::AbstractArray)
 end
 
 
-immutable PathPrimitive <: FormPrimitive
+immutable Path <: Form
     ops::Vector{PathOp}
 end
 
-typealias Path Form{PathPrimitive}
 
-
-function path(tokens::AbstractArray, tag=empty_tag)
-    return Path([PathPrimitive(parsepath(tokens))], tag)
+function path(tokens::AbstractArray)
+    return Path(parsepath(tokens))
 end
 
 
-function path{T <: AbstractArray}(tokens::AbstractArray{T}, tag=empty_tag)
-    return Path([PathPrimitive(parsepath(ts)) for ts in tokens], tag)
+function path{T <: AbstractArray}(tokens::AbstractArray{T})
+    return [Path(parsepath(ts)) for ts in tokens]
 end
 
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PathPrimitive)
-    return PathPrimitive([resolve(box, units, t, op) for op in p.ops])
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Path)
+    return Path([resolve(box, units, t, op) for op in p.ops])
 end
 
 

@@ -127,7 +127,7 @@ end
 # in the form of a property frame.
 type SVGPropertyFrame
     # Vector properties in this frame.
-    vector_properties::Dict{Type, Property}
+    vector_properties::Dict{Type, Any}
 
     # True if this property frame has scalar properties. Scalar properties are
     # emitted as a group (<g> tag) that must be closed when the frame is popped.
@@ -142,7 +142,7 @@ type SVGPropertyFrame
     has_mask::Bool
 
     function SVGPropertyFrame()
-        return new(Dict{Type, Property}(), false, false, false)
+        return new(Dict{Type, PropertyNode}(), false, false, false)
     end
 end
 
@@ -156,7 +156,7 @@ type SVG <: Backend
     out::IO
 
     # Save output from IOBuffers to allow multiple calls to writemime
-    cached_out::@compat(Union{AbstractString, (@compat Void)})
+    cached_out::Union{AbstractString, Void}
 
     # Unique ID for the figure.
     id::AbstractString
@@ -170,13 +170,13 @@ type SVG <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
+    vector_properties::Dict{Type, Union{Void, Any}}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, ASCIIString}
+    clippaths::Dict{Clip, ASCIIString}
 
     # Batched forms to be included within <def> tags.
-    batches::Vector{Tuple{FormPrimitive, ASCIIString}}
+    batches::Vector{Tuple{Form, ASCIIString}}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -189,7 +189,7 @@ type SVG <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::@compat(Union{AbstractString, (@compat Void)})
+    filename::Union{AbstractString, Void}
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -206,7 +206,7 @@ type SVG <: Backend
     jsheader::Vector{AbstractString}
 
     # (Name, binding) pairs of javascript modules the embedded code depends on
-    jsmodules::Vector{@compat Tuple{AbstractString, AbstractString}}
+    jsmodules::Vector{Tuple{AbstractString, AbstractString}}
 
     # User javascript from JSCall attributes
     scripts::Vector{AbstractString}
@@ -237,9 +237,9 @@ type SVG <: Backend
         img.cached_out = nothing
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
-        img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
-        img.clippaths = Dict{ClipPrimitive, ASCIIString}()
-        img.batches = Array(Tuple{FormPrimitive, ASCIIString}, 0)
+        img.vector_properties = Dict{Type, @compat(Union{(@compat Void), PropertyNode})}()
+        img.clippaths = Dict{Clip, ASCIIString}()
+        img.batches = Array(Tuple{Form, ASCIIString}, 0)
         img.embobj = Set{AbstractString}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
@@ -594,7 +594,7 @@ end
 # -----------------
 
 
-function print_property(img::SVG, property::StrokePrimitive)
+function print_property(img::SVG, property::Stroke)
     if property.color.alpha != 1.0
         @printf(img.out, " stroke=\"%s\" stroke-opacity=\"%0.3f\"",
                 svg_fmt_color(color(property.color)), property.color.alpha)
@@ -604,7 +604,7 @@ function print_property(img::SVG, property::StrokePrimitive)
 end
 
 
-function print_property(img::SVG, property::FillPrimitive)
+function print_property(img::SVG, property::Fill)
     if property.color.alpha != 1.0
         @printf(img.out, " fill=\"%s\" fill-opacity=\"%0.3f\"",
                 svg_fmt_color(color(property.color)), property.color.alpha)
@@ -614,7 +614,7 @@ function print_property(img::SVG, property::FillPrimitive)
 end
 
 
-function print_property(img::SVG, property::StrokeDashPrimitive)
+function print_property(img::SVG, property::StrokeDash)
     if isempty(property.value)
         print(img.out, " stroke-dasharray=\"none\"")
     else
@@ -635,7 +635,7 @@ svg_fmt_linecap(::LineCapSquare) = "square"
 svg_fmt_linecap(::LineCapRound) = "round"
 
 
-function print_property(img::SVG, property::StrokeLineCapPrimitive)
+function print_property(img::SVG, property::StrokeLineCap)
     @printf(img.out, " stroke-linecap=\"%s\"", svg_fmt_linecap(property.value))
 end
 
@@ -646,33 +646,33 @@ svg_fmt_linejoin(::LineJoinRound) = "round"
 svg_fmt_linejoin(::LineJoinBevel) = "bevel"
 
 
-function print_property(img::SVG, property::StrokeLineJoinPrimitive)
+function print_property(img::SVG, property::StrokeLineJoin)
     @printf(img.out, " stroke-linejoin=\"%s\"", svg_fmt_linejoin(property.value))
 end
 
 
-function print_property(img::SVG, property::LineWidthPrimitive)
+function print_property(img::SVG, property::LineWidth)
     print(img.out, " stroke-width=\"")
     svg_print_float(img.out, property.value.value)
     print(img.out, '"')
 end
 
 
-function print_property(img::SVG, property::FillOpacityPrimitive)
+function print_property(img::SVG, property::FillOpacity)
     print(img.out, " opacity=\"")
     svg_print_float(img.out, property.value)
     print(img.out, '"')
 end
 
 
-function print_property(img::SVG, property::StrokeOpacityPrimitive)
+function print_property(img::SVG, property::StrokeOpacity)
     print(img.out, " stroke-opacity=\"")
     svg_print_float(img.out, property.value)
     print(img.out, '"')
 end
 
 
-function print_property(img::SVG, property::VisiblePrimitive)
+function print_property(img::SVG, property::Visible)
     @printf(img.out, " visibility=\"%s\"",
             property.value ? "visible" : "hidden")
 end
@@ -680,41 +680,41 @@ end
 
 # I may end up applying the same clip path to many forms separately, so I
 # shouldn't make a new one for each applicaiton. Where should that happen?
-function print_property(img::SVG, property::ClipPrimitive)
+function print_property(img::SVG, property::Clip)
     url = clippathurl(img, property)
     @printf(img.out, " clip-path=\"url(#%s)\"", url)
 end
 
 
-function print_property(img::SVG, property::FontPrimitive)
+function print_property(img::SVG, property::Font)
     @printf(img.out, " font-family=\"%s\"", escape_string(property.family))
 end
 
 
-function print_property(img::SVG, property::FontSizePrimitive)
+function print_property(img::SVG, property::FontSize)
     print(img.out, " font-size=\"")
     svg_print_float(img.out, property.value.value)
     print(img.out, '"')
 end
 
 
-function print_property(img::SVG, property::SVGIDPrimitive)
+function print_property(img::SVG, property::SVGID)
     @printf(img.out, " id=\"%s\"", escape_string(property.value))
 end
 
 
-function print_property(img::SVG, property::SVGClassPrimitive)
+function print_property(img::SVG, property::SVGClass)
     @printf(img.out, " class=\"%s\"", escape_string(property.value))
 end
 
 
-function print_property(img::SVG, property::SVGAttributePrimitive)
+function print_property(img::SVG, property::SVGAttribute)
     @printf(img.out, " %s=\"%s\"",
             property.attribute, escape_string(property.value))
 end
 
 
-function print_property(img::SVG, property::JSIncludePrimitive)
+function print_property(img::SVG, property::JSInclude)
     push!(img.jsheader, property.value)
     if property.jsmodule != nothing
         push!(img.jsmodules, property.jsmodule)
@@ -722,7 +722,7 @@ function print_property(img::SVG, property::JSIncludePrimitive)
 end
 
 
-function print_property(img::SVG, property::JSCallPrimitive)
+function print_property(img::SVG, property::JSCall)
     @assert img.has_current_id
     push!(img.scripts,
           @sprintf("fig.select(\"#%s\")\n   .%s;",
@@ -734,10 +734,10 @@ end
 function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
     if haskey(img.vector_properties, JSCall)
         if haskey(img.vector_properties, SVGID)
-            img.current_id = img.vector_properties[SVGID].primitives[idx].value
+            img.current_id = img.vector_properties[SVGID][idx].value
         else
             img.current_id = genid(img)
-            print_property(img, SVGIDPrimitive(img.current_id))
+            print_property(img, SVGID(img.current_id))
         end
         img.has_current_id = true
     end
@@ -751,17 +751,17 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
             continue
         end
 
-        if idx > length(property.primitives)
+        if idx > length(property)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
 
         # let the opacity primitives clobber the alpha value in fill and stroke
         if propertytype == Fill && has_fill_opacity
-           print_property(img, FillPrimitive(RGBA{Float64}(property.primitives[idx].color, 1.0)))
+           print_property(img, Fill(RGBA{Float64}(property[idx].color, 1.0)))
         elseif propertytype == Stroke && has_stroke_opacity
-           print_property(img, StrokePrimitive(RGBA{Float64}(property.primitives[idx].color, 1.0)))
+           print_property(img, Stroke(RGBA{Float64}(property[idx].color, 1.0)))
         else
-            print_property(img, property.primitives[idx])
+            print_property(img, property[idx])
         end
     end
 
@@ -772,14 +772,18 @@ end
 # Form Drawing
 # ------------
 
-function draw{T}(img::SVG, form::Form{T})
-    for i in 1:length(form.primitives)
-        draw(img, form.primitives[i], i)
+function draw{T<:Form}(img::SVG, form::AbstractArray{T})
+    for i in 1:length(form)
+        draw(img, form[i], i)
     end
 end
 
+function draw(img::SVG, form::Form)
+    draw(img, form, 1)
+end
 
-function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
+
+function draw(img::SVG, prim::Rectangle, idx::Int)
     indent(img)
 
     # SVG will hide rectangles with zero height or width. We'd prefer to have
@@ -801,7 +805,7 @@ function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
+function draw(img::SVG, prim::Polygon, idx::Int)
     n = length(prim.points)
     if n <= 1; return; end
 
@@ -814,7 +818,7 @@ function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::ComplexPolygonPrimitive, idx::Int)
+function draw(img::SVG, prim::ComplexPolygon, idx::Int)
     Compose.write(img.out, "<path d=\"")
     for ring in prim.rings
         indent(img)
@@ -827,7 +831,7 @@ function draw(img::SVG, prim::ComplexPolygonPrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::CirclePrimitive, idx::Int)
+function draw(img::SVG, prim::Circle, idx::Int)
     indent(img)
     print(img.out, "<circle cx=\"")
     svg_print_float(img.out, prim.center[1].value)
@@ -841,7 +845,7 @@ function draw(img::SVG, prim::CirclePrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
+function draw(img::SVG, prim::Ellipse, idx::Int)
     cx = prim.center[1].value
     cy = prim.center[2].value
     rx = sqrt((prim.x_point[1].value - cx)^2 +
@@ -879,7 +883,7 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::LinePrimitive, idx::Int)
+function draw(img::SVG, prim::Line, idx::Int)
     n = length(prim.points)
     if n <= 1; return; end
 
@@ -892,7 +896,7 @@ function draw(img::SVG, prim::LinePrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::TextPrimitive, idx::Int)
+function draw(img::SVG, prim::Text, idx::Int)
     indent(img)
     print(img.out, "<text x=\"")
     svg_print_float(img.out, prim.position[1].value)
@@ -933,7 +937,7 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::CurvePrimitive, idx::Int)
+function draw(img::SVG, prim::Curve, idx::Int)
     indent(img)
     print(img.out, "<path fill=\"none\" d=\"M")
     svg_print_float(img.out, prim.anchor0[1].value)
@@ -958,7 +962,7 @@ function draw(img::SVG, prim::CurvePrimitive, idx::Int)
 end
 
 
-function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
+function draw(img::SVG, prim::Bitmap, idx::Int)
     indent(img)
     print(img.out, "<image x=\"")
     svg_print_float(img.out, prim.corner[1].value)
@@ -1168,7 +1172,7 @@ function svg_print_path_op(io::IO, op::ArcRelPathOp)
 end
 
 
-function draw(img::SVG, prim::PathPrimitive, idx::Int)
+function draw(img::SVG, prim::Path, idx::Int)
     indent(img)
     print(img.out, "<path d=\"")
     for op in prim.ops
@@ -1203,41 +1207,52 @@ end
 # -------------------
 
 
-# Return a URL corresponding to a ClipPrimitive
-function clippathurl(img::SVG, property::ClipPrimitive)
+# Return a URL corresponding to a Clip
+function clippathurl(img::SVG, property::Clip)
     return get!(() -> genid(img), img.clippaths, property)
 end
 
+proptype{P <: Property}(x::P) = P
+proptype{P <: Property}(x::Array{P}) = P
 
-function push_property_frame(img::SVG, properties::Vector{Property})
+function add_to_frame{P<:Property}(img::SVG, property::P, frame, scalar_properties, applied_properties)
+    push!(scalar_properties, property)
+    push!(applied_properties, P)
+    frame.has_scalar_properties = true
+end
+
+function add_to_frame{P<:Property}(img::SVG, property::AbstractArray{P}, frame, scalar_properties, applied_properties)
+    frame.vector_properties[P] = property
+    img.vector_properties[P] = property
+end
+
+function push_property_frame(img::SVG, properties::Vector)
     if isempty(properties)
         return
     end
 
     frame = SVGPropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
+    scalar_properties = Array(PropertyNode, 0)
     for property in properties
-        if !isrepeatable(property) && (typeof(property) in applied_properties)
+        # e.g. if given two fill properties, this check makes sure
+        # the first one wins.
+        if !isrepeatable(proptype(property)) && (proptype(property) in applied_properties)
             continue
-        elseif isscalar(property)
-            push!(scalar_properties, property)
-            push!(applied_properties, typeof(property))
-            frame.has_scalar_properties = true
         else
-            frame.vector_properties[typeof(property)] = property
-            img.vector_properties[typeof(property)] = property
+            add_to_frame(img, property, frame, scalar_properties, applied_properties)
         end
     end
+
     push!(img.property_stack, frame)
     if isempty(scalar_properties)
         return
     end
 
-    id_needed = any([isa(property, JSCall) for property in scalar_properties])
+    id_needed = any([proptype(property) === JSCall for property in scalar_properties])
     for property in scalar_properties
-        if isa(property, SVGID)
-            img.current_id = property.primitives[1].value
+        if proptype(property) === SVGID
+            img.current_id = property.value
             img.has_current_id = true
         end
     end
@@ -1251,7 +1266,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     indent(img)
     write(img.out, "<g")
     for property in scalar_properties
-        print_property(img, property.primitives[1])
+        print_property(img, property)
     end
     write(img.out, ">\n");
     img.has_current_id = false
