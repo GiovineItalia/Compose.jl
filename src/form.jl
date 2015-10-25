@@ -10,6 +10,11 @@ Base.in(x::Primitive, y::Primitive) = x == y
 Base.map(f, x::Primitive) = f(x)
 
 
+const empty_tag = symbol("")
+const tag_dict = ObjectIdDict()
+settag!(c, tag) = (tag_dict[tag] = c)
+gettag(c,default...) = get(tag_dict, tag, default...)
+
 # A form is something that ends up as geometry in the graphic.
 
 abstract Form <: Primitive
