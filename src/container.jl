@@ -682,7 +682,7 @@ end
 function showcompact(io::IO, ctx::Context)
     print(io, "Context(")
     first = true
-    for c in ctx.children
+    for c in children(ctx)
         first || print(io, ",")
         first = false
         showcompact(io, c)

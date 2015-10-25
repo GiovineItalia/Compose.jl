@@ -1017,15 +1017,15 @@ function draw_path_op(img::Image, op::CubicCurveShortRelPathOp)
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=(2*x1 - ctrl1[1].value) - x1),
-                      Measure(abs=(2*y1 - ctrl1[2].value) - y1))
+        ctrl1 = (Measure(abs=(2*x1 - ctrl1[1].value) - x1),
+                 Measure(abs=(2*y1 - ctrl1[2].value) - y1))
     end
     cx, cy = ctrl1[1].value, ctrl1[2].value
 
     rel_curve_to(img, ctrl1, op.ctrl2, op.to)
     img.last_ctrl2_point =
-        Point(Measure(abs=op.ctrl2[1].value + xy.x.abs),
-              Measure(abs=op.ctrl2[2].value + xy.y.abs))
+        (Measure(abs=op.ctrl2[1].value + xy.x.abs),
+         Measure(abs=op.ctrl2[2].value + xy.y.abs))
 end
 
 
@@ -1035,10 +1035,10 @@ function draw_path_op(img::Image, op::QuadCurveAbsPathOp)
     x2, y2 = op.to[1].value, op.to[2].value
     cx, cy = op.ctrl1[1].value, op.ctrl1[2].value
     curve_to(img,
-             Point(Measure(abs=(x1 + 2*cx)/3),
-                   Measure(abs=(y1 + 2*cy)/3)),
-             Point(Measure(abs=(x2 + 2*cx)/3),
-                   Measure(abs=(y2 + 2*cy)/3)),
+             (Measure(abs=(x1 + 2*cx)/3),
+              Measure(abs=(y1 + 2*cy)/3)),
+             (Measure(abs=(x2 + 2*cx)/3),
+              Measure(abs=(y2 + 2*cy)/3)),
              op.to)
     img.last_ctrl1_point = op.ctrl1
 end
@@ -1050,10 +1050,10 @@ function draw_path_op(img::Image, op::QuadCurveRelPathOp)
     x2, y2 = op.to[1].value, op.to[2].value
     cx, cy = op.ctrl1[1].value, op.ctrl1[2].value
     rel_curve_to(img,
-             Point(Measure(abs=(x1 + 2*cx)/3),
-                   Measure(abs=(y1 + 2*cy)/3)),
-             Point(Measure(abs=(x2 + 2*cx)/3),
-                   Measure(abs=(y2 + 2*cy)/3)),
+                 (Measure(abs=(x1 + 2*cx)/3),
+                  Measure(abs=(y1 + 2*cy)/3)),
+                 (Measure(abs=(x2 + 2*cx)/3),
+                  Measure(abs=(y2 + 2*cy)/3)),
              op.to)
     img.last_ctrl1_point =
         (Measure(abs=op.ctrl1[1].value + xy.x.abs),
@@ -1076,11 +1076,11 @@ function draw_path_op(img::Image, op::QuadCurveShortAbsPathOp)
     cx, cy = ctrl1[1].value, ctrl1[2].value
 
     curve_to(img,
-             Point(Measure(abs=(x1 + 2*cx)/3),
-                   Measure(abs=(y1 + 2*cy)/3)),
-             Point(Measure(abs=(x2 + 2*cx)/3),
-                   Measure(abs=(y2 + 2*cy)/3)),
-             Point(Measure(abs=x2), Measure(abs=y2)))
+             (Measure(abs=(x1 + 2*cx)/3),
+              Measure(abs=(y1 + 2*cy)/3)),
+             (Measure(abs=(x2 + 2*cx)/3),
+              Measure(abs=(y2 + 2*cy)/3)),
+             (Measure(abs=x2), Measure(abs=y2)))
     img.last_ctrl1_point = ctrl1
 end
 
@@ -1094,20 +1094,20 @@ function draw_path_op(img::Image, op::QuadCurveShortRelPathOp)
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=(2*x1 - ctrl1[1].value) - x1),
-                      Measure(abs=(2*y1 - ctrl1[2].value) - y1))
+        ctrl1 = (Measure(abs=(2*x1 - ctrl1[1].value) - x1),
+                 Measure(abs=(2*y1 - ctrl1[2].value) - y1))
     end
     cx, cy = ctrl1[1].value, ctrl1[2].value
 
     rel_curve_to(img,
-                 Point(Measure(abs=(x1 + 2*cx)/3),
-                       Measure(abs=(y1 + 2*cy)/3)),
-                 Point(Measure(abs=(x2 + 2*cx)/3),
-                       Measure(abs=(y2 + 2*cy)/3)),
-                 Point(Measure(abs=x2), Measure(abs=y2)))
+                 (Measure(abs=(x1 + 2*cx)/3),
+                  Measure(abs=(y1 + 2*cy)/3)),
+                 (Measure(abs=(x2 + 2*cx)/3),
+                  Measure(abs=(y2 + 2*cy)/3)),
+                 (Measure(abs=x2), Measure(abs=y2)))
     img.last_ctrl1_point =
-        Point(Measure(abs=op.ctrl1[1].value + x1),
-              Measure(abs=op.ctrl1[2].value + y1))
+        (Measure(abs=op.ctrl1[1].value + x1),
+         Measure(abs=op.ctrl1[2].value + y1))
 end
 
 
