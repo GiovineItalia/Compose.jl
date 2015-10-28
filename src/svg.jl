@@ -230,7 +230,7 @@ type SVG <: Backend
                  jsmode::Symbol=:none)
 
         img = new()
-        img.id = replace(string(Base.Random.uuid4()), "-", "")[1:8]
+        img.id = string("img-", string(Base.Random.uuid4())[1:8])
         img.width  = width
         img.height = height
         img.out = out
