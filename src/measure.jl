@@ -221,6 +221,21 @@ function isyflipped{S, T, U, V}(units::UnitBox{S, T, U, V})
 end
 
 
+function hasunits(::Type, x::Measure)
+    return false
+end
+
+
+function hasunits{u, T}(::Type{Length{u}}, x::Length{u, T})
+    return true
+end
+
+
+function hasunits(T::Type, x::Measures.BinaryOp)
+    return hasunits(T, x.a) || hasunits(T, x.b)
+end
+
+
 # Canvas Transforms
 # -----------------
 

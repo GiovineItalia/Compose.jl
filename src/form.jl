@@ -200,13 +200,15 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
     width = resolve(box, units, t, p.width)
     height = resolve(box, units, t, p.height)
 
-    if isxflipped(units)
+    if isxflipped(units) && hasunits(Length{:cx}, p.corner[1])
+        # if coordinates are flipped we end up with the corner on the other end
+        # of the rectangle, which is fix here
         x = corner[1] - width
     else
         x = corner[1]
     end
 
-    if isyflipped(units)
+    if isyflipped(units) && hasunits(Length{:cy}, p.corner[2])
         y = corner[2] - height
     else
         y = corner[2]
