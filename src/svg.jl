@@ -141,8 +141,12 @@ type SVGPropertyFrame
     # closed.
     has_mask::Bool
 
+    # True if the property frame has a scalar Clip property, which needs some
+    # special handling.
+    has_scalar_clip::Bool
+
     function SVGPropertyFrame()
-        return new(Dict{Type, Property}(), false, false, false)
+        return new(Dict{Type, Property}(), false, false, false, false)
     end
 end
 
@@ -380,7 +384,7 @@ function finish(img::SVG)
         indent(img)
         write(img.out, "<clipPath id=\"$(id)\">\n  <path d=\"")
         print_svg_path(img.out, clippath.points)
-        write(img.out, "\" />\n</clipPath\n>")
+        write(img.out, "\" />\n</clipPath>\n")
     end
 
     for (primitive, id) in img.batches
@@ -1220,6 +1224,13 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     for property in properties
         if !isrepeatable(property) && (typeof(property) in applied_properties)
             continue
+        elseif isscalar(property) && isa(property, Clip)
+            # clip-path needs to be in it's own group. Otherwise it can cause
+            # problems if we apply a transform to the group.
+            write(img.out, "<g")
+            print_property(img, property.primitives[1])
+            write(img.out, ">\n")
+            frame.has_scalar_clip = true
         elseif isscalar(property)
             push!(scalar_properties, property)
             push!(applied_properties, typeof(property))
@@ -1274,6 +1285,10 @@ function pop_property_frame(img::SVG)
             write(img.out, "</mask>")
         end
         write(img.out, "\n")
+    end
+
+    if frame.has_scalar_clip
+        write(img.out, "</g>\n")
     end
 
     for (propertytype, property) in frame.vector_properties
