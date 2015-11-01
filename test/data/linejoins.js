@@ -8,12 +8,12 @@
      stroke-width="0.3"
      font-size="3.88"
 
-     id="7c17cb36">
-<g fill="#000000" fill-opacity="0.000" stroke-width="2" stroke="#000000" stroke-linejoin="round" id="7c17cb36-1">
+     id="img-7c17cb36">
+<g fill="#000000" fill-opacity="0.000" stroke-width="2" stroke="#000000" stroke-linejoin="round" id="img-7c17cb36-1">
   <path fill="none" d="M5,5 L 10 10 15 5"/>
-  <g stroke-linejoin="miter" id="7c17cb36-2">
+  <g stroke-linejoin="miter" id="img-7c17cb36-2">
     <path fill="none" d="M5,10 L 10 15 15 10"/>
-    <g stroke-linejoin="bevel" id="7c17cb36-3">
+    <g stroke-linejoin="bevel" id="img-7c17cb36-3">
       <path fill="none" d="M5,15 L 10 20 15 15"/>
     </g>
   </g>
