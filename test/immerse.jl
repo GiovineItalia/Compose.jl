@@ -56,3 +56,22 @@ has_tag(obj, tag) = false
 has_tag(obj)      = false
 
 @test find_tagged(ctx)[:rect] == ctx
+
+### Coordinate computations
+function absolute_to_data(x, y, transform, unit_box, parent_box)
+    xt, yt = invert_transform(transform, x, y)
+    (unit_box.x0 + unit_box.width *(xt-parent_box.x0[1])/Measures.width(parent_box),
+     unit_box.y0 + unit_box.height*(yt-parent_box.x0[2])/Measures.height(parent_box))
+end
+
+invert_transform(::Compose.IdentityTransform, x, y) = x, y
+
+function invert_transform(t::Compose.MatrixTransform, x, y)
+    @assert t.M[3,1] == t.M[3,2] == 0
+    xyt = t.M\[x, y, 1.0]
+    xyt[1], xyt[2]
+end
+
+box, units, transform = be.coords[:rect]
+xd, yd = absolute_to_data(0.5mm, 0.5mm, transform, units, box)
+@test_approx_eq_eps xd 0.1417 0.0001
