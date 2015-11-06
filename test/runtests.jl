@@ -1,6 +1,7 @@
 using Compose
 
 include("misc.jl")
+include("immerse.jl")
 
 # Run the examples
 const testdir = dirname(@__FILE__)

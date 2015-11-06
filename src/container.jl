@@ -431,6 +431,7 @@ function draw(backend::Backend, root_container::Container)
     finish(backend)
 end
 
+register_coords(backend::Backend, box, units, transform, form) = nothing
 
 immutable DrawState
     pop_poperty::Bool
@@ -513,6 +514,7 @@ function drawpart(backend::Backend, container::Container,
 
         child = ctx.property_children
         while !isa(child, ListNull)
+            register_coords(backend, box, units, transform, child.head)
             push!(properties, resolve(parent_box, units, parent_transform, child.head))
             child = child.tail
         end
@@ -533,6 +535,7 @@ function drawpart(backend::Backend, container::Container,
     trybatch = canbatch(backend)
     child = ctx.form_children
     while !isa(child, ListNull)
+        register_coords(backend, box, units, transform, child.head)
         form = resolve(box, units, transform, child.head)
         if isempty(form.primitives)
             child = child.tail
