@@ -43,6 +43,12 @@ function register_coords(backend::ImmerseBackend, box, units, transform, propert
     nothing
 end
 
+absolute_native_units(backend::ImmerseBackend, u::Float64) = absolute_native_units(backend.cb, u)
+absolute_native_units(backend::ImmerseBackend, l::Length{:mm}) = absolute_native_units(backend.cb, l.value)
+absolute_native_units(backend::ImmerseBackend, l::Tuple{Length{:mm},Length{:mm}}) = (absolute_native_units(backend.cb, l[1].value), absolute_native_units(backend.cb, l[2].value))
+
+surface(backend::ImmerseBackend) = surface(backend.cb)
+
 draw(backend::ImmerseBackend, form::Form) = draw(backend.cb, form)
 
 finish(backend::ImmerseBackend) = finish(backend.cb)
