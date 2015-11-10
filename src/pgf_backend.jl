@@ -553,7 +553,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
         write(img.buf, ";\n")
     end
    if !isnull(img.fontfamily) && !img.texfonts
-       @printf(img.buf, "\\fontspec{%s}\n", img.fontfamily)
+       @printf(img.buf, "\\fontspec{%s}\n", get(img.fontfamily))
     end
 end
 
