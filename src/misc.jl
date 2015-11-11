@@ -1,14 +1,37 @@
 
 
+#function all_equal(xs::AbstractArray)
+    #if isempty(xs)
+        #return true
+    #end
+    #x = xs[1]
+    #for i in 2:length(xs)
+        #if xs[i] != x
+            #return false
+        #end
+    #end
+    #return x
+#end
+
+
 function iszero{T}(x::T)
     return x == zero(T)
 end
 
 
 function Maybe(T::Type)
-    return @compat(Union{T, (@compat Void)})
+    return @compat(Union{T,Void})
 end
 
+function in_expr_args(ex::Expr)
+    if ex.head === :in
+        return ex.args[1], ex.args[2]
+    elseif (ex.head === :comparison && length(ex.args) == 3 &&
+            ex.args[2] === :in)
+        return ex.args[1], ex.args[3]
+    end
+    error("Not an `in` expression")
+end
 
 # Cycle-zip. Zip two or more arrays, cycling the short ones.
 function cyclezip(xs::AbstractArray...)
@@ -23,13 +46,13 @@ end
 # This generates optimized code for a reoccuring pattern in forms and patterns
 # that looks like:
 #
-#   return Circle([CirclePrimitive(Point(x, y), x_measure(r))
+#   return Circle([CirclePrimitive((x, y), x_measure(r))
 #                  for (x, y, r) in cyclezip(xs, ys, rs)])
 #
 # This macro does the equivalent with
 #
 #   return @makeform (x in xs, y in ys, r in rs),
-#                    CirclePrimitive(Point(x, y), x_measure(r)))
+#                    CirclePrimitive((x, y), x_measure(r)))
 #
 # but much more efficiently.
 macro makeform(args...)
@@ -45,9 +68,7 @@ macro makeform(args...)
     iter_ex = quote begin end end
 
     for iterator in iterators.args
-        @assert iterator.head == :in
-        var = iterator.args[1]
-        arr = iterator.args[2]
+        var, arr = in_expr_args(iterator::Expr)
         ivar = symbol(string("i_", var))
 
         push!(maxlen_ex.args,
@@ -96,9 +117,7 @@ macro makeprimitives(args)
     iter_ex = quote begin end end
 
     for iterator in iterators.args
-        @assert iterator.head == :in
-        var = iterator.args[1]
-        arr = iterator.args[2]
+        var, arr = in_expr_args(iterator::Expr)
 
         push!(maxlen_ex.args, quote
             if isempty($(arr))
@@ -122,3 +141,106 @@ macro makeprimitives(args)
         primitives
     end
 end
+
+
+function narrow_polygon_point_types{XM <: Measure, YM <: Measure}(
+            point_arrays::AbstractArray{Vector{Tuple{XM, YM}}})
+    return (XM, YM)
+end
+
+
+type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (Any, Any)
+type_params{XM <: Measure, YM <: Measure}(p::Type{Tuple{XM, YM}}) = (XM, YM)
+
+function narrow_polygon_point_types(point_arrays::AbstractArray)
+    if !isempty(point_arrays) && all([eltype(arr) <: Vec for arr in point_arrays])
+        xm, ym = type_params(eltype(point_arrays[1]))
+        for i in 2:length(point_arrays)
+            if type_params(eltype(point_arrays[i])) != (xm, ym)
+                return Any, Any
+            end
+        end
+        return xm, ym
+    else
+        return Any, Any
+    end
+end
+
+
+function narrow_polygon_point_types{P <: Tuple}(ring_arrays::Vector{Vector{Vector{P}}})
+    type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (XM, YM)
+
+    xm = nothing
+    ym = nothing
+    for point_arrays in ring_arrays
+        if !isempty(point_arrays) && all([eltype(arr) <: Vec for arr in point_arrays])
+            if xm == nothing
+                xm, ym = type_params(eltype(point_arrays[1]))
+            end
+            for i in 2:length(point_arrays)
+                if type_params(eltype(point_arrays[i])) != (xm, ym)
+                    return Any, Any
+                end
+            end
+        end
+    end
+    if xm == nothing
+        return Any, Any
+    else
+        return xy, ym
+    end
+end
+
+
+# Hacks to make Dates time work as coordinates
+
+if !method_exists(/, (Dates.Day, Dates.Day))
+    /(a::Dates.Day, b::Dates.Day) = a.value / b.value
+end
+
+if !method_exists(/, (Dates.Day, Real))
+    /(a::Dates.Day, b::Real) = Dates.Day(round(Integer, (a.value / b)))
+end
+/(a::Dates.Day, b::AbstractFloat) = convert(Dates.Millisecond, a) / b
+
+if !method_exists(/, (Dates.Millisecond, Dates.Millisecond))
+    /(a::Dates.Millisecond, b::Dates.Millisecond) = a.value / b.value
+end
+
+if !method_exists(/, (Dates.Millisecond, Real))
+    /(a::Dates.Millisecond, b::Real) = Dates.Millisecond(round(Integer, (a.value / b)))
+end
+/(a::Dates.Millisecond, b::AbstractFloat) = Dates.Millisecond(round(Integer, (a.value / b)))
+
+
+if !method_exists(-, (Dates.Date, Dates.DateTime))
+    -(a::Dates.Date, b::Dates.DateTime) = convert(Dates.DateTime, a) - b
+end
+
++(a::Dates.Date, b::Dates.Millisecond) = convert(Dates.DateTime, a) + b
+
+if !method_exists(-, (Dates.DateTime, Dates.Date))
+    -(a::Dates.DateTime, b::Dates.Date) = a - convert(Dates.DateTime, b)
+end
+
+
+if !method_exists(/, (Dates.Day, Dates.Millisecond))
+    /(a::Dates.Day, b::Dates.Millisecond) = convert(Dates.Millisecond, a) / b
+end
+
+for T in [Dates.Hour, Dates.Minute, Dates.Second, Dates.Millisecond]
+    if !method_exists(-, (Dates.Date, T))
+        @eval begin
+            -(a::Dates.Date, b::$(T)) = convert(Dates.DateTime, a) - b
+        end
+    end
+end
+
+
+#if !method_exists(*, (AbstractFloat, Dates.Day))
+    *(a::AbstractFloat, b::Dates.Day) = Dates.Day(round(Integer, (a * b.value)))
+    *(a::Dates.Day, b::AbstractFloat) = b * a
+    *(a::AbstractFloat, b::Dates.Millisecond) = Dates.Millisecond(round(Integer, (a * b.value)))
+    *(a::Dates.Millisecond, b::AbstractFloat) = b * a
+#end
+

@@ -6,11 +6,14 @@ using Colors
 using Iterators
 using DataStructures
 using Compat
+using Measures
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!,
              display, writemime, showcompact, convert, zero, isless, max, fill, size, copy,
              min, max, abs, +, -, *, /
+
+import Measures: resolve, w, h
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
        ParentDrawContext, context, ctxpromise, table, set_units!, minwidth, minheight,
@@ -24,16 +27,17 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
        boundingbox, Patchable
 
-abstract Backend
 
-function isinstalled(pkg, ge=v"0.0.0")
+
+function isinstalled(pkg, ge=v"0.0.0-")
     try
         # Pkg.installed might throw an error,
         # we need to account for it to be able to precompile
         ver = Pkg.installed(pkg)
         ver == nothing && try
             # Assume the version is new enough if the package is in LOAD_PATH
-            require(pkg)
+            ex = Expr(:import, symbol(pkg))
+            @eval $ex
             return true
         catch
             return false
@@ -44,6 +48,17 @@ function isinstalled(pkg, ge=v"0.0.0")
     end
 end
 
+
+abstract Backend
+
+
+"""
+Some backends can more efficiently draw forms by batching. If so, they
+shuld define a similar method that returns true.
+"""
+function canbatch(::Backend)
+    return false
+end
 
 # Allow users to supply strings without deprecation warnings
 parse_colorant(c::Colorant) = c
@@ -65,6 +80,7 @@ nullnode = NullNode()
 include("form.jl")
 include("property.jl")
 include("container.jl")
+include("batch.jl")
 include("table.jl")
 include("stack.jl")
 
@@ -144,7 +160,12 @@ else
     global PDF
 
     msg1 = "Install Cairo.jl to use the "
-    msg2 = " backend. You may need to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji")) afterwards."
+    msg2 = " backend."
+    if VERSION >= v"0.4.0-dev+6521"
+        msg2 = string(msg2,
+            " You may need to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji")) afterwards.")
+    end
+
     PNG(args...) = error(string(msg1, "PNG", msg2))
     PS(args...) = error(string(msg1, "PS", msg2))
     PDF(args...) = error(string(msg1, "PDF", msg2))
@@ -223,9 +244,9 @@ function pad_outer(c::Context,
     top_padding    = size_measure(top_padding)
     bottom_padding = size_measure(bottom_padding)
 
-    root = context(c.box.x0, c.box.y0,
-                   c.box.width + left_padding + right_padding,
-                   c.box.height + top_padding + bottom_padding,
+    root = context(c.box.x0[1], c.box.x0[1],
+                   c.box.a[1] + left_padding + right_padding,
+                   c.box.a[2] + top_padding + bottom_padding,
                    minwidth=c.minwidth,
                    minheight=c.minheight)
     c = copy(c)
@@ -266,9 +287,8 @@ function pad_inner(c::Context,
     top_padding    = size_measure(top_padding)
     bottom_padding = size_measure(bottom_padding)
 
-    root = context(c.box.x0, c.box.y0,
-                   c.box.width,
-                   c.box.height,
+    root = context(c.box.x0[1], c.box.x0[2],
+                   c.box.a[1], c.box.a[2],
                    minwidth=c.minwidth,
                    minheight=c.minheight)
     c = copy(c)

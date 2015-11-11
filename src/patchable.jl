@@ -7,35 +7,74 @@ import Patchwork.Elem
 export Patchable
 
 type Patchable <: Backend
-    width::Float64
-    height::Float64
+    width::Length{:mm}
+    height::Length{:mm}
 
     jsheader::Vector{AbstractString}
     jsmodules::Vector{(@compat Tuple{AbstractString, AbstractString})}
     clip_paths::Dict{ClipPrimitive, AbstractString}
-    vector_properties::Vector
-    function Patchable(width, height, absolute_elems=Elem[])
+    parent_stack::Vector
+    property_stack::Vector
+    function Patchable(width, height)
         width = size_measure(width)
         height = size_measure(height)
-        if !isabsolute(width) || !isabsolute(height)
-            error("SVG image size must be specified in absolute units.")
-        end
-        new(width.abs,
-            height.abs,
-            AbstractString[],
+        new(
+            width,
+            height,
+            String[],
             (@compat Tuple{AbstractString, AbstractString})[],
             Dict{ClipPrimitive, AbstractString}(),
+            Elem[Elem(:svg, :svg)],
             Any[])
     end
 end
 
+vector_properties(img::Patchable) = if !isempty(img.property_stack)
+    img.property_stack[end].vector_properties
+end
+
+immutable PatchablePropertyFrame
+    has_scalar_properties::Bool
+    vector_properties::Dict
+end
+
+function push_property_frame(img::Patchable, properties)
+    applied_properties = Set{Type}() # Don't double apply the same property
+    scalar_properties = Array(Property, 0)
+    vector_props = Dict()
+    for property in properties
+        if !isrepeatable(property) && (typeof(property) in applied_properties)
+            continue
+        elseif isscalar(property)
+            push!(scalar_properties, property)
+            push!(applied_properties, typeof(property))
+        else
+            vector_props[typeof(property)] = property
+        end
+    end
+    push!(img.property_stack, PatchablePropertyFrame(!isempty(scalar_properties), vector_props))
+    if isempty(scalar_properties)
+        return
+    end
+    # TODO: current_id???
+
+    props = Dict()
+    for p in scalar_properties
+        draw!(img, p.primitives[1], props)
+    end
+    push!(img.parent_stack, Elem(:svg, :g) & props)
+end
+
+function pop_property_frame(img::Patchable)
+    frame = pop!(img.property_stack)
+    if frame.has_scalar_properties
+        last = pop!(img.parent_stack)
+        img.parent_stack[end] <<= last
+    end
+end
 
 iswithjs(::Patchable) = false
 iswithousjs(::Patchable) = true
-
-vector_properties(img::Patchable) = if !isempty(img.vector_properties)
-    img.vector_properties[end]
-end
 
 clip_path_id(img, path) =
    if (haskey(img.clip_paths, path))
@@ -46,19 +85,27 @@ clip_path_id(img, path) =
        return id
    end
 
-# Declare that we need the recursive drawing procedure
-function draw(img::Patchable, root::Context)
-    root = Elem(:svg, :svg,
-         draw_recursive(img, root),
-         width=string(img.width, "mm"),
-         height=string(img.height, "mm"),
-         viewBox=string("0 0 ", img.width, ' ', img.height),
-         stroke=svg_fmt_color(default_stroke_color),
-         fill=svg_fmt_color(default_fill_color))
+# Specialize absolute form drawing method for Patchwork backend
+function draw(backend::Patchable, box::AbsoluteBox, units::UnitBox, t::Transform,
+              form::Form)
+    absform = Form([resolve(box, units, t, primitive)
+                  for primitive in form.primitives])
+    backend.parent_stack[end] <<= draw(backend, absform)
+end
 
-    root &= @compat Dict("stroke-width" => svg_fmt_float(default_line_width.abs),
-                 "font-size" => svg_fmt_float(default_font_size.abs))
+function finish(img::Patchable)
+    root = img.parent_stack[end]
+    @assert isa(root, Elem{:svg, :svg})
+    root &= @compat Dict(
+        :width=>string(img.width),
+        :height=>string(img.height),
+        :viewBox=>string("0 0 ", img.width.value, ' ', img.height.value),
+        :stroke=>svg_fmt_color(default_stroke_color),
+        :fill=>svg_fmt_color(default_fill_color)
+    )
 
+    root &= @compat Dict("stroke-width" => svg_fmt_float(default_line_width.value),
+                 "font-size" => svg_fmt_float(default_font_size.value))
     if !isempty(img.clip_paths)
         defs = Elem(:svg, :defs)
         for (path, id) in img.clip_paths
@@ -68,36 +115,16 @@ function draw(img::Patchable, root::Context)
         end
         root = root << defs
     end
+    img.parent_stack[end] = Elem(:svg, :svg)
     root
 end
 
 root_box(img::Patchable) =
-    AbsoluteBoundingBox(0.0, 0.0, img.width, img.height)
+    BoundingBox(0.0mm, 0.0mm, img.width, img.height)
 
 init_context(::Patchable, ::Context) = Elem(:svg, :g)
 
 typealias SVGPart @compat(Union{Elem, Dict, (@compat Void)})
-
-addto(::Patchable, acc::(@compat Void), child::(@compat Void)) = nothing
-addto(::Patchable, acc::(@compat Void), child::SVGPart) = child
-addto(::Patchable, acc::SVGPart, child::(@compat Void)) = acc
-addto(::Patchable, acc::Elem{:svg, :g}, child::Elem) = acc << child
-
-addto(p::Patchable, acc::(@compat Void), child::Array) = addto(p, Elem(:svg, :g), child)
-function addto(p::Patchable, acc::Elem{:svg, :g}, child::Array)
-    for i=1:length(child)
-        @inbounds acc = addto(p, acc, child[i])
-    end
-    acc
-end
-
-addto(::Patchable, acc::Elem, child::Elem) = Elem(:svg, :g, acc, child)
-addto(::Patchable, acc::Elem, child::Dict) = acc & child
-addto(::Patchable, acc::(@compat Void), child::Dict) = Elem(:svg, :g) & child
-
-function push_property_frame(img::Patchable, vector_props)
-    push!(img.vector_properties, vector_props)
-end
 
 function properties_at_index(img, prop_vecs, i)
     props = Dict()
@@ -108,10 +135,6 @@ function properties_at_index(img, prop_vecs, i)
         draw!(img, property.primitives[i], props)
     end
     props
-end
-
-function pop_property_frame(img::Patchable)
-    pop!(img.vector_properties)
 end
 
 # Form Drawing
@@ -125,7 +148,7 @@ function draw(img::Patchable, form::Form)
         elem = draw(img, form.primitives[i])
         if properties !== nothing && !isempty(properties)
             props = properties_at_index(img, properties, i)
-            elem = addto(img, elem, props)
+            elem &= props
         end
         acc[i] = elem
     end
@@ -140,32 +163,32 @@ end
 
 draw(img::Patchable, prim::CirclePrimitive) =
     Elem(:svg, :circle,
-         cx=prim.center.x.abs,
-         cy=prim.center.y.abs,
-         r=prim.radius.abs)
+         cx=prim.center[1].value,
+         cy=prim.center[2].value,
+         r=prim.radius.value)
 
 draw(img::Patchable, prim::CurvePrimitive) =
     Elem(:svg, :path,
          fill="none",
          path=string("M"
-                     , prim.anchor0.x.abs, ','
-                     , prim.anchor0.y.abs, "C"
-                     , prim.ctrl0.x.abs, ','
-                     , prim.ctrl0.y.abs, ' '
-                     , prim.ctrl1.x.abs, ','
-                     , prim.ctrl1.y.abs, ' '
-                     , prim.anchor1.x.abs, ','
-                     , prim.anchor1.y.abs))
+                     , prim.anchor0[1].value, ','
+                     , prim.anchor0[2].value, "C"
+                     , prim.ctrl0[1].value, ','
+                     , prim.ctrl0[2].value, ' '
+                     , prim.ctrl1[1].value, ','
+                     , prim.ctrl1[2].value, ' '
+                     , prim.anchor1[1].value, ','
+                     , prim.anchor1[2].value))
 
 function draw(img::Patchable, prim::EllipsePrimitive)
-    cx = prim.center.x.abs
-    cy = prim.center.y.abs
-    rx = sqrt((prim.x_point.x.abs - cx)^2 +
-              (prim.x_point.y.abs - cy)^2)
-    ry = sqrt((prim.y_point.x.abs - cx)^2 +
-              (prim.y_point.y.abs - cy)^2)
-    theta = rad2deg(atan2(prim.x_point.y.abs - cy,
-                          prim.x_point.x.abs - cx))
+    cx = prim.center[1].value
+    cy = prim.center[2].value
+    rx = sqrt((prim.x_point[1].value - cx)^2 +
+              (prim.x_point[2].value - cy)^2)
+    ry = sqrt((prim.y_point[1].value - cx)^2 +
+              (prim.y_point[2].value - cy)^2)
+    theta = rad2deg(atan2(prim.x_point[2].value - cy,
+                          prim.x_point[1].value - cx))
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
         return nothing
@@ -181,7 +204,7 @@ function draw(img::Patchable, prim::EllipsePrimitive)
     el
 end
 
-function svg_fmt_path{P <: Point}(points::Vector{P}, bridge_gaps::Bool=false)
+function svg_fmt_path(points::Vector, bridge_gaps::Bool=false)
     io=IOBuffer()
     print_svg_path(io, points, bridge_gaps)
     takebuf_string(io)
@@ -191,12 +214,7 @@ function draw(img::Patchable, prim::LinePrimitive)
     n = length(prim.points)
     if n <= 1; return; end
 
-    paths = make_paths(prim.points)
-    if length(paths) > 1
-        addto(Elem(:svg, :g)[Elem(:svg, :path, fill="none", d=svg_fmt_path(path, true)) for path in paths])
-    else
-        Elem(:svg, :path, fill="none", d=svg_fmt_path(paths[1], true))
-    end
+    Elem(:svg, :path, fill="none", d=svg_fmt_path(prim.points, true))
 end
 
 function svg_fmt_path_ops(ops)
@@ -214,12 +232,7 @@ function draw(img::Patchable, prim::PolygonPrimitive)
      n = length(prim.points)
      if n <= 1; return; end
 
-    paths = make_paths(prim.points)
-    if length(paths) > 1
-        addto(Elem(:svg, :g)[Elem(:svg, :path, d=svg_fmt_path(path, true) * " z") for path in paths])
-    else
-        Elem(:svg, :path, d=svg_fmt_path(paths[1], true) * " z")
-    end
+     Elem(:svg, :path, d=svg_fmt_path(prim.points, true) * " z")
 end
 
 function draw(img::Patchable, prim::ComplexPolygonPrimitive)
@@ -227,20 +240,20 @@ function draw(img::Patchable, prim::ComplexPolygonPrimitive)
 end
 
 function draw(img::Patchable, prim::RectanglePrimitive)
-    width = max(prim.width.abs, 0.01)
-    height = max(prim.height.abs, 0.01)
+    width = max(prim.width.value, 0.01)
+    height = max(prim.height.value, 0.01)
 
     Elem(:svg, :rect,
-         x=prim.corner.x.abs,
-         y=prim.corner.y.abs,
+         x=prim.corner[1].value,
+         y=prim.corner[2].value,
          width=width,
          height=height)
 end
 
 function draw(img::Patchable, prim::TextPrimitive)
     el = pango_to_elems(prim.value) & @compat Dict(
-            :x=>prim.position.x.abs,
-            :y=>prim.position.y.abs)
+            :x=>prim.position[1].value,
+            :y=>prim.position[2].value)
     if is(prim.halign, hcenter)
         el &= @compat Dict("text-anchor" => "middle")
     elseif is(prim.halign, hright)
@@ -255,8 +268,8 @@ function draw(img::Patchable, prim::TextPrimitive)
     if abs(prim.rot.theta) > 1e-4
         el &= @compat Dict(:transform => string("rotate(",
                                      rad2deg(prim.rot.theta), ' ',
-                                     svg_fmt_float(prim.rot.offset.x.abs), ' ',
-                                     svg_fmt_float(prim.rot.offset.y.abs), ')'))
+                                     svg_fmt_float(prim.rot.offset[1].value), ' ',
+                                     svg_fmt_float(prim.rot.offset[2].value), ')'))
      end
      el
 
@@ -304,7 +317,7 @@ draw(img::Patchable, prim::FontPrimitive) =
     "font-family", escape_string(prim.family)
 
 draw(img::Patchable, prim::FontSizePrimitive) =
-    "font-size", prim.value.abs
+    "font-size", prim.value.value
 
 function draw(img::Patchable, prim::JSCallPrimitive)
     nothing
@@ -319,7 +332,7 @@ function draw(img::Patchable, prim::JSIncludePrimitive)
 end
 
 draw(img::Patchable, prim::LineWidthPrimitive) =
-    "stroke-width", prim.value.abs
+    "stroke-width", prim.value.value
 
 draw(img::Patchable, prim::SVGAttributePrimitive) = nothing
     #prim.attribute, escape_string(prim.value)
@@ -334,7 +347,7 @@ function draw(img::Patchable, prim::StrokeDashPrimitive)
     if isempty(prim.value)
         "stroke-dasharray", :none
     else
-        "stroke-dasharray", join([v.abs for v in prim.value], ',')
+        "stroke-dasharray", join([v.value for v in prim.value], ',')
     end
 end
 

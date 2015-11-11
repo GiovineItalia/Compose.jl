@@ -1,6 +1,4 @@
-
 using Colors, Base.Test
-import Compose: Point
 
 # showcompact
 tomato_bisque =
@@ -11,11 +9,11 @@ tomato_bisque =
 io = IOBuffer()
 showcompact(io, tomato_bisque)
 str = takebuf_string(io)
-@test str == "Context(Context(f,R),Context(f,C))"
+@test str == "Context(Context(R,f),Context(C,f))"
 
 # Tagging
 function points(xa, ya)
-    [Point(x,y) for (x,y) in zip(xa,ya)]
+    [(x, y) for (x, y) in zip(xa, ya)]
 end
 
 pnts = points(rand(5), rand(5))

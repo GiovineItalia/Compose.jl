@@ -3,6 +3,29 @@
 abstract PropertyPrimitive
 
 
+# Meaningless isless function used to sort in optimize_batching
+function Base.isless{T <: PropertyPrimitive}(a::T, b::T)
+    for field in fieldnames(T)
+        x = getfield(a, field)
+        y = getfield(b, field)
+        if isa(x, Colorant)
+            if color_isless(x, y)
+                return true
+            elseif color_isless(y, x)
+                return false
+            end
+        else
+            if x < y
+                return true
+            elseif x > y
+                return false
+            end
+        end
+    end
+    return false
+end
+
+
 immutable Property{P <: PropertyPrimitive} <: ComposeNode
 	primitives::Vector{P}
 end
@@ -24,17 +47,14 @@ function isrepeatable(p::Property)
 end
 
 
-function absolute_units{T}(p::Property{T}, t::Transform, units::UnitBox,
-                           box::AbsoluteBoundingBox)
-    return Property{T}([absolute_units(primitive, t, units, box)
-                        for primitive in p.primitives])
+function resolve{T}(box::AbsoluteBox, units::UnitBox, t::Transform, p::Property{T})
+    return Property{T}([resolve(box, units, t, primitive) for primitive in p.primitives])
 end
 
 
 # Property primitive catchall: most properties don't need measure transforms
-function absolute_units{T <: PropertyPrimitive}(primitive::T, t::Transform,
-                                                units::UnitBox,
-                                                box::AbsoluteBoundingBox)
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::PropertyPrimitive)
     return primitive
 end
 
@@ -112,9 +132,9 @@ function strokedash(values::AbstractArray{AbstractArray})
 end
 
 
-function absolute_units(primitive::StrokeDashPrimitive, t::Transform,
-                        units::UnitBox, box::AbsoluteBoundingBox)
-    return StrokeDashPrimitive([Measure(absolute_units(v, t, units, box))
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::StrokeDashPrimitive)
+    return StrokeDashPrimitive([resolve(box, units, t, v)
                                 for v in primitive.value])
 end
 
@@ -215,9 +235,9 @@ function linewidth(values::AbstractArray)
 end
 
 
-function absolute_units(primitive::LineWidthPrimitive, t::Transform,
-                        units::UnitBox, box::AbsoluteBoundingBox)
-    return LineWidthPrimitive(Measure(absolute_units(primitive.value, t, units, box)))
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::LineWidthPrimitive)
+    return LineWidthPrimitive(resolve(box, units, t, primitive.value))
 end
 
 prop_string(::LineWidth) = "lw"
@@ -306,7 +326,7 @@ prop_string(::StrokeOpacity) = "so"
 # Clip
 # ----
 
-immutable ClipPrimitive{P <: Point} <: PropertyPrimitive
+immutable ClipPrimitive{P <: Vec} <: PropertyPrimitive
     points::Vector{P}
 end
 
@@ -314,29 +334,43 @@ typealias Clip Property{ClipPrimitive}
 
 
 function clip()
-    return Clip([ClipPrimitive(Array(Point, 0))])
+    return Clip([ClipPrimitive(Array(Vec, 0))])
 end
 
 
-function clip(points::XYTupleOrPoint...)
-    return Clip([ClipPrimitive([convert(Point, point) for point in points])])
+function clip{T <: XYTupleOrVec}(points::AbstractArray{T})
+    XM, YM = narrow_polygon_point_types(Vector[points])
+    if XM == Any
+        XM = Length{:cx, Float64}
+    end
+    if YM == Any
+        YM = Length{:cy, Float64}
+    end
+    VecType = Tuple{XM, YM}
+
+    prim = ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])
+    return Clip(typeof(prim)[prim])
 end
 
 
 function clip(point_arrays::AbstractArray...)
-    clipprims = Array(ClipPrimitive, length(point_arrays))
+    XM, YM = narrow_polygon_point_types(point_arrays)
+    VecType = XM == YM == Any ? Vec : Vec{XM, YM}
+    PrimType = XM == YM == Any ? ClipPrimitive : ClipPrimitive{VecType}
+
+    clipprims = Array(PrimType, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
-        clipprims[i] = ClipPrimitive([convert(Point, point)
-                                      for point in point_array])
+        clipprims[i] = ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
+                                             for point in point_array])
     end
-    return Clip(clipprims)
+    return Property{PrimType}(clipprims)
 end
 
 
-function absolute_units(primitive::ClipPrimitive, t::Transform, units::UnitBox,
-                        box::AbsoluteBoundingBox)
-    return ClipPrimitive(SimplePoint[absolute_units(point, t, units, box)
-                                     for point in primitive.points])
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::ClipPrimitive)
+    return ClipPrimitive{AbsoluteVec2}(
+        AbsoluteVec2[resolve(box, units, t, point) for point in primitive.points])
 end
 
 prop_string(::Clip) = "clp"
@@ -362,6 +396,16 @@ end
 
 prop_string(::Font) = "fnt"
 
+function Base.hash(primitive::FontPrimitive, h::UInt64)
+    return hash(primitive.family, h)
+end
+
+
+function Base.(:(==))(a::FontPrimitive, b::FontPrimitive)
+    return a.family == b.family
+end
+
+
 # FontSize
 # --------
 
@@ -386,9 +430,9 @@ function fontsize(values::AbstractArray)
 end
 
 
-function absolue_units(primitive::FontSizePrimitive, t::Transform,
-                       units::UnitBox, box::AbsoluteBoundingBox)
-    return FontSizePrimitive(Measure(absolute_units(primitive.value, t, units, box)))
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::FontSizePrimitive)
+    return FontSizePrimitive(resolve(box, units, t, primitive.value))
 end
 
 prop_string(::FontSize) = "fsz"
@@ -415,11 +459,21 @@ end
 prop_string(::SVGID) = "svgid"
 
 
+function Base.hash(primitive::SVGIDPrimitive, h::UInt64)
+    return hash(primitive.value, h)
+end
+
+
+function Base.(:(==))(a::SVGIDPrimitive, b::SVGIDPrimitive)
+    return a.value == b.value
+end
+
+
 # SVGClass
 # --------
 
 immutable SVGClassPrimitive <: PropertyPrimitive
-    value::AbstractString
+    value::ASCIIString
 end
 
 typealias SVGClass Property{SVGClassPrimitive}
@@ -428,6 +482,7 @@ typealias SVGClass Property{SVGClassPrimitive}
 function svgclass(value::AbstractString)
     return SVGClass([SVGClassPrimitive(value)])
 end
+
 
 function svgclass(values::AbstractArray)
     return SVGClass([SVGClassPrimitive(value) for value in values])
@@ -441,12 +496,22 @@ function prop_string(svgc::SVGClass)
     end
 end
 
+function Base.hash(primitive::SVGClassPrimitive, h::UInt64)
+    return hash(primitive.value, h)
+end
+
+
+function Base.(:(==))(a::SVGClassPrimitive, b::SVGClassPrimitive)
+    return a.value == b.value
+end
+
+
 # SVGAttribute
 # ------------
 
 immutable SVGAttributePrimitive <: PropertyPrimitive
-    attribute::AbstractString
-    value::AbstractString
+    attribute::ASCIIString
+    value::ASCIIString
 end
 
 typealias SVGAttribute Property{SVGAttributePrimitive}
@@ -471,6 +536,18 @@ function svgattribute(attributes::AbstractArray, values::AbstractArray)
 end
 
 prop_string(::SVGAttribute) = "svga"
+
+function Base.hash(primitive::SVGAttributePrimitive, h::UInt64)
+    h = hash(primitive.attribute, h)
+    h = hash(primitive.value, h)
+    return h
+end
+
+
+function Base.(:(==))(a::SVGAttributePrimitive, b::SVGAttributePrimitive)
+    return a.attribute == b.attribute && a.value == b.value
+end
+
 
 # JSInclude
 # ---------
@@ -517,8 +594,8 @@ function jscall(codes::AbstractArray,
 end
 
 
-function absolute_units(primitive::JSCallPrimitive, t::Transform,
-                        units::UnitBox, box::AbsoluteBoundingBox)
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 primitive::JSCallPrimitive)
     # we are going to build a new string by scanning across "code" and
     # replacing %x with translated x values, %y with translated y values
     # and %s with translated size values.
@@ -541,16 +618,16 @@ function absolute_units(primitive::JSCallPrimitive, t::Transform,
         elseif primitive.code[j+1] == '%'
             write(newcode, '%')
         elseif primitive.code[j+1] == 'x'
-            val = absolute_x_position(primitive.args[validx], t, units, box)
-            write(newcode, svg_fmt_float(val))
+            val = resolve(box, units, t, (primitive.args[validx], 0mm))
+            write(newcode, svg_fmt_float(val[1].value))
             validx += 1
         elseif primitive.code[j+1] == 'y'
-            val = absolute_y_position(primitive.args[validx], t, units, box)
-            write(newcode, svg_fmt_float(val))
+            val = resolve(box, units, t, (0mm, primitive.args[validx]))
+            write(newcode, svg_fmt_float(val[2].value))
             validx += 1
         elseif primitive.code[j+1] == 's'
-            val = absolute_units(primitive.args[validx], t, units, box)
-            write(newcode, svg_fmt_float(val.abs))
+            val = resolve(box, units, t, primitive.args[validx])
+            write(newcode, svg_fmt_float(val.value))
             validx += 1
         else
             write(newcode, '%', primitive.code[j+1])
@@ -566,5 +643,15 @@ end
 function isrepeatable(p::JSCall)
     return true
 end
+
+
+function Base.isless(a::FillPrimitive, b::FillPrimitive)
+    return color_isless(a.color, b.color)
+end
+
+function Base.isless(a::StrokePrimitive, b::StrokePrimitive)
+    return color_isless(a.color, b.color)
+end
+
 
 prop_string(::JSCall) = "jsc"

@@ -16,45 +16,42 @@ function hstack(x0, y0, height, aligned_contexts::(@compat Tuple{Context, VAlign
         return context(x0, y0, 0, height)
     end
 
-    # To get the expected results, we scale width units, so that everything
-    # fits.
-    total_width_units = sum(Float64[context.box.width.cw
-                                    for (context, _) in aligned_contexts])
-    width = sum(Measure[context.box.width
-                        for (context, _) in aligned_contexts])
-    width = Measure(width,
-                    cw=total_width_units > 0.0 ?
-                        width.cw / total_width_units : 0.0)
+    widths = [aligned_context[1].box.a[1] for aligned_context in aligned_contexts]
+    width = sum(widths)
+    total_width_units = sum_component(Length{:w, Float64}, width)
+
+    if total_width_units > 0.0
+        width -= total_width_units*w
+        width += 1w
+    end
 
     height = y_measure(height)
 
     root = context(x0, y0, width, height)
-    x = Measure()
+    x = 0w
     for (context, aln) in aligned_contexts
         context = copy(context)
-        context.box = copy(context.box)
 
-        if context.box.width.cw != 0.0
-            context.box =
-                BoundingBox(context.box,
-                    width=Measure(context.box.width,
-                        cw=context.box.width.cw / total_width_units))
+        w_component = sum_component(Length{:w, Float64}, context.box.a[1])
+        box_w = context.box.a[1]
+        if w_component != 0.0
+            box_w = scale_component(Length{:w, Float64},
+                                    w_component / total_width_units,
+                                    context.box.a[1])
         end
 
-        # Should we interpret vbottom to mean 0?
-        context.box = BoundingBox(context.box, x0=x)
+        y = context.box.x0[2]
         if aln == vtop
-            context.box = BoundingBox(context.box, y0=Measure{T}())
+            y = 0h
         elseif aln == vcenter
-            context.box = BoundingBox(context.box,
-                            y0=(height / 2) - (context.box.height / 2))
+            y = (height / 2) - (context.box.a[2] / 2)
         elseif aln == vbottom
-            context.box = BoundingBox(context.box,
-                            y0=height - context.box.height)
+            y = height - context.box.a[2]
         end
 
+        context.box = BoundingBox((x, y), (box_w, context.box.a[2]))
         root = compose!(root, context)
-        x += context.box.width
+        x += context.box.a[1]
     end
 
     return root
@@ -73,7 +70,7 @@ hstack() = context()
 function hstack(contexts::Context...; x0::MeasureOrNumber=0,
                 y0::MeasureOrNumber=0, height=0)
     if height == 0
-        height = maximum([context.box.height for context in contexts])
+        height = maximum([context.box.a[2] for context in contexts])
     end
     return hstack(x0, y0, height, [(context, vcenter) for context in contexts]...)
 end
@@ -94,43 +91,42 @@ function vstack(x0, y0, width, aligned_contexts::(@compat Tuple{Context, HAlignm
         return context(x0, y0, width, 0)
     end
 
-    # Scale height units
-    total_height_units = sum(Float64[context.box.height.ch
-                                     for (context, _) in aligned_contexts])
-    height = sum(Measure[context.box.height
-                         for (context, _) in aligned_contexts])
-    height = Measure(height,
-                     ch=total_height_units > 0.0 ?
-                          height.ch / total_height_units : 0.0)
+    heights = [aligned_context[1].box.a[2] for aligned_context in aligned_contexts]
+    height = sum(heights)
+    total_height_units = sum_component(Length{:h, Float64}, height)
+
+    if total_height_units > 0.0
+        height -= total_height_units*h
+        height += 1h
+    end
 
     width = x_measure(width)
 
     root = context(x0, y0, width, height)
-    y = Measure()
+    y = 0h
     for (context, aln) in aligned_contexts
         context = copy(context)
-        context.box = copy(context.box)
 
-        if context.box.height.ch != 0.0
-            context.box =
-                BoundingBox(context.box,
-                    height=Measure(context.box.height,
-                        ch=context.box.height.ch / total_height_units))
+        h_component = sum_component(Length{:h, Float64}, context.box.a[2])
+        box_h = context.box.a[2]
+        if h_component != 0.0
+            box_h = scale_component(Length{:h, Float64},
+                                    h_component / total_height_units,
+                                    context.box.a[2])
         end
 
-        context.box = BoundingBox(context.box, y0=y)
+        x = context.box.x0[1]
         if aln == hleft
-            context.box = BoundingBox(context.box, x0=Measure{T}())
+            x = 0w
         elseif aln == hcenter
-            context.box = BoundingBox(context.box,
-                            x0=(width / 2) - (context.box.width / 2))
+            x = (width / 2) - (context.box.a[1] / 2)
         elseif aln == hright
-            context.box = BoundingBox(context.box,
-                            x0 = width - context.box.width)
+            x = width - context.box.a[1]
         end
 
-        root = compose(root, context)
-        y += context.box.height
+        context.box = BoundingBox((x, y), (context.box.a[1], box_h))
+        root = compose!(root, context)
+        y += context.box.a[2]
     end
 
     return root
@@ -149,7 +145,7 @@ vstack() = context()
 function vstack(contexts::Context...; x0::MeasureOrNumber=0,
                 y0::MeasureOrNumber=0, width::MeasureOrNumber=0)
     if width == 0
-        width = max([context.box.width for context in contexts]...)
+        width = maximum([context.box.a[1] for context in contexts])
     end
     return vstack(x0, y0, width, [(context, hcenter) for context in contexts]...)
 end

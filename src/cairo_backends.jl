@@ -3,8 +3,9 @@ using Compat
 # Cairo backend for compose
 import Cairo
 
-import Cairo.CairoContext, Cairo.CairoSurface, Cairo.CairoARGBSurface,
-       Cairo.CairoEPSSurface, Cairo.CairoPDFSurface, Cairo.CairoSVGSurface
+using Cairo: CairoContext, CairoSurface, CairoARGBSurface,
+             CairoEPSSurface, CairoPDFSurface, CairoSVGSurface,
+             CairoImageSurface
 
 abstract ImageBackend
 abstract PNGBackend <: ImageBackend
@@ -22,6 +23,10 @@ type ImagePropertyState
     stroke_linecap::LineCap
     stroke_linejoin::LineJoin
     visible::Bool
+    linewidth::AbsoluteLength
+    fontsize::AbsoluteLength
+    font::AbstractString
+    clip::Nullable{ClipPrimitive}
 end
 
 type ImagePropertyFrame
@@ -52,11 +57,15 @@ type Image{B <: ImageBackend} <: Backend
     stroke_linecap::LineCap
     stroke_linejoin::LineJoin
     visible::Bool
+    linewidth::AbsoluteLength
+    fontsize::AbsoluteLength
+    font::AbstractString
+    clip::Nullable{ClipPrimitive}
 
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
     property_stack::Vector{ImagePropertyFrame}
-    vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
+    vector_properties::Dict{Type, Nullable{Property}}
 
     # Close the surface when finished
     owns_surface::Bool
@@ -77,8 +86,8 @@ type Image{B <: ImageBackend} <: Backend
     ppmm::Float64
 
     # For use with the t/T and s/S commands in SVG-style paths
-    last_ctrl1_point::@compat(Union{Point, (@compat Void)})
-    last_ctrl2_point::@compat(Union{Point, (@compat Void)})
+    last_ctrl1_point::Nullable{AbsoluteVec2}
+    last_ctrl2_point::Nullable{AbsoluteVec2}
 
     function Image(surface::CairoSurface, ctx::CairoContext, out::IO)
         img = new()
@@ -87,6 +96,7 @@ type Image{B <: ImageBackend} <: Backend
         img.height = 0
         img.surface = surface
         img.ctx = ctx
+
         img.stroke = default_stroke_color == nothing ?
                         RGBA{Float64}(0, 0, 0, 0) : convert(RGBA{Float64}, default_stroke_color)
         img.fill   = default_fill_color == nothing ?
@@ -95,17 +105,22 @@ type Image{B <: ImageBackend} <: Backend
         img.stroke_linecap = LineCapButt()
         img.stroke_linejoin = LineJoinMiter()
         img.visible = true
+        img.linewidth = default_line_width
+        img.fontsize = default_font_size
+        img.font = default_font_family
+        img.clip = Nullable{ClipPrimitive}()
+
         img.state_stack = Array(ImagePropertyState, 0)
         img.property_stack = Array(ImagePropertyFrame, 0)
-        img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
+        img.vector_properties = Dict{Type, Nullable{Property}}()
         img.owns_surface = false
         img.ownedfile = false
         img.filename = nothing
         img.finished = false
         img.emit_on_finish = false
         img.ppmm = 72 / 25.4
-        img.last_ctrl1_point = nothing
-        img.last_ctrl2_point = nothing
+        img.last_ctrl1_point = Nullable{AbsoluteVec2}()
+        img.last_ctrl2_point = Nullable{AbsoluteVec2}()
         img
     end
 
@@ -125,13 +140,13 @@ type Image{B <: ImageBackend} <: Backend
         width = size_measure(width)
         height = size_measure(height)
 
-        if !isabsolute(width) || !isabsolute(height)
+        if !isa(width, AbsoluteLength) || !isa(height, AbsoluteLength)
             error("Image size must be specificed in absolute units.")
         end
 
         ppmm = dpi / 25.4
-        width = width.abs * ppmm
-        height = height.abs * ppmm
+        width = width.value * ppmm
+        height = height.value * ppmm
 
         surface = newsurface(B, out, width, height)
         img = Image{B}(surface, CairoContext(surface), out)
@@ -166,10 +181,21 @@ type Image{B <: ImageBackend} <: Backend
     end
 end
 
+
 typealias PNG Image{PNGBackend}
 typealias PDF Image{PDFBackend}
 typealias PS  Image{PSBackend}
 typealias CAIROSURFACE  Image{CairoBackend}
+
+
+function canbatch(img::Image)
+    for vp in values(img.vector_properties)
+        if !isnull(vp)
+            return false
+        end
+    end
+    return true
+end
 
 
 # convert compose absolute units (millimeters) to the absolute units used by the
@@ -179,12 +205,12 @@ function absolute_native_units{B}(img::Image{B}, u::Float64)
     img.ppmm * u
 end
 
-function width(img::Image)
-    Cairo.width(img.surface) / img.ppmm
+function Measures.width(img::Image)
+    (Cairo.width(img.surface) / img.ppmm) * mm
 end
 
-function height(img::Image)
-    Cairo.height(img.surface) / img.ppmm
+function Measures.height(img::Image)
+    (Cairo.height(img.surface) / img.ppmm) * mm
 end
 
 
@@ -284,7 +310,7 @@ end
 
 
 function root_box(img::Image)
-    AbsoluteBoundingBox(0.0, 0.0, width(img), height(img))
+    BoundingBox(width(img), height(img))
 end
 
 
@@ -345,7 +371,7 @@ function pop_property_frame(img::Image)
     end
 
     for (propertytype, property) in frame.vector_properties
-        img.vector_properties[propertytype] = nothing
+        img.vector_properties[propertytype] = Nullable{Property}()
         for i in length(img.property_stack):-1:1
             if haskey(img.property_stack[i].vector_properties, propertytype)
                 img.vector_properties[propertytype] =
@@ -364,7 +390,11 @@ function save_property_state(img::Image)
             img.stroke_dash,
             img.stroke_linecap,
             img.stroke_linejoin,
-            img.visible))
+            img.visible,
+            img.linewidth,
+            img.fontsize,
+            img.font,
+            img.clip))
     Cairo.save(img.ctx)
 end
 
@@ -377,6 +407,10 @@ function restore_property_state(img::Image)
     img.stroke_linecap = state.stroke_linecap
     img.stroke_linejoin = state.stroke_linejoin
     img.visible = state.visible
+    img.linewidth = state.linewidth
+    img.fontsize = state.fontsize
+    img.font = state.font
+    img.clip = state.clip
     Cairo.restore(img.ctx)
 end
 
@@ -400,13 +434,14 @@ end
 function push_vector_properties(img::Image, idx::Int)
     save_property_state(img)
     for (propertytype, property) in img.vector_properties
-        if property === nothing
+        if isnull(property)
             continue
         end
-        if idx > length(property.primitives)
+        primitives = get(property).primitives
+        if idx > length(primitives)
             error("Vector form and vector property differ in length. Can't distribute.")
         end
-        apply_property(img, property.primitives[idx])
+        apply_property(img, primitives[idx])
     end
 end
 
@@ -437,7 +472,7 @@ end
 
 
 function apply_property(img::Image, p::StrokeDashPrimitive)
-    img.stroke_dash = map(v -> absolute_native_units(img, v.abs), p.value)
+    img.stroke_dash = map(v -> absolute_native_units(img, v.value), p.value)
 end
 
 
@@ -457,18 +492,21 @@ end
 
 
 function apply_property(img::Image, property::LineWidthPrimitive)
+    img.linewidth = property.value
     Cairo.set_line_width(
         img.ctx,
-        absolute_native_units(img, property.value.abs))
+        absolute_native_units(img, property.value.value))
 end
 
 
 function apply_property(img::Image, property::FontPrimitive)
+    img.font = property.family
+
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
                       Ptr{Void}, (Ptr{Void},), img.ctx.layout)
 
     if font_desc == C_NULL
-        size = absolute_native_units(img, default_font_size.abs)
+        size = absolute_native_units(img, default_font_size.value)
     else
         size = ccall((:pango_font_description_get_size, Cairo._jl_libpango),
                      Cint, (Ptr{Void},), font_desc)
@@ -480,6 +518,8 @@ end
 
 
 function apply_property(img::Image, property::FontSizePrimitive)
+    img.fontsize = property.value
+
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
                       Ptr{Void}, (Ptr{Void},), img.ctx.layout)
 
@@ -493,7 +533,7 @@ function apply_property(img::Image, property::FontSizePrimitive)
 
     Cairo.set_font_face(img.ctx,
         @sprintf("%s %.2fpx",
-            family, absolute_native_units(img, property.value.abs)))
+            family, absolute_native_units(img, property.value.value)))
 end
 
 
@@ -505,6 +545,7 @@ function apply_property(img::Image, property::ClipPrimitive)
     end
     close_path(img)
     Cairo.clip(img.ctx)
+    img.clip = property
 end
 
 
@@ -533,93 +574,93 @@ function current_point(img::Image)
     y = Array(Float64, 1)
     ccall((:cairo_get_current_point, Cairo._jl_libcairo), Void,
           (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
-    return Point(Measure(abs=x[1] / img.ppmm),
-                 Measure(abs=y[1] / img.ppmm))
+    return ((x[1] / img.ppmm)*mm, (x[2] / img.ppmm)*mm)
 end
 
 
-function move_to(img::Image, point::Point)
+function move_to(img::Image, point::AbsoluteVec2)
     Cairo.move_to(
         img.ctx,
-        absolute_native_units(img, point.x.abs),
-        absolute_native_units(img, point.y.abs))
+        absolute_native_units(img, point[1].value),
+        absolute_native_units(img, point[2].value))
 end
 
 
-function rel_move_to(img::Image, point::Point)
+function rel_move_to(img::Image, point::AbsoluteVec2)
     Cairo.rel_move_to(
         img.ctx,
-        absolute_native_units(img, point.x.abs),
-        absolute_native_units(img, point.y.abs))
+        absolute_native_units(img, point[1].value),
+        absolute_native_units(img, point[2].value))
 end
 
 
-function line_to(img::Image, point::Point)
+function line_to(img::Image, point::AbsoluteVec2)
     Cairo.line_to(
         img.ctx,
-        absolute_native_units(img, point.x.abs),
-        absolute_native_units(img, point.y.abs))
+        absolute_native_units(img, point[1].value),
+        absolute_native_units(img, point[2].value))
 end
 
 
-function rel_line_to(img::Image, point::Point)
+function rel_line_to(img::Image, point::AbsoluteVec2)
     Cairo.rel_line_to(
         img.ctx,
-        absolute_native_units(img, point.x.abs),
-        absolute_native_units(img, point.y.abs))
+        absolute_native_units(img, point[1].value),
+        absolute_native_units(img, point[2].value))
 end
 
 
-function curve_to(img::Image, ctrl1::Point, ctrl2::Point, to::Point)
+function curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, to::AbsoluteVec2)
     Cairo.curve_to(
         img.ctx,
-        absolute_native_units(img, ctrl1.x.abs),
-        absolute_native_units(img, ctrl1.y.abs),
-        absolute_native_units(img, ctrl2.x.abs),
-        absolute_native_units(img, ctrl2.y.abs),
-        absolute_native_units(img, to.x.abs),
-        absolute_native_units(img, to.y.abs),)
+        absolute_native_units(img, ctrl1[1].value),
+        absolute_native_units(img, ctrl1[2].value),
+        absolute_native_units(img, ctrl2[1].value),
+        absolute_native_units(img, ctrl2[2].value),
+        absolute_native_units(img, to[1].value),
+        absolute_native_units(img, to[2].value),)
 end
 
 
-function rel_curve_to(img::Image, ctrl1::Point, ctrl2::Point, to::Point)
+function rel_curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, to::AbsoluteVec2)
     Cairo.rel_curve_to(
         img.ctx,
-        absolute_native_units(img, ctrl1.x.abs),
-        absolute_native_units(img, ctrl1.y.abs),
-        absolute_native_units(img, ctrl2.x.abs),
-        absolute_native_units(img, ctrl2.y.abs),
-        absolute_native_units(img, to.x.abs),
-        absolute_native_units(img, to.y.abs),)
+        absolute_native_units(img, ctrl1[1].value),
+        absolute_native_units(img, ctrl1[2].value),
+        absolute_native_units(img, ctrl2[1].value),
+        absolute_native_units(img, ctrl2[2].value),
+        absolute_native_units(img, to[1].value),
+        absolute_native_units(img, to[2].value),)
 end
 
 
-function rectangle(img::Image, corner::Point, width::Measure, height::Measure)
+function rectangle(img::Image, corner::AbsoluteVec2,
+                   width::AbsoluteLength, height::AbsoluteLength)
     Cairo.rectangle(img.ctx,
-                    absolute_native_units(img, corner.x.abs),
-                    absolute_native_units(img, corner.y.abs),
-                    absolute_native_units(img, width.abs),
-                    absolute_native_units(img, height.abs))
+                    absolute_native_units(img, corner[1].value),
+                    absolute_native_units(img, corner[2].value),
+                    absolute_native_units(img, width.value),
+                    absolute_native_units(img, height.value))
 end
 
 
-function circle(img::Image, center::Point, radius::Measure)
+function circle(img::Image, center::AbsoluteVec2, radius::AbsoluteLength)
     Cairo.circle(img.ctx,
-                 absolute_native_units(img, center.x.abs),
-                 absolute_native_units(img, center.y.abs),
-                 absolute_native_units(img, radius.abs))
+                 absolute_native_units(img, center[1].value),
+                 absolute_native_units(img, center[2].value),
+                 absolute_native_units(img, radius.value))
 end
 
 
-function curve_to(img::Image, ctrl1::Point, ctrl2::Point, anchor::Point)
+function curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, anchor::AbsoluteVec2)
     Cairo.curve_to(
         img.ctx,
-        absolute_native_units(img, ctrl1.x.abs),
-        absolute_native_units(img, ctrl1.y.abs),
-        absolute_native_units(img, ctrl2.x.abs),
-        absolute_native_units(img, ctrl2.y.abs),
-        absolute_native_units(img, anchor.x.abs),
-        absolute_native_units(img, anchor.y.abs))
+        absolute_native_units(img, ctrl1[1].value),
+        absolute_native_units(img, ctrl1[2].value),
+        absolute_native_units(img, ctrl2[1].value),
+        absolute_native_units(img, ctrl2[2].value),
+        absolute_native_units(img, anchor[1].value),
+        absolute_native_units(img, anchor[2].value))
 end
 
 
@@ -735,13 +776,14 @@ function draw(img::Image, form::Form)
     else
         for (idx, primitive) in enumerate(form.primitives)
             for (propertytype, property) in img.vector_properties
-                if property === nothing
+                if isnull(property)
                     continue
                 end
-                if idx > length(property.primitives)
+                primitives = get(property).primitives
+                if idx > length(primitives)
                     error("Vector form and vector property differ in length. Can't distribute.")
                 end
-                apply_property(img, property.primitives[idx])
+                apply_property(img, primitives[idx])
             end
             draw(img, primitive)
         end
@@ -756,18 +798,19 @@ end
 
 
 function draw(img::Image, prim::PolygonPrimitive)
-    if isempty(prim.points); return; end
-
-    paths = make_paths(prim.points)
-    for path in paths
-        move_to(img, path[1])
-        for point in path[2:end]
-            line_to(img, point)
-        end
-        close_path(img)
-        fillstroke(img)
+    n = length(prim.points)
+    if n <= 1
+        return
     end
+
+    move_to(img, prim.points[1])
+    for i in 2:length(prim.points)
+        line_to(img, prim.points[i])
+    end
+    close_path(img)
+    fillstroke(img)
 end
+
 
 function draw(img::Image, prim::Compose.ComplexPolygonPrimitive)
     if isempty(prim.rings); return; end
@@ -782,6 +825,7 @@ function draw(img::Image, prim::Compose.ComplexPolygonPrimitive)
     fillstroke(img)
 end
 
+
 function draw(img::Image, prim::CirclePrimitive)
     circle(img, prim.center, prim.radius)
     fillstroke(img)
@@ -789,14 +833,14 @@ end
 
 
 function draw(img::Image, prim::EllipsePrimitive)
-    cx = prim.center.x.abs
-    cy = prim.center.y.abs
-    rx = sqrt((prim.x_point.x.abs - cx)^2 +
-              (prim.x_point.y.abs - cy)^2)
-    ry = sqrt((prim.y_point.x.abs - cx)^2 +
-              (prim.y_point.y.abs - cy)^2)
-    theta = atan2(prim.x_point.y.abs - cy,
-                  prim.x_point.x.abs - cx)
+    cx = prim.center[1].value
+    cy = prim.center[2].value
+    rx = sqrt((prim.x_point[1].value - cx)^2 +
+              (prim.x_point[2].value - cy)^2)
+    ry = sqrt((prim.y_point[1].value - cx)^2 +
+              (prim.y_point[2].value - cy)^2)
+    theta = atan2(prim.x_point[2].value - cy,
+                  prim.x_point[1].value - cx)
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
         return
@@ -815,21 +859,17 @@ end
 
 function draw(img::Image, prim::LinePrimitive)
     if length(prim.points) <= 1; return; end
-
-    paths = make_paths(prim.points)
-    for path in paths
-        move_to(img, path[1])
-        for point in path[2:end]
-            line_to(img, point)
-        end
-        fillstroke(img, true)
+    move_to(img, prim.points[1])
+    for i in 2:length(prim.points)
+        line_to(img, prim.points[i])
     end
+    fillstroke(img, true)
 end
 
 
 function get_layout_size(img::Image)
     width, height = Cairo.get_layout_size(img.ctx)
-    width / img.ppmm, height / img.ppmm
+    return ((width / img.ppmm) * mm, (height / img.ppmm) * mm)
 end
 
 
@@ -838,22 +878,22 @@ function draw(img::Image, prim::TextPrimitive)
         return
     end
 
-    pos = copy(prim.position)
+    pos = prim.position
     Cairo.set_text(img.ctx, prim.value, true)
     width, height = get_layout_size(img)
-    pos = Point(pos.x, Measure(pos.y.abs - height))
+    pos = (pos[1], pos[2] - height)
 
     if prim.halign != hleft || prim.valign != vbottom
         if prim.halign == hcenter
-            pos = Point(Measure(pos.x.abs - width/2), pos.y)
+            pos = (pos[1] - width/2, pos[2])
         elseif prim.halign == hright
-            pos = Point(Measure(pos.x.abs - width), pos.y)
+            pos = (pos[1] - width, pos[2])
         end
 
         if prim.valign == vcenter
-            pos = Point(pos.x, Measure(pos.y.abs + height/2))
+            pos = (pos[1], pos[2] + height/2)
         elseif prim.valign == vtop
-            pos = Point(pos.x, Measure(pos.y.abs + height))
+            pos = (pos[1], pos[2] + height)
         end
     end
 
@@ -863,7 +903,7 @@ function draw(img::Image, prim::TextPrimitive)
     if prim.rot.theta != 0.0
         save_property_state(img)
         rotate(img, prim.rot.theta,
-               prim.rot.offset.x.abs, prim.rot.offset.y.abs)
+               prim.rot.offset[1].value, prim.rot.offset[2].value)
     end
 
     move_to(img, pos)
@@ -874,11 +914,13 @@ function draw(img::Image, prim::TextPrimitive)
     end
 end
 
+
 function draw(img::Image, prim::CurvePrimitive)
     move_to(img, prim.anchor0)
     curve_to(img, prim.ctrl0, prim.ctrl1, prim.anchor1)
     fillstroke(img, true)
 end
+
 
 function draw(img::Image, prim::BitmapPrimitive)
 
@@ -936,23 +978,23 @@ end
 
 function draw_path_op(img::Image, op::HorLineAbsPathOp)
     pos = current_point(img)
-    line_to(img, Point(op.x, pos.y))
+    line_to(img, (op.x, pos.y))
 end
 
 
 function draw_path_op(img::Image, op::HorLineRelPathOp)
-    rel_line_to(img, Point(op.Δx, 0.0))
+    rel_line_to(img, (op.Δx, 0.0mm))
 end
 
 
 function draw_path_op(img::Image, op::VertLineAbsPathOp)
     pos = current_point(img)
-    line_to(img, Point(pos.x, op.y))
+    line_to(img, (pos.x, op.y))
 end
 
 
 function draw_path_op(img::Image, op::VertLineRelPathOp)
-    rel_line_to(img, Point(0.0, op.Δy))
+    rel_line_to(img, (0.0mm, op.Δy))
 end
 
 
@@ -965,26 +1007,18 @@ end
 function draw_path_op(img::Image, op::CubicCurveRelPathOp)
     xy = current_point(img)
     rel_curve_to(img, op.ctrl1, op.ctrl2, op.to)
-    img.last_ctrl2_point =
-        Point(Measure(abs=op.ctrl2.x.abs + xy.x.abs),
-              Measure(abs=op.ctrl2.y.abs + xy.y.abs))
+    img.last_ctrl2_point = (op.ctrl2[1] + xy[1], op.ctrl2[2] + xy[2])
 end
 
 
 function draw_path_op(img::Image, op::CubicCurveShortAbsPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
-
     ctrl1 = img.last_ctrl2_point
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=2*x1 - ctrl1.x.abs),
-                      Measure(abs=2*y1 - ctrl1.y.abs))
+        ctrl1 = (2*xy[1] - ctrl1[1], 2*xy[2] - ctrl1[2])
     end
-    cx, cy = ctrl1.x.abs, ctrl1.y.abs
-
     curve_to(img, ctrl1, op.ctrl2, op.to)
     img.last_ctrl2_point = op.ctrl2
 end
@@ -992,35 +1026,35 @@ end
 
 function draw_path_op(img::Image, op::CubicCurveShortRelPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
 
     ctrl1 = img.last_ctrl2_point
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=(2*x1 - ctrl1.x.abs) - x1),
-                      Measure(abs=(2*y1 - ctrl1.y.abs) - y1))
+        ctrl1 = (Measure(abs=(2*x1 - ctrl1[1].value) - x1),
+                 Measure(abs=(2*y1 - ctrl1[2].value) - y1))
     end
-    cx, cy = ctrl1.x.abs, ctrl1.y.abs
+    cx, cy = ctrl1[1].value, ctrl1[2].value
 
     rel_curve_to(img, ctrl1, op.ctrl2, op.to)
     img.last_ctrl2_point =
-        Point(Measure(abs=op.ctrl2.x.abs + xy.x.abs),
-              Measure(abs=op.ctrl2.y.abs + xy.y.abs))
+        (Measure(abs=op.ctrl2[1].value + xy.x.abs),
+         Measure(abs=op.ctrl2[2].value + xy.y.abs))
 end
 
 
 function draw_path_op(img::Image, op::QuadCurveAbsPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
-    cx, cy = op.ctrl1.x.abs, op.ctrl1.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
+    cx, cy = op.ctrl1[1].value, op.ctrl1[2].value
     curve_to(img,
-             Point(Measure(abs=(x1 + 2*cx)/3),
-                   Measure(abs=(y1 + 2*cy)/3)),
-             Point(Measure(abs=(x2 + 2*cx)/3),
-                   Measure(abs=(y2 + 2*cy)/3)),
+             (Measure(abs=(x1 + 2*cx)/3),
+              Measure(abs=(y1 + 2*cy)/3)),
+             (Measure(abs=(x2 + 2*cx)/3),
+              Measure(abs=(y2 + 2*cy)/3)),
              op.to)
     img.last_ctrl1_point = op.ctrl1
 end
@@ -1028,75 +1062,75 @@ end
 
 function draw_path_op(img::Image, op::QuadCurveRelPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
-    cx, cy = op.ctrl1.x.abs, op.ctrl1.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
+    cx, cy = op.ctrl1[1].value, op.ctrl1[2].value
     rel_curve_to(img,
-             Point(Measure(abs=(x1 + 2*cx)/3),
-                   Measure(abs=(y1 + 2*cy)/3)),
-             Point(Measure(abs=(x2 + 2*cx)/3),
-                   Measure(abs=(y2 + 2*cy)/3)),
+                 (Measure(abs=(x1 + 2*cx)/3),
+                  Measure(abs=(y1 + 2*cy)/3)),
+                 (Measure(abs=(x2 + 2*cx)/3),
+                  Measure(abs=(y2 + 2*cy)/3)),
              op.to)
     img.last_ctrl1_point =
-        Point(Measure(abs=op.ctrl1.x.abs + xy.x.abs),
-              Measure(abs=op.ctrl1.y.abs + xy.y.abs))
+        (Measure(abs=op.ctrl1[1].value + xy.x.abs),
+         Measure(abs=op.ctrl1[2].value + xy.y.abs))
 end
 
 
 function draw_path_op(img::Image, op::QuadCurveShortAbsPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
 
     ctrl1 = img.last_ctrl1_point
-    if ctrl1 === nothing
+    if isnull(img.last_ctrl1_point)
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=2*x1 - ctrl1.x.abs),
-                      Measure(abs=2*y1 - ctrl1.y.abs))
+        ctrl1 = (Measure(abs=2*x1 - ctrl1[1].value),
+                 Measure(abs=2*y1 - ctrl1[2].value))
     end
-    cx, cy = ctrl1.x.abs, ctrl1.y.abs
+    cx, cy = ctrl1[1].value, ctrl1[2].value
 
     curve_to(img,
-             Point(Measure(abs=(x1 + 2*cx)/3),
-                   Measure(abs=(y1 + 2*cy)/3)),
-             Point(Measure(abs=(x2 + 2*cx)/3),
-                   Measure(abs=(y2 + 2*cy)/3)),
-             Point(Measure(abs=x2), Measure(abs=y2)))
+             (Measure(abs=(x1 + 2*cx)/3),
+              Measure(abs=(y1 + 2*cy)/3)),
+             (Measure(abs=(x2 + 2*cx)/3),
+              Measure(abs=(y2 + 2*cy)/3)),
+             (Measure(abs=x2), Measure(abs=y2)))
     img.last_ctrl1_point = ctrl1
 end
 
 
 function draw_path_op(img::Image, op::QuadCurveShortRelPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = x1 + op.to.x.abs, y1 + op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = x1 + op.to[1].value, y1 + op.to[2].value
 
     ctrl1 = img.last_ctrl1_point
     if ctrl1 === nothing
         ctrl1 = xy
     else
-        ctrl1 = Point(Measure(abs=(2*x1 - ctrl1.x.abs) - x1),
-                      Measure(abs=(2*y1 - ctrl1.y.abs) - y1))
+        ctrl1 = (Measure(abs=(2*x1 - ctrl1[1].value) - x1),
+                 Measure(abs=(2*y1 - ctrl1[2].value) - y1))
     end
-    cx, cy = ctrl1.x.abs, ctrl1.y.abs
+    cx, cy = ctrl1[1].value, ctrl1[2].value
 
     rel_curve_to(img,
-                 Point(Measure(abs=(x1 + 2*cx)/3),
-                       Measure(abs=(y1 + 2*cy)/3)),
-                 Point(Measure(abs=(x2 + 2*cx)/3),
-                       Measure(abs=(y2 + 2*cy)/3)),
-                 Point(Measure(abs=x2), Measure(abs=y2)))
+                 (Measure(abs=(x1 + 2*cx)/3),
+                  Measure(abs=(y1 + 2*cy)/3)),
+                 (Measure(abs=(x2 + 2*cx)/3),
+                  Measure(abs=(y2 + 2*cy)/3)),
+                 (Measure(abs=x2), Measure(abs=y2)))
     img.last_ctrl1_point =
-        Point(Measure(abs=op.ctrl1.x.abs + x1),
-              Measure(abs=op.ctrl1.y.abs + y1))
+        (Measure(abs=op.ctrl1[1].value + x1),
+         Measure(abs=op.ctrl1[2].value + y1))
 end
 
 
 function draw_path_op(img::Image, op::ArcAbsPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = op.to.x.abs, op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = op.to[1].value, op.to[2].value
     rx, ry = op.rx.abs, op.ry.abs
     φ = deg2rad(op.rotation)
     draw_endpoint_arc(img, rx, ry, φ, op.largearc, op.sweep, x1, y1, x2, y2)
@@ -1105,8 +1139,8 @@ end
 
 function draw_path_op(img::Image, op::ArcRelPathOp)
     xy = current_point(img)
-    x1, y1 = xy.x.abs, xy.y.abs
-    x2, y2 = x1 + op.to.x.abs, y1 + op.to.y.abs
+    x1, y1 = xy[1].value, xy[2].value
+    x2, y2 = x1 + op.to[1].value, y1 + op.to[2].value
     rx, ry = op.rx.abs, op.ry.abs
     φ = deg2rad(op.rotation)
     draw_endpoint_arc(img, rx, ry, φ, op.largearc, op.sweep, x1, y1, x2, y2)
@@ -1163,5 +1197,40 @@ function draw_endpoint_arc(img::Image, rx::Float64, ry::Float64, φ::Float64,
     end
     Cairo.restore(img.ctx)
 end
+
+
+function draw(img::Image, batch::FormBatch)
+    bounds = boundingbox(batch.primitive, img.linewidth, img.font, img.fontsize)
+    width = bounds.a[1].value * img.ppmm
+    height = bounds.a[2].value * img.ppmm
+
+    xt = -bounds.x0[1].value * img.ppmm
+    yt = -bounds.x0[2].value * img.ppmm
+
+    Cairo.save(img.ctx)
+    Cairo.reset_clip(img.ctx)
+    Cairo.translate(img.ctx, xt, yt)
+    Cairo.push_group(img.ctx)
+    draw(img, batch.primitive)
+    pattern = Cairo.pop_group(img.ctx)
+    surface = Cairo.pattern_get_surface(pattern)
+    Cairo.restore(img.ctx)
+
+    # reapply the clipping region we just reset
+    if !isnull(img.clip)
+        apply_property(img, get(img.clip))
+    end
+
+    Cairo.set_antialias(img.ctx, Cairo.ANTIALIAS_NONE)
+    for offset in batch.offsets
+        x = offset[1].value * img.ppmm - xt
+        y = offset[2].value * img.ppmm - yt
+        Cairo.set_source_surface(img.ctx, surface, x, y)
+        Cairo.rectangle(img.ctx, x, y, width, height)
+        Cairo.fill(img.ctx)
+    end
+    Cairo.set_antialias(img.ctx, Cairo.ANTIALIAS_DEFAULT)
+end
+
 
 

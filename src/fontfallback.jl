@@ -89,7 +89,7 @@ end
 
 function max_text_extents(font_family::AbstractString, size::Measure,
                           texts::AbstractString...)
-    if !isabsolute(size)
+    if !isa(size, AbsoluteLength)
         error("text_extents requries font size be in absolute units")
     end
     scale = size / 12pt
