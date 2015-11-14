@@ -154,8 +154,9 @@ default_fill_color = colorant"black"
 # Use cairo for the PNG, PS, PDF if it's installed.
 macro missing_cairo_error(backend)
     msg1 = """
-    Cairo is necessary for the $(backend) backend. Run:
+    Cairo and Fontconfig are necessary for the $(backend) backend. Run:
       Pkg.add("Cairo")
+      Pkg.add("Fontconfig")
     """
     msg2 = if VERSION >= v"0.4.0-dev+6521"
         """
