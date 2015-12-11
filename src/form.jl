@@ -271,7 +271,7 @@ function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray, tag=emp
     end
 
     return @makeform (x in xs, y in ys, r in rs),
-        CirclePrimitive{Vec2, Measure}((x_measure(x), y_measure(y)), size_measure(r)) tag
+        CirclePrimitive{Vec2, Measure}((x_measure(x), y_measure(y)), x_measure(r)) tag
 end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,

@@ -72,3 +72,6 @@ bm = bitmap("fake", rand(UInt8,10), 0, 1, 0.8, 0.7, :image)
 
 @test isa(Compose.line(), Compose.Line)
 @test isa(Compose.line([(1,2),(3,5),(4,2)]), Compose.Line)
+
+# issue #172: default circle(xs, ys, rs) radius measure is context units
+@test isequal(circle([0.5], [0.5], [0.1]).primitives[1].radius, 0.1cx)
