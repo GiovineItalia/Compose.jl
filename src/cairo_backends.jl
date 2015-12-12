@@ -205,6 +205,8 @@ function absolute_native_units{B}(img::Image{B}, u::Float64)
     img.ppmm * u
 end
 
+surface(img::Image) = img.surface
+
 function Measures.width(img::Image)
     (Cairo.width(img.surface) / img.ppmm) * mm
 end
@@ -1231,6 +1233,3 @@ function draw(img::Image, batch::FormBatch)
     end
     Cairo.set_antialias(img.ctx, Cairo.ANTIALIAS_DEFAULT)
 end
-
-
-

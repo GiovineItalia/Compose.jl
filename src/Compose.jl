@@ -154,6 +154,7 @@ default_fill_color = colorant"black"
 # Use cairo for the PNG, PS, PDF if it's installed.
 if isinstalled("Cairo")
     include("cairo_backends.jl")
+    include("immerse_backend.jl")
 else
     global PNG
     global PS
