@@ -413,6 +413,12 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec2)
     return xy
 end
 
+function resolve(box::AbsoluteBox, units::UnitBox, t::MatrixTransform, p::Vec2)
+    x = resolve_position(box, units, t, p[1]) + box.x0[1]
+    y = resolve_position(box, units, t, p[2]) + box.x0[2]
+    xy = t.M * [x.value, y.value, 1]
+    return (xy[1]mm, xy[2]mm)
+end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::BoundingBox)
     return BoundingBox(resolve(box, units, t, a.x0),
