@@ -18,14 +18,14 @@ draw(output,c);
 
 # insert image (Uint32) into SVG
 output = Compose.SVG("t2.svg",400px,300px);
-m = rand(Uint32,4,8);        
+m = rand(UInt32,4,8);        
 r = Compose.image(m,0.0,0.0,1.0,1.0)    
 c = compose(compose(context(), r))
 draw(output,c);
 
 # insert image (Uint32) into SVG
 output = Compose.SVG("t2h.svg",400px,300px);
-m = rand(Uint32,4,8);        
+m = rand(UInt32,4,8);        
 r = Compose.image(m,0.0,0.0,1.0,0.5)    
 c = compose(compose(context(), r))
 draw(output,c);
@@ -39,7 +39,7 @@ draw(output,c);
 
 # insert image (Uint32) into PNG
 output = Compose.PNG("t4.png",400px,300px);
-m = rand(Uint32,4,8);        
+m = rand(UInt32,4,8);        
 r = Compose.image(m,0.0,0.0,1.0,0.5)
 c = compose(compose(context(), r))
 draw(output,c);

@@ -564,6 +564,53 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
 end
 
 form_string(::Curve) = "CV"
+# # Bitmap
+# # ------
+
+# immutable BitmapPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimitive
+#     mime::AbstractString
+#     data::Vector{UInt8}
+#     corner::P
+#     width::XM
+#     height::YM
+# end
+
+# typealias Bitmap{P<:BitmapPrimitive} Form{P}
+
+
+# function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height, tag=empty_tag)
+#     corner = (x_measure(x0), y_measure(y0))
+#     width = x_measure(width)
+#     height = y_measure(height)
+#     prim = BitmapPrimitive(mime, data, corner, width, height)
+#     return Bitmap{typeof(prim)}([prim], tag)
+# end
+
+
+# function bitmap(mimes::AbstractArray, datas::AbstractArray,
+#                 x0s::AbstractArray, y0s::AbstractArray,
+#                 widths::AbstractArray, heights::AbstractArray, tag=empty_tag)
+#     return @makeform (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heigths),
+#             BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height)) tag
+# end
+
+
+# function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+#                  p::BitmapPrimitive)
+#     return BitmapPrimitive{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
+#                 p.mime, p.data,
+#                 resolve(box, units, t, p.corner),
+#                 resolve(box, units, t, p.width),
+#                 resolve(box, units, t, p.height))
+# end
+
+
+# function boundingbox(form::BitmapPrimitive, linewidth::Measure,
+#                      font::AbstractString, fontsize::Measure)
+#     return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
+# end
+
+# form_string(::Bitmap) = "B"
 
 # Bitmap
 # ------
@@ -616,39 +663,50 @@ form_string(::Bitmap) = "B"
 # Image, as this interferes with the Image backends, here as ImageMatrix
 # ------
 
-immutable ImageMatrixPrimitive{P <: Point, XM <: Measure, YM <: Measure} <: FormPrimitive
-    data::Array{Uint32}
+immutable ImageMatrixPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimitive
+    mime::AbstractString
+    data::Array{UInt32}
     corner::P
     width::XM
     height::YM
 end
 
-typealias ImageMatrix Form{ImageMatrixPrimitive}
+typealias ImageMatrix{P<:ImageMatrixPrimitive} Form{P}
+
+# function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height, tag=empty_tag)
+#     corner = (x_measure(x0), y_measure(y0))
+#     width = x_measure(width)
+#     height = y_measure(height)
+#     prim = BitmapPrimitive(mime, data, corner, width, height)
+#     return Bitmap{typeof(prim)}([prim], tag)
+# end
 
 
-function image(data::Array{Uint32}, x0, y0, width, height)
-    corner = Point(x0, y0)
+function image(data::Array{UInt32}, x0, y0, width, height, tag=empty_tag)
+    corner = (x_measure(x0), y_measure(y0))
     width = x_measure(width)
     height = y_measure(height)
-    return ImageMatrix([ImageMatrixPrimitive(data, corner, width, height)])
+    prim = ImageMatrixPrimitive("",data, corner, width, height)
+    return ImageMatrix{typeof(prim)}([prim], tag)
 end
 
-function image(data::Array{Uint32})
-    corner = Point(0.0, 0.0)
+function image(data::Array{UInt32})
+    corner = (0.0,0.0)
     width = x_measure(1.0)
     height = y_measure(1.0)
     return ImageMatrix([ImageMatrixPrimitive(data, corner, width, height)])
 end
 
-
-function absolute_units(p::ImageMatrixPrimitive, t::Transform, units::UnitBox,
-                        box::AbsoluteBoundingBox)
-    return ImageMatrixPrimitive{SimplePoint, SimpleMeasure, SimpleMeasure}(
-                       p.data,
-                       absolute_units(p.corner, t, units, box),
-                       Measure(absolute_units(p.width, t, units, box)),
-                       Measure(absolute_units(p.height, t, units, box)))
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
+                 p::ImageMatrixPrimitive)
+    return ImageMatrixPrimitive{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
+                p.mime, p.data,
+                resolve(box, units, t, p.corner),
+                resolve(box, units, t, p.width),
+                resolve(box, units, t, p.height))
 end
+
+
 
 
 function boundingbox(form::ImageMatrixPrimitive, linewidth::Measure,

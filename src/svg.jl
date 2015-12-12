@@ -987,10 +987,10 @@ function draw(img::SVG, prim::ImageMatrixPrimitive, idx::Int)
     # prepare png data first, scale up
     s = Cairo.CairoRGBSurface(prim.data);
 
-    w = prim.width.abs;
-    h = prim.height.abs;
+    w = prim.width.value;
+    h = prim.height.value;
 
-    s_scaled = Cairo.CairoRGBSurface(int(ceil(w)),int(ceil(h)));
+    s_scaled = Cairo.CairoRGBSurface(round(Int,(ceil(w))),round(Int,ceil(h)));
 
     p = Cairo.CairoPattern(s);
     m = Cairo.CairoMatrix(s.width/w,0,0,s.height/h,0,0)
@@ -1007,13 +1007,13 @@ function draw(img::SVG, prim::ImageMatrixPrimitive, idx::Int)
     
     indent(img)
     print(img.out, "<image x=\"")
-    svg_print_float(img.out, prim.corner.x.abs)
+    svg_print_float(img.out, prim.corner[1].value)
     print(img.out, "\" y=\"")
-    svg_print_float(img.out, prim.corner.y.abs)
+    svg_print_float(img.out, prim.corner[2].value)
     print(img.out, "\" width=\"")
-    svg_print_float(img.out, prim.width.abs)
+    svg_print_float(img.out, prim.width.value)
     print(img.out, "\" height=\"")
-    svg_print_float(img.out, prim.height.abs)
+    svg_print_float(img.out, prim.height.value)
     print(img.out, '"')
     print_vector_properties(img, idx)
 
