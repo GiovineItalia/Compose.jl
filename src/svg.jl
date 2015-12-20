@@ -1018,7 +1018,7 @@ function draw(img::SVG, prim::ImageMatrixPrimitive, idx::Int)
     print_vector_properties(img, idx)
 
     print(img.out, " xlink:href=\"data:", "image/png", ";base64,")
-    b64pipe = Base64Pipe(img.out)
+    b64pipe = Base.Base64.Base64EncodePipe(img.out)
     write(b64pipe, d)
     close(b64pipe)
     print(img.out, "\"></image>\n")

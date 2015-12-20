@@ -710,7 +710,7 @@ end
 
 
 function boundingbox(form::ImageMatrixPrimitive, linewidth::Measure,
-                     font::String, fontsize::Measure)
+                     font::AbstractString, fontsize::Measure)
     return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
 end
 
