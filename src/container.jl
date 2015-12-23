@@ -427,6 +427,10 @@ end
 
 
 function draw(backend::Backend, root_container::Container)
+	if isfinished(backend)
+		error("The backend has already been drawn upon.")
+	end
+	
     drawpart(backend, root_container, IdentityTransform(), UnitBox(), root_box(backend))
     finish(backend)
 end
