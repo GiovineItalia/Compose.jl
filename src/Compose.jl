@@ -152,6 +152,25 @@ default_fill_color = colorant"black"
 
 
 # Use cairo for the PNG, PS, PDF if it's installed.
+macro missing_cairo_error(backend)
+    msg1 = """
+    Cairo and Fontconfig are necessary for the $(backend) backend. Run:
+      Pkg.add("Cairo")
+      Pkg.add("Fontconfig")
+    """
+    msg2 = if VERSION >= v"0.4.0-dev+6521"
+        """
+        You also have to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji"))
+        and restart your REPL session afterwards.
+        """
+    else
+        """
+        You also have to restart your REPL session afterwards.
+        """
+    end
+    string(msg1, msg2)
+end
+
 if isinstalled("Cairo")
     include("cairo_backends.jl")
     include("immerse_backend.jl")
@@ -160,16 +179,9 @@ else
     global PS
     global PDF
 
-    msg1 = "Install Cairo.jl to use the "
-    msg2 = " backend."
-    if VERSION >= v"0.4.0-dev+6521"
-        msg2 = string(msg2,
-            " You may need to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji")) afterwards.")
-    end
-
-    PNG(args...) = error(string(msg1, "PNG", msg2))
-    PS(args...) = error(string(msg1, "PS", msg2))
-    PDF(args...) = error(string(msg1, "PDF", msg2))
+    PNG(args...) = error(@missing_cairo_error "PNG")
+    PS(args...) = error(@missing_cairo_error "PS")
+    PDF(args...) = error(@missing_cairo_error "PDF")
 end
 include("svg.jl")
 include("pgf_backend.jl")
