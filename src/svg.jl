@@ -1,6 +1,6 @@
 using Compat
 
-const snapsvgjs = Pkg.dir("Compose", "data", "snap.svg-min.js")
+const snapsvgjs = joinpath(dirname(@__FILE__), "..", "data", "snap.svg-min.js")
 
 # Packages can insert extra XML namespaces here to be defined in the output
 # SVG.
@@ -8,7 +8,7 @@ const xmlns = Dict()
 
 
 # Format a floating point number into a decimal string of reasonable precision.
-function svg_fmt_float(x::FloatingPoint)
+function svg_fmt_float(x::Fractional)
     # All svg (in our use) coordinates are in millimeters. This number gives the
     # largest deviation from the true position allowed in millimeters.
     const eps = 0.01
@@ -28,23 +28,25 @@ end
 
 # A much faster version of svg_fmt_float. This does not allocate any
 # temporary buffers, because it writes directly to the output.
-function svg_print_float(io::IO, x::FloatingPoint)
+function svg_print_float(io::IO, x::AbstractFloat)
     const ndig = 2
-    const eps = 1.0/10^ndig
+    const eps = 0.01
+    #const eps = 1.0/10^ndig
+
     if isfinite(x)
         if x < 0
             write(io, '-')
             x = abs(x)
         end
         x = round(x/eps)*eps
-        xt = trunc(Uint, x)
+        xt = trunc(UInt, x)
         dx = x - convert(Float64, xt)
         if !(0 <= dx < 1)
             error("Formatting overflow")
         end
         svg_print_uint(io, xt, 1)  # width=1 prints 0.2 instead of .2
-        dxi = round(Uint, dx/eps)
-        if dxi != uint(0)
+        dxi = round(UInt, dx/eps)
+        if dxi != 0
             write(io, '.')
             svg_print_uint(io, dxi, ndig, true)
         end
@@ -57,7 +59,7 @@ function svg_print_float(io::IO, x::FloatingPoint)
     end
 end
 
-let a = Array(Uint8, 20)
+let a = Array(UInt8, 20)
 global svg_print_uint
 function svg_print_uint(io::IO, x::Unsigned, width = 0, drop = false)
     n = length(a)
@@ -85,12 +87,12 @@ end
 end
 
 # Format a color for SVG.
-svg_fmt_color(c::ColorValue) = @sprintf("#%s", hex(c))
-svg_fmt_color(c::Nothing) = "none"
+svg_fmt_color(c::Color) = string("#", hex(c))
+svg_fmt_color(c::(@compat Void)) = "none"
 
 
 # Replace newlines in a string with the appropriate SVG tspan tags.
-function svg_newlines(input::String, x::Float64)
+function svg_newlines(input::AbstractString, x::Float64)
     xpos = svg_fmt_float(x)
     newline_count = 0
     output = IOBuffer()
@@ -111,12 +113,12 @@ end
 
 
 # Javascript in a <script> tag in SVG needs to escape '"' and '<'.
-#=function escape_script(js::String)=#
+#=function escape_script(js::AbstractString)=#
     #=return replace(replace(js, "&", "&amp;"), "<", "&lt;")=#
 #=end=#
 
 # Javascript contained to CDATA block needs to avoid ']]'
-function escape_script(js::String)
+function escape_script(js::AbstractString)
     return replace(js, "]]", "] ]")
 end
 
@@ -139,25 +141,29 @@ type SVGPropertyFrame
     # closed.
     has_mask::Bool
 
+    # True if the property frame has a scalar Clip property, which needs some
+    # special handling.
+    has_scalar_clip::Bool
+
     function SVGPropertyFrame()
-        return new(Dict{Type, Property}(), false, false, false)
+        return new(Dict{Type, Property}(), false, false, false, false)
     end
 end
 
 
 type SVG <: Backend
     # Image size in millimeters.
-    width::Float64
-    height::Float64
+    width::AbsoluteLength
+    height::AbsoluteLength
 
     # Output stream.
     out::IO
 
     # Save output from IOBuffers to allow multiple calls to writemime
-    cached_out::Union(String, Nothing)
+    cached_out::@compat(Union{AbstractString, (@compat Void)})
 
     # Unique ID for the figure.
-    id::String
+    id::AbstractString
 
     # Current level of indentation.
     indentation::Int
@@ -168,14 +174,17 @@ type SVG <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, Union(Nothing, Property)}
+    vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, String}
+    clippaths::Dict{ClipPrimitive, ASCIIString}
+
+    # Batched forms to be included within <def> tags.
+    batches::Vector{Tuple{FormPrimitive, ASCIIString}}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
-    embobj::Set{String}
+    embobj::Set{AbstractString}
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -184,27 +193,27 @@ type SVG <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union(String, Nothing)
+    filename::@compat(Union{AbstractString, (@compat Void)})
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
 
     # IDs of the SVG element currently being generated. `has_current_id` is
     # false if the element being drawn does not have an id.
-    current_id::String
+    current_id::AbstractString
     has_current_id::Bool
 
     # A counter used to generate unique IDs
     id_count::Int
 
     # Filenames of javsacript to include before any JSCall code.
-    jsheader::Vector{String}
+    jsheader::Vector{AbstractString}
 
     # (Name, binding) pairs of javascript modules the embedded code depends on
-    jsmodules::Vector{(String, String)}
+    jsmodules::Vector{@compat Tuple{AbstractString, AbstractString}}
 
     # User javascript from JSCall attributes
-    scripts::Vector{String}
+    scripts::Vector{AbstractString}
 
     # Use javascript extensions to add interactivity, etc.
     withjs::Bool
@@ -219,36 +228,32 @@ type SVG <: Backend
     jsmode::Symbol
 
     function SVG(out::IO,
-                 width,
-                 height,
+                 width::AbsoluteLength,
+                 height::AbsoluteLength,
                  emit_on_finish::Bool=true,
                  jsmode::Symbol=:none)
-        width = size_measure(width)
-        height = size_measure(height)
-        if !isabsolute(width) || !isabsolute(height)
-            error("SVG image size must be specified in absolute units.")
-        end
 
         img = new()
-        img.id = string("fig-", replace(string(Base.Random.uuid4()), "-", ""))
-        img.width  = width.abs
-        img.height = height.abs
+        img.id = string("img-", string(Base.Random.uuid4())[1:8])
+        img.width  = width
+        img.height = height
         img.out = out
         img.cached_out = nothing
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
-        img.vector_properties = Dict{Type, Union(Nothing, Property)}()
-        img.clippaths = Dict{ClipPrimitive, String}()
-        img.embobj = Set{String}()
+        img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
+        img.clippaths = Dict{ClipPrimitive, ASCIIString}()
+        img.batches = Array(Tuple{FormPrimitive, ASCIIString}, 0)
+        img.embobj = Set{AbstractString}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
         img.current_id = ""
         img.has_current_id = false
         img.id_count = 0
-        img.jsheader = String[]
-        img.jsmodules = Array((String, String), 1)
+        img.jsheader = AbstractString[]
+        img.jsmodules = Array((@compat Tuple{AbstractString, AbstractString}), 1)
         img.jsmodules[1] = ("Snap.svg", "Snap")
-        img.scripts = String[]
+        img.scripts = AbstractString[]
         img.withjs = jsmode != :none
         img.jsmode = jsmode
         img.ownedfile = false
@@ -258,7 +263,7 @@ type SVG <: Backend
     end
 
     # Write to a file.
-    function SVG(filename::String, width, height, jsmode::Symbol=:none)
+    function SVG(filename::AbstractString, width, height, jsmode::Symbol=:none)
         out = open(filename, "w")
         img = SVG(out, width, height, true, jsmode)
         img.ownedfile = true
@@ -274,6 +279,11 @@ type SVG <: Backend
 end
 
 
+function canbatch(img::SVG)
+    return true
+end
+
+
 function iswithjs(img::SVG)
     return img.withjs
 end
@@ -282,7 +292,7 @@ end
 # Return the next unique element ID. Sort of like gensym for SVG elements.
 function genid(img::SVG)
     img.id_count += 1
-    return @sprintf("%s-element-%d", img.id, img.id_count)
+    return @sprintf("%s-%d", img.id, img.id_count)
 end
 
 
@@ -293,7 +303,7 @@ function SVGJS(out::IO, width, height, emit_on_finish::Bool=true;
 end
 
 
-function SVGJS(filename::String, width, height; jsmode::Symbol=:embed)
+function SVGJS(filename::AbstractString, width, height; jsmode::Symbol=:embed)
     return SVG(filename, width, height, jsmode)
 end
 
@@ -305,8 +315,8 @@ end
 
 
 function writeheader(img::SVG)
-    widthstr = svg_fmt_float(img.width)
-    heightstr = svg_fmt_float(img.height)
+    widthstr = svg_fmt_float(img.width.value)
+    heightstr = svg_fmt_float(img.height.value)
     write(img.out,
           """
           <?xml version="1.0" encoding="UTF-8"?>
@@ -324,8 +334,8 @@ function writeheader(img::SVG)
                width="$(widthstr)mm" height="$(heightstr)mm" viewBox="0 0 $(widthstr) $(heightstr)"
                stroke="$(svg_fmt_color(default_stroke_color))"
                fill="$(svg_fmt_color(default_fill_color))"
-               stroke-width="$(svg_fmt_float(default_line_width.abs))"
-               font-size="$(svg_fmt_float(default_font_size.abs))"
+               stroke-width="$(svg_fmt_float(default_line_width.value))"
+               font-size="$(svg_fmt_float(default_font_size.value))"
           """)
     if img.withjs
         write(img.out, "\n     id=\"$(img.id)\"")
@@ -364,13 +374,31 @@ function finish(img::SVG)
         write(img.out, "\n")
     end
 
-    if length(img.clippaths) > 0
+    # defs
+    if !isempty(img.clippaths) | !isempty(img.batches)
         write(img.out, "<defs>\n")
-        for (clippath, id) in img.clippaths
-            write(img.out, "<clipPath id=\"$(id)\">\n  <path d=\"")
-            print_svg_path(img.out, clippath.points)
-            write(img.out, "\" />\n</clipPath\n>")
-        end
+        img.indentation += 1
+    end
+
+    for (clippath, id) in img.clippaths
+        indent(img)
+        write(img.out, "<clipPath id=\"$(id)\">\n  <path d=\"")
+        print_svg_path(img.out, clippath.points)
+        write(img.out, "\" />\n</clipPath>\n")
+    end
+
+    for (primitive, id) in img.batches
+        indent(img)
+        print(img.out, "<g id=\"", id, "\">\n")
+        img.indentation += 1
+        draw(img, primitive, 1)
+        img.indentation -= 1
+        indent(img)
+        print(img.out, "</g>\n")
+    end
+
+    if !isempty(img.clippaths) | !isempty(img.batches)
+        img.indentation -= 1
         write(img.out, "</defs>\n")
     end
 
@@ -492,7 +520,7 @@ end
 
 
 function root_box(img::SVG)
-    AbsoluteBoundingBox(0.0, 0.0, img.width, img.height)
+    BoundingBox(0mm, 0mm, img.width, img.height)
 end
 
 
@@ -516,11 +544,11 @@ end
 # Returns:
 #   A string containing SVG path data.
 #
-function print_svg_path(out, points::Vector{SimplePoint},
+function print_svg_path(out, points::Vector{AbsoluteVec2},
                         bridge_gaps::Bool=false)
     isfirst = true
     for point in points
-        x, y = point.x.abs, point.y.abs
+        x, y = point[1].value, point[2].value
         if !(isfinite(x) && isfinite(y))
             isfirst = true
             continue
@@ -543,27 +571,27 @@ function print_svg_path(out, points::Vector{SimplePoint},
 end
 
 
+# TODO: This logic should be moved to Gadfly
 # Return array of paths to draw with printpath
 # array is formed by splitting by NaN values
-function make_paths(points::Vector{SimplePoint})
-    paths = Vector{SimplePoint}[]
-    nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
-                [(point.x.abs, point.y.abs) for point in points])
-
-    if length(nans) == 0
-        push!(paths, points)
-    else
-        nans = [0, nans, length(points) + 1]
-        i, n = 1, length(nans)
-        while i <= n-1
-            if nans[i] + 1 < nans[i + 1]
-                push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])
-            end
-            i += 1
-        end
-    end
-    paths
-end
+#function make_paths(points::Vector{AbsoluteVec})
+    #paths = Vector{AbsoluteVec}[]
+    #nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
+                #[(point[1].value, point[2].value) for point in points])
+    #if length(nans) == 0
+        #push!(paths, points)
+    #else
+        #nans = [0, nans..., length(points) + 1]
+        #i, n = 1, length(nans)
+        #while i <= n-1
+            #if nans[i] + 1 < nans[i + 1]
+                #push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])
+            #end
+            #i += 1
+        #end
+    #end
+    #paths
+#end
 
 
 # Property Printing
@@ -573,9 +601,9 @@ end
 function print_property(img::SVG, property::StrokePrimitive)
     if property.color.alpha != 1.0
         @printf(img.out, " stroke=\"%s\" stroke-opacity=\"%0.3f\"",
-                svg_fmt_color(property.color.c), property.color.alpha)
+                svg_fmt_color(color(property.color)), property.color.alpha)
     else
-        @printf(img.out, " stroke=\"%s\"", svg_fmt_color(property.color.c))
+        @printf(img.out, " stroke=\"%s\"", svg_fmt_color(color(property.color)))
     end
 end
 
@@ -583,9 +611,9 @@ end
 function print_property(img::SVG, property::FillPrimitive)
     if property.color.alpha != 1.0
         @printf(img.out, " fill=\"%s\" fill-opacity=\"%0.3f\"",
-                svg_fmt_color(property.color.c), property.color.alpha)
+                svg_fmt_color(color(property.color)), property.color.alpha)
     else
-        @printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color.c))
+        @printf(img.out, " fill=\"%s\"", svg_fmt_color(color(property.color)))
     end
 end
 
@@ -595,10 +623,10 @@ function print_property(img::SVG, property::StrokeDashPrimitive)
         print(img.out, " stroke-dasharray=\"none\"")
     else
         print(img.out, " stroke-dasharray=\"")
-        svg_print_float(img.out, property.value[1].abs)
+        svg_print_float(img.out, property.value[1].value)
         for i in 2:length(property.value)
             print(img.out, ',')
-            svg_print_float(img.out, property.value[i].abs)
+            svg_print_float(img.out, property.value[i].value)
         end
         print(img.out, '"')
     end
@@ -629,7 +657,7 @@ end
 
 function print_property(img::SVG, property::LineWidthPrimitive)
     print(img.out, " stroke-width=\"")
-    svg_print_float(img.out, property.value.abs)
+    svg_print_float(img.out, property.value.value)
     print(img.out, '"')
 end
 
@@ -669,7 +697,7 @@ end
 
 function print_property(img::SVG, property::FontSizePrimitive)
     print(img.out, " font-size=\"")
-    svg_print_float(img.out, property.value.abs)
+    svg_print_float(img.out, property.value.value)
     print(img.out, '"')
 end
 
@@ -748,10 +776,9 @@ end
 # Form Drawing
 # ------------
 
-
-function draw(img::SVG, form::Form)
-    for (idx, primitive) in enumerate(form.primitives)
-        draw(img, primitive, idx)
+function draw{T}(img::SVG, form::Form{T})
+    for i in 1:length(form.primitives)
+        draw(img, form.primitives[i], i)
     end
 end
 
@@ -761,13 +788,13 @@ function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
 
     # SVG will hide rectangles with zero height or width. We'd prefer to have
     # zero width/height rectangles stroked, so this is a work-around.
-    width = max(prim.width.abs, 0.01)
-    height = max(prim.height.abs, 0.01)
+    width = max(prim.width.value, 0.01)
+    height = max(prim.height.value, 0.01)
 
     print(img.out, "<rect x=\"")
-    svg_print_float(img.out, prim.corner.x.abs)
+    svg_print_float(img.out, prim.corner[1].value)
     print(img.out, "\" y=\"")
-    svg_print_float(img.out, prim.corner.y.abs)
+    svg_print_float(img.out, prim.corner[2].value)
     print(img.out, "\" width=\"")
     svg_print_float(img.out, width)
     print(img.out, "\" height=\"")
@@ -779,26 +806,39 @@ end
 
 
 function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
-     n = length(prim.points)
-     if n <= 1; return; end
+    n = length(prim.points)
+    if n <= 1; return; end
 
-     indent(img)
-     write(img.out, "<path d=\"")
-     print_svg_path(img.out, prim.points, true)
-     write(img.out, " z\"")
-     print_vector_properties(img, idx)
-     write(img.out, "/>\n")
+    indent(img)
+    write(img.out, "<path d=\"")
+    print_svg_path(img.out, prim.points, true)
+    write(img.out, " z\"")
+    print_vector_properties(img, idx)
+    write(img.out, "/>\n")
+end
+
+
+function draw(img::SVG, prim::ComplexPolygonPrimitive, idx::Int)
+    Compose.write(img.out, "<path d=\"")
+    for ring in prim.rings
+        indent(img)
+        print_svg_path(img.out, ring, true)
+        write(img.out, " ")
+    end
+    write(img.out, " z\"")
+    print_vector_properties(img, idx)
+    write(img.out, "/>\n")
 end
 
 
 function draw(img::SVG, prim::CirclePrimitive, idx::Int)
     indent(img)
     print(img.out, "<circle cx=\"")
-    svg_print_float(img.out, prim.center.x.abs)
+    svg_print_float(img.out, prim.center[1].value)
     print(img.out, "\" cy=\"")
-    svg_print_float(img.out, prim.center.y.abs)
+    svg_print_float(img.out, prim.center[2].value)
     print(img.out, "\" r=\"")
-    svg_print_float(img.out, prim.radius.abs)
+    svg_print_float(img.out, prim.radius.value)
     print(img.out, "\"")
     print_vector_properties(img, idx)
     print(img.out, "/>\n")
@@ -806,14 +846,14 @@ end
 
 
 function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
-    cx = prim.center.x.abs
-    cy = prim.center.y.abs
-    rx = sqrt((prim.x_point.x.abs - cx)^2 +
-              (prim.x_point.y.abs - cy)^2)
-    ry = sqrt((prim.y_point.x.abs - cx)^2 +
-              (prim.y_point.y.abs - cy)^2)
-    theta = rad2deg(atan2(prim.x_point.y.abs - cy,
-                          prim.x_point.x.abs - cx))
+    cx = prim.center[1].value
+    cy = prim.center[2].value
+    rx = sqrt((prim.x_point[1].value - cx)^2 +
+              (prim.x_point[2].value - cy)^2)
+    ry = sqrt((prim.y_point[1].value - cx)^2 +
+              (prim.y_point[2].value - cy)^2)
+    theta = rad2deg(atan2(prim.x_point[2].value - cy,
+                          prim.x_point[1].value - cx))
 
     if !all(isfinite([cx, cy, rx, ry, theta]))
         return
@@ -821,21 +861,21 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
 
     indent(img)
     print(img.out, "<ellipse cx=\"")
-    svg_print_float(cx)
+    svg_print_float(img.out, cx)
     print(img.out, "\" cy=\"")
-    svg_print_float(cy)
+    svg_print_float(img.out, cy)
     print(img.out, "\" rx=\"")
-    svg_print_float(rx)
+    svg_print_float(img.out, rx)
     print(img.out, "\" ry=\"")
-    svg_print_float(ry)
+    svg_print_float(img.out, ry)
     print(img.out, '"')
     if abs(theta) > 1e-4
         print(img.out, " transform=\"rotate(")
-        svg_print_float(theta)
+        svg_print_float(img.out, theta)
         print(img.out, ' ')
-        svg_print_float(cx)
+        svg_print_float(img.out, cx)
         print(img.out, ' ')
-        svg_print_float(cy)
+        svg_print_float(img.out, cy)
         print(img.out, ")\"")
 
     end
@@ -844,24 +884,24 @@ end
 
 
 function draw(img::SVG, prim::LinePrimitive, idx::Int)
-     n = length(prim.points)
-     if n <= 1; return; end
+    n = length(prim.points)
+    if n <= 1; return; end
 
-     indent(img)
-     print(img.out, "<path fill=\"none\" d=\"")
-     print_svg_path(img.out, prim.points, true)
-     print(img.out, "\"")
-     print_vector_properties(img, idx, true)
-     print(img.out, "/>\n")
+    indent(img)
+    print(img.out, "<path fill=\"none\" d=\"")
+    print_svg_path(img.out, prim.points, true)
+    print(img.out, "\"")
+    print_vector_properties(img, idx, true)
+    print(img.out, "/>\n")
 end
 
 
 function draw(img::SVG, prim::TextPrimitive, idx::Int)
     indent(img)
     print(img.out, "<text x=\"")
-    svg_print_float(img.out, prim.position.x.abs)
+    svg_print_float(img.out, prim.position[1].value)
     print(img.out, "\" y=\"")
-    svg_print_float(img.out, prim.position.y.abs)
+    svg_print_float(img.out, prim.position[2].value)
     print(img.out, '"')
 
     if is(prim.halign, hcenter)
@@ -885,36 +925,36 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
         print(img.out, " transform=\"rotate(")
         svg_print_float(img.out, rad2deg(prim.rot.theta))
         print(img.out, ", ")
-        svg_print_float(img.out, prim.rot.offset.x.abs)
+        svg_print_float(img.out, prim.rot.offset[1].value)
         print(img.out, ", ")
-        svg_print_float(img.out, prim.rot.offset.y.abs)
+        svg_print_float(img.out, prim.rot.offset[2].value)
         print(img.out, ")\"")
     end
     print_vector_properties(img, idx)
 
     @printf(img.out, ">%s</text>\n",
-            svg_newlines(pango_to_svg(prim.value), prim.position.x.abs))
+            svg_newlines(pango_to_svg(prim.value), prim.position[1].value))
 end
 
 
 function draw(img::SVG, prim::CurvePrimitive, idx::Int)
     indent(img)
     print(img.out, "<path fill=\"none\" d=\"M")
-    svg_print_float(img.out, prim.anchor0.x.abs)
+    svg_print_float(img.out, prim.anchor0[1].value)
     print(img.out, ',')
-    svg_print_float(img.out, prim.anchor0.y.abs)
+    svg_print_float(img.out, prim.anchor0[2].value)
     print(img.out, " C")
-    svg_print_float(img.out, prim.ctrl0.x.abs)
+    svg_print_float(img.out, prim.ctrl0[1].value)
     print(img.out, ',')
-    svg_print_float(img.out, prim.ctrl0.y.abs)
+    svg_print_float(img.out, prim.ctrl0[2].value)
     print(img.out, ' ')
-    svg_print_float(img.out, prim.ctrl1.x.abs)
+    svg_print_float(img.out, prim.ctrl1[1].value)
     print(img.out, ',')
-    svg_print_float(img.out, prim.ctrl1.y.abs)
+    svg_print_float(img.out, prim.ctrl1[2].value)
     print(img.out, ' ')
-    svg_print_float(img.out, prim.anchor1.x.abs)
+    svg_print_float(img.out, prim.anchor1[1].value)
     print(img.out, ',')
-    svg_print_float(img.out, prim.anchor1.y.abs)
+    svg_print_float(img.out, prim.anchor1[2].value)
     print(img.out, ' ')
     print(img.out, '"')
     print_vector_properties(img, idx, true)
@@ -925,18 +965,18 @@ end
 function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
     indent(img)
     print(img.out, "<image x=\"")
-    svg_print_float(img.out, prim.corner.x.abs)
+    svg_print_float(img.out, prim.corner[1].value)
     print(img.out, "\" y=\"")
-    svg_print_float(img.out, prim.corner.y.abs)
+    svg_print_float(img.out, prim.corner[2].value)
     print(img.out, "\" width=\"")
-    svg_print_float(img.out, prim.width.abs)
+    svg_print_float(img.out, prim.width.value)
     print(img.out, "\" height=\"")
-    svg_print_float(img.out, prim.height.abs)
+    svg_print_float(img.out, prim.height.value)
     print(img.out, '"')
     print_vector_properties(img, idx)
 
     print(img.out, " xlink:href=\"data:", prim.mime, ";base64,")
-    b64pipe = Base64Pipe(img.out)
+    b64pipe = @compat Base64EncodePipe(img.out)
     write(b64pipe, prim.data)
     close(b64pipe)
     print(img.out, "\"></image>\n")
@@ -945,17 +985,17 @@ end
 
 function svg_print_path_op(io::IO, op::MoveAbsPathOp)
     print(io, 'M')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
 function svg_print_path_op(io::IO, op::MoveRelPathOp)
     print(io, 'm')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
@@ -966,145 +1006,169 @@ end
 
 function svg_print_path_op(io::IO, op::LineAbsPathOp)
     print(io, 'L')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
 function svg_print_path_op(io::IO, op::LineRelPathOp)
     print(io, 'l')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
 function svg_print_path_op(io::IO, op::HorLineRelPathOp)
     print(io, 'H')
-    svg_print_float(io, op.x.abs)
+    svg_print_float(io, op.x.value)
 end
 
 
 function svg_print_path_op(io::IO, op::HorLineRelPathOp)
     print(io, 'h')
-    svg_print_float(io, op.Δx.abs)
+    svg_print_float(io, op.Δx.value)
 end
 
 
 function svg_print_path_op(io::IO, op::VertLineAbsPathOp)
     print(io, 'V')
-    svg_print_float(io, op.y.abs)
+    svg_print_float(io, op.y.value)
 end
 
 
 function svg_print_path_op(io::IO, op::VertLineRelPathOp)
     print(io, 'v')
-    svg_print_float(io, op.Δy.abs)
+    svg_print_float(io, op.Δy.value)
 end
 
 
 function svg_print_path_op(io::IO, op::CubicCurveAbsPathOp)
     print(io, 'C')
-    svg_print_float(io, op.ctrl1.x.abs)
+    svg_print_float(io, op.ctrl1[1].value)
     print(io, ' ')
-    svg_print_float(io, op.ctrl1.y.abs)
+    svg_print_float(io, op.ctrl1[2].value)
     print(io, ' ')
-    svg_print_float(io, op.ctrl2.x.abs)
+    svg_print_float(io, op.ctrl2[1].value)
     print(io, ' ')
-    svg_print_float(io, op.ctrl2.y.abs)
+    svg_print_float(io, op.ctrl2[2].value)
     print(io, ' ')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
 function svg_print_path_op(io::IO, op::CubicCurveRelPathOp)
     print(io, 'c')
-    svg_print_float(io, op.ctrl1.x.abs)
+    svg_print_float(io, op.ctrl1[1].value)
     print(io, ' ')
-    svg_print_float(io, op.ctrl1.y.abs)
+    svg_print_float(io, op.ctrl1[2].value)
     print(io, ' ')
-    svg_print_float(io, op.ctrl2.x.abs)
+    svg_print_float(io, op.ctrl2[1].value)
     print(io, ' ')
-    svg_print_float(io, op.ctrl2.y.abs)
+    svg_print_float(io, op.ctrl2[2].value)
     print(io, ' ')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
+end
+
+
+function svg_print_path_op(io::IO, op::CubicCurveShortAbsPathOp)
+    print(io, 'S')
+    svg_print_float(io, op.ctrl2[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
+end
+
+
+function svg_print_path_op(io::IO, op::CubicCurveShortRelPathOp)
+    print(io, 's')
+    svg_print_float(io, op.ctrl2[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.ctrl2[2].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[1].value)
+    print(io, ' ')
+    svg_print_float(io, op.to[2].value)
 end
 
 
 function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
     print(io, 'Q')
-    svg_print_float(io, op.ctrl1.x.abs)
+    svg_print_float(io, op.ctrl1[1].value)
     print(io, ' ')
-    svg_print_float(io, op.ctrl1.y.abs)
+    svg_print_float(io, op.ctrl1[2].value)
     print(io, ' ')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
 function svg_print_path_op(io::IO, op::QuadCurveRelPathOp)
     print(io, 'q')
-    svg_print_float(io, op.ctrl1.x.abs)
+    svg_print_float(io, op.ctrl1[1].value)
     print(io, ' ')
-    svg_print_float(io, op.ctrl1.y.abs)
+    svg_print_float(io, op.ctrl1[2].value)
     print(io, ' ')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
-function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
+function svg_print_path_op(io::IO, op::QuadCurveShortAbsPathOp)
     print(io, 'T')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
-function svg_print_path_op(io::IO, op::QuadCurveRelPathOp)
+function svg_print_path_op(io::IO, op::QuadCurveShortRelPathOp)
     print(io, 't')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
 function svg_print_path_op(io::IO, op::ArcAbsPathOp)
     print(io, 'A')
-    svg_print_float(io, op.rx.abs)
+    svg_print_float(io, op.rx.value)
     print(io, ' ')
-    svg_print_float(io, op.ry.abs)
+    svg_print_float(io, op.ry.value)
     print(io, ' ')
     svg_print_float(io, op.rotation)
     print(io, ' ',
           op.largearc ? 1 : 0, ' ',
           op.sweep ? 1 : 0, ' ')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
 function svg_print_path_op(io::IO, op::ArcRelPathOp)
-    print(io, 'A')
-    svg_print_float(io, op.rx.abs)
+    print(io, 'a')
+    svg_print_float(io, op.rx.value)
     print(io, ' ')
-    svg_print_float(io, op.ry.abs)
+    svg_print_float(io, op.ry.value)
     print(io, ' ')
     svg_print_float(io, op.rotation)
     print(io, ' ',
           op.largearc ? 1 : 0, ' ',
           op.sweep ? 1 : 0, ' ')
-    svg_print_float(io, op.to.x.abs)
+    svg_print_float(io, op.to[1].value)
     print(io, ' ')
-    svg_print_float(io, op.to.y.abs)
+    svg_print_float(io, op.to[2].value)
 end
 
 
@@ -1117,6 +1181,25 @@ function draw(img::SVG, prim::PathPrimitive, idx::Int)
     print(img.out, '"')
     print_vector_properties(img, idx)
     print(img.out, "/>\n")
+end
+
+
+# FormBatch Drawing
+# -----------------
+
+function draw(img::SVG, batch::FormBatch)
+    id = genid(img)
+    push!(img.batches, (batch.primitive, id))
+    for i in 1:length(batch.offsets)
+        indent(img)
+        print(img.out, "<use xlink:href=\"#", id, "\" x=\"")
+        svg_print_float(img.out, batch.offsets[i][1].value)
+        print(img.out, "\" y=\"")
+        svg_print_float(img.out, batch.offsets[i][2].value)
+        print(img.out, "\"")
+        print_vector_properties(img, i)
+        print(img.out, "/>\n")
+    end
 end
 
 
@@ -1141,6 +1224,13 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     for property in properties
         if !isrepeatable(property) && (typeof(property) in applied_properties)
             continue
+        elseif isscalar(property) && isa(property, Clip)
+            # clip-path needs to be in it's own group. Otherwise it can cause
+            # problems if we apply a transform to the group.
+            write(img.out, "<g")
+            print_property(img, property.primitives[1])
+            write(img.out, ">\n")
+            frame.has_scalar_clip = true
         elseif isscalar(property)
             push!(scalar_properties, property)
             push!(applied_properties, typeof(property))
@@ -1197,6 +1287,10 @@ function pop_property_frame(img::SVG)
         write(img.out, "\n")
     end
 
+    if frame.has_scalar_clip
+        write(img.out, "</g>\n")
+    end
+
     for (propertytype, property) in frame.vector_properties
         img.vector_properties[propertytype] = nothing
         for i in length(img.property_stack):-1:1
@@ -1207,4 +1301,3 @@ function pop_property_frame(img::SVG)
         end
     end
 end
-

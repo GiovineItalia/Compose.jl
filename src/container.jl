@@ -10,16 +10,18 @@ type Context <: Container
     box::BoundingBox
 
     # Context coordinates used for children
-    units::UnitBox
+    units::Nullable{UnitBox}
 
     # Rotation is degrees of
-    rot::Rotation
+    rot::Nullable{Rotation}
 
     # Maybe mirror about a line, after rotation
-    mir::Maybe(Mirror)
+    mir::Nullable{Mirror}
 
     # Container children
-    children::List{ComposeNode}
+    container_children::List{Container}
+    form_children::List{Form}
+    property_children::List{Property}
 
     # Z-order of this context relative to its siblings.
     order::Int
@@ -48,13 +50,15 @@ type Context <: Container
     # is preferable to another.
     penalty::Float64
 
+    tag::Symbol
+
     function Context(x0=0.0w,
                      y0=0.0h,
                      width=1.0w,
                      height=1.0h;
-                     units=NilUnitBox(),
-                     rotation=Rotation(),
-                     mirror=nothing,
+                     units=NullUnitBox(),
+                     rotation=Nullable{Rotation}(),
+                     mirror=Nullable{Mirror}(),
                      order=0,
                      clip=false,
                      withjs=false,
@@ -62,41 +66,47 @@ type Context <: Container
                      raster=false,
                      minwidth=nothing,
                      minheight=nothing,
-                     penalty=0.0)
+                     penalty=0.0,
+                     tag=empty_tag)
         return new(BoundingBox(x0, y0, width, height), units, rotation, mirror,
                    ListNull{ComposeNode}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty)
+                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
     end
 
     function Context(box::BoundingBox,
-                     units::UnitBox,
-                     rotation::Rotation,
+                     units,
+                     rotation::Nullable{Rotation},
                      mirror,
-                     children::List{ComposeNode},
+                     container_children::List{Container},
+                     form_children::List{Form},
+                     property_children::List{Property},
                      order::Int,
                      clip::Bool,
                      withjs::Bool,
                      withoutjs::Bool,
                      raster::Bool,
                      minwidth, minheight,
-                     penalty)
-        if isa(minwidth, Measure)
-            minwidth = minwidth.abs
+                     penalty, tag)
+        if isa(minwidth, AbsoluteLength)
+            minwidth = minwidth.value
         end
 
-        if isa(minheight, Measure)
-            minheight = minheight.abs
+        if isa(minheight, AbsoluteLength)
+            minheight = minheight.value
         end
 
-        return new(box, units, rotation, mirror, children, order,
+        return new(box, units, rotation, mirror, container_children,
+                   form_children, property_children, order,
                    clip, withjs, withoutjs, raster, minwidth, minheight,
-                   penalty)
+                   penalty, tag)
     end
 
     function Context(ctx::Context)
-        return new(ctx.box, ctx.units, ctx.rot, ctx.mir, ctx.children, ctx.order,
+        return new(ctx.box, ctx.units, ctx.rot, ctx.mir,
+                   ctx.container_children, ctx.form_children,
+                   ctx.property_children, ctx.order,
                    ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
-                   ctx.minwidth, ctx.minheight, ctx.penalty)
+                   ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
     end
 end
 
@@ -105,8 +115,8 @@ function context(x0=0.0w,
                  y0=0.0h,
                  width=1.0w,
                  height=1.0h;
-                 units=NilUnitBox(),
-                 rotation=Rotation(),
+                 units=NullUnitBox(),
+                 rotation=Nullable{Rotation}(),
                  mirror=nothing,
                  order=0,
                  clip=false,
@@ -115,10 +125,21 @@ function context(x0=0.0w,
                  raster=false,
                  minwidth=nothing,
                  minheight=nothing,
-                 penalty=0.0)
-    return Context(BoundingBox(x0, y0, width, height), units, rotation, mirror,
-                   ListNull{ComposeNode}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty)
+                 penalty=0.0,
+                 tag=empty_tag)
+
+    return Context(BoundingBox(x_measure(x0), y_measure(y0),
+                               x_measure(width), y_measure(height)),
+                   isa(units, Nullable) ? units : Nullable{UnitBox}(units),
+                   isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
+                   mirror, ListNull{Container}(), ListNull{Form}(),
+                   ListNull{Property}(), order, clip,
+                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
+end
+
+
+function children(ctx::Context)
+    chain(ctx.container_children, ctx.form_children, ctx.property_children)
 end
 
 
@@ -191,14 +212,11 @@ function transformcoordinates(from::Measure, ctx::Context)
 end
 
 function boundingbox(c::Context,linewidth::Measure=default_line_width,
-                     font::String=default_font_family,
+                     font::AbstractString=default_font_family,
                      fontsize::Measure=default_font_size,
                      parent_abs_width = nothing,
                      parent_abs_height = nothing)
-    for child in c.children
-        if !isa(child, Property)
-            continue
-        end
+    for child in c.property_children
         for p in child.primitives
             if isa(p, LineWidthPrimitive)
                 linewidth = p.value
@@ -233,27 +251,27 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
     end
 
     bb = BoundingBox(Measure(),Measure(),Measure(),Measure())
-    for child in c.children
-        if isa(child, Property)
-            continue
-        elseif isa(child,Context)
-            cbb = boundingbox(child, linewidth, font, fontsize, c_abs_width, c_abs_height)
-            width′  = transformcoordinates(cbb.width,child)
-            height′ = transformcoordinates(cbb.height,child)
-            x0′     = transformcoordinates(cbb.x0,child)
-            y0′     = transformcoordinates(cbb.y0,child)
-            bb′ = BoundingBox(child.box.x0+x0′, child.box.y0+y0′, width′, height′)
-            bb = union(bb, bb′, c.units, c_abs_width, c_abs_height)
-        elseif isa(child, Container)
+    for child in c.container_children
+        if !isa(child, Context)
             error("Can not compute boundingbox for graphics with non-Context containers")
-        elseif isa(child, Form)
-            for prim in child.primitives
-                newbb = boundingbox(prim, linewidth, font, fontsize)
-                nextbb = union(bb, newbb, c.units, c_abs_height, c_abs_height)
-                bb = nextbb
-            end
+        end
+        cbb = boundingbox(child, linewidth, font, fontsize, c_abs_width, c_abs_height)
+        width′  = transformcoordinates(cbb.width,child)
+        height′ = transformcoordinates(cbb.height,child)
+        x0′     = transformcoordinates(cbb.x0,child)
+        y0′     = transformcoordinates(cbb.y0,child)
+        bb′ = BoundingBox(child.box.x0+x0′, child.box.y0+y0′, width′, height′)
+        bb = union(bb, bb′, c.units, c_abs_width, c_abs_height)
+    end
+
+    for child in c.form_children
+        for prim in child.primitives
+            newbb = boundingbox(prim, linewidth, font, fontsize)
+            nextbb = union(bb, newbb, c.units, c_abs_height, c_abs_height)
+            bb = nextbb
         end
     end
+
     return bb
 end
 
@@ -269,7 +287,7 @@ abstract ContainerPromise <: Container
 immutable ParentDrawContext
     t::Transform
     units::UnitBox
-    box::AbsoluteBoundingBox
+    box::Absolute2DBox
 end
 
 
@@ -320,8 +338,20 @@ function realize(promise::AdhocContainerPromise, drawctx::ParentDrawContext)
 end
 
 
-function compose!(a::Context, b::ComposeNode)
-    a.children = cons(b, a.children)
+function compose!(a::Context, b::Container)
+    a.container_children = cons(b, a.container_children)
+    return a
+end
+
+
+function compose!(a::Context, b::Form)
+    a.form_children = cons(b, a.form_children)
+    return a
+end
+
+
+function compose!(a::Context, b::Property)
+    a.property_children = cons(b, a.property_children)
     return a
 end
 
@@ -374,17 +404,17 @@ function compose(a::Context)
 end
 
 
-function compose(a, b::Nothing)
+function compose(a, b::(@compat Void))
     return a
 end
 
 
-for (f, S, T) in [(:compose!, Property, Nothing),
-                  (:compose!, Form, Nothing),
+for (f, S, T) in [(:compose!, Property, (@compat Void)),
+                  (:compose!, Form, (@compat Void)),
                   (:compose!, Property, Any),
                   (:compose!, Form, Any),
-                  (:compose, Property, Nothing),
-                  (:compose, Form, Nothing),
+                  (:compose, Property, (@compat Void)),
+                  (:compose, Form, (@compat Void)),
                   (:compose, Property, Any),
                   (:compose, Form, Any)]
     eval(
@@ -396,14 +426,31 @@ for (f, S, T) in [(:compose!, Property, Nothing),
 end
 
 
-function draw(backend::Backend, root_canvas::Context)
-    drawpart(backend, root_canvas)
+function draw(backend::Backend, root_container::Container)
+	if isfinished(backend)
+		error("The backend has already been drawn upon.")
+	end
+	
+    drawpart(backend, root_container, IdentityTransform(), UnitBox(), root_box(backend))
     finish(backend)
 end
 
+register_coords(backend::Backend, box, units, transform, form) = nothing
 
-function draw(backend::Backend, root_form::Form)
-    draw(backend, compose(context(), root_form))
+immutable DrawState
+    pop_poperty::Bool
+    container::Container
+    parent_transform::Transform
+    units::UnitBox
+    parent_box::Absolute2DBox
+
+    function DrawState()
+        new(true)
+    end
+
+    function DrawState(container, parent_transform, units, parent_box)
+        new(false, container, parent_transform, units, parent_box)
+    end
 end
 
 
@@ -412,214 +459,143 @@ end
 # Drawing is basically a depth-first traversal of the tree, pushing and popping
 # properties, expanding context promises, etc. as needed.
 #
-function drawpart(backend::Backend, root_container::Container)
-    S = Any[(root_container, IdentityTransform(), UnitBox(), root_box(backend))]
+function drawpart(backend::Backend, container::Container,
+                  parent_transform::Transform, units::UnitBox,
+                  parent_box::Absolute2DBox)
 
-    # used to collect property children
-    properties = Array(Property, 0)
+    if (iswithjs(container) && !iswithjs(backend)) ||
+       (iswithoutjs(container) && iswithjs(backend))
+        return
+    end
 
-    # collect and sort container children
-    container_children = Array((Int, Int, Container), 0)
-
-    while !isempty(S)
-        s = pop!(S)
-
-        # Groups of properties are in a property frame, analogous to a stack
-        # frame. A marker is pushed to the stack so we know when to pop the
-        # frame.
-        if s == :POP_PROPERTY_FRAME
-            pop_property_frame(backend)
-            continue
+    if isa(container, ContainerPromise)
+        container = realize(container,
+                            ParentDrawContext(parent_transform, units, parent_box))
+        if !isa(container, Container)
+            error("Error: A container promise function did not evaluate to a container")
         end
+        drawpart(backend, container, parent_transform, units, parent_box)
+        return
+    end
 
-        container, parent_transform, units, parent_box = s
+    ctx = optimize_batching(container)
+    box = resolve(parent_box, units, parent_transform, ctx.box)
 
-        if (iswithjs(container) && !iswithjs(backend)) ||
-           (iswithoutjs(container) && iswithjs(backend))
-            continue
-        end
+    transform = parent_transform
+    if !isnull(ctx.rot)
+        rot = resolve(box, units, parent_transform, get(ctx.rot))
+        transform = combine(convert(Transform, rot), transform)
+    end
 
-        if isa(container, ContainerPromise)
-            container = realize(container,
-                                ParentDrawContext(parent_transform, units, parent_box))
-            if !isa(container, Container)
-                error("Error: A container promise function did not evaluate to a container")
-            end
-            push!(S, (container, parent_transform, units, parent_box))
-            continue
-        end
+    if !isnull(ctx.mir)
+        mir = resolve(box, units, parent_transform, get(ctx.mir))
+        transform = combine(convert(Transform, mir), transform)
+    end
 
-        @assert isa(container, Context)
-        ctx = container
+    if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
+        bitmapbackend = PNG(box.a[1], box.a[2], false)
+        draw(bitmapbackend, ctx)
+        f = bitmap("image/png", takebuf_array(bitmapbackend.out),
+                   0, 0, 1w, 1h)
 
-        box = absolute_units(ctx.box, parent_transform, units, parent_box)
-        rot = absolute_units(ctx.rot, parent_transform, units, box)
-        transform = combine(convert(Transform, rot), parent_transform)
+        c = context(ctx.box.x0[1], ctx.box.x0[2],
+                    ctx.box.a[1], ctx.box.a[2],
+                    units=UnitBox(),
+                    order=ctx.order,
+                    clip=ctx.clip)
+        drawpart(backend, compose(c, f), parent_transform, units, parent_box)
+        return
+    end
 
-        if ctx.mir != nothing
-            mir = absolute_units(ctx.mir, parent_transform, units, box)
-            transform = combine(convert(Transform, mir), transform)
-        end
+    if !isnull(ctx.units)
+        units = resolve(box, units, transform, get(ctx.units))
+    end
 
-        if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
-            # TODO: commented out while I search for the real source of the
-            # slowness, cause it it ain't this.
-            bitmapbackend = PNG(box.width, box.height, false)
-            draw(bitmapbackend, ctx)
-            f = bitmap("image/png", takebuf_array(bitmapbackend.out),
-                       0, 0, 1w, 1h)
+    has_properties = false
+    if !isa(ctx.property_children, ListNull) || ctx.clip
+        has_properties = true
+        properties = Array(Property, 0)
 
-            c = context(ctx.box.x0, ctx.box.y0,
-                        ctx.box.width, ctx.box.height,
-                        units=UnitBox(),
-                        order=ctx.order,
-                        clip=ctx.clip)
-            push!(S, (compose(c, f), parent_transform, units, parent_box))
-            continue
-        end
-
-        if ctx.units != nil_unit_box
-            units = absolute_units(ctx.units, transform, units, box)
-        end
-
-        for child in ctx.children
-            if isa(child, Property)
-                push!(properties, absolute_units(child, parent_transform, units, parent_box))
-            end
+        child = ctx.property_children
+        while !isa(child, ListNull)
+            register_coords(backend, box, units, transform, child.head)
+            push!(properties, resolve(parent_box, units, parent_transform, child.head))
+            child = child.tail
         end
 
         if ctx.clip
-            x0 = ctx.box.x0
-            y0 = ctx.box.y0
-            x1 = x0 + ctx.box.width
-            y1 = y0 + ctx.box.height
+            x0 = ctx.box.x0[1]
+            y0 = ctx.box.x0[2]
+            x1 = x0 + ctx.box.a[1]
+            y1 = y0 + ctx.box.a[2]
             push!(properties,
-                  absolute_units(clip(Point(x0, y0), Point(x1, y0),
-                                      Point(x1, y1), Point(x0, y1)),
-                                 parent_transform, units, parent_box))
+            resolve(parent_box, units, parent_transform,
+            clip([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])))
         end
 
-        if !isempty(properties)
-            push_property_frame(backend, properties)
-            push!(S, :POP_PROPERTY_FRAME)
-            empty!(properties)
+        push_property_frame(backend, properties)
+    end
+
+    trybatch = canbatch(backend)
+    child = ctx.form_children
+    while !isa(child, ListNull)
+        register_coords(backend, box, units, transform, child.head)
+        form = resolve(box, units, transform, child.head)
+        if isempty(form.primitives)
+            child = child.tail
+            continue
         end
 
-        for child in ctx.children
-            if isa(child, Form)
-                draw(backend, transform, units, box, child)
+        if trybatch
+            b = batch(form)
+            if !isnull(b)
+                draw(backend, get(b))
+                child = child.tail
+                continue
             end
         end
 
-        for child in ctx.children
-            if isa(child, Container)
-                push!(container_children,
-                      (order(child), 1 + length(container_children), child))
-            end
-        end
-        sort!(container_children, rev=true)
+        draw(backend, form)
+        child = child.tail
+    end
 
-        for (_, _, child) in container_children
-            push!(S, (child, transform, units, box))
+    # Order children if needed
+    ordered_children = false
+    child = ctx.container_children
+    while !isa(child, ListNull)
+        if order(child.head) != 0
+            ordered_children = true
+            break
+        end
+        child = child.tail
+    end
+
+    if ordered_children
+        container_children = Array((@compat Tuple{Int, Int, Container}), 0)
+        child = ctx.container_children
+        while !isa(child, ListNull)
+            push!(container_children,
+                  (order(child.head), 1 + length(container_children), child.head))
+            child = child.tail
+        end
+
+        sort!(container_children)
+        for i in 1:length(container_children)
+            drawpart(backend, container_children[i][3], transform, units, box)
         end
         empty!(container_children)
+    else
+        child = ctx.container_children
+        while !isa(child, ListNull)
+            drawpart(backend, child.head, transform, units, box)
+            child = child.tail
+        end
+    end
+
+    if has_properties
+        pop_property_frame(backend)
     end
 end
-
-function draw_recursive(backend::Backend,
-                        container::ContainerPromise,
-                        transform=IdentityTransform(),
-                        units=UnitBox(),
-                        parent_box=root_box(backend))
-    container = realize(container,
-                        ParentDrawContext(transform, units, parent_box))
-    if !isa(container, Container)
-        error("Error: A container promise function did not evaluate to a container")
-    end
-    draw_recursive(backend, container, transform, units, parent_box)
-end
-
-function draw_recursive(backend::Backend,
-                        ctx::Context,
-                        parent_transform=IdentityTransform(),
-                        units=UnitBox(),
-                        parent_box=root_box(backend))
-
-        if (iswithjs(ctx) && !iswithjs(backend)) ||
-           (iswithoutjs(ctx) && iswithjs(backend))
-            return nothing
-        end
-
-        box = absolute_units(ctx.box, parent_transform, units, parent_box)
-        rot = absolute_units(ctx.rot, parent_transform, units, box)
-        transform = combine(convert(Transform, rot), parent_transform)
-
-        if ctx.mir != nothing
-            mir = absolute_units(ctx.mir, parent_transform, units, box)
-            transform = combine(convert(Transform, mir), transform)
-        end
-
-        if ctx.units != nil_unit_box
-            units = absolute_units(ctx.units, transform, units, box)
-        end
-
-        acc = init_context(backend, ctx)
-
-        if ctx.clip
-            x0 = ctx.box.x0
-            y0 = ctx.box.y0
-            x1 = x0 + ctx.box.width
-            y1 = y0 + ctx.box.height
-            _clip = absolute_units(clip(Point(x0, y0), Point(x1, y0),
-                                        Point(x1, y1), Point(x0, y1)),
-                                   parent_transform, units, parent_box)
-
-            acc = addto(backend, acc, draw(backend, _clip))
-        end
-
-        child_containers = Any[]
-        vector_properties = Dict{Type, Property}()
-
-        for child in ctx.children
-            if isa(child, Property)
-                # Properties get the parent units
-                prop = absolute_units(child, parent_transform, units, parent_box)
-                if isscalar(child)
-                    acc = addto(backend, acc, draw(backend, prop))
-                else
-                    vector_properties[typeof(child)] = child
-                end
-            end
-        end
-
-        pop_frame = false
-        if !isempty(vector_properties)
-            push_property_frame(backend, vector_properties)
-            pop_frame = true
-        end
-        for child in ctx.children
-            if isa(child, Form)
-                # this draw call calls draw(backend, absolute_form)
-                acc = addto(backend, acc, draw(backend, transform, units, box, child))
-            elseif isa(child, Container)
-                push!(child_containers, (order(child), length(child_containers) + 1, child))
-            end
-        end
-
-        sort!(child_containers)
-        for child in child_containers
-            ord, len, container = child
-            acc = addto(backend, acc, draw_recursive(backend, container, transform, units, box))
-        end
-
-        if pop_frame
-            pop_property_frame(backend)
-        end
-
-        empty!(child_containers)
-        acc
-end
-
 
 
 # Produce a tree diagram representing the tree structure of a graphic.
@@ -631,14 +607,14 @@ end
 #   A Context giving a tree diagram.
 #
 function introspect(root::Context)
-    positions = Dict{ComposeNode, (Float64, Float64)}()
+    positions = Dict{ComposeNode, @compat(Tuple{Float64, Float64})}()
     level_count = Int[]
     max_level = 0
 
     # TODO: It would be nice if we can try to do a better job of positioning
     # nodes within their levels
 
-    q = Queue((ComposeNode, Int))
+    q = Queue(@compat(Tuple{ComposeNode, Int}))
     enqueue!(q, (root, 1))
     figs = compose!(context(), stroke("#333"), linewidth(0.5mm))
     figsize = 6mm
@@ -656,7 +632,7 @@ function introspect(root::Context)
         fig = context(level_count[level] - 1, level - 1)
         if isa(node, Context)
             compose!(fig, circle(0.5, 0.5, figsize/2), fill(LCHab(92, 10, 77)))
-            for child in node.children
+            for child in children(node)
                 enqueue!(q, (child, level + 1))
             end
         elseif isa(node, Container)
@@ -664,8 +640,12 @@ function introspect(root::Context)
             compose!(fig, circle(0.5, 0.5, figsize/2), fill(LCHab(92, 10, 77)))
         elseif isa(node, Form)
             compose!(fig,
-                rectangle(0.5cx - figsize/2, 0.5cy - figsize/2, figsize, figsize),
-                fill(LCHab(68, 74, 192)))
+                (context(),
+                 text(0.5cx, 0.5cy, form_string(node), hcenter, vcenter),
+                 fill(colorant"black")),
+                (context(),
+                 rectangle(0.5cx - figsize/2, 0.5cy - figsize/2, figsize, figsize),
+                 fill(LCHab(68, 74, 192))))
         elseif isa(node, Property)
             # TODO: what should the third color be?
             compose!(fig,
@@ -692,7 +672,7 @@ function introspect(root::Context)
         end
         pos = positions[node]
 
-        for child in node.children
+        for child in children(node)
             childpos = positions[child]
             compose!(lines_ctx,
                      line([(pos[1], pos[2]), (childpos[1], childpos[2])]))
@@ -706,6 +686,30 @@ function introspect(root::Context)
 end
 
 
+function showcompact(io::IO, ctx::Context)
+    print(io, "Context(")
+    first = true
+    for c in children(ctx)
+        first || print(io, ",")
+        first = false
+        showcompact(io, c)
+    end
+    print(io, ")")
+end
 
+function showcompact(io::IO, a::AbstractArray)
+    print(io, "[")
+    first = true
+    for c in a
+        first || print(io, ",")
+        first = false
+        showcompact(io, c)
+    end
+    print(io, "]")
+end
 
+showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
 
+showcompact(io::IO, p::Compose.Property) = print(io, Compose.prop_string(p))
+
+showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)

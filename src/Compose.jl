@@ -1,20 +1,19 @@
-
-require("Color")
-require("Iterators")
-require("JSON")
-
+VERSION >= v"0.4.0-dev+6521" && __precompile__()
 
 module Compose
 
-using Color
+using Colors
 using Iterators
 using DataStructures
 using Compat
+using Measures
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!,
-             display, writemime, convert, zero, isless, max, fill, size, copy,
-             min, max, +, -, *, /
+             display, writemime, showcompact, convert, zero, isless, max, fill, size, copy,
+             min, max, abs, +, -, *, /
+
+import Measures: resolve, w, h
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
        ParentDrawContext, context, ctxpromise, table, set_units!, minwidth, minheight,
@@ -28,23 +27,44 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
        boundingbox, Patchable
 
-abstract Backend
 
-function isinstalled(pkg, ge=v"0.0.0")
+
+function isinstalled(pkg, ge=v"0.0.0-")
     try
         # Pkg.installed might throw an error,
         # we need to account for it to be able to precompile
         ver = Pkg.installed(pkg)
-        if ver != nothing && ver >= ge
+        ver == nothing && try
+            # Assume the version is new enough if the package is in LOAD_PATH
+            ex = Expr(:import, symbol(pkg))
+            @eval $ex
             return true
-        else
+        catch
             return false
         end
+        return ver >= ge
     catch
         return false
     end
 end
 
+
+abstract Backend
+
+
+"""
+Some backends can more efficiently draw forms by batching. If so, they
+shuld define a similar method that returns true.
+"""
+function canbatch(::Backend)
+    return false
+end
+
+# Allow users to supply strings without deprecation warnings
+parse_colorant(c::Colorant) = c
+parse_colorant(str::AbstractString) = parse(Colorant, str)
+parse_colorant_vec(c...) = to_vec(map(parse_colorant, c)...)
+@noinline to_vec(c...) = [c...]
 
 include("misc.jl")
 include("measure.jl")
@@ -60,6 +80,7 @@ nullnode = NullNode()
 include("form.jl")
 include("property.jl")
 include("container.jl")
+include("batch.jl")
 include("table.jl")
 include("stack.jl")
 
@@ -127,38 +148,52 @@ default_font_family = "Helvetica Neue,Helvetica,Arial,sans"
 default_font_size = 11pt
 default_line_width = 0.3mm
 default_stroke_color = nothing
-default_fill_color = color("black")
+default_fill_color = colorant"black"
 
 
-# Use cairo for the PNG, PS, PDF if its installed.
-try
-    require("Cairo")
+# Use cairo for the PNG, PS, PDF if it's installed.
+macro missing_cairo_error(backend)
+    msg1 = """
+    Cairo and Fontconfig are necessary for the $(backend) backend. Run:
+      Pkg.add("Cairo")
+      Pkg.add("Fontconfig")
+    """
+    msg2 = if VERSION >= v"0.4.0-dev+6521"
+        """
+        You also have to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji"))
+        and restart your REPL session afterwards.
+        """
+    else
+        """
+        You also have to restart your REPL session afterwards.
+        """
+    end
+    string(msg1, msg2)
+end
+
+if isinstalled("Cairo")
     include("cairo_backends.jl")
-catch
+    include("immerse_backend.jl")
+else
     global PNG
     global PS
     global PDF
-    PNG(::Union(IO,String), ::MeasureOrNumber, ::MeasureOrNumber) =
-        error("Cairo must be installed to use the PNG backend.")
-    PS(::Union(IO,String), ::MeasureOrNumber, ::MeasureOrNumber) =
-        error("Cairo must be installed to use the PS backend.")
-    PDF(::Union(IO,String), ::MeasureOrNumber, ::MeasureOrNumber) =
-        error("Cairo must be installed to use the PDF backend.")
+
+    PNG(args...) = error(@missing_cairo_error "PNG")
+    PS(args...) = error(@missing_cairo_error "PS")
+    PDF(args...) = error(@missing_cairo_error "PDF")
 end
 include("svg.jl")
 include("pgf_backend.jl")
 
 if isinstalled("Patchwork", v"0.1.2")
-    include("patchwork.jl")
+    include("patchable.jl")
 end
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 
-try
-    # Trigger an exception if unavailable.
-    require("Fontconfig")
-
+if isinstalled("Fontconfig")
     pango_cairo_ctx = C_NULL
     include("pango.jl")
 
@@ -172,7 +207,7 @@ try
                                  Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
         pangolayout = PangoLayout()
     end
-catch
+else
     include("fontfallback.jl")
 end
 
@@ -222,9 +257,9 @@ function pad_outer(c::Context,
     top_padding    = size_measure(top_padding)
     bottom_padding = size_measure(bottom_padding)
 
-    root = context(c.box.x0, c.box.y0,
-                   c.box.width + left_padding + right_padding,
-                   c.box.height + top_padding + bottom_padding,
+    root = context(c.box.x0[1], c.box.x0[1],
+                   c.box.a[1] + left_padding + right_padding,
+                   c.box.a[2] + top_padding + bottom_padding,
                    minwidth=c.minwidth,
                    minheight=c.minheight)
     c = copy(c)
@@ -265,9 +300,8 @@ function pad_inner(c::Context,
     top_padding    = size_measure(top_padding)
     bottom_padding = size_measure(bottom_padding)
 
-    root = context(c.box.x0, c.box.y0,
-                   c.box.width,
-                   c.box.height,
+    root = context(c.box.x0[1], c.box.x0[2],
+                   c.box.a[1], c.box.a[2],
                    minwidth=c.minwidth,
                    minheight=c.minheight)
     c = copy(c)
@@ -309,6 +343,9 @@ end
 
 const pad = pad_outer
 
+if VERSION >= v"0.4.0-dev+5512"
+    include("precompile.jl")
+    _precompile_()
+end
+
 end # module Compose
-
-

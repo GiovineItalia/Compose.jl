@@ -2,11 +2,18 @@ language: julia
 os:
     - osx
     - linux
+sudo: required
+dist: trusty
 julia:
     - release
     - nightly
 notifications:
     email: false
+before_install:
+    - if [ `uname` = "Linux" ]; then
+        sudo apt-get update -qq -y;
+        sudo apt-get install -y libcairo2 libfontconfig1 libpango1.0-0 libpng12-0 libpng12-dev libpixman-1-0 gettext;
+      fi
 script:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
     - julia -e 'Pkg.clone(pwd()); Pkg.build("Compose"); Pkg.test("Compose"; coverage=true)'

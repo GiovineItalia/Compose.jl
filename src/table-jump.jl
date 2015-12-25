@@ -10,11 +10,11 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
 
     m, n = size(tbl.children)
 
-    abswidth = drawctx.box.width
-    absheight = drawctx.box.height
+    abswidth = drawctx.box.a[1].value
+    absheight = drawctx.box.a[2].value
 
-    c_indexes = (Int, Int, Int)[]
-    idx_cs = Dict()
+    c_indexes = @compat Tuple{Int, Int, Int}[]
+    idx_cs = Dict{(@compat Tuple{Int, Int}), Vector{Int}}()
     for i in 1:m, j in 1:n
         if length(tbl.children[i, j]) > 1
             for k in 1:length(tbl.children[i, j])
@@ -105,8 +105,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     end
 
     # configurations are mutually exclusive
-    for cgroup in groupby(1:length(c_indexes),
-                          l -> (c_indexes[l][1], c_indexes[l][2]))
+    for cgroup in groupby(l -> (c_indexes[l][1], c_indexes[l][2]),
+                          1:length(c_indexes))
         @addConstraint(model, sum{c[l], l=cgroup} == 1)
     end
 

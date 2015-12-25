@@ -11,22 +11,22 @@ type Table <: ContainerPromise
     # In the formulation of the table layout problem used here, we are trying
     # find a feasible solution in which the width + height of a particular
     # group of cells in the table is maximized.
-    x_focus::Range1{Int}
-    y_focus::Range1{Int}
+    x_focus::UnitRange{Int}
+    y_focus::UnitRange{Int}
 
     # If non-nothing, constrain the focused cells to have a proportional
     # relationship.
-    x_prop::Union(Nothing, Vector{Float64})
-    y_prop::Union(Nothing, Vector{Float64})
+    x_prop::@compat(Union{(@compat Void), Vector{Float64}})
+    y_prop::@compat(Union{(@compat Void), Vector{Float64}})
 
     # If non-nothing, constrain the focused cells to have a fixed aspect ratio.
-    aspect_ratio::Union(Nothing, Float64)
+    aspect_ratio::@compat(Union{(@compat Void), Float64})
 
     # fixed configuration
     fixed_configs::Vector
 
     # Coordinate system used for children
-    units::UnitBox
+    units::Nullable{UnitBox}
 
     # Z-order of this context relative to its siblings.
     order::Int
@@ -40,10 +40,10 @@ type Table <: ContainerPromise
 
 
     function Table(m::Integer, n::Integer,
-                   y_focus::Range1{Int}, x_focus::Range1{Int};
+                   y_focus::UnitRange{Int}, x_focus::UnitRange{Int};
                    y_prop=nothing, x_prop=nothing,
                    aspect_ratio=nothing,
-                   units=NilUnitBox(), order=0, withjs=false, withoutjs=false,
+                   units=NullUnitBox(), order=0, withjs=false, withoutjs=false,
                    fixed_configs=Any[])
 
         if x_prop != nothing
@@ -188,7 +188,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     function update_focused_col_widths!(focused_col_widths)
         minwidth = sum(mincolwidths)
         total_focus_width =
-            drawctx.box.width - minwidth + sum(mincolwidths[tbl.x_focus])
+            drawctx.box.a[1].value - minwidth + sum(mincolwidths[tbl.x_focus])
 
         if tbl.x_prop != nothing
             for k in 1:length(tbl.x_focus)
@@ -216,7 +216,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     function update_focused_row_heights!(focused_row_heights)
         minheight = sum(minrowheights)
         total_focus_height =
-            drawctx.box.height - minheight + sum(minrowheights[tbl.y_focus])
+            drawctx.box.a[2].value - minheight + sum(minrowheights[tbl.y_focus])
 
         if tbl.y_prop != nothing
             for k in 1:length(tbl.y_focus)
@@ -293,7 +293,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         objective = sum(focused_col_widths) + sum(focused_row_heights) - penalty
 
         # feasible?
-        if minwidth < drawctx.box.width && minheight < drawctx.box.height &&
+        if minwidth < drawctx.box.a[1].value && minheight < drawctx.box.a[2].value &&
            all(focused_col_widths .>= mincolwidths[tbl.x_focus]) &&
            all(focused_row_heights .>= minrowheights[tbl.y_focus])
             if objective > maxobjective || !feasible
@@ -303,8 +303,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             end
             feasible = true
         else
-            badness = max(minwidth - drawctx.box.width, 0.0) +
-                      max(minheight - drawctx.box.height, 0.0)
+            badness = max(minwidth - drawctx.box.a[1].value, 0.0) +
+                      max(minheight - drawctx.box.a[2].value, 0.0)
             if badness < minbadness && !feasible
                 minbadness = badness
                 optimal_choice = copy(choice)
@@ -368,14 +368,27 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     return root
 end
 
-if isinstalled("JuMP") &&
-    (isinstalled("GLPKMathProgInterface") ||
-     isinstalled("Cbc"))
-    include("table-jump.jl")
-else
+# TODO: Enable this when we have a mechanism for making it optional
+#if isinstalled("JuMP") &&
+    #(isinstalled("GLPKMathProgInterface") ||
+     #isinstalled("Cbc"))
+    #include("table-jump.jl")
+#else
     function realize(tbl::Table, drawctx::ParentDrawContext)
         return realize_brute_force(tbl, drawctx)
     end
+#end
+
+function showcompact(io::IO, t::Table)
+    println(io,"$(size(t.children,1))x$(size(t.children,2)) Table:")
+    for i = 1:size(t.children,1)
+        print(io, "  ")
+        first = true
+        for j = 1:size(t.children,2)
+            first || print(io, ",")
+            first = false
+            showcompact(io, t.children[i,j])
+        end
+        println(io)
+    end
 end
-
-
