@@ -72,7 +72,7 @@ type PGF <: Backend
     emit_on_finish::Bool
 
     # Emit only the tikzpicture environment
-    only_tikz :: Bool
+    only_tikz::Bool
 
     # Use default TeX fonts instead of fonts specified by the theme.
     texfonts::Bool
@@ -593,7 +593,7 @@ end
 # FIX ME!
 function pango_to_pgf(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
-    input = convert(Array{UInt8}, text)
+    input = convert(Array{UInt8}, escape_tex_chars(text))
     output = IOBuffer()
     lastpos = 1
     for mat in eachmatch(pat, text)
@@ -632,9 +632,21 @@ function pango_to_pgf(text::AbstractString)
     write(output, input[lastpos:end])
     write(output, "}")
 
-    # Cleanup characters
     str_out = bytestring(output)
-    replace(str_out, "%", "\\%")
 end
 
-
+function escape_tex_chars(text::AbstractString)
+	# see http://www.cespedes.org/blog/85/how-to-escape-latex-special-characters
+	escaped_str = text
+	escaped_str = replace(escaped_str, "\\", "\\textbackslash{}")
+	escaped_str = replace(escaped_str, "#", "\\#")
+	escaped_str = replace(escaped_str, "\$", "\\\$")
+	escaped_str = replace(escaped_str, "%", "\\%")
+	escaped_str = replace(escaped_str, "&", "\\&")
+	escaped_str = replace(escaped_str, "_", "\\_")
+	escaped_str = replace(escaped_str, "{", "\\{")
+	escaped_str = replace(escaped_str, "}", "\\}")
+	escaped_str = replace(escaped_str, "^", "\\textasciicircum{}")
+	escaped_str = replace(escaped_str, "~", "\\textasciitilde{}")
+	escaped_str = replace(escaped_str, "\\textbackslash\\{\\}", "\\textbackslash{}")
+end
