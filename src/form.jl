@@ -691,10 +691,7 @@ function image(data::Array{UInt32}, x0, y0, width, height, tag=empty_tag)
 end
 
 function image(data::Array{UInt32})
-    corner = (0.0,0.0)
-    width = x_measure(1.0)
-    height = y_measure(1.0)
-    return ImageMatrix([ImageMatrixPrimitive(data, corner, width, height)])
+    image(data, 0.0, 0.0, 1.0, 1.0)
 end
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
