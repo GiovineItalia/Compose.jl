@@ -931,18 +931,29 @@ function draw(img::Image, prim::BitmapPrimitive)
 end
 
 function draw(img::Image, prim::ImageMatrixPrimitive)
+    x = absolute_native_units(img, prim.corner[1].value)
+    y = absolute_native_units(img, prim.corner[2].value)
+    w = absolute_native_units(img, prim.width.value)
+    h = absolute_native_units(img, prim.height.value)
 
+    # Construct rectangle in which the image shall be drawn
     rectangle(img, prim.corner, prim.width, prim.height)
-    s = Cairo.CairoRGBSurface(prim.data);
-    p = Cairo.CairoPattern(s)
-    w = absolute_native_units(img,prim.width.value)
-    h = absolute_native_units(img,prim.height.value)
-    m = Cairo.CairoMatrix(s.width/w,0,0,s.height/h,0,0)
-    Cairo.set_matrix(p,m)
-    Cairo.pattern_set_filter(p,Cairo.FILTER_NEAREST)        
-    Cairo.set_source(img.ctx,p)
-    Cairo.fill(img.ctx)
+    # Construct pattern that shall fill the rectangle
+    imgsurf = Cairo.CairoRGBSurface(prim.data)
+    imgpatt = Cairo.CairoPattern(imgsurf)
+    # Set pattern interpolation mode
+    Cairo.pattern_set_filter(imgpatt, Cairo.FILTER_NEAREST)
+    # Scale pattern appropriately
+    imgmatrix = Cairo.CairoMatrix(imgsurf.width/w, 0, 0, imgsurf.height/h, 0, 0)
+    Cairo.set_matrix(imgpatt, imgmatrix)
 
+    save_property_state(img)
+    # Translate to draw position and draw
+    Cairo.translate(img.ctx, x, y)
+    Cairo.set_source(img.ctx, imgpatt)
+    Cairo.fill(img.ctx)
+    # Clean up
+    restore_property_state(img)
 end
 
 function draw(img::Image, prim::PathPrimitive)
