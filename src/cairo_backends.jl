@@ -170,8 +170,9 @@ type Image{B <: ImageBackend} <: Backend
 
     function Image(width::MeasureOrNumber,
                    height::MeasureOrNumber,
-                   emit_on_finish::Bool=true)
-        img = Image{B}(IOBuffer(), width, height, emit_on_finish)
+                   emit_on_finish::Bool=true;
+                   dpi = (B == PNGBackend ? 96 : 72))
+        img = Image{B}(IOBuffer(), width, height, emit_on_finish, dpi = dpi)
         img
     end
 
