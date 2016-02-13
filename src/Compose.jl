@@ -186,10 +186,6 @@ end
 include("svg.jl")
 include("pgf_backend.jl")
 
-if isinstalled("Patchwork", v"0.1.2")
-    include("patchable.jl")
-end
-
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 
