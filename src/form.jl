@@ -57,7 +57,12 @@ function polygon()
     return Polygon([PolygonPrimitive(Vec[])])
 end
 
+"""
+    polygon(points)
 
+Define a polygon. `points` is an array of `(x,y)` tuples
+that specify the corners of the polygon.
+"""
 function polygon{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(Vector[points])
     if XM == Any
@@ -169,13 +174,22 @@ end
 
 typealias Rectangle{P<:RectanglePrimitive} Form{P}
 
+"""
+    rectangle()
 
+Define a rectangle that fills the current context completely.
+"""
 function rectangle()
     prim = RectanglePrimitive((0.0w, 0.0h), 1.0w, 1.0h)
     return Rectangle{typeof(prim)}([prim])
 end
 
 
+"""
+    rectangle(x0, y0, width, height)
+
+Define a rectangle of size `width`x`height` with its top left corner at the point (`x`, `y`).
+"""
 function rectangle(x0, y0, width, height, tag=empty_tag)
     corner = (x_measure(x0), y_measure(y0))
     width = x_measure(width)
@@ -184,7 +198,11 @@ function rectangle(x0, y0, width, height, tag=empty_tag)
     return Rectangle{typeof(prim)}([prim], tag)
 end
 
+"""
+    rectangle(x0s, y0s, widths, heights)
 
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
 function rectangle(x0s::AbstractArray, y0s::AbstractArray,
                    widths::AbstractArray, heights::AbstractArray, tag=empty_tag)
     return @makeform (x0 in x0s, y0 in y0s, width in widths, height in heights),
@@ -251,19 +269,31 @@ end
 
 typealias Circle{P<:CirclePrimitive} Form{P}
 
+"""
+    circle()
 
+Define a circle in the center of the current context with a diameter equal to the width of the context.
+"""
 function circle()
     prim = CirclePrimitive((0.5w, 0.5h), 0.5w)
     return Circle{typeof(prim)}([prim])
 end
 
+"""
+    circle(x, y, r)
 
+Define a circle with its center at (`x`,`y`) and a radius of `r`.
+"""
 function circle(x, y, r, tag=empty_tag)
     prim = CirclePrimitive(x, y, r)
     return Circle{typeof(prim)}([prim], tag)
 end
 
+"""
+    circle(xs, ys, rs)
 
+Arguments can be passed in arrays in order to perform multiple drawing operations.
+"""
 function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray, tag=empty_tag)
     if isempty(xs) || isempty(ys) || isempty(rs)
         prima = CirclePrimitive[]
@@ -393,6 +423,16 @@ end
 typealias Text{P<:TextPrimitive} Form{P}
 
 
+
+"""
+    text(x, y, value [,halgin::HAlignment [,valgin::VAlignment [,rot::Rotation]]])
+
+Draw the text `value` at the position (`x`,`y`) relative to the current context.
+
+The default alignment of the text is `hleft` `vbottom`. The vertical and horizontal
+alignment is specified by passing `hleft`, `hcenter` or `hright` and `vtop`,
+`vcenter` or `vbottom` as values for `halgin` and `valgin` respectively.
+"""
 function text(x, y, value::AbstractString,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation(); tag::Symbol=empty_tag)
@@ -409,6 +449,11 @@ function text(x, y, value,
 end
 
 
+"""
+    text(xs, ys, values [,halgins::HAlignment [,valgins::VAlignment [,rots::Rotation]]])
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
 function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{AbstractString},
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
               rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag)
