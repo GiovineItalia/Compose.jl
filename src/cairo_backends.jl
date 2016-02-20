@@ -862,9 +862,15 @@ end
 
 function draw(img::Image, prim::LinePrimitive)
     if length(prim.points) <= 1; return; end
-    move_to(img, prim.points[1])
-    for i in 2:length(prim.points)
-        line_to(img, prim.points[i])
+    prev_ok = false
+    for (i,p) in enumerate(prim.points)
+        ok = !(isnan(p[1].value) || isnan(p[2].value))
+        if ok && prev_ok
+            line_to(img, p)
+        else
+            move_to(img, p)
+        end
+        prev_ok = ok
     end
     fillstroke(img, true)
 end
