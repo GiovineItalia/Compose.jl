@@ -61,10 +61,10 @@ end
 function polygon{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(Vector[points])
     if XM == Any
-        XM = Length{:cx, Float64}
+        XM = Measure
     end
     if YM == Any
-        YM = Length{:cy, Float64}
+        YM = Measure
     end
     VecType = Tuple{XM, YM}
 
