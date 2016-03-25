@@ -29,6 +29,9 @@ function in_expr_args(ex::Expr)
     elseif (ex.head === :comparison && length(ex.args) == 3 &&
             ex.args[2] === :in)
         return ex.args[1], ex.args[3]
+    elseif (ex.head === :call && length(ex.args) == 3 &&
+            ex.args[1] === :in)
+        return ex.args[2], ex.args[3]
     end
     error("Not an `in` expression")
 end
