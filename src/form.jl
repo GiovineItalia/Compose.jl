@@ -1012,8 +1012,8 @@ end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::QuadCurveRelPathOp)
-    return QuadCurveRelPathOp(
+                 p::QuadCurveShortRelPathOp)
+    return QuadCurveShortRelPathOp(
             (resolve(box, units, t, p.to[1]),
              resolve(box, units, t, p.to[2])))
 end
