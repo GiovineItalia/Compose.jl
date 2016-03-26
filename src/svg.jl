@@ -1020,7 +1020,7 @@ function svg_print_path_op(io::IO, op::LineRelPathOp)
 end
 
 
-function svg_print_path_op(io::IO, op::HorLineRelPathOp)
+function svg_print_path_op(io::IO, op::HorLineAbsPathOp)
     print(io, 'H')
     svg_print_float(io, op.x.value)
 end
