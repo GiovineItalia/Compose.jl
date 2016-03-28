@@ -24,12 +24,14 @@ function Maybe(T::Type)
 end
 
 function in_expr_args(ex::Expr)
-    if ex.head === :in
+    ex.head === :in && return ex.args[1], ex.args[2]
+if VERSION < v"0.5.0-dev+3200"
+    (ex.head === :comparison && length(ex.args) == 3 && ex.args[2] === :in) &&
         return ex.args[1], ex.args[2]
-    elseif (ex.head === :comparison && length(ex.args) == 3 &&
-            ex.args[2] === :in)
-        return ex.args[1], ex.args[3]
-    end
+else
+    (ex.head === :call && length(ex.args) == 3 && ex.args[1] === :in) &&
+        return ex.args[2], ex.args[3]
+end
     error("Not an `in` expression")
 end
 
