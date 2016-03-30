@@ -214,9 +214,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     end
 
     function update_focused_row_heights!(focused_row_heights)
-        minheight = sum(minrowheights)
         total_focus_height =
-            drawctx.box.a[2].value - minheight + sum(minrowheights[tbl.y_focus])
+            drawctx.box.a[2].value - sum(minrowheights) + sum(minrowheights[tbl.y_focus])
 
         if tbl.y_prop != nothing
             for k in 1:length(tbl.y_focus)
@@ -284,8 +283,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
 
         penalty = update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
 
-        minheight = sum(minrowheights)
-        minwidth = sum(mincolwidths)
+        minheightval = sum(minrowheights)
+        minwidthval = sum(mincolwidths)
 
         update_focused_col_widths!(focused_col_widths)
         update_focused_row_heights!(focused_row_heights)
@@ -293,7 +292,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         objective = sum(focused_col_widths) + sum(focused_row_heights) - penalty
 
         # feasible?
-        if minwidth < drawctx.box.a[1].value && minheight < drawctx.box.a[2].value &&
+        if minwidthval < drawctx.box.a[1].value && minheightval < drawctx.box.a[2].value &&
            all(focused_col_widths .>= mincolwidths[tbl.x_focus]) &&
            all(focused_row_heights .>= minrowheights[tbl.y_focus])
             if objective > maxobjective || !feasible
@@ -303,8 +302,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             end
             feasible = true
         else
-            badness = max(minwidth - drawctx.box.a[1].value, 0.0) +
-                      max(minheight - drawctx.box.a[2].value, 0.0)
+            badness = max(minwidthval - drawctx.box.a[1].value, 0.0) +
+                      max(minheightval - drawctx.box.a[2].value, 0.0)
             if badness < minbadness && !feasible
                 minbadness = badness
                 optimal_choice = copy(choice)
