@@ -473,7 +473,7 @@ end
 # --------
 
 immutable SVGClassPrimitive <: PropertyPrimitive
-    value::ASCIIString
+    value::AbstractString
 end
 
 typealias SVGClass Property{SVGClassPrimitive}
