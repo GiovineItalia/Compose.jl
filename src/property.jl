@@ -473,7 +473,7 @@ end
 # --------
 
 immutable SVGClassPrimitive <: PropertyPrimitive
-    value::ASCIIString
+    value::UTF8String
 end
 
 typealias SVGClass Property{SVGClassPrimitive}
