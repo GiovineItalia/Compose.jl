@@ -177,10 +177,10 @@ type SVG <: Backend
     vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, ASCIIString}
+    clippaths::Dict{ClipPrimitive, AbstractString}
 
     # Batched forms to be included within <def> tags.
-    batches::Vector{Tuple{FormPrimitive, ASCIIString}}
+    batches::Vector{Tuple{FormPrimitive, AbstractString}}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -242,8 +242,8 @@ type SVG <: Backend
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
         img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
-        img.clippaths = Dict{ClipPrimitive, ASCIIString}()
-        img.batches = Array(Tuple{FormPrimitive, ASCIIString}, 0)
+        img.clippaths = Dict{ClipPrimitive, AbstractString}()
+        img.batches = Array(Tuple{FormPrimitive, AbstractString}, 0)
         img.embobj = Set{AbstractString}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
