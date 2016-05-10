@@ -430,7 +430,7 @@ function draw(backend::Backend, root_container::Container)
 	if isfinished(backend)
 		error("The backend has already been drawn upon.")
 	end
-	
+
     drawpart(backend, root_container, IdentityTransform(), UnitBox(), root_box(backend))
     finish(backend)
 end
@@ -692,12 +692,12 @@ function showcompact(io::IO, ctx::Context)
     for c in children(ctx)
         first || print(io, ",")
         first = false
-        showcompact(io, c)
+        isa(c, AbstractArray) ? showcompact_array(io, c) : showcompact(io, c)
     end
     print(io, ")")
 end
 
-function showcompact(io::IO, a::AbstractArray)
+function showcompact_array(io::IO, a::AbstractArray)
     print(io, "[")
     first = true
     for c in a
@@ -707,6 +707,7 @@ function showcompact(io::IO, a::AbstractArray)
     end
     print(io, "]")
 end
+showcompact_array(io::IO, a::Range) = showcompact(io, a)
 
 showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
 
