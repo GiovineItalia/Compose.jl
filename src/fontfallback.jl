@@ -3,8 +3,8 @@
 # Define this even if we're not calling pango, since cairo needs it.
 const PANGO_SCALE = 1024.0
 
-# Handle deprecation of readall, replacement with readstring
-isdefined(:readstring) || (readstring = readall)
+using Compat
+using Compat: readstring
 
 # Serialized glyph sizes for commont fonts.
 const glyphsizes = open(fd -> JSON.parse(readstring(fd)),

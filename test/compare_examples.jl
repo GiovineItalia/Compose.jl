@@ -1,3 +1,6 @@
+using Compat
+using Compat: readstring
+
 # Compare with cached output
 cachedout = joinpath(testdir, "data")
 differentfiles = AbstractString[]
@@ -31,7 +34,7 @@ if length(differentfiles)>0
     #Capture diffs
     diffs = map(
         output -> output * ":\n" *
-            readall(ignorestatus(`diff $(joinpath(cachedout, output)) $(joinpath(testdir, output))`)) *
+            readstring(ignorestatus(`diff $(joinpath(cachedout, output)) $(joinpath(testdir, output))`)) *
             "\n\n",
         differentfiles)
     error(string("Generated output differs from cached test output:\n",

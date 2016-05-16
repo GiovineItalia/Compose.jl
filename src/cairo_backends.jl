@@ -128,9 +128,6 @@ type Image{B <: ImageBackend} <: Backend
         Image{B}(surface, ctx, IOBuffer())
     end
 
-    Image(surface::CairoSurface) = Image{B}(surface, CairoContext(surface))
-
-
     function Image(out::IO,
                    width::MeasureOrNumber,
                    height::MeasureOrNumber,
@@ -612,19 +609,6 @@ function rel_line_to(img::Image, point::AbsoluteVec2)
         absolute_native_units(img, point[2].value))
 end
 
-
-function curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, to::AbsoluteVec2)
-    Cairo.curve_to(
-        img.ctx,
-        absolute_native_units(img, ctrl1[1].value),
-        absolute_native_units(img, ctrl1[2].value),
-        absolute_native_units(img, ctrl2[1].value),
-        absolute_native_units(img, ctrl2[2].value),
-        absolute_native_units(img, to[1].value),
-        absolute_native_units(img, to[2].value),)
-end
-
-
 function rel_curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, to::AbsoluteVec2)
     Cairo.rel_curve_to(
         img.ctx,
@@ -665,7 +649,6 @@ function curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, anchor::
         absolute_native_units(img, anchor[1].value),
         absolute_native_units(img, anchor[2].value))
 end
-
 
 function close_path(img::Image)
     Cairo.close_path(img.ctx)
