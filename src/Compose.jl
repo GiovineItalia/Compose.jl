@@ -36,7 +36,7 @@ function isinstalled(pkg, ge=v"0.0.0-")
         ver = Pkg.installed(pkg)
         ver == nothing && try
             # Assume the version is new enough if the package is in LOAD_PATH
-            ex = Expr(:import, symbol(pkg))
+            ex = Expr(:import, Symbol(pkg))
             @eval $ex
             return true
         catch
@@ -340,7 +340,11 @@ end
 const pad = pad_outer
 
 if VERSION >= v"0.4.0-dev+5512"
-    include("precompile.jl")
+    if VERSION < v"0.5.0-dev"
+        include("precompile0.4.jl")
+    else
+        include("precompile0.5.jl")
+    end
     _precompile_()
 end
 

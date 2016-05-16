@@ -160,10 +160,10 @@ type SVG <: Backend
     out::IO
 
     # Save output from IOBuffers to allow multiple calls to writemime
-    cached_out::@compat(Union{AbstractString, (@compat Void)})
+    cached_out::Union{String, Void}
 
     # Unique ID for the figure.
-    id::AbstractString
+    id::String
 
     # Current level of indentation.
     indentation::Int
@@ -174,13 +174,13 @@ type SVG <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
+    vector_properties::Dict{Type, Union{Void, Property}}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, ASCIIString}
+    clippaths::Dict{ClipPrimitive, String}
 
     # Batched forms to be included within <def> tags.
-    batches::Vector{Tuple{FormPrimitive, ASCIIString}}
+    batches::Vector{Tuple{FormPrimitive, String}}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -193,7 +193,7 @@ type SVG <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::@compat(Union{AbstractString, (@compat Void)})
+    filename::Union{AbstractString, Void}
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -210,7 +210,7 @@ type SVG <: Backend
     jsheader::Vector{AbstractString}
 
     # (Name, binding) pairs of javascript modules the embedded code depends on
-    jsmodules::Vector{@compat Tuple{AbstractString, AbstractString}}
+    jsmodules::Vector{Tuple{AbstractString, AbstractString}}
 
     # User javascript from JSCall attributes
     scripts::Vector{AbstractString}
@@ -241,9 +241,9 @@ type SVG <: Backend
         img.cached_out = nothing
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
-        img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
-        img.clippaths = Dict{ClipPrimitive, ASCIIString}()
-        img.batches = Array(Tuple{FormPrimitive, ASCIIString}, 0)
+        img.vector_properties = Dict{Type, Union{Void, Property}}()
+        img.clippaths = Dict{ClipPrimitive, String}()
+        img.batches = Array(Tuple{FormPrimitive, String}, 0)
         img.embobj = Set{AbstractString}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
@@ -251,7 +251,7 @@ type SVG <: Backend
         img.has_current_id = false
         img.id_count = 0
         img.jsheader = AbstractString[]
-        img.jsmodules = Array((@compat Tuple{AbstractString, AbstractString}), 1)
+        img.jsmodules = Array(Tuple{AbstractString, AbstractString}, 1)
         img.jsmodules[1] = ("Snap.svg", "Snap")
         img.scripts = AbstractString[]
         img.withjs = jsmode != :none
@@ -407,7 +407,7 @@ function finish(img::SVG)
             write(img.out,
                 """
                 <script> <![CDATA[
-                $(escape_script(readall(snapsvgjs)))
+                $(escape_script(readstring(snapsvgjs)))
                 ]]> </script>
                 """)
         elseif img.jsmode == :linkabs
@@ -426,7 +426,7 @@ function finish(img::SVG)
             if img.jsmode == :embed
                 write(img.out, "<script> <![CDATA[\n")
                 for script in img.jsheader
-                    write(img.out, escape_script(readall(script)), "\n")
+                    write(img.out, escape_script(readstring(script)), "\n")
                 end
             elseif img.jsmode == :linkabs
                 for script in img.jsheader
