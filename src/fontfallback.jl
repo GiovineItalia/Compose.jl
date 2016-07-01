@@ -4,7 +4,7 @@
 const PANGO_SCALE = 1024.0
 
 # Handle deprecation of readall, replacement with readstring
-isdefined(:readstring) || (readstring = readall)
+isdefined(:readstring) || (readstring = readstring)
 
 # Serialized glyph sizes for commont fonts.
 const glyphsizes = open(fd -> JSON.parse(readstring(fd)),

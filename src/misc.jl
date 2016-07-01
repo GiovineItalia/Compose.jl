@@ -71,7 +71,7 @@ macro makeform(args...)
 
     for iterator in iterators.args
         var, arr = in_expr_args(iterator::Expr)
-        ivar = symbol(string("i_", var))
+        ivar = Symbol(string("i_", var))
 
         push!(maxlen_ex.args,
             quote

@@ -36,7 +36,7 @@ function isinstalled(pkg, ge=v"0.0.0-")
         ver = Pkg.installed(pkg)
         ver == nothing && try
             # Assume the version is new enough if the package is in LOAD_PATH
-            ex = Expr(:import, symbol(pkg))
+            ex = Expr(:import, Symbol(pkg))
             @eval $ex
             return true
         catch

@@ -177,10 +177,10 @@ type SVG <: Backend
     vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, ASCIIString}
+    clippaths::Dict{ClipPrimitive, String}
 
     # Batched forms to be included within <def> tags.
-    batches::Vector{Tuple{FormPrimitive, ASCIIString}}
+    batches::Vector{Tuple{FormPrimitive, String}}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -242,8 +242,8 @@ type SVG <: Backend
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
         img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
-        img.clippaths = Dict{ClipPrimitive, ASCIIString}()
-        img.batches = Array(Tuple{FormPrimitive, ASCIIString}, 0)
+        img.clippaths = Dict{ClipPrimitive, String}()
+        img.batches = Array(Tuple{FormPrimitive, String}, 0)
         img.embobj = Set{AbstractString}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
@@ -407,7 +407,7 @@ function finish(img::SVG)
             write(img.out,
                 """
                 <script> <![CDATA[
-                $(escape_script(readall(snapsvgjs)))
+                $(escape_script(readstring(snapsvgjs)))
                 ]]> </script>
                 """)
         elseif img.jsmode == :linkabs
@@ -426,7 +426,7 @@ function finish(img::SVG)
             if img.jsmode == :embed
                 write(img.out, "<script> <![CDATA[\n")
                 for script in img.jsheader
-                    write(img.out, escape_script(readall(script)), "\n")
+                    write(img.out, escape_script(readstring(script)), "\n")
                 end
             elseif img.jsmode == :linkabs
                 for script in img.jsheader
