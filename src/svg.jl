@@ -177,7 +177,7 @@ type SVG <: Backend
     vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, String}
+    clippaths::Dict{ClipPrimitive, Compat.ASCIIString}
 
     # Batched forms to be included within <def> tags.
     batches::Vector{Tuple{FormPrimitive, String}}
