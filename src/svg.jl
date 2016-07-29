@@ -180,7 +180,7 @@ type SVG <: Backend
     clippaths::Dict{ClipPrimitive, Compat.ASCIIString}
 
     # Batched forms to be included within <def> tags.
-    batches::Vector{Tuple{FormPrimitive, String}}
+    batches::Vector{Tuple{FormPrimitive, Compat.ASCIIString}}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -242,8 +242,8 @@ type SVG <: Backend
         img.indentation = 0
         img.property_stack = Array(SVGPropertyFrame, 0)
         img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
-        img.clippaths = Dict{ClipPrimitive, String}()
-        img.batches = Array(Tuple{FormPrimitive, String}, 0)
+        img.clippaths = Dict{ClipPrimitive, Compat.ASCIIString}()
+        img.batches = Array(Tuple{FormPrimitive, Compat.ASCIIString}, 0)
         img.embobj = Set{AbstractString}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
