@@ -473,7 +473,7 @@ end
 # --------
 
 immutable SVGClassPrimitive <: PropertyPrimitive
-    value::UTF8String
+    value::Compat.UTF8String
 end
 
 typealias SVGClass Property{SVGClassPrimitive}
@@ -510,8 +510,8 @@ end
 # ------------
 
 immutable SVGAttributePrimitive <: PropertyPrimitive
-    attribute::ASCIIString
-    value::ASCIIString
+    attribute::Compat.ASCIIString
+    value::Compat.ASCIIString
 end
 
 typealias SVGAttribute Property{SVGAttributePrimitive}

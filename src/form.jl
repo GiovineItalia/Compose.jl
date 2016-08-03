@@ -3,7 +3,7 @@
 
 abstract FormPrimitive
 
-const empty_tag = symbol("")
+const empty_tag = Symbol("")
 
 immutable Form{P <: FormPrimitive} <: ComposeNode
     primitives::Vector{P}

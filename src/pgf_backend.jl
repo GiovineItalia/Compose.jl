@@ -237,8 +237,8 @@ function print_pgf_path(out::IO, points::Vector{AbsoluteVec2},
 end
 
 function get_vector_properties(img::PGF, idx::Int)
-    props_str = ASCIIString[]
-    modifiers = ASCIIString[]
+    props_str = Compat.ASCIIString[]
+    modifiers = Compat.ASCIIString[]
     for (propertytype, property) in img.vector_properties
         if isnull(property)
             continue
