@@ -10,8 +10,18 @@ cd(testdir)
 exampledir = joinpath(testdir, "..", "examples")
 for ex in readdir(exampledir)
     endswith(ex, ".jl") || continue
-    srand(1) #Needed so that SVG uuid is reproducible
-    include(joinpath(exampledir, ex))
+    file = joinpath(exampledir, ex)
+    expr = quote
+        module $(Symbol(replace(ex, ".", "_")))
+        using Compose
+        using Colors
+        using Compat
+        srand(1) #Needed so that SVG uuid is reproducible
+        include($file)
+        end
+    end
+    expr.head = :toplevel
+    eval(expr)
 end
 
 if !haskey(ENV, "TRAVIS")

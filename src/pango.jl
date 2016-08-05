@@ -53,7 +53,7 @@ let available_font_families = Set{AbstractString}()
         family = Fontconfig.format(match(Fontconfig.Pattern(family=family)), "%{family}")
         desc = @sprintf("%s %fpx", family, size)
         fd = ccall((:pango_font_description_from_string, libpango),
-                   Ptr{Void}, (Ptr{UInt8},), bytestring(desc))
+                   Ptr{Void}, (Ptr{UInt8},), desc)
         return fd
     end
 end
@@ -90,7 +90,7 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
-    textarray = convert(Vector{UInt8}, bytestring(text))
+    textarray = convert(Vector{UInt8}, convert(Compat.UTF8String, text))
     ccall((:pango_layout_set_markup, libpango),
           Void, (Ptr{Void}, Ptr{UInt8}, Int32),
           pangolayout.layout, textarray, length(textarray))
@@ -361,13 +361,13 @@ end
 
 
 function pango_to_svg(text::AbstractString)
-    c_stripped_text = Array(Ptr{UInt8}, 1)
-    c_attr_list = Array(Ptr{Void}, 1)
+    c_stripped_text = Ref{Ptr{UInt8}}()
+    c_attr_list = Ref{Ptr{Void}}()
 
     ret = ccall((:pango_parse_markup, libpango),
-                Int32, (Ptr{UInt8}, Int32, UInt32, Ptr{Ptr{Void}},
+                Int32, (Cstring, Int32, UInt32, Ptr{Ptr{Void}},
                         Ptr{Ptr{UInt8}}, Ptr{UInt32}, Ptr{Void}),
-                bytestring(text), -1, 0, c_attr_list, c_stripped_text,
+                text, -1, 0, c_attr_list, c_stripped_text,
                 C_NULL, C_NULL)
 
     if ret == 0
@@ -376,16 +376,14 @@ function pango_to_svg(text::AbstractString)
 
     # TODO: do c_stripped_text and c_attr_list need to be freed?
 
-    bytearray =  str -> convert(Array{UInt8, 1}, str)
-
-    text = bytearray(bytestring(c_stripped_text[1]))
+    text = convert(Vector{UInt8}, unsafe_string(c_stripped_text[]))
 
     last_idx = 1
     open_tag = false
     baseline_shift = 0.0
 
     tagged_text = sprint() do io
-        for (idx, attr) in unpack_pango_attr_list(c_attr_list[1])
+        for (idx, attr) in unpack_pango_attr_list(c_attr_list[])
             write(io, text[last_idx:idx])
             last_idx = idx + 1
 
