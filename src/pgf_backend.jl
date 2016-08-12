@@ -632,7 +632,7 @@ function pango_to_pgf(text::AbstractString)
     write(output, input[lastpos:end])
     write(output, "}")
 
-    str_out = bytestring(output)
+    return takebuf_string(output)
 end
 
 function escape_tex_chars(text::AbstractString)

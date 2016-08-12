@@ -503,7 +503,7 @@ function isfinished(img::SVG)
 end
 
 
-function writemime(io::IO, ::MIME"text/html", img::SVG)
+@compat function show(io::IO, ::MIME"text/html", img::SVG)
     if img.cached_out === nothing
         img.cached_out = takebuf_string(img.out)
     end
@@ -511,7 +511,7 @@ function writemime(io::IO, ::MIME"text/html", img::SVG)
 end
 
 
-function writemime(io::IO, ::MIME"image/svg+xml", img::SVG)
+@compat function show(io::IO, ::MIME"image/svg+xml", img::SVG)
     if img.cached_out === nothing
         img.cached_out = takebuf_string(img.out)
     end

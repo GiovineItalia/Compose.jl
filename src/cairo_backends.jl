@@ -175,11 +175,6 @@ type Image{B <: ImageBackend} <: Backend
         img = Image{B}(IOBuffer(), width, height, emit_on_finish, dpi = dpi)
         img
     end
-
-    function Image(c::CairoSurface)
-        img = Image{B}(c,CairoContext(c))
-        img
-    end
 end
 
 
@@ -317,17 +312,17 @@ function root_box(img::Image)
 end
 
 
-function writemime(io::IO, ::MIME"image/png", img::PNG)
+@compat function show(io::IO, ::MIME"image/png", img::PNG)
     write(io, takebuf_string(img.out))
 end
 
 
-function writemime(io::IO, ::MIME"application/pdf", img::PDF)
+@compat function show(io::IO, ::MIME"application/pdf", img::PDF)
     write(io, takebuf_string(img.out))
 end
 
 
-function writemime(io::IO, ::MIME"application/postscript", img::PS)
+@compat function show(io::IO, ::MIME"application/postscript", img::PS)
     write(io, takebuf_string(img.out))
 end
 
@@ -531,7 +526,7 @@ function apply_property(img::Image, property::FontSizePrimitive)
     else
         family = ccall((:pango_font_description_get_family, Cairo._jl_libpango),
                        Ptr{UInt8}, (Ptr{Void},), font_desc)
-        family = bytestring(family)
+        family = unsafe_string(family)
     end
 
     Cairo.set_font_face(img.ctx,
@@ -610,18 +605,6 @@ function rel_line_to(img::Image, point::AbsoluteVec2)
         img.ctx,
         absolute_native_units(img, point[1].value),
         absolute_native_units(img, point[2].value))
-end
-
-
-function curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, to::AbsoluteVec2)
-    Cairo.curve_to(
-        img.ctx,
-        absolute_native_units(img, ctrl1[1].value),
-        absolute_native_units(img, ctrl1[2].value),
-        absolute_native_units(img, ctrl2[1].value),
-        absolute_native_units(img, ctrl2[2].value),
-        absolute_native_units(img, to[1].value),
-        absolute_native_units(img, to[2].value),)
 end
 
 

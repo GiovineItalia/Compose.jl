@@ -1,7 +1,4 @@
-
-
 abstract PropertyPrimitive
-
 
 # Meaningless isless function used to sort in optimize_batching
 function Base.isless{T <: PropertyPrimitive}(a::T, b::T)
@@ -27,7 +24,7 @@ end
 
 
 immutable Property{P <: PropertyPrimitive} <: ComposeNode
-	primitives::Vector{P}
+    primitives::Vector{P}
 end
 
 
@@ -401,7 +398,7 @@ function Base.hash(primitive::FontPrimitive, h::UInt64)
 end
 
 
-function Base.(:(==))(a::FontPrimitive, b::FontPrimitive)
+function ==(a::FontPrimitive, b::FontPrimitive)
     return a.family == b.family
 end
 
@@ -464,7 +461,7 @@ function Base.hash(primitive::SVGIDPrimitive, h::UInt64)
 end
 
 
-function Base.(:(==))(a::SVGIDPrimitive, b::SVGIDPrimitive)
+function ==(a::SVGIDPrimitive, b::SVGIDPrimitive)
     return a.value == b.value
 end
 
@@ -501,7 +498,7 @@ function Base.hash(primitive::SVGClassPrimitive, h::UInt64)
 end
 
 
-function Base.(:(==))(a::SVGClassPrimitive, b::SVGClassPrimitive)
+function ==(a::SVGClassPrimitive, b::SVGClassPrimitive)
     return a.value == b.value
 end
 
@@ -544,7 +541,7 @@ function Base.hash(primitive::SVGAttributePrimitive, h::UInt64)
 end
 
 
-function Base.(:(==))(a::SVGAttributePrimitive, b::SVGAttributePrimitive)
+function ==(a::SVGAttributePrimitive, b::SVGAttributePrimitive)
     return a.attribute == b.attribute && a.value == b.value
 end
 

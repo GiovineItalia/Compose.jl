@@ -200,6 +200,5 @@ function pango_to_svg(text::AbstractString)
     if open_tag
         write(output, "</tspan>")
     end
-    bytestring(output)
+    takebuf_string(output)
 end
-

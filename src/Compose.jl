@@ -9,9 +9,9 @@ using Compat
 using Measures
 import JSON
 
-import Base: length, start, next, done, isempty, getindex, setindex!,
-             display, writemime, showcompact, convert, zero, isless, max, fill, size, copy,
-             min, max, abs, +, -, *, /
+@compat import Base: length, start, next, done, isempty, getindex, setindex!,
+    display, show, showcompact, convert, zero, isless, max, fill, size, copy,
+    min, max, abs, +, -, *, /, ==
 
 import Measures: resolve, w, h
 
@@ -207,18 +207,18 @@ else
     include("fontfallback.jl")
 end
 
-function writemime(io::IO, m::MIME"text/html", ctx::Context)
+@compat function show(io::IO, m::MIME"text/html", ctx::Context)
     draw(SVGJS(io, default_graphic_width, default_graphic_height, false,
                jsmode=default_jsmode), ctx)
 end
 
-function writemime(io::IO, m::MIME"image/svg+xml", ctx::Context)
+@compat function show(io::IO, m::MIME"image/svg+xml", ctx::Context)
     draw(SVG(io, default_graphic_width, default_graphic_height, false), ctx)
 end
 
 try
     getfield(Compose, :Cairo) # throws if Cairo isn't being used
-    function writemime(io::IO, ::MIME"image/png", ctx::Context)
+    @compat function show(io::IO, ::MIME"image/png", ctx::Context)
         draw(PNG(io, default_graphic_width, default_graphic_height), ctx)
     end
 end

@@ -1,8 +1,4 @@
-
-using Compat
-
 using Measures: Add, Min, Max, Div, Mul, Neg
-
 
 # Measure Constants
 # -----------------
@@ -10,8 +6,8 @@ using Measures: Add, Min, Max, Div, Mul, Neg
 const cx = Length{:cx}
 const cy = Length{:cy}
 
-Base.(:*){T}(a::T, b::Type{cx}) = x_measure(a)
-Base.(:*){T}(a::T, b::Type{cy}) = y_measure(a)
+*{T}(a::T, b::Type{cx}) = x_measure(a)
+*{T}(a::T, b::Type{cy}) = y_measure(a)
 
 # Pixels are not typically used in Compose in preference of absolute
 # measurements or measurements relative to parent canvases. So for the
