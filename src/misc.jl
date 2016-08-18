@@ -153,6 +153,7 @@ end
 
 type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (Any, Any)
 type_params{XM <: Measure, YM <: Measure}(p::Type{Tuple{XM, YM}}) = (XM, YM)
+type_params(p::Type{Union{}}) = (Any, Any)
 
 function narrow_polygon_point_types(point_arrays::AbstractArray)
     if !isempty(point_arrays) && all([eltype(arr) <: Vec for arr in point_arrays])
