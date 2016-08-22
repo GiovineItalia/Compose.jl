@@ -123,16 +123,26 @@ end
 function text_extents(font_family::AbstractString, size::Measure, texts::AbstractString...)
     scale = size / 12pt
     font_family = match_font(font_family)
-    height = glyphsizes[font_family]["height"]
-    widths = glyphsizes[font_family]["widths"]
+    glyphheight = glyphsizes[font_family]["height"]
+    glyphwidths = glyphsizes[font_family]["widths"]
+    fontsize = size/pt
 
     extents = Array((@compat Tuple{Measure, Measure}), length(texts))
     for (i, text) in enumerate(texts)
-        width = text_width(widths, text, size/pt)*mm
-        extents[i] = (text_extents_scale_x * scale * width,
-                      text_extents_scale_y * scale *
-                      (match(r"<su(p|b)>", text) == nothing ?
-                          height * mm : height * 1.5 * mm))
+        chunkwidths = Float64[]
+        textheight = 0.0
+        for chunk in split(text, "\n")
+            chunkheight = glyphheight
+            if match(r"<su(p|b)>", text) != nothing
+                chunkheight *= 1.5
+            end
+            textheight += chunkheight
+            push!(chunkwidths, text_width(glyphwidths, chunk, fontsize))
+
+        end
+        width = maximum(chunkwidths)
+        extents[i] = (text_extents_scale_x * scale * width * mm,
+                      text_extents_scale_y * scale * textheight * mm)
     end
 
     return extents

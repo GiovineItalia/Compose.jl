@@ -75,3 +75,9 @@ bm = bitmap("fake", rand(UInt8,10), 0, 1, 0.8, 0.7, :image)
 
 # issue #172: default circle(xs, ys, rs) radius measure is context units
 @test isequal(circle([0.5], [0.5], [0.1]).primitives[1].radius, 0.1cx)
+
+# Gadfly issue 857 and 436
+# make sure that newlines are respected by `text_extents`
+font_family = "'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif"
+@test text_extents(font_family, 8pt, "test test")[1][2]*2 ==
+                        text_extents(font_family, 8pt, "test\ntest")[1][2]
