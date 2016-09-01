@@ -1,5 +1,7 @@
 # Compose!
 
+Linux, OSX: [![Build Status](https://travis-ci.org/dcjones/Compose.jl.svg?branch=master)](https://travis-ci.org/dcjones/Compose.jl)
+
 Compose is a vector graphics library for Julia.
 It forms the basis for the statistical graphics system
 [Gadfly](https://github.com/dcjones/Gadfly.jl).
