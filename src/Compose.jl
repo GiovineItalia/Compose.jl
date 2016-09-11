@@ -238,7 +238,7 @@ function display(p::Context)
             @try_display return display(displays[i], p)
         end
     end
-    invoke(display,(Any,),p)
+    invoke(display, Tuple{Any}, p)
 end
 
 
