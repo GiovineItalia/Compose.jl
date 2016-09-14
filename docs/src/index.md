@@ -1,19 +1,23 @@
+```@meta
+Author = ["Daniel C. Jones", "Gio Borje"]
+```
+
 ![Logo](assets/logo.svg)
+
+# Compose
 
 Compose is a declarative vector graphics system written in Julia. It's designed
 to simplify the creation of complex graphics and serves as the basis of the
 [Gadfly](https://github.com/dcjones/Gadfly.jl) data visualization package.
 
-Compose is declarative
-----------------------
+## Compose is declarative
 
 In a declarative graphics system, a figure is built without specifying the
 precise sequence of drawing commands but by arranging shapes and attaching
 properties. This makes it easy to break a complex graphic into manageable parts
 and then figure out how to combine the parts.
 
-Everything is a tree
---------------------
+## Everything is a tree
 
 Graphics in Compose are defined using a tree structure. It's not unlike SVG in
 this regard, but has simpler semantics. There are three important types that
@@ -45,8 +49,7 @@ draw(SVG("tomato.svg", 4cm, 4cm), composition)
 
 ![](tomato.svg)
 
-The compose function accepts S-expressions
-------------------------------------------
+## The compose function accepts S-expressions
 
 In the first example, we had to call `compose` twice just to draw a lousy red
 square. Fortunately `compose` has a few tricks up its sleeve. As everyone from
@@ -71,8 +74,7 @@ draw(SVG("tomato_bisque.svg", 4cm, 4cm), composition)
 
 ![](tomato_bisque.svg)
 
-Trees can be visualized with introspect
----------------------------------------
+## Trees can be visualized with introspect
 
 A useful function for visualizing the graphic that you've constructed is
 `introspect`. It takes a `Context` defining a graphic and returns a new graphic
@@ -114,8 +116,7 @@ t[3,2] = [compose(context(), text(0, 0.5, "Property", hleft, vcenter))]
 compose(context(), t, fill(LCHab(92, 10, 77)), fontsize(10pt))
 ```
 
-Contexts specify a coordinate system for their children
---------------------------------------------------------
+## Contexts specify a coordinate system for their children
 
 In addition to forming internal nodes to group `Form` and `Property` children, a
 `Context` can define a coordinate system using the `context(x0, y0, width, height)`
@@ -157,8 +158,7 @@ draw(SVG("tomato_bisque_triangle.svg", 4cm, 4cm), composition)
 ![](tomato_bisque_triangle.svg)
 
 
-Measures can be a combination of absolute and relative units
-------------------------------------------------------------
+## Measures can be a combination of absolute and relative units
 
 Complex visualizations often are defined using a combination of relative and
 absolute units. Compose makes these easy. In fact there are three sorts of units
@@ -178,8 +178,7 @@ Any linear combination of these types of units is allowed. For example: `0.5w +
 2cm - 5cx` is a valid measure that can be used anywhere.
 
 
-Forms and Properties can be vectorized
---------------------------------------
+## Forms and Properties can be vectorized
 
 Often one needs to produce many copies of a similar shape. Most of the forms an
 properties have a scalar and vector forms to simplify this sort of mass
@@ -237,8 +236,7 @@ draw(SVG("circles_fill_vectorized.svg", 4cm, 4cm), circles_fill_vectorized)
 If vector properties are used with vector forms, they must be of equal length.
 
 
-Compose can produce arbitrary directed graphs
----------------------------------------------
+## Compose can produce arbitrary directed graphs
 
 Though we've so far explained `compose` as producing trees, there's nothing
 stopping one from producing an arbitrary directed graph. This can be quite
