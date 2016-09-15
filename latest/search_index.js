@@ -5,7 +5,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Home",
     "category": "page",
-    "text": "Author = [\"Daniel C. Jones\", \"Gio Borje\"](Image: Logo)"
+    "text": "Author = [\"Daniel C. Jones\", \"Gio Borje\"]"
 },
 
 {
