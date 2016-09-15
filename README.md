@@ -20,7 +20,7 @@ consistent and powerful means of building vector graphics.
 
 ## Documentation
 
-(Work in progress) documentation is available at: [composejl.org](http://composejl.org)
+- [**LATEST**][docs-latest-url] &mdash; *in-development version of the documentation.*
 
 ## Example
 
@@ -108,3 +108,4 @@ for example. The Haskell library
 [Diagrams](http://projects.haskell.org/diagrams/) was another starting point
 with many admirable notions I hope to steal.
 
+[docs-latest-url]: https://dcjones.github.io/Compose.jl/latest
