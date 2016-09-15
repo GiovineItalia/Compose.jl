@@ -2,8 +2,6 @@
 Author = ["Daniel C. Jones", "Gio Borje"]
 ```
 
-![Logo](assets/logo.svg)
-
 # Compose
 
 Compose is a declarative vector graphics system written in Julia. It's designed
