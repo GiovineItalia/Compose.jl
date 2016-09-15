@@ -8,13 +8,13 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="#F4E6D6" id="img-dfc6e29d-1">
-  <use xlink:href="#img-dfc6e29d-2" x="10" y="10"/>
-  <use xlink:href="#img-dfc6e29d-2" x="20" y="20"/>
-  <use xlink:href="#img-dfc6e29d-2" x="30" y="30"/>
+<g fill="#F4E6D6" id="img-e138e6cc-1">
+  <use xlink:href="#img-e138e6cc-2" x="10" y="10"/>
+  <use xlink:href="#img-e138e6cc-2" x="20" y="20"/>
+  <use xlink:href="#img-e138e6cc-2" x="30" y="30"/>
 </g>
 <defs>
-  <g id="img-dfc6e29d-2">
+  <g id="img-e138e6cc-2">
     <circle cx="0" cy="0" r="4"/>
   </g>
 </defs>
