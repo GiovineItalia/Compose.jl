@@ -253,7 +253,7 @@ end
 function unpack_pango_attr(ptr::Ptr{Void}, t::Symbol)
     ptr += sizeof(Ptr{Void}) # skip `klass` pointer
     ptr = convert(Ptr{UInt32}, ptr)
-    idx = pointer_to_array(ptr, (2,))
+    idx = unsafe_wrap(Array, ptr, (2,), false)
     ptr += 2 * sizeof(UInt32)
     ptr = convert(Ptr{Void}, ptr)
 
@@ -278,13 +278,13 @@ end
 #   And int value.
 function unpack_pango_int(ptr::Ptr{Void})
     ptr = convert(Ptr{Int32}, ptr)
-    pointer_to_array(ptr, (1,))[1]
+    unsafe_wrap(Array, ptr, (1,), false)[1]
 end
 
 
 function unpack_pango_float(ptr::Ptr{Void})
     ptr = convert(Ptr{Float64}, ptr)
-    pointer_to_array(ptr, (1,))[1]
+    unsafe_wrap(Array, ptr, (1,), false)[1]
 end
 
 
