@@ -28,7 +28,7 @@ consistent and powerful means of building vector graphics.
 The easiest way to get a sense of how Compose works is with an example. So,
 here's how to draw a Sierpinski triangle.
 
-![Sierpinski](http://dcjones.github.com/Compose.jl/sierpinski.svg)
+![Sierpinski](http://giovineitalia.github.com/Compose.jl/sierpinski.svg)
 
 ```julia
 using Compose
@@ -109,4 +109,4 @@ for example. The Haskell library
 [Diagrams](http://projects.haskell.org/diagrams/) was another starting point
 with many admirable notions I hope to steal.
 
-[docs-latest-url]: https://dcjones.github.io/Compose.jl/latest
+[docs-latest-url]: https://giovineitalia.github.io/Compose.jl/latest
