@@ -1,6 +1,7 @@
 # Compose!
 
-Linux, OSX: [![Build Status](https://travis-ci.org/dcjones/Compose.jl.svg?branch=master)](https://travis-ci.org/dcjones/Compose.jl)
+Linux, OSX: [![Build
+Status](https://travis-ci.org/GiovineItalia/Compose.jl.svg?branch=master)](https://travis-ci.org/GiovineItalia/Compose.jl)
 
 Compose is a vector graphics library for Julia.
 It forms the basis for the statistical graphics system
