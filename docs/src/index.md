@@ -1,5 +1,5 @@
 ```@meta
-Author = ["Daniel C. Jones", "Gio Borje"]
+Author = ["Daniel C. Jones", "Gio Borje", "Tamas Nagy"]
 ```
 
 # Compose
@@ -270,3 +270,54 @@ draw(SVG("sierpinski.svg", 8cm, 8*(sqrt(3)/2)*cm), composition)
 There are no safeguards to check for cycles. You can produce a graph with a
 cycle and Compose will run in an infinite loop trying to draw it. In most
 applications, this isn't a concern.
+
+## Fancier compositions
+
+There are fancier forms of the `compose` function, in particular, variadic
+`compose`, which is roughly defined as:
+
+```julia
+compose(a, b, cs...) = compose(compose(a, b), cs...)
+```
+
+Compose over tuples or arrays:
+```julia
+compose((as...)) = compose(as...)
+```
+
+In effect, this lets one write a complex series of compose operations as an
+S-expression. For example:
+
+```julia
+compose(a, b, ((c, d), (e, f), g))
+```
+
+Since all we are doing is building trees, this syntax tends to be pretty
+convenient.
+
+## Forms
+
+These are basic constructors for the in-built forms - see `src/form.jl` for more constructors.
+
+* `polygon(points)`
+* `rectangle(x0, y0, width, height)`
+* `circle(x, y, r)`
+* `ellipse(x, y, x_radius, y_radius)`
+* `text(x, y, value)`
+* `line(points)`
+* `curve(anchor0, ctrl0, ctrl1, anchor1)`
+* `bitmap(mime, data, x0, y0, width, height)`
+
+## Coordinates
+
+Besides coordinate transformations, Compose also handles mixtures of relative
+and absolute coordinates. For example, `1w - 10mm` is a well formed expression,
+giving the width of the parent canvas minus ten millimeters.
+
+## Influences
+
+Compose is intended as a futuristic version of the R library
+[grid](http://www.stat.auckland.ac.nz/~paul/grid/grid.html), and so takes a few
+ideas from grid. The Compose canvas is roughly equivalent to a viewport in grid,
+for example. Compose was also inspired by the admirable Haskell library
+[Diagrams](http://projects.haskell.org/diagrams/).
