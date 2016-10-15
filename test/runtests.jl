@@ -1,4 +1,5 @@
 using Compose
+using Compat
 
 include("misc.jl")
 include("immerse.jl")
