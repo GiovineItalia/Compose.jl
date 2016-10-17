@@ -4,6 +4,6 @@
 
 using Compose
 
-img = PNG("text.png", 400px, 400px)
+img = PNG("text-$(Sys.KERNEL).png", 400px, 400px)
 c = compose(compose(context(), text(150px, 200px, "hello & goodbye")), fill("tomato"))
 draw(img, c)

@@ -2,7 +2,19 @@
 cachedout = joinpath(testdir, "data")
 differentfiles = AbstractString[]
 const creator_producer = r"(Creator|Producer)"
-for output in readdir(cachedout)
+
+files = split("""dash.pdf
+                 golden_rect.svg
+                 linecaps.pdf
+                 linecaps.svg
+                 linejoins.js
+                 linejoins.pdf
+                 linejoins.svg
+                 sierpinski.svg
+                 sierpinski_deferred.svg
+                 text-$(Sys.KERNEL).png""", "\n")
+
+for output in files
     cached = open(readlines, joinpath(cachedout, output))
     genned = open(readlines, joinpath(testdir, output))
     same = (n=length(cached)) == length(genned)
