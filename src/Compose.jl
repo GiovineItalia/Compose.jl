@@ -7,6 +7,7 @@ using Iterators
 using DataStructures
 using Compat
 using Measures
+using Requires
 import JSON
 
 @compat import Base: length, start, next, done, isempty, getindex, setindex!,
@@ -171,29 +172,30 @@ macro missing_cairo_error(backend)
     string(msg1, msg2)
 end
 
-if isinstalled("Cairo")
+PNG(args...) = error(@missing_cairo_error "PNG")
+PS(args...) = error(@missing_cairo_error "PS")
+PDF(args...) = error(@missing_cairo_error "PDF")
+
+@require Cairo begin
+    export PNG, PDF, PS
+    importall Compose
     include("cairo_backends.jl")
     include("immerse_backend.jl")
-else
-    global PNG
-    global PS
-    global PDF
-
-    PNG(args...) = error(@missing_cairo_error "PNG")
-    PS(args...) = error(@missing_cairo_error "PS")
-    PDF(args...) = error(@missing_cairo_error "PDF")
 end
+
 include("svg.jl")
 include("pgf_backend.jl")
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 
-if isinstalled("Fontconfig")
+include("fontfallback.jl")
+
+@require Fontconfig begin
     pango_cairo_ctx = C_NULL
     include("pango.jl")
 
-    function __init__()
+    Requires.@guard @init begin
         global pango_cairo_ctx
         global pangolayout
         ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
@@ -203,8 +205,6 @@ if isinstalled("Fontconfig")
                                  Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
         pangolayout = PangoLayout()
     end
-else
-    include("fontfallback.jl")
 end
 
 @compat function show(io::IO, m::MIME"text/html", ctx::Context)

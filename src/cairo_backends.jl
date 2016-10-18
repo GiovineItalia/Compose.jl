@@ -178,9 +178,13 @@ type Image{B <: ImageBackend} <: Backend
 end
 
 
-typealias PNG Image{PNGBackend}
-typealias PDF Image{PDFBackend}
-typealias PS  Image{PSBackend}
+PNG(file, args...) = Image{PNGBackend}(file, args...)
+PDF(file, args...) = Image{PDFBackend}(file, args...)
+PS(file, args...) = Image{PSBackend}(file, args...)
+
+typealias PNGtype Image{PNGBackend}
+typealias PDFtype Image{PDFBackend}
+typealias PStype  Image{PSBackend}
 typealias CAIROSURFACE  Image{CairoBackend}
 
 
@@ -312,17 +316,17 @@ function root_box(img::Image)
 end
 
 
-@compat function show(io::IO, ::MIME"image/png", img::PNG)
+@compat function show(io::IO, ::MIME"image/png", img::PNGtype)
     write(io, takebuf_string(img.out))
 end
 
 
-@compat function show(io::IO, ::MIME"application/pdf", img::PDF)
+@compat function show(io::IO, ::MIME"application/pdf", img::PDFtype)
     write(io, takebuf_string(img.out))
 end
 
 
-@compat function show(io::IO, ::MIME"application/postscript", img::PS)
+@compat function show(io::IO, ::MIME"application/postscript", img::PStype)
     write(io, takebuf_string(img.out))
 end
 

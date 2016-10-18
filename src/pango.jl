@@ -1,7 +1,7 @@
 
 # Estimation of text extents using pango.
 
-import Fontconfig
+import Fontconfig, Cairo
 
 const libpangocairo = Cairo._jl_libpangocairo
 const libpango = Cairo._jl_libpango
