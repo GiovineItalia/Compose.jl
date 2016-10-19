@@ -7,6 +7,7 @@ using Iterators
 using DataStructures
 using Compat
 using Measures
+using Requires
 import JSON
 
 @compat import Base: length, start, next, done, isempty, getindex, setindex!,
@@ -24,29 +25,7 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        inch, mm, cm, pt, px, cx, cy, w, h, hleft, hcenter, hright, vtop, vcenter,
        vbottom, SVG, SVGJS, PGF, PNG, PS, PDF, draw, pad, pad_inner, pad_outer,
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
-       CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
-       boundingbox, Patchable
-
-
-
-function isinstalled(pkg, ge=v"0.0.0-")
-    try
-        # Pkg.installed might throw an error,
-        # we need to account for it to be able to precompile
-        ver = Pkg.installed(pkg)
-        ver == nothing && try
-            # Assume the version is new enough if the package is in LOAD_PATH
-            ex = Expr(:import, Symbol(pkg))
-            @eval $ex
-            return true
-        catch
-            return false
-        end
-        return ver >= ge
-    catch
-        return false
-    end
-end
+       CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode, boundingbox
 
 
 abstract Backend
@@ -153,58 +132,80 @@ default_fill_color = colorant"black"
 
 # Use cairo for the PNG, PS, PDF if it's installed.
 macro missing_cairo_error(backend)
-    msg1 = """
-    Cairo and Fontconfig are necessary for the $(backend) backend. Run:
+    """
+    Usage: $(backend)("filename", width, height)
+
+    You should load Cairo and Fontconfig to use the $(backend) backend. Run:
+
       Pkg.add("Cairo")
       Pkg.add("Fontconfig")
+      import Cairo, Fontconfig
     """
-    msg2 = if VERSION >= v"0.4.0-dev+6521"
-        """
-        You also have to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji"))
-        and restart your REPL session afterwards.
-        """
-    else
-        """
-        You also have to restart your REPL session afterwards.
-        """
-    end
-    string(msg1, msg2)
 end
 
-if isinstalled("Cairo")
+immutable NoProvider end
+global cairo_provider = NoProvider()
+
+PNG(::NoProvider, args...) = error((@missing_cairo_error "PNG") * string(args))
+PS(::NoProvider, args...) = error(@missing_cairo_error "PS")
+PDF(::NoProvider, args...) = error(@missing_cairo_error "PDF")
+
+PNG(args...) = PNG(cairo_provider, args...)
+PS(args...)  = PS(cairo_provider, args...)
+PDF(args...) = PDF(cairo_provider, args...)
+
+@require Cairo begin
+    importall Compose
+    global cairo_provider
+    immutable CairoProvier end
+    cairo_provider = CairoProvier()
+
     include("cairo_backends.jl")
     include("immerse_backend.jl")
-else
-    global PNG
-    global PS
-    global PDF
-
-    PNG(args...) = error(@missing_cairo_error "PNG")
-    PS(args...) = error(@missing_cairo_error "PS")
-    PDF(args...) = error(@missing_cairo_error "PDF")
 end
+
 include("svg.jl")
 include("pgf_backend.jl")
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 
-if isinstalled("Fontconfig")
-    pango_cairo_ctx = C_NULL
+immutable FontfallbackInfo end
+global fontinfo_provider
+fontinfo_provider = FontfallbackInfo()
+
+
+function max_text_extents(font_family::AbstractString, size::Measure,
+                          texts::AbstractString...)
+
+    max_text_extents(fontinfo_provider, font_family, size, texts...)
+end
+
+function text_extents(font_family::AbstractString, size::Measure,
+                      texts::AbstractString...)
+
+    text_extents(fontinfo_provider, font_family, size, texts...)
+end
+
+function pango_to_svg(text::AbstractString)
+    pango_to_svg(fontinfo_provider, text)
+end
+
+include("fontfallback.jl")
+
+@require Fontconfig begin
+    import Cairo
+
     include("pango.jl")
 
-    function __init__()
-        global pango_cairo_ctx
-        global pangolayout
-        ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
-        pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
-                                 Ptr{Void}, ())
-        pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
-                                 Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
-        pangolayout = PangoLayout()
-    end
-else
-    include("fontfallback.jl")
+    global pango_cairo_ctx
+    global pangolayout
+    ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
+    pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
+                             Ptr{Void}, ())
+    pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
+                             Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
+    pangolayout = PangoLayout()
 end
 
 @compat function show(io::IO, m::MIME"text/html", ctx::Context)

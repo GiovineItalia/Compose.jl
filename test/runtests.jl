@@ -1,4 +1,5 @@
 using Compose
+import Cairo
 using Compat
 
 include("misc.jl")
