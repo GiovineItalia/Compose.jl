@@ -3,6 +3,8 @@ cachedout = joinpath(testdir, "data")
 differentfiles = AbstractString[]
 const creator_producer = r"(Creator|Producer)"
 
+const KERNEL = VERSION < v"0.5.0-dev" ? OS_NAME : Sys.KERNEL
+
 files = split("""dash.pdf
                  golden_rect.svg
                  linecaps.pdf
@@ -12,7 +14,7 @@ files = split("""dash.pdf
                  linejoins.svg
                  sierpinski.svg
                  sierpinski_deferred.svg
-                 text-$(Sys.KERNEL).png""", "\n")
+                 text-$(KERNEL).png""", "\n")
 
 for output in files
     cached = open(readlines, joinpath(cachedout, output))
