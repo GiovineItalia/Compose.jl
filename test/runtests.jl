@@ -1,4 +1,5 @@
 using Compose
+using Cairo, Fontconfig
 using Compat
 
 include("misc.jl")

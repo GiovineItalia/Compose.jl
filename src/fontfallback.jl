@@ -86,8 +86,7 @@ function text_width(widths::Dict, text::AbstractString, size::Float64)
     width
 end
 
-
-function max_text_extents(font_family::AbstractString, size::Measure,
+function max_text_extents(::FontfallbackInfo, font_family::AbstractString, size::Measure,
                           texts::AbstractString...)
     if !isa(size, AbsoluteLength)
         error("text_extents requries font size be in absolute units")
@@ -120,7 +119,7 @@ function max_text_extents(font_family::AbstractString, size::Measure,
 end
 
 
-function text_extents(font_family::AbstractString, size::Measure, texts::AbstractString...)
+function text_extents(::FontfallbackInfo, font_family::AbstractString, size::Measure, texts::AbstractString...)
     scale = size / 12pt
     font_family = match_font(font_family)
     glyphheight = glyphsizes[font_family]["height"]
@@ -150,7 +149,7 @@ end
 
 
 # Amazingly crude fallback to parse pango markup into svg.
-function pango_to_svg(text::AbstractString)
+function pango_to_svg(::FontfallbackInfo, text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
     input = convert(Array{UInt8}, text)
     output = IOBuffer()

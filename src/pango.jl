@@ -103,6 +103,11 @@ function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
     width, height = (extents[3] / PANGO_SCALE)pt, (extents[4] / PANGO_SCALE)pt
 end
 
+immutable PangoFontinfo end
+
+global fontinfo_provider
+fontinfo_provider = PangoFontinfo()
+
 
 # Find the minimum width and height needed to fit any of the given strings.
 #
@@ -116,7 +121,7 @@ end
 # Returns:
 #   A (width, height) tuple in absolute units.
 #
-function max_text_extents(font_family::AbstractString, pts::Float64, texts::AbstractString...)
+function max_text_extents(::PangoFontinfo, font_family::AbstractString, pts::Float64, texts::AbstractString...)
     pango_set_font(pangolayout::PangoLayout, font_family, pts)
     max_width  = 0mm
     max_height = 0mm
@@ -129,25 +134,25 @@ function max_text_extents(font_family::AbstractString, pts::Float64, texts::Abst
 end
 
 # Same as max_text_extents but with font_size in arbitrary absolute units.
-function max_text_extents(font_family::AbstractString, size::Measure,
+function max_text_extents(p::PangoFontinfo, font_family::AbstractString, size::Measure,
                       texts::AbstractString...)
     if !isa(size, AbsoluteLength)
         error("text_extents requries font size be in absolute units")
     end
-    return max_text_extents(font_family, size/pt, texts...)
+    return max_text_extents(p, font_family, size/pt, texts...)
 end
 
 
 # Return an array with the extents of each element
-function text_extents(font_family::AbstractString, pts::Float64, texts::AbstractString...)
+function text_extents(::PangoFontinfo, font_family::AbstractString, pts::Float64, texts::AbstractString...)
     pango_set_font(pangolayout::PangoLayout, font_family, pts)
     return [pango_text_extents(pangolayout::PangoLayout, text)
             for text in texts]
 end
 
 
-function text_extents(font_family::AbstractString, size::Measure, texts::AbstractString...)
-    return text_extents(font_family, size/pt, texts...)
+function text_extents(p::PangoFontinfo, font_family::AbstractString, size::Measure, texts::AbstractString...)
+    return text_extents(p, font_family, size/pt, texts...)
 end
 
 
@@ -360,7 +365,7 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
 end
 
 
-function pango_to_svg(text::AbstractString)
+function pango_to_svg(::PangoFontinfo, text::AbstractString)
     c_stripped_text = Ref{Ptr{UInt8}}()
     c_attr_list = Ref{Ptr{Void}}()
 
