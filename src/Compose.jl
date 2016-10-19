@@ -139,7 +139,7 @@ macro missing_cairo_error(backend)
 
       Pkg.add("Cairo")
       Pkg.add("Fontconfig")
-      using Cairo, Fontconfig
+      import Cairo, Fontconfig
     """
 end
 
