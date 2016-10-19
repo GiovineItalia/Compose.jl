@@ -189,6 +189,7 @@ include("pgf_backend.jl")
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 
+
 if isinstalled("Fontconfig")
     pango_cairo_ctx = C_NULL
     include("pango.jl")
@@ -320,6 +321,7 @@ function pad_inner(cs::Vector{Context}, left_padding::MeasureOrNumber,
     return map(c -> pad_inner(c, left_padding, right_padding,
                               top_padding, bottom_padding), cs)
 end
+
 
 
 function pad_inner(cs::Vector{Context}, padding::MeasureOrNumber)
