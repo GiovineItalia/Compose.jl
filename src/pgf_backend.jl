@@ -216,6 +216,8 @@ end
 function print_pgf_path(out::IO, points::Vector{AbsoluteVec2},
                         bridge_gaps::Bool=false)
     isfirst = true
+    sx0, sy0 = "", ""
+
     for point in points
         x, y = point[1].value, point[2].value
         if !(isfinite(x) && isfinite(y))
@@ -223,16 +225,18 @@ function print_pgf_path(out::IO, points::Vector{AbsoluteVec2},
             continue
         end
 
+        sx = svg_fmt_float(x)
+        sy = svg_fmt_float(y)
+
         if isfirst
             isfirst = false
-            @printf(out, " (%s,%s)",
-                    svg_fmt_float(x),
-                    svg_fmt_float(y))
-        else
-            @printf(out, " -- (%s,%s)",
-                    svg_fmt_float(x),
-                    svg_fmt_float(y))
+            @printf(out, " (%s,%s)", sx, sy)
+        elseif sx0 != sx || sy0 != sy # If both are equal we can skip it.
+            @printf(out, " -- (%s,%s)", sx, sy)
         end
+
+        sx0 = sx
+        sy0 = sy
     end
 end
 
