@@ -1,11 +1,9 @@
 language: julia
 os:
-    - osx
     - linux
 sudo: required
 dist: trusty
 julia:
-    - 0.4
     - 0.5
     - nightly
 notifications:
