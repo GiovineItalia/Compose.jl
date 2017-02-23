@@ -59,7 +59,7 @@ function svg_print_float(io::IO, x::AbstractFloat)
     end
 end
 
-let a = Array(UInt8, 20)
+let a = Array{UInt8}(20)
 global svg_print_uint
 function svg_print_uint(io::IO, x::Unsigned, width = 0, drop = false)
     n = length(a)

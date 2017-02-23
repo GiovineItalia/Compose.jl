@@ -1,7 +1,7 @@
 
 # A form is something that ends up as geometry in the graphic.
 
-abstract FormPrimitive
+@compat abstract type FormPrimitive end
 
 const empty_tag = Symbol("")
 
@@ -9,7 +9,7 @@ immutable Form{P <: FormPrimitive} <: ComposeNode
     primitives::Vector{P}
     tag::Symbol
 
-    function Form(prim, tag::Symbol=empty_tag)
+    @compat function Form{P}(prim, tag::Symbol=empty_tag) where {P}
         new(prim, tag)
     end
 end
@@ -47,10 +47,10 @@ immutable SimplePolygonPrimitive{P <: Vec} <: FormPrimitive
     points::Vector{P}
 end
 
-typealias SimplePolygon{P<:SimplePolygonPrimitive} Form{P}
+const SimplePolygon{P<:SimplePolygonPrimitive} = Form{P}
 
-typealias Polygon SimplePolygon
-typealias PolygonPrimitive SimplePolygonPrimitive
+const Polygon = SimplePolygon
+const PolygonPrimitive = SimplePolygonPrimitive
 
 
 function polygon()
@@ -118,7 +118,7 @@ immutable ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
     rings::Vector{Vector{P}}
 end
 
-typealias ComplexPolygon{P<:ComplexPolygonPrimitive} Form{P}
+const ComplexPolygon{P<:ComplexPolygonPrimitive} = Form{P}
 
 
 function complexpolygon()
@@ -172,7 +172,7 @@ immutable RectanglePrimitive{P <: Vec, M1 <: Measure, M2 <: Measure} <: FormPrim
     height::M2
 end
 
-typealias Rectangle{P<:RectanglePrimitive} Form{P}
+const Rectangle{P<:RectanglePrimitive} = Form{P}
 
 """
     rectangle()
@@ -267,7 +267,7 @@ function CirclePrimitive(x, y, r)
 end
 
 
-typealias Circle{P<:CirclePrimitive} Form{P}
+const Circle{P<:CirclePrimitive} = Form{P}
 
 """
     circle()
@@ -332,7 +332,7 @@ immutable EllipsePrimitive{P1 <: Vec, P2 <: Vec, P3 <: Vec} <: FormPrimitive
     y_point::P3
 end
 
-typealias Ellipse{P<:EllipsePrimitive} Form{P}
+const Ellipse{P<:EllipsePrimitive} = Form{P}
 
 
 function ellipse()
@@ -390,7 +390,7 @@ form_string(::Ellipse) = "E"
 # Text
 # ----
 
-abstract HAlignment
+@compat abstract type HAlignment end
 immutable HLeft   <: HAlignment end
 immutable HCenter <: HAlignment end
 immutable HRight  <: HAlignment end
@@ -399,7 +399,7 @@ const hleft   = HLeft()
 const hcenter = HCenter()
 const hright  = HRight()
 
-abstract VAlignment
+@compat abstract type VAlignment end
 immutable VTop    <: VAlignment end
 immutable VCenter <: VAlignment end
 immutable VBottom <: VAlignment end
@@ -420,7 +420,7 @@ immutable TextPrimitive{P <: Vec, R <: Rotation} <: FormPrimitive
     rot::R
 end
 
-typealias Text{P<:TextPrimitive} Form{P}
+const Text{P<:TextPrimitive} = Form{P}
 
 
 
@@ -514,7 +514,7 @@ immutable LinePrimitive{P <: Vec} <: FormPrimitive
     points::Vector{P}
 end
 
-typealias Line{P<:LinePrimitive} Form{P}
+const Line{P<:LinePrimitive} = Form{P}
 
 
 function line()
@@ -577,7 +577,7 @@ immutable CurvePrimitive{P1 <: Vec, P2 <: Vec, P3 <: Vec, P4 <: Vec} <: FormPrim
     anchor1::P4
 end
 
-typealias Curve{P<:CurvePrimitive} Form{P}
+const Curve{P<:CurvePrimitive} = Form{P}
 
 
 function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
@@ -621,7 +621,7 @@ immutable BitmapPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimiti
     height::YM
 end
 
-typealias Bitmap{P<:BitmapPrimitive} Form{P}
+const Bitmap{P<:BitmapPrimitive} = Form{P}
 
 
 function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height, tag=empty_tag)
@@ -663,7 +663,7 @@ form_string(::Bitmap) = "B"
 
 # An implementation of the SVG path mini-language.
 
-abstract PathOp
+@compat abstract type PathOp end
 
 immutable MoveAbsPathOp <: PathOp
     to::Vec
@@ -1158,7 +1158,7 @@ immutable PathPrimitive <: FormPrimitive
     ops::Vector{PathOp}
 end
 
-typealias Path Form{PathPrimitive}
+const Path = Form{PathPrimitive}
 
 
 function path(tokens::AbstractArray, tag=empty_tag)

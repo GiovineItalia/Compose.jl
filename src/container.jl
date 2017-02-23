@@ -1,7 +1,7 @@
 
 # A container is a node in the tree that can have Forms, Properties, or other
 # Containers as children.
-abstract Container <: ComposeNode
+@compat abstract type Container <: ComposeNode end
 
 
 # The basic Container which defines a coordinate transform for its children.
@@ -280,7 +280,7 @@ end
 # absolute size, or it is one many possible layout that we want to decide
 # between before rendering. A ContainerPromise lets us defer computing a subtree
 # until the graphic is actually being rendered.
-abstract ContainerPromise <: Container
+@compat abstract type ContainerPromise <: Container end
 
 
 # This information is passed to a container promise at drawtime.

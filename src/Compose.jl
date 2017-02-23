@@ -49,7 +49,7 @@ function isinstalled(pkg, ge=v"0.0.0-")
 end
 
 
-abstract Backend
+@compat abstract type Backend end
 
 
 """
@@ -71,7 +71,7 @@ include("measure.jl")
 include("list.jl")
 
 # Every graphic in Compose consists of a tree.
-abstract ComposeNode
+@compat abstract type ComposeNode end
 
 # Used to mark null child pointers
 immutable NullNode <: ComposeNode end

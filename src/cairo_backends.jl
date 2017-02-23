@@ -7,14 +7,14 @@ using Cairo: CairoContext, CairoSurface, CairoARGBSurface,
              CairoEPSSurface, CairoPDFSurface, CairoSVGSurface,
              CairoImageSurface
 
-abstract ImageBackend
-abstract PNGBackend <: ImageBackend
+@compat abstract type ImageBackend end
+@compat abstract type PNGBackend <: ImageBackend end
 
-abstract VectorImageBackend <: ImageBackend
-abstract SVGBackend <: VectorImageBackend
-abstract PDFBackend <: VectorImageBackend
-abstract PSBackend  <: VectorImageBackend
-abstract CairoBackend <: VectorImageBackend
+@compat abstract type VectorImageBackend <: ImageBackend end
+@compat abstract type SVGBackend <: VectorImageBackend end
+@compat abstract type PDFBackend <: VectorImageBackend end
+@compat abstract type PSBackend  <: VectorImageBackend end
+@compat abstract type CairoBackend <: VectorImageBackend end
 
 type ImagePropertyState
     stroke::RGBA{Float64}
@@ -89,7 +89,7 @@ type Image{B <: ImageBackend} <: Backend
     last_ctrl1_point::Nullable{AbsoluteVec2}
     last_ctrl2_point::Nullable{AbsoluteVec2}
 
-    function Image(surface::CairoSurface, ctx::CairoContext, out::IO)
+    @compat function Image{B}(surface::CairoSurface, ctx::CairoContext, out::IO) where {B}
         img = new()
         img.out = out
         img.width = 0
@@ -124,18 +124,18 @@ type Image{B <: ImageBackend} <: Backend
         img
     end
 
-    function Image(surface::CairoSurface, ctx::CairoContext)
+    @compat function Image{B}(surface::CairoSurface, ctx::CairoContext) where {B}
         Image{B}(surface, ctx, IOBuffer())
     end
 
-    Image(surface::CairoSurface) = Image{B}(surface, CairoContext(surface))
+    @compat Image{B}(surface::CairoSurface) where {B} = Image{B}(surface, CairoContext(surface))
 
 
-    function Image(out::IO,
-                   width::MeasureOrNumber,
-                   height::MeasureOrNumber,
-                   emit_on_finish::Bool=true;
-                   dpi = (B == PNGBackend ? 96 : 72))
+    @compat function Image{B}(out::IO,
+                              width::MeasureOrNumber,
+                              height::MeasureOrNumber,
+                              emit_on_finish::Bool=true;
+                              dpi = (B == PNGBackend ? 96 : 72)) where {B}
 
         width = size_measure(width)
         height = size_measure(height)
@@ -158,30 +158,30 @@ type Image{B <: ImageBackend} <: Backend
         img
     end
 
-    function Image(filename::AbstractString,
-                   width::MeasureOrNumber,
-                   height::MeasureOrNumber;
-                   dpi = (B == PNGBackend ? 96 : 72))
+    @compat function Image{B}(filename::AbstractString,
+                              width::MeasureOrNumber,
+                              height::MeasureOrNumber;
+                              dpi = (B == PNGBackend ? 96 : 72)) where {B}
         img = Image{B}(open(filename, "w"), width, height, dpi = dpi)
         img.ownedfile = true
         img.filename = filename
         img
     end
 
-    function Image(width::MeasureOrNumber,
-                   height::MeasureOrNumber,
-                   emit_on_finish::Bool=true;
-                   dpi = (B == PNGBackend ? 96 : 72))
+    @compat function Image{B}(width::MeasureOrNumber,
+                              height::MeasureOrNumber,
+                              emit_on_finish::Bool=true;
+                              dpi = (B == PNGBackend ? 96 : 72)) where {B}
         img = Image{B}(IOBuffer(), width, height, emit_on_finish, dpi = dpi)
         img
     end
 end
 
 
-typealias PNG Image{PNGBackend}
-typealias PDF Image{PDFBackend}
-typealias PS  Image{PSBackend}
-typealias CAIROSURFACE  Image{CairoBackend}
+const PNG = Image{PNGBackend}
+const PDF = Image{PDFBackend}
+const PS =  Image{PSBackend}
+const CAIROSURFACE =  Image{CairoBackend}
 
 
 function canbatch(img::Image)
