@@ -8,7 +8,7 @@ tomato_bisque =
 
 io = IOBuffer()
 showcompact(io, tomato_bisque)
-str = takebuf_string(io)
+str = String(take!(io))
 @test str == "Context(Context(R,f),Context(C,f))"
 
 # Tagging
