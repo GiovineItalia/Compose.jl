@@ -223,25 +223,6 @@ try
     end
 end
 
-
-import Base.Multimedia: @try_display, xdisplayable
-
-function display(p::Context)
-    displays = Base.Multimedia.displays
-    for i = length(displays):-1:1
-        m = default_mime()
-        if xdisplayable(displays[i], m, p)
-             @try_display return display(displays[i], m, p)
-        end
-
-        if xdisplayable(displays[i], p)
-            @try_display return display(displays[i], p)
-        end
-    end
-    invoke(display, Tuple{Any}, p)
-end
-
-
 function pad_outer(c::Context,
                    left_padding::MeasureOrNumber,
                    right_padding::MeasureOrNumber,
