@@ -98,7 +98,7 @@ type PGF <: Backend
         img.indentation = 0
         img.out = out
         img.color_set = Set{Color}([colorant"black"])
-        img.property_stack = Array(PGFPropertyFrame, 0)
+        img.property_stack = Array{PGFPropertyFrame}(0)
         img.vector_properties = Dict{Type, Nullable{Property}}()
         # img.clippaths = Dict{ClipPrimitive, String}()
         img.visible = true
@@ -521,7 +521,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
 
     frame = PGFPropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
+    scalar_properties = Array{Property}(0)
     for property in properties
         if !isrepeatable(property) && (typeof(property) in applied_properties)
             continue

@@ -514,7 +514,7 @@ function drawpart(backend::Backend, container::Container,
     has_properties = false
     if !isa(ctx.property_children, ListNull) || ctx.clip
         has_properties = true
-        properties = Array(Property, 0)
+        properties = Array{Property}(0)
 
         child = ctx.property_children
         while !isa(child, ListNull)
@@ -571,7 +571,7 @@ function drawpart(backend::Backend, container::Container,
     end
 
     if ordered_children
-        container_children = Array((@compat Tuple{Int, Int, Container}), 0)
+        container_children = Array{@compat Tuple{Int, Int, Container}}(0)
         child = ctx.container_children
         while !isa(child, ListNull)
             push!(container_children,

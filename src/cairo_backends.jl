@@ -110,8 +110,8 @@ type Image{B <: ImageBackend} <: Backend
         img.font = default_font_family
         img.clip = Nullable{ClipPrimitive}()
 
-        img.state_stack = Array(ImagePropertyState, 0)
-        img.property_stack = Array(ImagePropertyFrame, 0)
+        img.state_stack = Array{ImagePropertyState}(0)
+        img.property_stack = Array{ImagePropertyFrame}(0)
         img.vector_properties = Dict{Type, Nullable{Property}}()
         img.owns_surface = false
         img.ownedfile = false
@@ -337,7 +337,7 @@ function push_property_frame(img::Image, properties::Vector{Property})
 
     frame = ImagePropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
+    scalar_properties = Array{Property}(0)
     for property in properties
         if isscalar(property) && !(typeof(property) in applied_properties)
             push!(scalar_properties, property)
@@ -568,8 +568,8 @@ end
 # --------------
 
 function current_point(img::Image)
-    x = Array(Float64, 1)
-    y = Array(Float64, 1)
+    x = Array{Float64}(1)
+    y = Array{Float64}(1)
     ccall((:cairo_get_current_point, Cairo._jl_libcairo), Void,
           (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
     return ((x[1] / img.ppmm)*mm, (x[2] / img.ppmm)*mm)
