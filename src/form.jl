@@ -9,7 +9,7 @@ immutable Form{P <: FormPrimitive} <: ComposeNode
     primitives::Vector{P}
     tag::Symbol
 
-    @compat function Form{P}(prim, tag::Symbol=empty_tag) where {P}
+    @compat function Form{P}(prim, tag::Symbol=empty_tag) where {P <: FormPrimitive}
         new(prim, tag)
     end
 end
@@ -54,7 +54,7 @@ const PolygonPrimitive = SimplePolygonPrimitive
 
 
 function polygon()
-    return Polygon([PolygonPrimitive(Vec[])])
+    return Form([PolygonPrimitive(Vec[])])
 end
 
 """
@@ -73,7 +73,7 @@ function polygon{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
     end
     VecType = Tuple{XM, YM}
 
-    return Polygon([PolygonPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
+    return Form([PolygonPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
                     for point in points])], tag)
 end
 
