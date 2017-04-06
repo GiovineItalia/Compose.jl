@@ -89,8 +89,8 @@ type Image{B <: ImageBackend} <: Backend
     last_ctrl1_point::Nullable{AbsoluteVec2}
     last_ctrl2_point::Nullable{AbsoluteVec2}
 
-    @compat function Image{B}(surface::CairoSurface, ctx::CairoContext, out::IO) where {B}
-        img = new()
+    @compat function (::Type{Image{B}}){B}(surface::CairoSurface, ctx::CairoContext, out::IO)
+        img = new{B}()
         img.out = out
         img.width = 0
         img.height = 0
@@ -124,18 +124,18 @@ type Image{B <: ImageBackend} <: Backend
         img
     end
 
-    @compat function Image{B}(surface::CairoSurface, ctx::CairoContext) where {B}
+    @compat function (::Type{Image{B}}){B}(surface::CairoSurface, ctx::CairoContext)
         Image{B}(surface, ctx, IOBuffer())
     end
 
-    @compat Image{B}(surface::CairoSurface) where {B} = Image{B}(surface, CairoContext(surface))
+    @compat (::Type{Image{B}}){B}(surface::CairoSurface) = Image{B}(surface, CairoContext(surface))
 
 
-    @compat function Image{B}(out::IO,
+    @compat function (::Type{Image{B}}){B}(out::IO,
                               width::MeasureOrNumber,
                               height::MeasureOrNumber,
                               emit_on_finish::Bool=true;
-                              dpi = (B == PNGBackend ? 96 : 72)) where {B}
+                              dpi = (B == PNGBackend ? 96 : 72))
 
         width = size_measure(width)
         height = size_measure(height)
@@ -158,20 +158,20 @@ type Image{B <: ImageBackend} <: Backend
         img
     end
 
-    @compat function Image{B}(filename::AbstractString,
+    @compat function (::Type{Image{B}}){B}(filename::AbstractString,
                               width::MeasureOrNumber,
                               height::MeasureOrNumber;
-                              dpi = (B == PNGBackend ? 96 : 72)) where {B}
+                              dpi = (B == PNGBackend ? 96 : 72))
         img = Image{B}(open(filename, "w"), width, height, dpi = dpi)
         img.ownedfile = true
         img.filename = filename
         img
     end
 
-    @compat function Image{B}(width::MeasureOrNumber,
+    @compat function (::Type{Image{B}}){B}(width::MeasureOrNumber,
                               height::MeasureOrNumber,
                               emit_on_finish::Bool=true;
-                              dpi = (B == PNGBackend ? 96 : 72)) where {B}
+                              dpi = (B == PNGBackend ? 96 : 72))
         img = Image{B}(IOBuffer(), width, height, emit_on_finish, dpi = dpi)
         img
     end

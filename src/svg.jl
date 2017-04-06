@@ -108,7 +108,7 @@ function svg_newlines(input::AbstractString, x::Float64)
         write(output, "</tspan>")
     end
 
-    return takebuf_string(output)
+    return String(take!(output))
 end
 
 
@@ -240,10 +240,10 @@ type SVG <: Backend
         img.out = out
         img.cached_out = nothing
         img.indentation = 0
-        img.property_stack = Array(SVGPropertyFrame, 0)
+        img.property_stack = Array{SVGPropertyFrame}(0)
         img.vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}()
         img.clippaths = Dict{ClipPrimitive, Compat.ASCIIString}()
-        img.batches = Array(Tuple{FormPrimitive, Compat.ASCIIString}, 0)
+        img.batches = Array{Tuple{FormPrimitive, Compat.ASCIIString}}(0)
         img.embobj = Set{AbstractString}()
         img.finished = false
         img.emit_on_finish = emit_on_finish
@@ -251,7 +251,7 @@ type SVG <: Backend
         img.has_current_id = false
         img.id_count = 0
         img.jsheader = AbstractString[]
-        img.jsmodules = Array((@compat Tuple{AbstractString, AbstractString}), 1)
+        img.jsmodules = Array{@compat Tuple{AbstractString, AbstractString}}(1)
         img.jsmodules[1] = ("Snap.svg", "Snap")
         img.scripts = AbstractString[]
         img.withjs = jsmode != :none
@@ -904,7 +904,7 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
     svg_print_float(img.out, prim.position[2].value)
     print(img.out, '"')
 
-    if is(prim.halign, hcenter)
+    if prim.halign === hcenter
         print(img.out, " text-anchor=\"middle\"")
     elseif is(prim.halign, hright)
         print(img.out, " text-anchor=\"end\"")
@@ -913,7 +913,7 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
     # NOTE: "dominant-baseline" is the correct way to vertically center text
     # in SVG, but implementations are pretty inconsistent (chrome in particular
     # does a really bad job). We fake it by shifting by some reasonable amount.
-    if is(prim.valign, vcenter)
+    if prim.valign === vcenter
         print(img.out, " dy=\"0.35em\"")
         #print(img.out, " style=\"dominant-baseline:central\"")
     elseif is(prim.valign, vtop)
@@ -1220,7 +1220,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
 
     frame = SVGPropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
+    scalar_properties = Array{Property}(0)
     for property in properties
         if !isrepeatable(property) && (typeof(property) in applied_properties)
             continue

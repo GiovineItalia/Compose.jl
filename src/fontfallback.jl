@@ -210,5 +210,5 @@ function pango_to_svg(text::AbstractString)
     if open_tag
         write(output, "</tspan>")
     end
-    takebuf_string(output)
+    String(take!(output))
 end

@@ -9,9 +9,7 @@ immutable Form{P <: FormPrimitive} <: ComposeNode
     primitives::Vector{P}
     tag::Symbol
 
-    @compat function Form{P}(prim, tag::Symbol=empty_tag) where {P <: FormPrimitive}
-        new(prim, tag)
-    end
+    @compat (::Type{Form{P}}){P}(prim, tag::Symbol=empty_tag) = new{P}(prim, tag)
 end
 
 function Form{P<:FormPrimitive}(primitives::Vector{P}, tag::Symbol=empty_tag)
@@ -47,7 +45,7 @@ immutable SimplePolygonPrimitive{P <: Vec} <: FormPrimitive
     points::Vector{P}
 end
 
-const SimplePolygon{P<:SimplePolygonPrimitive} = Form{P}
+@compat const SimplePolygon{P<:SimplePolygonPrimitive} = Form{P}
 
 const Polygon = SimplePolygon
 const PolygonPrimitive = SimplePolygonPrimitive
@@ -118,7 +116,7 @@ immutable ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
     rings::Vector{Vector{P}}
 end
 
-const ComplexPolygon{P<:ComplexPolygonPrimitive} = Form{P}
+@compat const ComplexPolygon{P<:ComplexPolygonPrimitive} = Form{P}
 
 
 function complexpolygon()
@@ -172,7 +170,7 @@ immutable RectanglePrimitive{P <: Vec, M1 <: Measure, M2 <: Measure} <: FormPrim
     height::M2
 end
 
-const Rectangle{P<:RectanglePrimitive} = Form{P}
+@compat const Rectangle{P<:RectanglePrimitive} = Form{P}
 
 """
     rectangle()
@@ -267,7 +265,7 @@ function CirclePrimitive(x, y, r)
 end
 
 
-const Circle{P<:CirclePrimitive} = Form{P}
+@compat const Circle{P<:CirclePrimitive} = Form{P}
 
 """
     circle()
@@ -326,13 +324,13 @@ form_string(::Circle) = "C"
 # -------
 
 
-immutable EllipsePrimitive{P1 <: Vec, P2 <: Vec, P3 <: Vec} <: FormPrimitive
+immutable EllipsePrimitive{P1<:Vec, P2<:Vec, P3<:Vec} <: FormPrimitive
     center::P1
     x_point::P2
     y_point::P3
 end
 
-const Ellipse{P<:EllipsePrimitive} = Form{P}
+@compat const Ellipse{P<:EllipsePrimitive} = Form{P}
 
 
 function ellipse()
@@ -409,7 +407,7 @@ const vcenter = VCenter()
 const vbottom = VBottom()
 
 
-immutable TextPrimitive{P <: Vec, R <: Rotation} <: FormPrimitive
+immutable TextPrimitive{P<:Vec, R<:Rotation} <: FormPrimitive
     position::P
     value::AbstractString
     halign::HAlignment
@@ -420,7 +418,7 @@ immutable TextPrimitive{P <: Vec, R <: Rotation} <: FormPrimitive
     rot::R
 end
 
-const Text{P<:TextPrimitive} = Form{P}
+@compat const Text{P<:TextPrimitive} = Form{P}
 
 
 
@@ -510,11 +508,11 @@ form_string(::Text) = "T"
 # Line
 # ----
 
-immutable LinePrimitive{P <: Vec} <: FormPrimitive
+immutable LinePrimitive{P<:Vec} <: FormPrimitive
     points::Vector{P}
 end
 
-const Line{P<:LinePrimitive} = Form{P}
+@compat const Line{P<:LinePrimitive} = Form{P}
 
 
 function line()
@@ -570,22 +568,23 @@ form_string(::Line) = "L"
 # Curve
 # -----
 
-immutable CurvePrimitive{P1 <: Vec, P2 <: Vec, P3 <: Vec, P4 <: Vec} <: FormPrimitive
+immutable CurvePrimitive{P1<:Vec, P2<:Vec, P3<:Vec, P4<:Vec} <: FormPrimitive
     anchor0::P1
     ctrl0::P2
     ctrl1::P3
     anchor1::P4
 end
 
-const Curve{P<:CurvePrimitive} = Form{P}
+@compat const Curve{P<:CurvePrimitive} = Form{P}
 
 
 function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
                ctrl1::XYTupleOrVec, anchor1::XYTupleOrVec, tag=empty_tag)
-    return Curve([CurvePrimitive((x_measure(anchor0[1]), y_measure(anchor0[2])),
+    prim = CurvePrimitive((x_measure(anchor0[1]), y_measure(anchor0[2])),
                                  (x_measure(ctrl0[1]), y_measure(ctrl0[2])),
                                  (x_measure(ctrl1[1]), y_measure(ctrl1[2])),
-                                 (x_measure(anchor1[1]), y_measure(anchor1[2])))], tag)
+                                 (x_measure(anchor1[1]), y_measure(anchor1[2])))
+    return Curve{typeof(prim)}([prim], tag)
 end
 
 
@@ -621,7 +620,7 @@ immutable BitmapPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimiti
     height::YM
 end
 
-const Bitmap{P<:BitmapPrimitive} = Form{P}
+@compat const Bitmap{P<:BitmapPrimitive} = Form{P}
 
 
 function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height, tag=empty_tag)

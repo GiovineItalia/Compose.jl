@@ -651,7 +651,7 @@ function introspect(root::Context)
             compose!(fig,
                 polygon([(0.5cx - figsize/2, 0.5cy - figsize/2),
                          (0.5cx + figsize/2, 0.5cy - figsize/2),
-                         (0.5, 0.5cy + figsize/2)]),
+                         (0.5cx, 0.5cy + figsize/2)]),
                 fill(LCHab(68, 74, 29)))
         else
             error("Unknown node type $(typeof(node))")
