@@ -331,7 +331,7 @@ const Clip = Property{ClipPrimitive}
 
 
 function clip()
-    return Clip([ClipPrimitive(Array(Vec, 0))])
+    return Clip([ClipPrimitive(Array{Vec}(0))])
 end
 
 
@@ -355,7 +355,7 @@ function clip(point_arrays::AbstractArray...)
     VecType = XM == YM == Any ? Vec : Vec{XM, YM}
     PrimType = XM == YM == Any ? ClipPrimitive : ClipPrimitive{VecType}
 
-    clipprims = Array(PrimType, length(point_arrays))
+    clipprims = Array{PrimType}(length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
         clipprims[i] = ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
                                              for point in point_array])
@@ -633,7 +633,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
         i = j + 2
     end
 
-    return JSCallPrimitive(takebuf_string(newcode), Measure[])
+    return JSCallPrimitive(String(take!(newcode)), Measure[])
 end
 
 

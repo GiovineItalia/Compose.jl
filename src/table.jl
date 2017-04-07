@@ -263,8 +263,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             end
         end
 
-        minrowheights[!isfinite(minrowheights)] = 0.0
-        mincolwidths[!isfinite(mincolwidths)] = 0.0
+        minrowheights[isfinite.(minrowheights) .== false] = 0.0
+        mincolwidths[isfinite.(mincolwidths) .== false] = 0.0
 
         return penalty
     end

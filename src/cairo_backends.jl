@@ -313,17 +313,17 @@ end
 
 
 @compat function show(io::IO, ::MIME"image/png", img::PNG)
-    write(io, takebuf_string(img.out))
+    write(io, String(take!(img.out)))
 end
 
 
 @compat function show(io::IO, ::MIME"application/pdf", img::PDF)
-    write(io, takebuf_string(img.out))
+    write(io, String(take!(img.out)))
 end
 
 
 @compat function show(io::IO, ::MIME"application/postscript", img::PS)
-    write(io, takebuf_string(img.out))
+    write(io, String(take!(img.out)))
 end
 
 
