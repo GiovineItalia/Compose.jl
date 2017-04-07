@@ -1,7 +1,7 @@
 
 # Basic list
 
-abstract List{T}
+@compat abstract type List{T} end
 
 immutable ListNull{T} <: List{T} end
 
@@ -80,6 +80,3 @@ function show{T}(io::IO, a::List{T})
     end
     print(io, "])")
 end
-
-
-

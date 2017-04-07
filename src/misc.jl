@@ -98,7 +98,7 @@ macro makeform(args...)
         prim1 = $(constructor)
         T = typeof(prim1)
 
-        primitives = Array(T, n)
+        primitives = Array{T}(n)
         primitives[1] = prim1
         for i in 2:n
             $(iter_ex)
@@ -123,7 +123,7 @@ macro makeprimitives(args)
 
         push!(maxlen_ex.args, quote
             if isempty($(arr))
-                primitives = Array($(T), 0)
+                primitives = Array{$(T)}(0)
                 @goto done
             end end)
         push!(maxlen_ex.args, quote n = max(n, length($(arr))) end)
@@ -134,7 +134,7 @@ macro makeprimitives(args)
 
     quote
         $(maxlen_ex)
-        primitives = Array($(T), n)
+        primitives = Array{$(T)}(n)
         for i in 1:n
             $(iter_ex)
             primitives[i] = $(constructor)
@@ -246,4 +246,3 @@ end
     *(a::AbstractFloat, b::Dates.Millisecond) = Dates.Millisecond(round(Integer, (a * b.value)))
     *(a::Dates.Millisecond, b::AbstractFloat) = b * a
 #end
-

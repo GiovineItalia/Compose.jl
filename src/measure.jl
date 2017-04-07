@@ -17,8 +17,8 @@ const cy = Length{:cy}
 const assumed_ppmm = 3.78 # equivalent to 96 DPI
 const px = mm/assumed_ppmm
 
-typealias XYTupleOrVec Union{NTuple{2}, Vec}
-typealias MeasureOrNumber Union{Measure, Number}
+const MeasureOrNumber = Union{Measure, Number}
+const XYTupleOrVec = Union{Tuple{MeasureOrNumber,MeasureOrNumber}, Vec}
 
 
 # Scaling w and h components
@@ -142,9 +142,9 @@ immutable UnitBox{S, T, U, V}
     toppad::AbsoluteLength
     bottompad::AbsoluteLength
 
-    function UnitBox(x0::S, y0::T, width::U, height::V;
-                     leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
-        return new(x0, y0, width, height, leftpad, rightpad, toppad, bottompad)
+    @compat function (::Type{UnitBox{S,T,U,V}}){S,T,U,V}(x0::S, y0::T, width::U, height::V;
+                                 leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
+        return new{S,T,U,V}(x0, y0, width, height, leftpad, rightpad, toppad, bottompad)
     end
 end
 
@@ -173,7 +173,7 @@ function UnitBox()
 end
 
 
-typealias NullUnitBox Nullable{UnitBox}
+const NullUnitBox = Nullable{UnitBox}
 
 
 # copy with substitution
@@ -238,7 +238,7 @@ end
 
 # Transform matrix in absolute coordinates
 
-abstract Transform
+@compat abstract type Transform end
 
 
 immutable IdentityTransform <: Transform
@@ -284,8 +284,8 @@ immutable Rotation{P <: Vec}
     offset::P
 
     # copy constructor
-    function Rotation(theta::Float64, offset::P)
-        new(theta, offset)
+    @compat function (::Type{Rotation{P}}){P}(theta::Float64, offset::P)
+        new{P}(theta, offset)
     end
 end
 

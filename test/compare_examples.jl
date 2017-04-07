@@ -9,7 +9,7 @@ for output in readdir(cachedout)
     if same
         lsame = Bool[cached[i] == genned[i] for i = 1:n]
         if !all(lsame)
-            for idx in find(!lsame)
+            for idx in find(lsame.==false)
                 # Don't worry about lines that are due to
                 # Creator/Producer (e.g., Cairo versions)
                 if !isempty(search(cached[idx], creator_producer))

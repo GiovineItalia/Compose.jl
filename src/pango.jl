@@ -95,7 +95,7 @@ function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
           Void, (Ptr{Void}, Ptr{UInt8}, Int32),
           pangolayout.layout, textarray, length(textarray))
 
-    extents = Array(Int32, 4)
+    extents = Array{Int32}(4)
     ccall((:pango_layout_get_extents, libpango),
           Void, (Ptr{Void}, Ptr{Int32}, Ptr{Int32}),
           pangolayout.layout, extents, C_NULL)
@@ -324,8 +324,8 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
                                      attr_it, eval(attr_name))
 
     attr_it_range = () -> begin
-        start_idx = Array(Int32, 1)
-        end_idx = Array(Int32, 1)
+        start_idx = Array{Int32}(1)
+        end_idx = Array{Int32}(1)
         ccall((:pango_attr_iterator_range, libpango),
               Void, (Ptr{Void}, Ptr{Int32}, Ptr{Int32}),
               attr_it, start_idx, end_idx)
@@ -333,7 +333,7 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
     end
 
 
-    attrs = Array((@compat Tuple{Int, PangoAttr}), 0)
+    attrs = Array{@compat Tuple{Int, PangoAttr}}(0)
 
     while attr_it_next() != 0
 

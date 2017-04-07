@@ -13,8 +13,8 @@ draw(be, ctx)
 @test be.coords[:rect][2] == Compose.UnitBox{Float64,Float64,Float64,Float64}(0.0,0.0,1.0,1.0)
 
 ### Finding tagged objects
-typealias ContainersWithChildren Union{Context,Compose.Table}
-typealias Iterables Union{ContainersWithChildren, AbstractArray}
+const ContainersWithChildren = Union{Context,Compose.Table}
+const Iterables = Union{ContainersWithChildren, AbstractArray}
 
 iterable(ctx::ContainersWithChildren) = ctx.children
 iterable(a::AbstractArray) = a
@@ -74,4 +74,4 @@ end
 
 box, units, transform = be.coords[:rect]
 xd, yd = absolute_to_data(0.5mm, 0.5mm, transform, units, box)
-@test_approx_eq_eps xd 0.1417 0.0001
+@test isapprox(xd,0.1417; atol=0.0001)

@@ -69,7 +69,7 @@ function batch{T <: CirclePrimitive}(form::Form{T})
     end
 
     prim = CirclePrimitive((0mm, 0mm), r)
-    offsets = Array(AbsoluteVec2, n)
+    offsets = Array{AbsoluteVec2}(n)
     for i in 1:n
         offsets[i] = form.primitives[i].center
     end
@@ -212,7 +212,7 @@ function optimize_batching(ctx::Context)
 
         if !haskey(grouped_forms, h)
             grouped_forms[h] = Form[similar(form) for form in forms]
-            group_prop = Array(Property, length(properties))
+            group_prop = Array{Property}(length(properties))
             for j in 1:length(properties)
                 group_prop[j] = Property([properties[j].primitives[i]])
             end
@@ -234,6 +234,3 @@ function optimize_batching(ctx::Context)
 
     return ctx
 end
-
-
-

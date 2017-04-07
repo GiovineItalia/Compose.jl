@@ -1,7 +1,7 @@
 
 # A container is a node in the tree that can have Forms, Properties, or other
 # Containers as children.
-abstract Container <: ComposeNode
+@compat abstract type Container <: ComposeNode end
 
 
 # The basic Container which defines a coordinate transform for its children.
@@ -280,7 +280,7 @@ end
 # absolute size, or it is one many possible layout that we want to decide
 # between before rendering. A ContainerPromise lets us defer computing a subtree
 # until the graphic is actually being rendered.
-abstract ContainerPromise <: Container
+@compat abstract type ContainerPromise <: Container end
 
 
 # This information is passed to a container promise at drawtime.
@@ -514,7 +514,7 @@ function drawpart(backend::Backend, container::Container,
     has_properties = false
     if !isa(ctx.property_children, ListNull) || ctx.clip
         has_properties = true
-        properties = Array(Property, 0)
+        properties = Array{Property}(0)
 
         child = ctx.property_children
         while !isa(child, ListNull)
@@ -571,7 +571,7 @@ function drawpart(backend::Backend, container::Container,
     end
 
     if ordered_children
-        container_children = Array((@compat Tuple{Int, Int, Container}), 0)
+        container_children = Array{@compat Tuple{Int, Int, Container}}(0)
         child = ctx.container_children
         while !isa(child, ListNull)
             push!(container_children,
@@ -651,7 +651,7 @@ function introspect(root::Context)
             compose!(fig,
                 polygon([(0.5cx - figsize/2, 0.5cy - figsize/2),
                          (0.5cx + figsize/2, 0.5cy - figsize/2),
-                         (0.5, 0.5cy + figsize/2)]),
+                         (0.5cx, 0.5cy + figsize/2)]),
                 fill(LCHab(68, 74, 29)))
         else
             error("Unknown node type $(typeof(node))")

@@ -7,14 +7,14 @@ using Cairo: CairoContext, CairoSurface, CairoARGBSurface,
              CairoEPSSurface, CairoPDFSurface, CairoSVGSurface,
              CairoImageSurface
 
-abstract ImageBackend
-abstract PNGBackend <: ImageBackend
+@compat abstract type ImageBackend end
+@compat abstract type PNGBackend <: ImageBackend end
 
-abstract VectorImageBackend <: ImageBackend
-abstract SVGBackend <: VectorImageBackend
-abstract PDFBackend <: VectorImageBackend
-abstract PSBackend  <: VectorImageBackend
-abstract CairoBackend <: VectorImageBackend
+@compat abstract type VectorImageBackend <: ImageBackend end
+@compat abstract type SVGBackend <: VectorImageBackend end
+@compat abstract type PDFBackend <: VectorImageBackend end
+@compat abstract type PSBackend  <: VectorImageBackend end
+@compat abstract type CairoBackend <: VectorImageBackend end
 
 type ImagePropertyState
     stroke::RGBA{Float64}
@@ -89,8 +89,8 @@ type Image{B <: ImageBackend} <: Backend
     last_ctrl1_point::Nullable{AbsoluteVec2}
     last_ctrl2_point::Nullable{AbsoluteVec2}
 
-    function Image(surface::CairoSurface, ctx::CairoContext, out::IO)
-        img = new()
+    @compat function (::Type{Image{B}}){B}(surface::CairoSurface, ctx::CairoContext, out::IO)
+        img = new{B}()
         img.out = out
         img.width = 0
         img.height = 0
@@ -110,8 +110,8 @@ type Image{B <: ImageBackend} <: Backend
         img.font = default_font_family
         img.clip = Nullable{ClipPrimitive}()
 
-        img.state_stack = Array(ImagePropertyState, 0)
-        img.property_stack = Array(ImagePropertyFrame, 0)
+        img.state_stack = Array{ImagePropertyState}(0)
+        img.property_stack = Array{ImagePropertyFrame}(0)
         img.vector_properties = Dict{Type, Nullable{Property}}()
         img.owns_surface = false
         img.ownedfile = false
@@ -124,18 +124,18 @@ type Image{B <: ImageBackend} <: Backend
         img
     end
 
-    function Image(surface::CairoSurface, ctx::CairoContext)
+    @compat function (::Type{Image{B}}){B}(surface::CairoSurface, ctx::CairoContext)
         Image{B}(surface, ctx, IOBuffer())
     end
 
-    Image(surface::CairoSurface) = Image{B}(surface, CairoContext(surface))
+    @compat (::Type{Image{B}}){B}(surface::CairoSurface) = Image{B}(surface, CairoContext(surface))
 
 
-    function Image(out::IO,
-                   width::MeasureOrNumber,
-                   height::MeasureOrNumber,
-                   emit_on_finish::Bool=true;
-                   dpi = (B == PNGBackend ? 96 : 72))
+    @compat function (::Type{Image{B}}){B}(out::IO,
+                              width::MeasureOrNumber,
+                              height::MeasureOrNumber,
+                              emit_on_finish::Bool=true;
+                              dpi = (B == PNGBackend ? 96 : 72))
 
         width = size_measure(width)
         height = size_measure(height)
@@ -158,30 +158,30 @@ type Image{B <: ImageBackend} <: Backend
         img
     end
 
-    function Image(filename::AbstractString,
-                   width::MeasureOrNumber,
-                   height::MeasureOrNumber;
-                   dpi = (B == PNGBackend ? 96 : 72))
+    @compat function (::Type{Image{B}}){B}(filename::AbstractString,
+                              width::MeasureOrNumber,
+                              height::MeasureOrNumber;
+                              dpi = (B == PNGBackend ? 96 : 72))
         img = Image{B}(open(filename, "w"), width, height, dpi = dpi)
         img.ownedfile = true
         img.filename = filename
         img
     end
 
-    function Image(width::MeasureOrNumber,
-                   height::MeasureOrNumber,
-                   emit_on_finish::Bool=true;
-                   dpi = (B == PNGBackend ? 96 : 72))
+    @compat function (::Type{Image{B}}){B}(width::MeasureOrNumber,
+                              height::MeasureOrNumber,
+                              emit_on_finish::Bool=true;
+                              dpi = (B == PNGBackend ? 96 : 72))
         img = Image{B}(IOBuffer(), width, height, emit_on_finish, dpi = dpi)
         img
     end
 end
 
 
-typealias PNG Image{PNGBackend}
-typealias PDF Image{PDFBackend}
-typealias PS  Image{PSBackend}
-typealias CAIROSURFACE  Image{CairoBackend}
+const PNG = Image{PNGBackend}
+const PDF = Image{PDFBackend}
+const PS =  Image{PSBackend}
+const CAIROSURFACE =  Image{CairoBackend}
 
 
 function canbatch(img::Image)
@@ -337,7 +337,7 @@ function push_property_frame(img::Image, properties::Vector{Property})
 
     frame = ImagePropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array(Property, 0)
+    scalar_properties = Array{Property}(0)
     for property in properties
         if isscalar(property) && !(typeof(property) in applied_properties)
             push!(scalar_properties, property)
@@ -568,8 +568,8 @@ end
 # --------------
 
 function current_point(img::Image)
-    x = Array(Float64, 1)
-    y = Array(Float64, 1)
+    x = Array{Float64}(1)
+    y = Array{Float64}(1)
     ccall((:cairo_get_current_point, Cairo._jl_libcairo), Void,
           (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
     return ((x[1] / img.ppmm)*mm, (x[2] / img.ppmm)*mm)

@@ -1,4 +1,4 @@
-abstract PropertyPrimitive
+@compat abstract type PropertyPrimitive end
 
 # Meaningless isless function used to sort in optimize_batching
 function Base.isless{T <: PropertyPrimitive}(a::T, b::T)
@@ -63,7 +63,7 @@ immutable StrokePrimitive <: PropertyPrimitive
 	color::RGBA{Float64}
 end
 
-typealias Stroke Property{StrokePrimitive}
+const Stroke = Property{StrokePrimitive}
 
 
 function stroke(c::(@compat Void))
@@ -89,7 +89,7 @@ immutable FillPrimitive <: PropertyPrimitive
 	color::RGBA{Float64}
 end
 
-typealias Fill Property{FillPrimitive}
+const Fill = Property{FillPrimitive}
 
 
 function fill(c::(@compat Void))
@@ -116,7 +116,7 @@ immutable StrokeDashPrimitive <: PropertyPrimitive
     value::Vector{Measure}
 end
 
-typealias StrokeDash Property{StrokeDashPrimitive}
+const StrokeDash = Property{StrokeDashPrimitive}
 
 
 function strokedash(values::AbstractArray)
@@ -141,7 +141,7 @@ prop_string(::StrokeDash) = "sd"
 # -------------
 
 
-abstract LineCap
+@compat abstract type LineCap end
 immutable LineCapButt <: LineCap end
 immutable LineCapSquare <: LineCap end
 immutable LineCapRound <: LineCap end
@@ -159,7 +159,7 @@ immutable StrokeLineCapPrimitive <: PropertyPrimitive
     end
 end
 
-typealias StrokeLineCap Property{StrokeLineCapPrimitive}
+const StrokeLineCap = Property{StrokeLineCapPrimitive}
 
 
 function strokelinecap(value::@compat(Union{LineCap, Type{LineCap}}))
@@ -176,7 +176,7 @@ prop_string(::StrokeLineCap) = "slc"
 # StrokeLineJoin
 # --------------
 
-abstract LineJoin
+@compat abstract type LineJoin end
 immutable LineJoinMiter <: LineJoin end
 immutable LineJoinRound <: LineJoin end
 immutable LineJoinBevel <: LineJoin end
@@ -194,7 +194,7 @@ immutable StrokeLineJoinPrimitive <: PropertyPrimitive
     end
 end
 
-typealias StrokeLineJoin Property{StrokeLineJoinPrimitive}
+const StrokeLineJoin = Property{StrokeLineJoinPrimitive}
 
 
 function strokelinejoin(value::@compat(Union{LineJoin, Type{LineJoin}}))
@@ -219,7 +219,7 @@ immutable LineWidthPrimitive <: PropertyPrimitive
     end
 end
 
-typealias LineWidth Property{LineWidthPrimitive}
+const LineWidth = Property{LineWidthPrimitive}
 
 
 function linewidth(value::@compat(Union{Measure, Number}))
@@ -246,7 +246,7 @@ immutable VisiblePrimitive <: PropertyPrimitive
     value::Bool
 end
 
-typealias Visible Property{VisiblePrimitive}
+const Visible = Property{VisiblePrimitive}
 
 
 function visible(value::Bool)
@@ -276,7 +276,7 @@ immutable FillOpacityPrimitive <: PropertyPrimitive
     end
 end
 
-typealias FillOpacity Property{FillOpacityPrimitive}
+const FillOpacity = Property{FillOpacityPrimitive}
 
 
 function fillopacity(value::Float64)
@@ -306,7 +306,7 @@ immutable StrokeOpacityPrimitive <: PropertyPrimitive
     end
 end
 
-typealias StrokeOpacity Property{StrokeOpacityPrimitive}
+const StrokeOpacity = Property{StrokeOpacityPrimitive}
 
 
 function strokeopacity(value::Float64)
@@ -327,7 +327,7 @@ immutable ClipPrimitive{P <: Vec} <: PropertyPrimitive
     points::Vector{P}
 end
 
-typealias Clip Property{ClipPrimitive}
+const Clip = Property{ClipPrimitive}
 
 
 function clip()
@@ -379,7 +379,7 @@ immutable FontPrimitive <: PropertyPrimitive
     family::AbstractString
 end
 
-typealias Font Property{FontPrimitive}
+const Font = Property{FontPrimitive}
 
 
 function font(family::AbstractString)
@@ -414,7 +414,7 @@ immutable FontSizePrimitive <: PropertyPrimitive
     end
 end
 
-typealias FontSize Property{FontSizePrimitive}
+const FontSize = Property{FontSizePrimitive}
 
 
 function fontsize(value::@compat(Union{Number, Measure}))
@@ -441,7 +441,7 @@ immutable SVGIDPrimitive <: PropertyPrimitive
     value::AbstractString
 end
 
-typealias SVGID Property{SVGIDPrimitive}
+const SVGID = Property{SVGIDPrimitive}
 
 
 function svgid(value::AbstractString)
@@ -473,7 +473,7 @@ immutable SVGClassPrimitive <: PropertyPrimitive
     value::Compat.UTF8String
 end
 
-typealias SVGClass Property{SVGClassPrimitive}
+const SVGClass = Property{SVGClassPrimitive}
 
 
 function svgclass(value::AbstractString)
@@ -511,7 +511,7 @@ immutable SVGAttributePrimitive <: PropertyPrimitive
     value::Compat.ASCIIString
 end
 
-typealias SVGAttribute Property{SVGAttributePrimitive}
+const SVGAttribute = Property{SVGAttributePrimitive}
 
 
 function svgattribute(attribute::AbstractString, value)
@@ -554,7 +554,7 @@ immutable JSIncludePrimitive <: PropertyPrimitive
     jsmodule::@compat(Union{(@compat Void), @compat Tuple{AbstractString, AbstractString}})
 end
 
-typealias JSInclude Property{JSIncludePrimitive}
+const JSInclude = Property{JSIncludePrimitive}
 
 
 function jsinclude(value::AbstractString, module_name=nothing)
@@ -574,7 +574,7 @@ immutable JSCallPrimitive <: PropertyPrimitive
     args::Vector{Measure}
 end
 
-typealias JSCall Property{JSCallPrimitive}
+const JSCall = Property{JSCallPrimitive}
 
 
 function jscall(code::AbstractString, arg::Vector{Measure}=Measure[])
