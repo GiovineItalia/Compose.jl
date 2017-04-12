@@ -505,7 +505,7 @@ end
 
 @compat function show(io::IO, ::MIME"text/html", img::SVG)
     if img.cached_out === nothing
-        img.cached_out = takebuf_string(img.out)
+        img.cached_out = String(take!(img.out))
     end
     write(io, img.cached_out)
 end
@@ -513,7 +513,7 @@ end
 
 @compat function show(io::IO, ::MIME"image/svg+xml", img::SVG)
     if img.cached_out === nothing
-        img.cached_out = takebuf_string(img.out)
+        img.cached_out = String(take!(img.out))
     end
     write(io, img.cached_out)
 end
@@ -906,7 +906,7 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
 
     if prim.halign === hcenter
         print(img.out, " text-anchor=\"middle\"")
-    elseif is(prim.halign, hright)
+    elseif prim.halign === hright
         print(img.out, " text-anchor=\"end\"")
     end
 
@@ -916,7 +916,7 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
     if prim.valign === vcenter
         print(img.out, " dy=\"0.35em\"")
         #print(img.out, " style=\"dominant-baseline:central\"")
-    elseif is(prim.valign, vtop)
+    elseif prim.valign === vtop
         print(img.out, " dy=\"0.6em\"")
         #print(img.out, " style=\"dominant-baseline:text-before-edge\"")
     end

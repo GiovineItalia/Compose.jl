@@ -495,7 +495,7 @@ function drawpart(backend::Backend, container::Container,
     if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
         bitmapbackend = PNG(box.a[1], box.a[2], false)
         draw(bitmapbackend, ctx)
-        f = bitmap("image/png", takebuf_array(bitmapbackend.out),
+        f = bitmap("image/png", take!(bitmapbackend.out),
                    0, 0, 1w, 1h)
 
         c = context(ctx.box.x0[1], ctx.box.x0[2],

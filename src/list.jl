@@ -59,7 +59,7 @@ function cat{T}(a::List{T}, b::List{T})
     else
         a = copy(a)
         u = a
-        while !is(u.tail, nothing)
+        while u.tail !== nothing
             u.tail = copy(u.tail)
             u = u.tail
         end

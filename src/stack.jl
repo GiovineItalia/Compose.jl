@@ -29,29 +29,29 @@ function hstack(x0, y0, height, aligned_contexts::(@compat Tuple{Context, VAlign
 
     root = context(x0, y0, width, height)
     x = 0w
-    for (context, aln) in aligned_contexts
-        context = copy(context)
+    for (ctx, aln) in aligned_contexts
+        ctx = copy(ctx)
 
-        w_component = sum_component(Length{:w, Float64}, context.box.a[1])
-        box_w = context.box.a[1]
+        w_component = sum_component(Length{:w, Float64}, ctx.box.a[1])
+        box_w = ctx.box.a[1]
         if w_component != 0.0
             box_w = scale_component(Length{:w, Float64},
                                     w_component / total_width_units,
-                                    context.box.a[1])
+                                    ctx.box.a[1])
         end
 
-        y = context.box.x0[2]
+        y = ctx.box.x0[2]
         if aln == vtop
             y = 0h
         elseif aln == vcenter
-            y = (height / 2) - (context.box.a[2] / 2)
+            y = (height / 2) - (ctx.box.a[2] / 2)
         elseif aln == vbottom
-            y = height - context.box.a[2]
+            y = height - ctx.box.a[2]
         end
 
-        context.box = BoundingBox((x, y), (box_w, context.box.a[2]))
-        root = compose!(root, context)
-        x += context.box.a[1]
+        ctx.box = BoundingBox((x, y), (box_w, ctx.box.a[2]))
+        root = compose!(root, ctx)
+        x += ctx.box.a[1]
     end
 
     return root
@@ -104,29 +104,29 @@ function vstack(x0, y0, width, aligned_contexts::(@compat Tuple{Context, HAlignm
 
     root = context(x0, y0, width, height)
     y = 0h
-    for (context, aln) in aligned_contexts
-        context = copy(context)
+    for (ctx, aln) in aligned_contexts
+        ctx = copy(ctx)
 
-        h_component = sum_component(Length{:h, Float64}, context.box.a[2])
-        box_h = context.box.a[2]
+        h_component = sum_component(Length{:h, Float64}, ctx.box.a[2])
+        box_h = ctx.box.a[2]
         if h_component != 0.0
             box_h = scale_component(Length{:h, Float64},
                                     h_component / total_height_units,
-                                    context.box.a[2])
+                                    ctx.box.a[2])
         end
 
-        x = context.box.x0[1]
+        x = ctx.box.x0[1]
         if aln == hleft
             x = 0w
         elseif aln == hcenter
-            x = (width / 2) - (context.box.a[1] / 2)
+            x = (width / 2) - (ctx.box.a[1] / 2)
         elseif aln == hright
-            x = width - context.box.a[1]
+            x = width - ctx.box.a[1]
         end
 
-        context.box = BoundingBox((x, y), (context.box.a[1], box_h))
-        root = compose!(root, context)
-        y += context.box.a[2]
+        ctx.box = BoundingBox((x, y), (ctx.box.a[1], box_h))
+        root = compose!(root, ctx)
+        y += ctx.box.a[2]
     end
 
     return root

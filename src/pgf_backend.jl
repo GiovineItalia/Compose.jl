@@ -147,7 +147,7 @@ function finish(img::PGF)
 
     writeheader(img)
     writecolors(img)
-    write(img.out, takebuf_array(img.buf))
+    write(img.out, take!(img.buf))
     write(img.out,
         """
         \\end{tikzpicture}
@@ -487,9 +487,9 @@ function draw(img::PGF, prim::TextPrimitive, idx::Int)
             ",",
             svg_fmt_float(prim.rot.offset[2].value - prim.position[2].value),
             ")}"))
-    if is(prim.halign, hcenter)
+    if prim.halign === hcenter
         push!(props, "inner sep=0.0")
-    elseif is(prim.halign, hright)
+    elseif prim.halign === hright
         push!(props, "left,inner sep=0.0")
     else
         push!(props, "right,inner sep=0.0")
@@ -632,7 +632,7 @@ function pango_to_pgf(text::AbstractString)
     write(output, input[lastpos:end])
     write(output, "}")
 
-    return takebuf_string(output)
+    return String(take!(output))
 end
 
 function escape_tex_chars(text::AbstractString)

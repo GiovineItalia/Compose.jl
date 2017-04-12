@@ -41,7 +41,7 @@ function cyclezip(xs::AbstractArray...)
         return Any[]
     end
     n = maximum([length(x) for x in xs])
-    return takestrict(zip([cycle(x) for x in xs]...), n)
+    return takestrict(zip([Compat.Iterators.cycle(x) for x in xs]...), n)
 end
 
 
@@ -122,22 +122,22 @@ macro makeprimitives(args)
         var, arr = in_expr_args(iterator::Expr)
 
         push!(maxlen_ex.args, quote
-            if isempty($(arr))
+            if isempty($(esc(arr)))
                 primitives = Array{$(T)}(0)
                 @goto done
             end end)
-        push!(maxlen_ex.args, quote n = max(n, length($(arr))) end)
+        push!(maxlen_ex.args, quote n = max(n, length($(esc(arr)))) end)
         push!(iter_ex.args, quote
-            $(var) = $(arr)[((i - 1) % length($(arr))) + 1]
+            $(esc(var)) = $(esc(arr))[((i - 1) % length($(esc(arr)))) + 1]
         end)
     end
 
     quote
         $(maxlen_ex)
-        primitives = Array{$(T)}(n)
+        primitives = Array{$(esc(T))}(n)
         for i in 1:n
             $(iter_ex)
-            primitives[i] = $(constructor)
+            primitives[i] = $(esc(constructor))
         end
         @label done
         primitives
