@@ -1,19 +1,3 @@
-
-
-#function all_equal(xs::AbstractArray)
-    #if isempty(xs)
-        #return true
-    #end
-    #x = xs[1]
-    #for i in 2:length(xs)
-        #if xs[i] != x
-            #return false
-        #end
-    #end
-    #return x
-#end
-
-
 function iszero{T}(x::T)
     return x == zero(T)
 end
@@ -202,7 +186,7 @@ if !method_exists(/, (Dates.Day, Dates.Day))
 end
 
 if !method_exists(/, (Dates.Day, Real))
-    /(a::Dates.Day, b::Real) = Dates.Day(round(Integer, (a.value / b)))
+    /(a::Dates.Day, b::Real) = Dates.Day(round(Int64, (a.value / b)))
 end
 /(a::Dates.Day, b::AbstractFloat) = convert(Dates.Millisecond, a) / b
 
@@ -211,9 +195,9 @@ if !method_exists(/, (Dates.Millisecond, Dates.Millisecond))
 end
 
 if !method_exists(/, (Dates.Millisecond, Real))
-    /(a::Dates.Millisecond, b::Real) = Dates.Millisecond(round(Integer, (a.value / b)))
+    /(a::Dates.Millisecond, b::Real) = Dates.Millisecond(round(Int64, (a.value / b)))
 end
-/(a::Dates.Millisecond, b::AbstractFloat) = Dates.Millisecond(round(Integer, (a.value / b)))
+/(a::Dates.Millisecond, b::AbstractFloat) = Dates.Millisecond(round(Int64, (a.value / b)))
 
 
 if !method_exists(-, (Dates.Date, Dates.DateTime))
@@ -240,9 +224,7 @@ for T in [Dates.Hour, Dates.Minute, Dates.Second, Dates.Millisecond]
 end
 
 
-#if !method_exists(*, (AbstractFloat, Dates.Day))
-    *(a::AbstractFloat, b::Dates.Day) = Dates.Day(round(Integer, (a * b.value)))
-    *(a::Dates.Day, b::AbstractFloat) = b * a
-    *(a::AbstractFloat, b::Dates.Millisecond) = Dates.Millisecond(round(Integer, (a * b.value)))
-    *(a::Dates.Millisecond, b::AbstractFloat) = b * a
-#end
+*(a::AbstractFloat, b::Dates.Day) = Dates.Day(round(Int64, (a * b.value)))
+*(a::Dates.Day, b::AbstractFloat) = b * a
+*(a::AbstractFloat, b::Dates.Millisecond) = Dates.Millisecond(round(Int64, (a * b.value)))
+*(a::Dates.Millisecond, b::AbstractFloat) = b * a

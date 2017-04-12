@@ -393,7 +393,7 @@ end
 
 prop_string(::Font) = "fnt"
 
-function Base.hash(primitive::FontPrimitive, h::UInt64)
+function Base.hash(primitive::FontPrimitive, h::UInt)
     return hash(primitive.family, h)
 end
 
@@ -456,7 +456,7 @@ end
 prop_string(::SVGID) = "svgid"
 
 
-function Base.hash(primitive::SVGIDPrimitive, h::UInt64)
+function Base.hash(primitive::SVGIDPrimitive, h::UInt)
     return hash(primitive.value, h)
 end
 
@@ -493,7 +493,7 @@ function prop_string(svgc::SVGClass)
     end
 end
 
-function Base.hash(primitive::SVGClassPrimitive, h::UInt64)
+function Base.hash(primitive::SVGClassPrimitive, h::UInt)
     return hash(primitive.value, h)
 end
 
@@ -534,7 +534,7 @@ end
 
 prop_string(::SVGAttribute) = "svga"
 
-function Base.hash(primitive::SVGAttributePrimitive, h::UInt64)
+function Base.hash(primitive::SVGAttributePrimitive, h::UInt)
     h = hash(primitive.attribute, h)
     h = hash(primitive.value, h)
     return h
