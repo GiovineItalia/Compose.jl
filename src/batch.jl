@@ -202,10 +202,10 @@ function optimize_batching(ctx::Context)
     # step 2: split primitives into groups on the cross product of property
     # primives
     n = length(forms[1].primitives)
-    grouped_forms = Dict{UInt64, Vector{Form}}()
-    grouped_properties = Dict{UInt64, Vector{Property}}()
+    grouped_forms = Dict{UInt, Vector{Form}}()
+    grouped_properties = Dict{UInt, Vector{Property}}()
     for i in 1:n
-        h = UInt64(0)
+        h = UInt(0)
         for property in properties
             h = hash(property.primitives[i], h)
         end
