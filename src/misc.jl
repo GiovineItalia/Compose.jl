@@ -215,6 +215,11 @@ if !method_exists(/, (Dates.Day, Dates.Millisecond))
     /(a::Dates.Day, b::Dates.Millisecond) = convert(Dates.Millisecond, a) / b
 end
 
+if !method_exists(/, (Dates.Millisecond, Dates.Day))
+    /(a::Dates.Millisecond, b::Dates.Day) = a / convert(Dates.Millisecond, b) 
+end
+
+
 for T in [Dates.Hour, Dates.Minute, Dates.Second, Dates.Millisecond]
     if !method_exists(-, (Dates.Date, T))
         @eval begin
