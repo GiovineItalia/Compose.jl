@@ -271,7 +271,9 @@ function push_property!(props_str, img::PGF, property::StrokeDashPrimitive)
     if isempty(property.value)
         return
     else
-        push!(props_str, string("dash pattern=", join(map(v -> join(v, " "),zip(cycle(["on", "off"]),map(v -> string(svg_fmt_float(v.value), "mm"), property.value)))," ")))
+        push!(props_str, string("dash pattern=", join(map( v -> join(v, " "),
+                zip(Base.Iterators.cycle(["on", "off"]),
+                    map(v -> string(svg_fmt_float(v.value), "mm"), property.value)) )," ")))
     end
 end
 
