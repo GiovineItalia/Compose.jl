@@ -29,5 +29,8 @@ patterns = Array[
 
 c = draw_lines(patterns)
 
-img = PDF("dash.pdf", 4inch, 4(sqrt(3)/2)inch)
-draw(img, compose(c, stroke(colorant"black"), linewidth(1mm)))
+imgs = [PDF("dash.pdf", 4inch, 4(sqrt(3)/2)inch),
+        PGF("dash.pdf", 4inch, 4(sqrt(3)/2)inch)]
+for img = imgs
+  draw(img, compose(c, stroke(colorant"black"), linewidth(1mm)))
+end
