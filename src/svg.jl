@@ -982,6 +982,49 @@ function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
     print(img.out, "\"></image>\n")
 end
 
+function draw(img::SVG, prim::ImageMatrixPrimitive, idx::Int)
+
+    # prepare png data first, scale up
+    s = Cairo.CairoRGBSurface(prim.data);
+
+    w = prim.width.value;
+    h = prim.height.value;
+
+    s_scaled = Cairo.CairoRGBSurface(round(Int,(ceil(w))),round(Int,ceil(h)));
+
+    p = Cairo.CairoPattern(s);
+    m = Cairo.CairoMatrix(s.width/w,0,0,s.height/h,0,0)
+    Cairo.set_matrix(p,m);
+    Cairo.pattern_set_filter(p,Cairo.FILTER_NEAREST);
+    c = Cairo.CairoContext(s_scaled);
+    Cairo.set_source(c,p)
+    Cairo.rectangle(c,0,0,s_scaled.width,s_scaled.height)
+    Cairo.fill(c)
+
+    fd = IOBuffer();
+    Cairo.write_to_png(s_scaled,fd);
+    d = takebuf_string(fd);
+    
+    indent(img)
+    print(img.out, "<image x=\"")
+    svg_print_float(img.out, prim.corner[1].value)
+    print(img.out, "\" y=\"")
+    svg_print_float(img.out, prim.corner[2].value)
+    print(img.out, "\" width=\"")
+    svg_print_float(img.out, prim.width.value)
+    print(img.out, "\" height=\"")
+    svg_print_float(img.out, prim.height.value)
+    print(img.out, '"')
+    print_vector_properties(img, idx)
+
+    print(img.out, " xlink:href=\"data:", "image/png", ";base64,")
+    b64pipe = Base.Base64.Base64EncodePipe(img.out)
+    write(b64pipe, d)
+    close(b64pipe)
+    print(img.out, "\"></image>\n")
+end
+
+
 
 function svg_print_path_op(io::IO, op::MoveAbsPathOp)
     print(io, 'M')
