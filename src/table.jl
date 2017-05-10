@@ -1,5 +1,3 @@
-
-
 # A special kind of container promise that performs table layout optimization.
 
 type Table <: ContainerPromise
@@ -37,61 +35,42 @@ type Table <: ContainerPromise
 
     # Ignore this context if we are drawing to the SVGJS backend.
     withoutjs::Bool
+end
 
+function Table(m::Integer, n::Integer, y_focus::UnitRange{Int}, x_focus::UnitRange{Int};
+               y_prop=nothing, x_prop=nothing,
+               aspect_ratio=nothing,
+               units=NullUnitBox(), order=0, withjs=false, withoutjs=false,
+               fixed_configs=Any[])
 
-    function Table(m::Integer, n::Integer,
-                   y_focus::UnitRange{Int}, x_focus::UnitRange{Int};
-                   y_prop=nothing, x_prop=nothing,
-                   aspect_ratio=nothing,
-                   units=NullUnitBox(), order=0, withjs=false, withoutjs=false,
-                   fixed_configs=Any[])
-
-        if x_prop != nothing
-            @assert length(x_prop) == length(x_focus)
-            x_prop ./= sum(filter(x -> !isnan(x), x_prop))
-        end
-
-
-        if y_prop != nothing
-            @assert length(y_prop) == length(y_focus)
-            y_prop ./= sum(filter(x -> !isnan(x), y_prop))
-        end
-
-        tbl = new(Array{Vector{Context}}((m, n)),
-                  x_focus, y_focus,
-                  x_prop, y_prop,
-                  aspect_ratio,
-                  fixed_configs,
-                  units, order, withjs, withoutjs)
-        for i in 1:m, j in 1:n
-            tbl.children[i, j] = Array{Context}(0)
-        end
-        return tbl
+    if x_prop != nothing
+        @assert length(x_prop) == length(x_focus)
+        x_prop ./= sum(filter(x -> !isnan(x), x_prop))
     end
+
+    if y_prop != nothing
+        @assert length(y_prop) == length(y_focus)
+        y_prop ./= sum(filter(x -> !isnan(x), y_prop))
+    end
+
+    tbl = Table(Array{Vector{Context}}((m, n)),
+              x_focus, y_focus,
+              x_prop, y_prop,
+              aspect_ratio,
+              fixed_configs,
+              units, order, withjs, withoutjs)
+    for i in 1:m, j in 1:n
+        tbl.children[i, j] = Array{Context}(0)
+    end
+    return tbl
 end
 
 const table = Table
 
-
-function getindex(t::Table, i::Integer, j::Integer)
-    return t.children[i, j]
-end
-
-
-function setindex!(t::Table, child, i::Integer, j::Integer)
-    t.children[i, j] = child
-end
-
-
-function size(t::Table, i::Integer)
-    return size(t.children, i)
-end
-
-
-function size(t::Table)
-    return size(t.children)
-end
-
+getindex(t::Table, i::Integer, j::Integer) = t.children[i, j]
+setindex!(t::Table, child, i::Integer, j::Integer) = t.children[i, j] = child
+size(t::Table, i::Integer) = size(t.children, i)
+size(t::Table) = size(t.children)
 
 # Adjust a table solution so that the aspect ratio matches tbl.aspect_ratio
 #
@@ -127,7 +106,6 @@ function force_aspect_ratio!(tbl::Table,
     end
 end
 
-
 # Return true if the minwidth and minheight constraints on ctx are satisfied
 # by the given width/height
 function issatisfied(ctx::Context, width, height)
@@ -135,7 +113,6 @@ function issatisfied(ctx::Context, width, height)
     return (minwidth(ctx) == nothing || width + eps >= minwidth(ctx)) &&
            (minheight(ctx) == nothing || height + eps >= minheight(ctx))
 end
-
 
 # Solve the table layout using a brute force approach, when a MILP isn't
 # available.
@@ -208,14 +185,14 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             extra_width = total_focus_width - sum(mincolwidths[tbl.x_focus])
             for k in 1:length(tbl.x_focus)
                 focused_col_widths[k] =
-                    mincolwidths[tbl.x_focus[k]] + extra_width / length(tbl.x_focus)
+                        mincolwidths[tbl.x_focus[k]] + extra_width / length(tbl.x_focus)
             end
         end
     end
 
     function update_focused_row_heights!(focused_row_heights)
         total_focus_height =
-            drawctx.box.a[2].value - sum(minrowheights) + sum(minrowheights[tbl.y_focus])
+                drawctx.box.a[2].value - sum(minrowheights) + sum(minrowheights[tbl.y_focus])
 
         if tbl.y_prop != nothing
             for k in 1:length(tbl.y_focus)
@@ -235,7 +212,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             extra_height = total_focus_height - sum(minrowheights[tbl.y_focus])
             for k in 1:length(tbl.y_focus)
                 focused_row_heights[k] =
-                    minrowheights[tbl.y_focus[k]] + extra_height / length(tbl.y_focus)
+                        minrowheights[tbl.y_focus[k]] + extra_height / length(tbl.y_focus)
             end
         end
     end
@@ -247,9 +224,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         fill!(mincolwidths, -Inf)
         penalty = 0.0
         for i in 1:m, j in 1:n
-            if isempty(tbl.children[i, j])
-                continue
-            end
+            isempty(tbl.children[i, j]) && continue
 
             choice_ij = choice[(j-1)*m + i]
             child = tbl.children[i, j][(choice_ij == 0 ? 1 : choice_ij)]
@@ -360,9 +335,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         compose!(root, ctx)
     end
 
-    if !feasible
-        warn("Graphic may not be drawn correctly at the given size.")
-    end
+    feasible || warn("Graphic may not be drawn correctly at the given size.")
 
     return root
 end
@@ -373,9 +346,7 @@ end
      #isinstalled("Cbc"))
     #include("table-jump.jl")
 #else
-    function realize(tbl::Table, drawctx::ParentDrawContext)
-        return realize_brute_force(tbl, drawctx)
-    end
+realize(tbl::Table, drawctx::ParentDrawContext) = realize_brute_force(tbl, drawctx)
 #end
 
 function showcompact(io::IO, t::Table)

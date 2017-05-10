@@ -5,9 +5,7 @@ const PANGO_SCALE = 1024.0
 
 # Serialized glyph sizes for commont fonts.
 const glyphsizes = open(fd -> JSON.parse(readstring(fd)),
-                        joinpath(dirname(@__FILE__), "..", "data",
-                                 "glyphsize.json"))
-
+                        joinpath(dirname(@__FILE__), "..", "data", "glyphsize.json"))
 
 # It's better to overestimate text extents than to underestimes, since the later
 # leads to overlaping where the former just results in some extra space. So, we
@@ -15,7 +13,6 @@ const glyphsizes = open(fd -> JSON.parse(readstring(fd)),
 # overestimated since it doesn't take kerning into account.
 const text_extents_scale_x = 1.0
 const text_extents_scale_y = 1.0
-
 
 # Normalized Levenshtein distance between two strings.
 function levenshtein(a::AbstractString, b::AbstractString)
@@ -39,16 +36,13 @@ function levenshtein(a::AbstractString, b::AbstractString)
     return D[n,m] / max(n, m)
 end
 
-
 # Find the nearst typeface from the glyph size table.
 let
     matched_font_cache = Dict{AbstractString, AbstractString}()
     global match_font
 
     function match_font(families::AbstractString)
-        if haskey(matched_font_cache, families)
-            return matched_font_cache[families]
-        end
+        haskey(matched_font_cache, families) && return matched_font_cache[families]
 
         smallest_dist = Inf
         best_match = "Helvetica"
@@ -86,12 +80,10 @@ function text_width(widths::Dict, text::AbstractString, size::Float64)
     width
 end
 
-
 function max_text_extents(font_family::AbstractString, size::Measure,
                           texts::AbstractString...)
-    if !isa(size, AbsoluteLength)
-        error("text_extents requries font size be in absolute units")
-    end
+    isa(size, AbsoluteLength) ||
+            error("text_extents requries font size be in absolute units")
     scale = size / 12pt
     font_family = match_font(font_family)
     glyphheight = glyphsizes[font_family]["height"]
@@ -118,7 +110,6 @@ function max_text_extents(font_family::AbstractString, size::Measure,
     (text_extents_scale_x * scale * width * mm,
      text_extents_scale_y * scale * height * mm)
 end
-
 
 function text_extents(font_family::AbstractString, size::Measure, texts::AbstractString...)
     scale = size / 12pt
@@ -148,7 +139,6 @@ function text_extents(font_family::AbstractString, size::Measure, texts::Abstrac
     return extents
 end
 
-
 # Amazingly crude fallback to parse pango markup into svg.
 function pango_to_svg(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
@@ -164,9 +154,7 @@ function pango_to_svg(text::AbstractString)
 
         closing_tag = mat.captures[1] == "/"
 
-        if open_tag && !closing_tag
-            write(output, "</tspan>")
-        end
+        open_tag && !closing_tag && write(output, "</tspan>")
 
         if mat.captures[2] == "sup"
             if mat.captures[1] == "/"
@@ -207,8 +195,6 @@ function pango_to_svg(text::AbstractString)
         lastpos = mat.offset + length(mat.match)
     end
     write(output, input[lastpos:end])
-    if open_tag
-        write(output, "</tspan>")
-    end
+    open_tag && write(output, "</tspan>")
     String(take!(output))
 end

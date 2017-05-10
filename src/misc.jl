@@ -1,11 +1,6 @@
-function iszero{T}(x::T)
-    return x == zero(T)
-end
+iszero{T}(x::T) = x == zero(T)
 
-
-function Maybe(T::Type)
-    return @compat(Union{T,Void})
-end
+Maybe(T::Type) = @compat(Union{T,Void})
 
 function in_expr_args(ex::Expr)
     ex.head === :in && return ex.args[1], ex.args[2]
@@ -21,9 +16,7 @@ end
 
 # Cycle-zip. Zip two or more arrays, cycling the short ones.
 function cyclezip(xs::AbstractArray...)
-    if any(map(isempty, xs))
-        return Any[]
-    end
+    any(map(isempty, xs)) && return Any[]
     n = maximum([length(x) for x in xs])
     return takestrict(zip([Compat.Iterators.cycle(x) for x in xs]...), n)
 end
@@ -129,11 +122,8 @@ macro makeprimitives(args)
 end
 
 
-function narrow_polygon_point_types{XM <: Measure, YM <: Measure}(
-            point_arrays::AbstractArray{Vector{Tuple{XM, YM}}})
-    return (XM, YM)
-end
-
+narrow_polygon_point_types{XM <: Measure, YM <: Measure}(
+            point_arrays::AbstractArray{Vector{Tuple{XM, YM}}}) = (XM, YM)
 
 type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (Any, Any)
 type_params{XM <: Measure, YM <: Measure}(p::Type{Tuple{XM, YM}}) = (XM, YM)
@@ -143,16 +133,13 @@ function narrow_polygon_point_types(point_arrays::AbstractArray)
     if !isempty(point_arrays) && all([eltype(arr) <: Vec for arr in point_arrays])
         xm, ym = type_params(eltype(point_arrays[1]))
         for i in 2:length(point_arrays)
-            if type_params(eltype(point_arrays[i])) != (xm, ym)
-                return Any, Any
-            end
+            type_params(eltype(point_arrays[i])) == (xm, ym) || return Any, Any
         end
         return xm, ym
     else
         return Any, Any
     end
 end
-
 
 function narrow_polygon_point_types{P <: Tuple}(ring_arrays::Vector{Vector{Vector{P}}})
     type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (XM, YM)
@@ -165,9 +152,7 @@ function narrow_polygon_point_types{P <: Tuple}(ring_arrays::Vector{Vector{Vecto
                 xm, ym = type_params(eltype(point_arrays[1]))
             end
             for i in 2:length(point_arrays)
-                if type_params(eltype(point_arrays[i])) != (xm, ym)
-                    return Any, Any
-                end
+                type_params(eltype(point_arrays[i])) == (xm, ym) || Any, Any
             end
         end
     end

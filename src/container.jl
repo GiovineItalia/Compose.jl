@@ -1,4 +1,3 @@
-
 # A container is a node in the tree that can have Forms, Properties, or other
 # Containers as children.
 @compat abstract type Container <: ComposeNode end
@@ -52,41 +51,9 @@ type Context <: Container
 
     tag::Symbol
 
-    function Context(x0=0.0w,
-                     y0=0.0h,
-                     width=1.0w,
-                     height=1.0h;
-                     units=NullUnitBox(),
-                     rotation=Nullable{Rotation}(),
-                     mirror=Nullable{Mirror}(),
-                     order=0,
-                     clip=false,
-                     withjs=false,
-                     withoutjs=false,
-                     raster=false,
-                     minwidth=nothing,
-                     minheight=nothing,
-                     penalty=0.0,
-                     tag=empty_tag)
-        return new(BoundingBox(x0, y0, width, height), units, rotation, mirror,
-                   ListNull{ComposeNode}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
-    end
-
-    function Context(box::BoundingBox,
-                     units,
-                     rotation::Nullable{Rotation},
-                     mirror,
-                     container_children::List{Container},
-                     form_children::List{Form},
-                     property_children::List{Property},
-                     order::Int,
-                     clip::Bool,
-                     withjs::Bool,
-                     withoutjs::Bool,
-                     raster::Bool,
-                     minwidth, minheight,
-                     penalty, tag)
+    function Context(box, units, rotation, mirror,
+                     container_children, form_children, property_children,
+                     order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
         if isa(minwidth, AbsoluteLength)
             minwidth = minwidth.value
         end
@@ -95,89 +62,67 @@ type Context <: Container
             minheight = minheight.value
         end
 
-        return new(box, units, rotation, mirror, container_children,
-                   form_children, property_children, order,
-                   clip, withjs, withoutjs, raster, minwidth, minheight,
-                   penalty, tag)
-    end
-
-    function Context(ctx::Context)
-        return new(ctx.box, ctx.units, ctx.rot, ctx.mir,
-                   ctx.container_children, ctx.form_children,
-                   ctx.property_children, ctx.order,
-                   ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
-                   ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
+        return new(box, units, rotation, mirror,
+                   container_children, form_children, property_children,
+                   order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
     end
 end
 
+Context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
+            units=NullUnitBox(),
+            rotation=Nullable{Rotation}(),
+            mirror=Nullable{Mirror}(),
+            order=0,
+            clip=false,
+            withjs=false,
+            withoutjs=false,
+            raster=false,
+            minwidth=nothing,
+            minheight=nothing,
+            penalty=0.0,
+            tag=empty_tag) =
+        Context(BoundingBox(x0, y0, width, height), units, rotation, mirror,
+            ListNull{ComposeNode}(),
+            order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
 
-function context(x0=0.0w,
-                 y0=0.0h,
-                 width=1.0w,
-                 height=1.0h;
-                 units=NullUnitBox(),
-                 rotation=Nullable{Rotation}(),
-                 mirror=nothing,
-                 order=0,
-                 clip=false,
-                 withjs=false,
-                 withoutjs=false,
-                 raster=false,
-                 minwidth=nothing,
-                 minheight=nothing,
-                 penalty=0.0,
-                 tag=empty_tag)
+Context(ctx::Context) = Context(ctx.box, ctx.units, ctx.rot, ctx.mir,
+            ctx.container_children, ctx.form_children, ctx.property_children,
+            ctx.order, ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
+            ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
 
-    return Context(BoundingBox(x_measure(x0), y_measure(y0),
-                               x_measure(width), y_measure(height)),
-                   isa(units, Nullable) ? units : Nullable{UnitBox}(units),
-                   isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
-                   mirror, ListNull{Container}(), ListNull{Form}(),
-                   ListNull{Property}(), order, clip,
-                   withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
-end
+context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
+            units=NullUnitBox(),
+            rotation=Nullable{Rotation}(),
+            mirror=nothing,
+            order=0,
+            clip=false,
+            withjs=false,
+            withoutjs=false,
+            raster=false,
+            minwidth=nothing,
+            minheight=nothing,
+            penalty=0.0,
+            tag=empty_tag) =
+        Context(BoundingBox(x_measure(x0), y_measure(y0), x_measure(width), y_measure(height)),
+            isa(units, Nullable) ? units : Nullable{UnitBox}(units),
+            isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
+            mirror,
+            ListNull{Container}(), ListNull{Form}(), ListNull{Property}(),
+            order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
 
-
-function children(ctx::Context)
-    chain(ctx.container_children, ctx.form_children, ctx.property_children)
-end
-
+children(ctx::Context) = chain(ctx.container_children, ctx.form_children, ctx.property_children)
 
 # Updating context fields
 
-function set_units!(ctx::Context, units::UnitBox)
+set_units!(ctx::Context, units::UnitBox) =
     ctx.units = units
-end
 
-
-function copy(ctx::Context)
-    return Context(ctx)
-end
-
-
-function iswithjs(ctx::Container)
-    return ctx.withjs
-end
-
-
-function iswithoutjs(ctx::Container)
-    return ctx.withoutjs
-end
-
-
-function order(cont::Container)
-    return cont.order
-end
-
-
-function minwidth(cont::Container)
-    return cont.minwidth
-end
-
-
-function minheight(cont::Container)
-    return cont.minheight
-end
+copy(ctx::Context) = Context(ctx)
+iswithjs(ctx::Container) = ctx.withjs
+iswithoutjs(ctx::Container) = ctx.withoutjs
+order(cont::Container) = cont.order
+minwidth(cont::Container) = cont.minwidth
+minheight(cont::Container) = cont.minheight
 
 # Normalize cx or cy coordinate to a number [0,1] according to the given
 # unit box.
@@ -189,7 +134,9 @@ function cx_proportion(from::Measure,units::UnitBox)
         cuw = 1.0
     end
     ret_cx_proportion = from.cx != measure_nil ? (from.cx-cux0)/cuw : 0.0
-    !isfinite(ret_cx_proportion) && (ret_cx_proportion = 0.0)
+    if !isfinite(ret_cx_proportion)
+        ret_cx_proportion = 0.0
+    end
     ret_cx_proportion
 end
 
@@ -201,14 +148,16 @@ function cy_proportion(from::Measure,units::UnitBox)
         cuh = 1.0
     end
     ret_cy_proportion  = from.cy != measure_nil ? (from.cy-cuy0)/cuh : 0.0
-    !isfinite(ret_cy_proportion) && (ret_cy_proportion = 0.0)
+    if !isfinite(ret_cy_proportion)
+        ret_cy_proportion = 0.0
+    end
     ret_cy_proportion
 end
 
 function transformcoordinates(from::Measure, ctx::Context)
     Measure(;abs = from.abs) +
-        (from.cw + cx_proportion(from,ctx.units))*ctx.box.width +
-        (from.ch + cy_proportion(from,ctx.units))*ctx.box.height
+            (from.cw + cx_proportion(from,ctx.units))*ctx.box.width +
+            (from.ch + cy_proportion(from,ctx.units))*ctx.box.height
 end
 
 function boundingbox(c::Context,linewidth::Measure=default_line_width,
@@ -275,13 +224,11 @@ function boundingbox(c::Context,linewidth::Measure=default_line_width,
     return bb
 end
 
-
 # Frequently we can't compute the contents of a container without knowing its
 # absolute size, or it is one many possible layout that we want to decide
 # between before rendering. A ContainerPromise lets us defer computing a subtree
 # until the graphic is actually being rendered.
 @compat abstract type ContainerPromise <: Container end
-
 
 # This information is passed to a container promise at drawtime.
 immutable ParentDrawContext
@@ -290,12 +237,10 @@ immutable ParentDrawContext
     box::Absolute2DBox
 end
 
-
 # TODO:
 # Optionl in layouts will typically be expressed with ad hoc container promises,
 # since we can that way avoid realizing layout possibilities that are not used.
 # That means we need to be able to express size constraints on these.
-
 
 type AdhocContainerPromise <: ContainerPromise
     # A function of the form:
@@ -317,8 +262,6 @@ type AdhocContainerPromise <: ContainerPromise
     minheight::Maybe(Float64)
 end
 
-
-
 function ctxpromise(f::Function; order=0, withjs::Bool=false,
                     withoutjs::Bool=false, minwidth=nothing, minheight=nothing)
     if isa(minwidth, Measure)
@@ -332,29 +275,22 @@ function ctxpromise(f::Function; order=0, withjs::Bool=false,
     return AdhocContainerPromise(f, order, withjs, withoutjs, minwidth, minheight)
 end
 
-
-function realize(promise::AdhocContainerPromise, drawctx::ParentDrawContext)
-    return promise.f(drawctx)
-end
-
+realize(promise::AdhocContainerPromise, drawctx::ParentDrawContext) = promise.f(drawctx)
 
 function compose!(a::Context, b::Container)
     a.container_children = cons(b, a.container_children)
     return a
 end
 
-
 function compose!(a::Context, b::Form)
     a.form_children = cons(b, a.form_children)
     return a
 end
 
-
 function compose!(a::Context, b::Property)
     a.property_children = cons(b, a.property_children)
     return a
 end
-
 
 function compose(a::Context, b::ComposeNode)
     a = copy(a)
@@ -362,52 +298,16 @@ function compose(a::Context, b::ComposeNode)
     return a
 end
 
-
 # higher-order compositions
-function compose!(a::Context, b, c, ds...)
-    return compose!(compose!(a, b), c, ds...)
-end
-
-
-function compose!(a::Context, bs::AbstractArray)
-    compose!(a, compose!(bs...))
-end
-
-
-function compose!(a::Context, bs::Tuple)
-    compose!(a, compose!(bs...))
-end
-
-
-function compose!(a::Context)
-    return a
-end
-
-
-function compose(a::Context, b, c, ds...)
-    return compose(compose(a, b), c, ds...)
-end
-
-
-function compose(a::Context, bs::AbstractArray)
-    compose(a, compose(bs...))
-end
-
-
-function compose(a::Context, bs::Tuple)
-    compose(a, compose(bs...))
-end
-
-
-function compose(a::Context)
-    return a
-end
-
-
-function compose(a, b::(@compat Void))
-    return a
-end
-
+compose!(a::Context, b, c, ds...) = compose!(compose!(a, b), c, ds...)
+compose!(a::Context, bs::AbstractArray) = compose!(a, compose!(bs...))
+compose!(a::Context, bs::Tuple) = compose!(a, compose!(bs...))
+compose!(a::Context) = a
+compose(a::Context, b, c, ds...) = compose(compose(a, b), c, ds...)
+compose(a::Context, bs::AbstractArray) = compose(a, compose(bs...))
+compose(a::Context, bs::Tuple) = compose(a, compose(bs...))
+compose(a::Context) = a
+compose(a, b::(@compat Void)) = a
 
 for (f, S, T) in [(:compose!, Property, (@compat Void)),
                   (:compose!, Form, (@compat Void)),
@@ -425,11 +325,8 @@ for (f, S, T) in [(:compose!, Property, (@compat Void)),
         end)
 end
 
-
 function draw(backend::Backend, root_container::Container)
-	if isfinished(backend)
-		error("The backend has already been drawn upon.")
-	end
+    isfinished(backend) && error("The backend has already been drawn upon.")
 
     drawpart(backend, root_container, IdentityTransform(), UnitBox(), root_box(backend))
     finish(backend)
@@ -443,16 +340,10 @@ immutable DrawState
     parent_transform::Transform
     units::UnitBox
     parent_box::Absolute2DBox
-
-    function DrawState()
-        new(true)
-    end
-
-    function DrawState(container, parent_transform, units, parent_box)
-        new(false, container, parent_transform, units, parent_box)
-    end
 end
-
+DrawState(container, parent_transform, units, parent_box) =
+        DrawState(false, container, parent_transform, units, parent_box)
+DrawState() = DrawState(true)  ### ???
 
 # Draw without finishing the backend
 #
@@ -463,17 +354,14 @@ function drawpart(backend::Backend, container::Container,
                   parent_transform::Transform, units::UnitBox,
                   parent_box::Absolute2DBox)
 
-    if (iswithjs(container) && !iswithjs(backend)) ||
-       (iswithoutjs(container) && iswithjs(backend))
-        return
-    end
+    ((iswithjs(container) && !iswithjs(backend)) ||
+       (iswithoutjs(container) && iswithjs(backend))) && return
 
     if isa(container, ContainerPromise)
         container = realize(container,
                             ParentDrawContext(parent_transform, units, parent_box))
-        if !isa(container, Container)
-            error("Error: A container promise function did not evaluate to a container")
-        end
+        isa(container, Container) ||
+                error("Error: A container promise function did not evaluate to a container")
         drawpart(backend, container, parent_transform, units, parent_box)
         return
     end
@@ -592,11 +480,8 @@ function drawpart(backend::Backend, container::Container,
         end
     end
 
-    if has_properties
-        pop_property_frame(backend)
-    end
+    has_properties && pop_property_frame(backend)
 end
-
 
 # Produce a tree diagram representing the tree structure of a graphic.
 #
@@ -667,9 +552,7 @@ function introspect(root::Context)
     enqueue!(q, (root, 1))
     while !isempty(q)
         node, level = dequeue!(q)
-        if !isa(node, Context)
-            continue
-        end
+        isa(node, Context) || continue
         pos = positions[node]
 
         for child in children(node)
@@ -684,7 +567,6 @@ function introspect(root::Context)
                     (context(order=-2), rectangle(), fill("#333")),
                     lines_ctx, figs)
 end
-
 
 function showcompact(io::IO, ctx::Context)
     print(io, "Context(")
@@ -708,9 +590,6 @@ function showcompact_array(io::IO, a::AbstractArray)
     print(io, "]")
 end
 showcompact_array(io::IO, a::Range) = showcompact(io, a)
-
 showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
-
 showcompact(io::IO, p::Compose.Property) = print(io, Compose.prop_string(p))
-
 showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)

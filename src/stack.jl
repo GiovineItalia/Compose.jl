@@ -1,6 +1,4 @@
-
 # Convenience function for rearranging contexts
-
 
 # Create a new context containing the given contexts stacked horizontally.
 #
@@ -12,9 +10,7 @@
 #                    specifier, giving the vertical positioning of the context.
 #
 function hstack(x0, y0, height, aligned_contexts::(@compat Tuple{Context, VAlignment})...)
-    if isempty(aligned_contexts)
-        return context(x0, y0, 0, height)
-    end
+    isempty(aligned_contexts) && return context(x0, y0, 0, height)
 
     widths = [aligned_context[1].box.a[1] for aligned_context in aligned_contexts]
     width = sum(widths)
@@ -57,9 +53,7 @@ function hstack(x0, y0, height, aligned_contexts::(@compat Tuple{Context, VAlign
     return root
 end
 
-
 hstack() = context()
-
 
 # Create a new context containing the given contexts stacked horizontally.
 #
@@ -75,7 +69,6 @@ function hstack(contexts::Context...; x0::MeasureOrNumber=0,
     return hstack(x0, y0, height, [(context, vcenter) for context in contexts]...)
 end
 
-
 # Create a new context containing the given contexts stacked vertically.
 #
 # Args:
@@ -86,10 +79,7 @@ end
 #                    specifier, giving the horizontal positioning of the context.
 #
 function vstack(x0, y0, width, aligned_contexts::(@compat Tuple{Context, HAlignment})...)
-
-    if isempty(aligned_contexts)
-        return context(x0, y0, width, 0)
-    end
+    isempty(aligned_contexts) && return context(x0, y0, width, 0)
 
     heights = [aligned_context[1].box.a[2] for aligned_context in aligned_contexts]
     height = sum(heights)
@@ -132,9 +122,7 @@ function vstack(x0, y0, width, aligned_contexts::(@compat Tuple{Context, HAlignm
     return root
 end
 
-
 vstack() = context()
-
 
 # Create a new context containing the given contexts stacked horizontally.
 #
@@ -149,4 +137,3 @@ function vstack(contexts::Context...; x0::MeasureOrNumber=0,
     end
     return vstack(x0, y0, width, [(context, hcenter) for context in contexts]...)
 end
-
