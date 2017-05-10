@@ -25,35 +25,15 @@ const XYTupleOrVec = Union{Tuple{MeasureOrNumber,MeasureOrNumber}, Vec}
 # --------------------------
 
 # Compute the length of the given type.
-function sum_component{T <: Length}(::Type{T}, l)
-    return 0.0
-end
-
-
-function sum_component{T <: Length}(::Type{T}, l::T)
-    return l.value
-end
-
-
-function sum_component{T <: Length}(::Type{T}, l::Add)
-    return sum_component(T, l.a) + sum_component(T, l.b)
-end
-
+sum_component{T <: Length}(::Type{T}, l) = 0.0
+sum_component{T <: Length}(::Type{T}, l::T) = l.value
+sum_component{T <: Length}(::Type{T}, l::Add) = sum_component(T, l.a) + sum_component(T, l.b)
 
 # Scale a length component by some factor.
-function scale_component{T <: Length}(::Type{T}, scale, l)
-    return l
-end
-
-
-function scale_component{T <: Length}(::Type{T}, scale, l::T)
-    return T(scale * l.value)
-end
-
-
-function scale_component{T <: Length}(::Type{T}, scale, l::Add)
-    return scale_component(T, scale, l.a) + scale_component(T, scale, l.b)
-end
+scale_component{T <: Length}(::Type{T}, scale, l) = l
+scale_component{T <: Length}(::Type{T}, scale, l::T) = T(scale * l.value)
+scale_component{T <: Length}(::Type{T}, scale, l::Add) =
+        scale_component(T, scale, l.a) + scale_component(T, scale, l.b)
 
 
 # Interpretation of bare numbers
@@ -78,7 +58,6 @@ size_measure(a) = a * mm
 # Higher-order measures
 # ---------------------
 
-
 # Compute the union of two bounding boxes.
 #
 # In other words, given two bounding boxes, return a new bounding box that
@@ -100,12 +79,11 @@ function union(a::BoundingBox, b::BoundingBox, units=nothing, parent_abs_width=n
         # Pure absolute or pure relative points are fine. When they are mixed,
         # there are problems
         if !isabsolute(m) && m.abs != 0.0
-            if units == nothing || parent_abs_width == nothing || parent_abs_height == nothing
-                error("""Bounding boxes are uncomputable without knowledge of the
-                         absolute dimensions of the top canvase due to mixing of relative
-                         and absolute coordinates. Either pass the dimension as a parameter
-                         or restrict the context to one kind of coordinates.""")
-            end
+            units == nothing || parent_abs_width == nothing || parent_abs_height == nothing &&
+                    error("""Bounding boxes are uncomputable without knowledge of the
+                        absolute dimensions of the top canvase due to mixing of relative
+                        and absolute coordinates. Either pass the dimension as a parameter
+                        or restrict the context to one kind of coordinates.""")
             parent_box = AbsoluteBox(0.0,0.0,parent_abs_width,parent_abs_height)
             abb = union(absolute_units(a,IdentityTransform(),units,parent_box),
                         absolute_units(b,IdentityTransform(),units,parent_box))
@@ -115,7 +93,6 @@ function union(a::BoundingBox, b::BoundingBox, units=nothing, parent_abs_width=n
     end
     return BoundingBox(x0, y0, x1 - x0, y1 - y0)
 end
-
 
 function union(a::AbsoluteBox, b::AbsoluteBox)
     (a.width == 0.0 || a.height == 0.0) && return b
@@ -127,11 +104,10 @@ function union(a::AbsoluteBox, b::AbsoluteBox)
     return AbsoluteBox(x0, y0, x1 - x0, y1 - y0)
 end
 
-
 # The same type-signature is used for a box used to assign
 # a custom coordinate system to a canvas.
 
-immutable UnitBox{S, T, U, V}
+immutable UnitBox{S,T,U,V}
     x0::S
     y0::T
     width::U
@@ -141,43 +117,23 @@ immutable UnitBox{S, T, U, V}
     rightpad::AbsoluteLength
     toppad::AbsoluteLength
     bottompad::AbsoluteLength
-
-    @compat function (::Type{UnitBox{S,T,U,V}}){S,T,U,V}(x0::S, y0::T, width::U, height::V;
-                                 leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
-        return new{S,T,U,V}(x0, y0, width, height, leftpad, rightpad, toppad, bottompad)
-    end
 end
 
+UnitBox(x0, y0, width, height; leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm) =
+        UnitBox{typeof(x0), typeof(y0), typeof(width), typeof(height)}(
+            x0, y0, width, height, leftpad, rightpad, toppad, bottompad)
 
-function UnitBox{S,T}(width::S, height::T;
-                      leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
-    x0 = zero(S)
-    y0 = zero(T)
-    return UnitBox{S, T, S, T}(x0, y0, width, height,
-                               leftpad=leftpad, rightpad=rightpad,
-                               toppad=toppad, bottompad=bottompad)
+function UnitBox(width, height; leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
+    S, T = typeof(width), typeof(height)
+    UnitBox{S,T,S,T}(zero(S), zero(T), width, height, leftpad, rightpad, toppad, bottompad)
 end
 
-
-function UnitBox{S, T, U, V}(x0::S, y0::T, width::U, height::V;
-                             leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
-    return UnitBox{S, T, U, V}(
-                   x0, y0, width, height,
-                   leftpad=leftpad, rightpad=rightpad,
-                   toppad=toppad, bottompad=bottompad)
-end
-
-
-function UnitBox()
-    return UnitBox{Float64, Float64, Float64, Float64}(0.0, 0.0, 1.0, 1.0)
-end
-
+UnitBox() = UnitBox(0.0, 0.0, 1.0, 1.0)
 
 const NullUnitBox = Nullable{UnitBox}
 
-
 # copy with substitution
-function UnitBox(units::UnitBox;
+UnitBox(units::UnitBox;
                  x0=Nullable{Measure}(),
                  y0=Nullable{Measure}(),
                  width=Nullable{Measure}(),
@@ -185,135 +141,62 @@ function UnitBox(units::UnitBox;
                  leftpad=Nullable{AbsoluteLength}(),
                  rightpad=Nullable{AbsoluteLength}(),
                  toppad=Nullable{AbsoluteLength}(),
-                 bottompad=Nullable{AbsoluteLength}())
-    return UnitBox(ifelse(isa(x0, Nullable)     && isnull(x0),     units.x0,     x0),
-                   ifelse(isa(y0, Nullable)     && isnull(y0),     units.y0,     y0),
-                   ifelse(isa(width, Nullable)  && isnull(width),  units.width,  width),
-                   ifelse(isa(height, Nullable) && isnull(height), units.height, height),
-                   leftpad   = ifelse(isa(leftpad,   Nullable) && isnull(leftpad),   units.leftpad,   leftpad),
-                   rightpad  = ifelse(isa(rightpad,  Nullable) && isnull(rightpad),  units.rightpad,  rightpad),
-                   toppad    = ifelse(isa(toppad,    Nullable) && isnull(toppad),    units.toppad,    toppad),
-                   bottompad = ifelse(isa(bottompad, Nullable) && isnull(bottompad), units.bottompad, bottompad))
-end
-
+                 bottompad=Nullable{AbsoluteLength}()) =
+        UnitBox(ifelse(isa(x0, Nullable)     && isnull(x0),     units.x0,     x0),
+            ifelse(isa(y0, Nullable)     && isnull(y0),     units.y0,     y0),
+            ifelse(isa(width, Nullable)  && isnull(width),  units.width,  width),
+            ifelse(isa(height, Nullable) && isnull(height), units.height, height),
+            leftpad   = ifelse(isa(leftpad,   Nullable) && isnull(leftpad),   units.leftpad,   leftpad),
+            rightpad  = ifelse(isa(rightpad,  Nullable) && isnull(rightpad),  units.rightpad,  rightpad),
+            toppad    = ifelse(isa(toppad,    Nullable) && isnull(toppad),    units.toppad,    toppad),
+            bottompad = ifelse(isa(bottompad, Nullable) && isnull(bottompad), units.bottompad, bottompad))
 
 Measures.width(units::UnitBox) = units.width
 Measures.height(units::UnitBox) = units.height
 
+ispadded(units::UnitBox) = units.leftpad != 0mm || units.rightpad != 0mm ||
+        units.toppad != 0mm || units.bottompad != 0mm
 
-function ispadded(units::UnitBox)
-    return units.leftpad != 0mm || units.rightpad != 0mm ||
-           units.toppad != 0mm || units.bottompad != 0mm
-end
-
-
-function isxflipped{S, T, U, V}(units::UnitBox{S, T, U, V})
-    return units.width < zero(U)
-end
-
-
-function isyflipped{S, T, U, V}(units::UnitBox{S, T, U, V})
-    return units.height < zero(V)
-end
-
-
-function hasunits(::Type, x::Measure)
-    return false
-end
-
-
-function hasunits{u, T}(::Type{Length{u}}, x::Length{u, T})
-    return true
-end
-
-
-function hasunits(T::Type, x::Measures.BinaryOp)
-    return hasunits(T, x.a) || hasunits(T, x.b)
-end
+isxflipped{S, T, U, V}(units::UnitBox{S, T, U, V}) = units.width < zero(U)
+isyflipped{S, T, U, V}(units::UnitBox{S, T, U, V}) = units.height < zero(V)
+hasunits(::Type, x::Measure) = false
+hasunits{u, T}(::Type{Length{u}}, x::Length{u, T}) = true
+hasunits(T::Type, x::Measures.BinaryOp) = hasunits(T, x.a) || hasunits(T, x.b)
 
 
 # Canvas Transforms
 # -----------------
 
-
 # Transform matrix in absolute coordinates
 
 @compat abstract type Transform end
-
 
 immutable IdentityTransform <: Transform
 end
 
 immutable MatrixTransform <: Transform
     M::Matrix{Float64}
-
-    function Transform()
-        new([1.0 0.0 0.0
-             0.0 1.0 0.0
-             0.0 0.0 1.0])
-    end
-
-    function MatrixTransform(M::Matrix{Float64})
-        new(M)
-    end
 end
 
-function combine(a::IdentityTransform, b::IdentityTransform)
-    return a
-end
-
-
-function combine(a::IdentityTransform, b::MatrixTransform)
-    return b
-end
-
-
-function combine(a::MatrixTransform, b::IdentityTransform)
-    return a
-end
-
-
-function combine(a::MatrixTransform, b::MatrixTransform)
-    MatrixTransform(a.M * b.M)
-end
-
+combine(a::IdentityTransform, b::IdentityTransform) = a
+combine(a::IdentityTransform, b::MatrixTransform) = b
+combine(a::MatrixTransform, b::IdentityTransform) = a
+combine(a::MatrixTransform, b::MatrixTransform) = MatrixTransform(a.M * b.M)
 
 # Rotation about a point.
 immutable Rotation{P <: Vec}
     theta::Float64
     offset::P
-
-    # copy constructor
-    @compat function (::Type{Rotation{P}}){P}(theta::Float64, offset::P)
-        new{P}(theta, offset)
-    end
 end
 
-
-function Rotation()
-    Rotation(0.0, (0.5w, 0.5h))
-end
-
-function Rotation{P <: Vec}(theta::Float64, offset::P)
-    Rotation{P}(theta, offset)
-end
-
-function Rotation(theta::Number)
-    Rotation{Vec2}(convert(Float64, theta), (0.5w, 0.5h))
-end
-
-function Rotation(theta::Number, offset::XYTupleOrVec)
-    Rotation(convert(Float64, theta), (x_measure(offset[1]), y_measure(offset[2])))
-end
-
-function Rotation(theta::Number, offset_x, offset_y)
-    Rotation(convert(Float64, theta), (x_measure(offset_x), y_measure(offset_y)))
-end
-
-
+Rotation(theta::Number, offset::XYTupleOrVec) =
+        Rotation(convert(Float64, theta), (x_measure(offset[1]), y_measure(offset[2])))
+Rotation(theta::Number, offset_x, offset_y) =
+        Rotation(convert(Float64, theta), (x_measure(offset_x), y_measure(offset_y)))
+Rotation(theta::Number) = Rotation{Vec2}(convert(Float64, theta), (0.5w, 0.5h))
+Rotation() = Rotation(0.0, (0.5w, 0.5h))
 
 copy(rot::Rotation) = Rotation(rot)
-
 
 function convert(::Type{Transform}, rot::Rotation)
     if rot.theta == 0.0
@@ -329,35 +212,20 @@ function convert(::Type{Transform}, rot::Rotation)
     end
 end
 
-
 # Mirror about a point at a given angle
 type Mirror
     theta::Float64
     point::Vec
-
-    function Mirror()
-        new(0.0, (0.5w, 0.5h))
-    end
-
-    function Mirror(theta::Number)
-        Mirror(convert(Float64, theta), 0.5w, 0.5h)
-    end
-
-    function Mirror(theta::Number, offset::XYTupleOrVec)
-        new(convert(Float64, theta), (x_measure(offset[1]), y_measure(offset[2])))
-    end
-
-    function Mirror(theta::Number, offset_x, offset_y)
-        new(convert(Float64, theta), (offset_x, offset_y))
-    end
-
-    # copy constructor
-    function Mirror(mir::Mirror)
-        new(copy(mir.theta),
-            copy(mir.offset))
-    end
 end
 
+Mirror(theta::Number, offset_x, offset_y) = Mirror(convert(Float64, theta), (offset_x, offset_y))
+Mirror(theta::Number, offset::XYTupleOrVec) =
+        Mirror(convert(Float64, theta), (x_measure(offset[1]), y_measure(offset[2])))
+Mirror(theta::Number) = Mirror(convert(Float64, theta), 0.5w, 0.5h)
+Mirror() = Mirror(0.0, (0.5w, 0.5h))
+
+# copy constructor
+Mirror(mir::Mirror) = Mirror(copy(mir.theta), copy(mir.offset))
 
 function convert(::Type{Transform}, mir::Mirror)
     n = [cos(mir.theta), sin(mir.theta)]
@@ -371,37 +239,21 @@ function convert(::Type{Transform}, mir::Mirror)
     MatrixTransform(M)
 end
 
-
 copy(mir::Mirror) = Mirror(mir)
 
 
 # Resolution
 # ----------
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length)
-    return resolve(box, a)
-end
-
-
-function resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cx})
-    return ((a.value - units.x0) / width(units)) * box.a[1]
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cx})
-    return abs(a.value / width(units)) * box.a[1]
-end
-
-
-function resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy})
-    return ((a.value - units.y0) / height(units)) * box.a[2]
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy})
-    return abs(a.value / height(units)) * box.a[2]
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length) = resolve(box, a)
+resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cx}) =
+        ((a.value - units.x0) / width(units)) * box.a[1]
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cx}) =
+        abs(a.value / width(units)) * box.a[1]
+resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy}) =
+        ((a.value - units.y0) / height(units)) * box.a[2]
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy}) =
+        abs(a.value / height(units)) * box.a[2]
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec2)
     xy = (resolve_position(box, units, t, p[1]) + box.x0[1],
@@ -416,16 +268,12 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::MatrixTransform, p::Vec2)
     return (xy[1]mm, xy[2]mm)
 end
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::BoundingBox)
-    return BoundingBox(resolve(box, units, t, a.x0),
-                       (resolve(box, units, t, a.a[1]), resolve(box, units, t, a.a[2])))
-end
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::BoundingBox) =
+        BoundingBox(resolve(box, units, t, a.x0),
+            (resolve(box, units, t, a.a[1]), resolve(box, units, t, a.a[2])))
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Rotation)
-    return Rotation(a.theta, resolve(box, units, t, a.offset))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Rotation) =
+        Rotation(a.theta, resolve(box, units, t, a.offset))
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, u::UnitBox)
     if !ispadded(u)
@@ -451,42 +299,21 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, u::UnitBox)
     end
 end
 
-
 # Equivalent to the resolve functions in Measures, but pass through the `units`
 # and `transform` parameters.
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Neg)
-    return -resolve(box, units, t, x.a)
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Add)
-    return resolve(box, units, t, x.a) + resolve(box, units, t, x.b)
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Mul)
-    return resolve(box, units, t, x.a) * x.b
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Div)
-    return resolve(box, units, t, x.a) / x.b
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Min)
-    return min(resolve(box, units, t, x.a), resolve(box, units, t, x.b))
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Max)
-    return max(resolve(box, units, t, x.a), resolve(box, units, t, x.b))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Neg) =
+        -resolve(box, units, t, x.a)
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Add) =
+        resolve(box, units, t, x.a) + resolve(box, units, t, x.b)
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Mul) =
+        resolve(box, units, t, x.a) * x.b
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Div) =
+        resolve(box, units, t, x.a) / x.b
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Min) =
+        min(resolve(box, units, t, x.a), resolve(box, units, t, x.b))
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Max) =
+        max(resolve(box, units, t, x.a), resolve(box, units, t, x.b))
 
 resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a) = resolve(box, units, t, a)
-
-
-function resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, op::Add)
-    return resolve_position(box, units, t, op.a) + resolve_position(box, units, t, op.b)
-end
+resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, op::Add) =
+        resolve_position(box, units, t, op.a) + resolve_position(box, units, t, op.b)

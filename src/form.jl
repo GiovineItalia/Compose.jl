@@ -1,4 +1,3 @@
-
 # A form is something that ends up as geometry in the graphic.
 
 @compat abstract type FormPrimitive end
@@ -12,29 +11,17 @@ immutable Form{P <: FormPrimitive} <: ComposeNode
     @compat (::Type{Form{P}}){P}(prim, tag::Symbol=empty_tag) = new{P}(prim, tag)
 end
 
-function Form{P<:FormPrimitive}(primitives::Vector{P}, tag::Symbol=empty_tag)
-    Form{P}(primitives, tag)
-end
+Form{P<:FormPrimitive}(primitives::Vector{P}, tag::Symbol=empty_tag) = Form{P}(primitives, tag)
 
-function isempty(f::Form)
-    return isempty(f.primitives)
-end
+isempty(f::Form) = isempty(f.primitives)
 
+isscalar(f::Form) =
+        length(f.primitives) == 1
 
-function isscalar(f::Form)
-    return length(f.primitives) == 1
-end
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, form::Form) =
+        Form([resolve(box, units, t, primitive) for primitive in form.primitives])
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, form::Form)
-    return Form([resolve(box, units, t, primitive)
-                 for primitive in form.primitives])
-end
-
-
-function Base.similar{T}(f::Form{T})
-    return Form{T}(T[])
-end
+Base.similar{T}(f::Form{T}) = Form{T}(T[])
 
 form_string(::Form) = "FORM"  # fallback definition
 
@@ -50,10 +37,7 @@ end
 const Polygon = SimplePolygon
 const PolygonPrimitive = SimplePolygonPrimitive
 
-
-function polygon()
-    return Form([PolygonPrimitive(Vec[])])
-end
+polygon() = Form([PolygonPrimitive(Vec[])])
 
 """
     polygon(points)
@@ -75,7 +59,6 @@ function polygon{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
                     for point in points])], tag)
 end
 
-
 function polygon(point_arrays::AbstractArray, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(point_arrays)
     VecType = XM == YM == Any ? Vec : Tuple{XM, YM}
@@ -89,12 +72,9 @@ function polygon(point_arrays::AbstractArray, tag=empty_tag)
     return Form{PrimType}(polyprims, tag)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PolygonPrimitive)
-    return PolygonPrimitive{AbsoluteVec2}(
-                AbsoluteVec2[resolve(box, units, t, point) for point in p.points])
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PolygonPrimitive) =
+        PolygonPrimitive{AbsoluteVec2}( AbsoluteVec2[
+            resolve(box, units, t, point) for point in p.points])
 
 function boundingbox(form::PolygonPrimitive, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
@@ -108,9 +88,7 @@ function boundingbox(form::PolygonPrimitive, linewidth::Measure,
                        y1 - y0 + linewidth)
 end
 
-
 form_string(::SimplePolygon) = "SP"
-
 
 immutable ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
     rings::Vector{Vector{P}}
@@ -118,11 +96,7 @@ end
 
 @compat const ComplexPolygon{P<:ComplexPolygonPrimitive} = Form{P}
 
-
-function complexpolygon()
-    return ComplexPolygon([ComplexPolygonPrimitive(Vec[])])
-end
-
+complexpolygon() = ComplexPolygon([ComplexPolygonPrimitive(Vec[])])
 
 function complexpolygon(rings::Vector{Vector}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(rings)
@@ -139,7 +113,6 @@ function complexpolygon(rings::Vector{Vector}, tag=empty_tag)
                                          for point in points]])], tag)
 end
 
-
 function complexpolygon(ring_arrays::Vector{Vector{Vector}}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(coords)
     VecType = XM == YM == Any ? Vec : Tuple{XM, YM}
@@ -149,16 +122,11 @@ function complexpolygon(ring_arrays::Vector{Vector{Vector}}, tag=empty_tag)
                     for ring in ring_array] for ring_array in ring_arrays], tag)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::ComplexPolygonPrimitive)
-    return ComplexPolygonPrimitive(
-                [AbsoluteVec2[resolve(box, units, t, point, t) for point in ring]
-                for ring in p.rings])
-end
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::ComplexPolygonPrimitive) =
+        ComplexPolygonPrimitive( [AbsoluteVec2[
+            resolve(box, units, t, point, t) for point in ring] for ring in p.rings])
 
 form_string(::ComplexPolygon) = "CP"
-
 
 
 # Rectangle
@@ -182,7 +150,6 @@ function rectangle()
     return Rectangle{typeof(prim)}([prim])
 end
 
-
 """
     rectangle(x0, y0, width, height)
 
@@ -201,17 +168,15 @@ end
 
 Arguments can be passed in arrays in order to perform multiple drawing operations at once.
 """
-function rectangle(x0s::AbstractArray, y0s::AbstractArray,
-                   widths::AbstractArray, heights::AbstractArray, tag=empty_tag)
-    return @makeform (x0 in x0s, y0 in y0s, width in widths, height in heights),
-        RectanglePrimitive{Vec2, Measure, Measure}((x_measure(x0), y_measure(y0)),
+rectangle(x0s::AbstractArray, y0s::AbstractArray,
+                   widths::AbstractArray, heights::AbstractArray, tag=empty_tag) =
+        @makeform (x0 in x0s, y0 in y0s, width in widths, height in heights),
+            RectanglePrimitive{Vec2, Measure, Measure}((x_measure(x0), y_measure(y0)),
                                                     x_measure(width), y_measure(height)) tag
-end
 
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
                  p::RectanglePrimitive)
-
     corner = resolve(box, units, t, p.corner)
     width = resolve(box, units, t, p.width)
     height = resolve(box, units, t, p.height)
@@ -234,15 +199,12 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
         (x, y), width, height)
 end
 
-
-function boundingbox(form::RectanglePrimitive, linewidth::Measure,
-                     font::AbstractString, fontsize::Measure)
-
-    return BoundingBox(form.corner.x - linewidth,
-                       form.corner.y - linewidth,
-                       form.width + 2*linewidth,
-                       form.height + 2*linewidth)
-end
+boundingbox(form::RectanglePrimitive, linewidth::Measure,
+                     font::AbstractString, fontsize::Measure) =
+        BoundingBox(form.corner.x - linewidth,
+                    form.corner.y - linewidth,
+                    form.width + 2*linewidth,
+                    form.height + 2*linewidth)
 
 form_string(::Rectangle) = "R"
 
@@ -254,16 +216,8 @@ immutable CirclePrimitive{P <: Vec, M <: Measure} <: FormPrimitive
     radius::M
 end
 
-
-function CirclePrimitive{P, M}(center::P, radius::M)
-    return CirclePrimitive{P, M}(center, radius)
-end
-
-
-function CirclePrimitive(x, y, r)
-    return CirclePrimitive((x_measure(x), y_measure(y)), x_measure(r))
-end
-
+CirclePrimitive{P, M}(center::P, radius::M) = CirclePrimitive{P, M}(center, radius)
+CirclePrimitive(x, y, r) = CirclePrimitive((x_measure(x), y_measure(y)), x_measure(r))
 
 @compat const Circle{P<:CirclePrimitive} = Form{P}
 
@@ -302,27 +256,21 @@ function circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray, tag=emp
         CirclePrimitive{Vec2, Measure}((x_measure(x), y_measure(y)), x_measure(r)) tag
 end
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::CirclePrimitive)
-    return CirclePrimitive{AbsoluteVec2, AbsoluteLength}(
-        resolve(box, units, t, p.center),
-        resolve(box, units, t, p.radius))
-end
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CirclePrimitive) =
+        CirclePrimitive{AbsoluteVec2, AbsoluteLength}(
+            resolve(box, units, t, p.center),
+            resolve(box, units, t, p.radius))
 
-
-function boundingbox(form::CirclePrimitive, linewidth::Measure,
-                     font::AbstractString, fontsize::Measure)
-    return BoundingBox(form.center[1] - form.radius - linewidth,
-                       form.center[2] - form.radius - linewidth,
-                       2 * (form.radius + linewidth),
-                       2 * (form.radius + linewidth))
-end
+boundingbox(form::CirclePrimitive, linewidth::Measure, font::AbstractString, fontsize::Measure) =
+        BoundingBox(form.center[1] - form.radius - linewidth,
+            form.center[2] - form.radius - linewidth,
+            2 * (form.radius + linewidth),
+            2 * (form.radius + linewidth))
 
 form_string(::Circle) = "C"
 
 # Ellipse
 # -------
-
 
 immutable EllipsePrimitive{P1<:Vec, P2<:Vec, P3<:Vec} <: FormPrimitive
     center::P1
@@ -332,14 +280,12 @@ end
 
 @compat const Ellipse{P<:EllipsePrimitive} = Form{P}
 
-
 function ellipse()
     prim = EllipsePrimitive((0.5w, 0.5h),
                             (1.0w, 0.5h),
                             (0.5w, 1.0h))
     return Ellipse{typeof(prim)}([prim])
 end
-
 
 function ellipse(x, y, x_radius, y_radius, tag=empty_tag)
     xm = x_measure(x)
@@ -350,24 +296,19 @@ function ellipse(x, y, x_radius, y_radius, tag=empty_tag)
     return Ellipse{typeof(prim)}([prim], tag)
 end
 
-
 function ellipse(xs::AbstractArray, ys::AbstractArray,
                  x_radiuses::AbstractArray, y_radiuses::AbstractArray, tag=empty_tag)
-    return @makeform (x in xs, y in ys, x_radius in x_radiuses, y_radius in y_radiuses),
-    EllipsePrimitive((x_measure(x), y_measure(y)),
+        return @makeform (x in xs, y in ys, x_radius in x_radiuses, y_radius in y_radiuses),
+            EllipsePrimitive((x_measure(x), y_measure(y)),
                      (x_measure(x) + x_measure(x_radius), y_measure(y)),
                      (x_measure(x), y_measure(y) + y_measure(y_radius))) tag
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::EllipsePrimitive)
-    return EllipsePrimitive{AbsoluteVec2, AbsoluteVec2, AbsoluteVec2}(
-                   resolve(box, units, t, p.center),
-                   resolve(box, units, t, p.x_point),
-                   resolve(box, units, t, p.y_point))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::EllipsePrimitive) =
+        EllipsePrimitive{AbsoluteVec2, AbsoluteVec2, AbsoluteVec2}(
+            resolve(box, units, t, p.center),
+            resolve(box, units, t, p.x_point),
+            resolve(box, units, t, p.y_point))
 
 function boundingbox(form::EllipsePrimitive, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
@@ -406,7 +347,6 @@ const vtop    = VTop()
 const vcenter = VCenter()
 const vbottom = VBottom()
 
-
 immutable TextPrimitive{P<:Vec, R<:Rotation} <: FormPrimitive
     position::P
     value::AbstractString
@@ -419,8 +359,6 @@ immutable TextPrimitive{P<:Vec, R<:Rotation} <: FormPrimitive
 end
 
 @compat const Text{P<:TextPrimitive} = Form{P}
-
-
 
 """
     text(x, y, value [,halgin::HAlignment [,valgin::VAlignment [,rot::Rotation]]])
@@ -438,7 +376,6 @@ function text(x, y, value::AbstractString,
     return Text{typeof(prim)}([prim], tag)
 end
 
-
 function text(x, y, value,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation(); tag::Symbol=empty_tag)
@@ -446,27 +383,22 @@ function text(x, y, value,
     return Text{typeof(prim)}([prim], tag)
 end
 
-
 """
     text(xs, ys, values [,halgins::HAlignment [,valgins::VAlignment [,rots::Rotation]]])
 
 Arguments can be passed in arrays in order to perform multiple drawing operations at once.
 """
-function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{AbstractString},
+text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{AbstractString},
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
-              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag)
-    return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-            TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot) tag
-end
+              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag) =
+    @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
+        TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot) tag
 
-
-function text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
+text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
-              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag)
-    return @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-            TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot) tag
-end
-
+              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag) =
+    @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
+        TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot) tag
 
 function resolve{P, R}(box::AbsoluteBox, units::UnitBox, t::Transform,
                        p::TextPrimitive{P, R})
@@ -514,12 +446,10 @@ end
 
 @compat const Line{P<:LinePrimitive} = Form{P}
 
-
 function line()
     prim = LinePrimitive(Vec[])
     return Line{typeof(prim)}([prim])
 end
-
 
 function line{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(Vector[points])
@@ -527,7 +457,6 @@ function line{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
     prim = LinePrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])
     return Line{typeof(prim)}([prim], tag)
 end
-
 
 function line(point_arrays::AbstractArray, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(point_arrays)
@@ -543,13 +472,9 @@ function line(point_arrays::AbstractArray, tag=empty_tag)
     return Form{PrimType}(lineprims, tag)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::LinePrimitive)
-    return LinePrimitive{AbsoluteVec2}(
-                AbsoluteVec2[resolve(box, units, t, point) for point in p.points])
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::LinePrimitive) =
+        LinePrimitive{AbsoluteVec2}(
+            AbsoluteVec2[resolve(box, units, t, point) for point in p.points])
 
 function boundingbox(form::LinePrimitive, linewidth::Measure,
                      font::AbstractString, fontsize::Measure)
@@ -577,7 +502,6 @@ end
 
 @compat const Curve{P<:CurvePrimitive} = Form{P}
 
-
 function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
                ctrl1::XYTupleOrVec, anchor1::XYTupleOrVec, tag=empty_tag)
     prim = CurvePrimitive((x_measure(anchor0[1]), y_measure(anchor0[2])),
@@ -587,25 +511,20 @@ function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
     return Curve{typeof(prim)}([prim], tag)
 end
 
+curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
+               ctrl1s::AbstractArray, anchor1s::AbstractArray, tag=empty_tag) =
+        @makeform (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
+            CurvePrimitive((x_measure(anchor0[1]), y_measure(anchor0[2])),
+                (x_measure(ctrl0[1]), y_measure(ctrl0[2])),
+                (x_measure(ctrl1[1]), y_measure(ctrl1[2])),
+                (x_measure(anchor1[1]), y_measure(anchor1[2]))) tag
 
-function curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
-               ctrl1s::AbstractArray, anchor1s::AbstractArray, tag=empty_tag)
-    return @makeform (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
-    CurvePrimitive((x_measure(anchor0[1]), y_measure(anchor0[2])),
-                   (x_measure(ctrl0[1]), y_measure(ctrl0[2])),
-                   (x_measure(ctrl1[1]), y_measure(ctrl1[2])),
-                   (x_measure(anchor1[1]), y_measure(anchor1[2]))) tag
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::CurvePrimitive)
-    return CurvePrimitive{AbsoluteVec2, AbsoluteVec2, AbsoluteVec2, AbsoluteVec2}(
-                resolve(box, units, t, p.anchor0),
-                resolve(box, units, t, p.ctrl0),
-                resolve(box, units, t, p.ctrl1),
-                resolve(box, units, t, p.anchor1))
-end
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CurvePrimitive) =
+        CurvePrimitive{AbsoluteVec2, AbsoluteVec2, AbsoluteVec2, AbsoluteVec2}(
+            resolve(box, units, t, p.anchor0),
+            resolve(box, units, t, p.ctrl0),
+            resolve(box, units, t, p.ctrl1),
+            resolve(box, units, t, p.anchor1))
 
 form_string(::Curve) = "CV"
 
@@ -622,7 +541,6 @@ end
 
 @compat const Bitmap{P<:BitmapPrimitive} = Form{P}
 
-
 function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height, tag=empty_tag)
     corner = (x_measure(x0), y_measure(y0))
     width = x_measure(width)
@@ -631,29 +549,21 @@ function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height
     return Bitmap{typeof(prim)}([prim], tag)
 end
 
-
-function bitmap(mimes::AbstractArray, datas::AbstractArray,
+bitmap(mimes::AbstractArray, datas::AbstractArray,
                 x0s::AbstractArray, y0s::AbstractArray,
-                widths::AbstractArray, heights::AbstractArray, tag=empty_tag)
-    return @makeform (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heigths),
+                widths::AbstractArray, heights::AbstractArray, tag=empty_tag) =
+        @makeform (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heigths),
             BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height)) tag
-end
 
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::BitmapPrimitive) =
+        BitmapPrimitive{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
+            p.mime, p.data,
+            resolve(box, units, t, p.corner),
+            resolve(box, units, t, p.width),
+            resolve(box, units, t, p.height))
 
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::BitmapPrimitive)
-    return BitmapPrimitive{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
-                p.mime, p.data,
-                resolve(box, units, t, p.corner),
-                resolve(box, units, t, p.width),
-                resolve(box, units, t, p.height))
-end
-
-
-function boundingbox(form::BitmapPrimitive, linewidth::Measure,
-                     font::AbstractString, fontsize::Measure)
-    return BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
-end
+boundingbox(form::BitmapPrimitive, linewidth::Measure, font::AbstractString, fontsize::Measure) =
+        BoundingBox(form.corner.x, form.corner.y, form.width, form.height)
 
 form_string(::Bitmap) = "B"
 
@@ -668,14 +578,11 @@ immutable MoveAbsPathOp <: PathOp
     to::Vec
 end
 
-
 function assert_pathop_tokens_len(op_type, tokens, i, needed)
     provided = length(tokens) - i + 1
-    if provided < needed
-        error("In path $(op_type) requires $(needed) argumens but only $(provided) provided.")
-    end
+    provided < needed &&
+            error("In path $(op_type) requires $(needed) argumens but only $(provided) provided.")
 end
-
 
 function parsepathop(::Type{MoveAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(MoveAbsPathOp, tokens, i, 2)
@@ -683,17 +590,12 @@ function parsepathop(::Type{MoveAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::MoveAbsPathOp)
-    return MoveAbsPathOp(resolve(box, units, t, p.to))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::MoveAbsPathOp) =
+        MoveAbsPathOp(resolve(box, units, t, p.to))
 
 immutable MoveRelPathOp <: PathOp
     to::Vec
 end
-
 
 function parsepathop(::Type{MoveRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(MoveRelPathOp, tokens, i, 2)
@@ -701,41 +603,25 @@ function parsepathop(::Type{MoveRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
-
-function resolve_offset(box::AbsoluteBox, units::UnitBox, t::Transform,
-                        p::Vec)
-
+function resolve_offset(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec)
     absp = resolve(box, units, t, p)
     zer0 = resolve(box, units, t, (0w, 0h))
     return (absp[1] - zer0[1], absp[2] - zer0[2])
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::MoveRelPathOp)
-    return MoveRelPathOp(resolve_offset(box, units, t, p.to))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::MoveRelPathOp) =
+        MoveRelPathOp(resolve_offset(box, units, t, p.to))
 
 immutable ClosePathOp <: PathOp
 end
 
+parsepathop(::Type{ClosePathOp}, tokens::AbstractArray, i) = (ClosePathOp(), i)
 
-function parsepathop(::Type{ClosePathOp}, tokens::AbstractArray, i)
-    return (ClosePathOp(), i)
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::ClosePathOp)
-    return p
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::ClosePathOp) = p
 
 immutable LineAbsPathOp <: PathOp
     to::Vec
 end
-
 
 function parsepathop(::Type{LineAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(LineAbsPathOp, tokens, i, 2)
@@ -743,17 +629,12 @@ function parsepathop(::Type{LineAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::LineAbsPathOp)
-    return LineAbsPathOp(resolve(box, units, t, p.to))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::LineAbsPathOp) =
+        LineAbsPathOp(resolve(box, units, t, p.to))
 
 immutable LineRelPathOp <: PathOp
     to::Vec
 end
-
 
 function parsepathop(::Type{LineRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(LineRelPathOp, tokens, i, 2)
@@ -761,17 +642,12 @@ function parsepathop(::Type{LineRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::LineRelPathOp)
-    return LineRelPathOp(resolve(box, units, t, p.to))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::LineRelPathOp) =
+        LineRelPathOp(resolve(box, units, t, p.to))
 
 immutable HorLineAbsPathOp <: PathOp
     x::Measure
 end
-
 
 function parsepathop(::Type{HorLineAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(HorLineAbsPathOp, tokens, i, 1)
@@ -779,17 +655,12 @@ function parsepathop(::Type{HorLineAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 1)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::HorLineAbsPathOp)
-    return HorLineAbsPathOp(resolve(box, units, t, (p.x, 0mm))[1])
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::HorLineAbsPathOp) =
+        HorLineAbsPathOp(resolve(box, units, t, (p.x, 0mm))[1])
 
 immutable HorLineRelPathOp <: PathOp
     Δx::Measure
 end
-
 
 function parsepathop(::Type{HorLineRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(HorLineRelPathOp, tokens, i, 1)
@@ -797,17 +668,12 @@ function parsepathop(::Type{HorLineRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 1)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::HorLineRelPathOp)
-    return HorLineRelPathOp(resolve(box, units, t, p.Δx))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::HorLineRelPathOp) =
+        HorLineRelPathOp(resolve(box, units, t, p.Δx))
 
 immutable VertLineAbsPathOp <: PathOp
     y::Measure
 end
-
 
 function parsepathop(::Type{VertLineAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(VertLineAbsPathOp, tokens, i, 1)
@@ -815,17 +681,12 @@ function parsepathop(::Type{VertLineAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 1)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::VertLineAbsPathOp)
-    return VertLineAbsPathOp(resolve(box, units, t, (0mm, p.y))[2])
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::VertLineAbsPathOp) =
+        VertLineAbsPathOp(resolve(box, units, t, (0mm, p.y))[2])
 
 immutable VertLineRelPathOp <: PathOp
     Δy::Measure
 end
-
 
 function parsepathop(::Type{VertLineRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(VertLineRelPathOp, tokens, i, 1)
@@ -833,19 +694,14 @@ function parsepathop(::Type{VertLineRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 1)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::VertLineRelPathOp)
-    return VertLineAbsPathOp(resolve(box, units, t, (0mmm, p.Δy))[2])
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::VertLineRelPathOp) =
+        VertLineAbsPathOp(resolve(box, units, t, (0mmm, p.Δy))[2])
 
 immutable CubicCurveAbsPathOp <: PathOp
     ctrl1::Vec
     ctrl2::Vec
     to::Vec
 end
-
 
 function parsepathop(::Type{CubicCurveAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(CubicCurveAbsPathOp, tokens, i, 6)
@@ -855,22 +711,17 @@ function parsepathop(::Type{CubicCurveAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 6)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::CubicCurveAbsPathOp)
-    return CubicCurveAbsPathOp(
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CubicCurveAbsPathOp) =
+        CubicCurveAbsPathOp(
             resolve(box, units, t, p.ctrl1),
             resolve(box, units, t, p.ctrl2),
             resolve(box, units, t, p.to))
-end
-
 
 immutable CubicCurveRelPathOp <: PathOp
     ctrl1::Vec
     ctrl2::Vec
     to::Vec
 end
-
 
 function parsepathop(::Type{CubicCurveRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(CubicCurveRelPathOp, tokens, i, 6)
@@ -880,21 +731,16 @@ function parsepathop(::Type{CubicCurveRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 6)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::CubicCurveRelPathOp)
-    return CubicCurveRelPathOp(
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CubicCurveRelPathOp) =
+        CubicCurveRelPathOp(
             resolve(box, units, t, p.ctrl1),
             resolve(box, units, t, p.ctrl2),
             resolve(box, units, t, p.to))
-end
-
 
 immutable CubicCurveShortAbsPathOp <: PathOp
     ctrl2::Vec
     to::Vec
 end
-
 
 function parsepathop(::Type{CubicCurveShortAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(CubicCurveShortAbsPathOp, tokens, i, 4)
@@ -903,20 +749,15 @@ function parsepathop(::Type{CubicCurveShortAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 4)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::CubicCurveShortAbsPathOp)
-    return CubicCurveShortAbsPathOp(
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CubicCurveShortAbsPathOp) =
+        CubicCurveShortAbsPathOp(
             resolve_offset(box, units, t, p.ctrl2),
             resolve_offset(box, units, t, p.to))
-end
-
 
 immutable CubicCurveShortRelPathOp <: PathOp
     ctrl2::Vec
     to::Vec
 end
-
 
 function parsepathop(::Type{CubicCurveShortRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(CubicCurveShortRelPathOp, tokens, i, 4)
@@ -925,20 +766,15 @@ function parsepathop(::Type{CubicCurveShortRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 4)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::CubicCurveShortRelPathOp)
-    return CubicCurveShortRelPathOp(
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CubicCurveShortRelPathOp) =
+        CubicCurveShortRelPathOp(
             resolve(box, units, t, p.ctrl2),
             resolve(box, units, t, p.to))
-end
-
 
 immutable QuadCurveAbsPathOp <: PathOp
     ctrl1::Vec
     to::Vec
 end
-
 
 function parsepathop(::Type{QuadCurveAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(QuadCurveAbsPathOp, tokens, i, 4)
@@ -947,20 +783,15 @@ function parsepathop(::Type{QuadCurveAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 4)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::QuadCurveAbsPathOp)
-    return QuadCurveAbsPathOp(
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::QuadCurveAbsPathOp) =
+        QuadCurveAbsPathOp(
             resolve(box, units, t, p.ctrl1),
             resolve(box, units, t, p.to))
-end
-
 
 immutable QuadCurveRelPathOp <: PathOp
     ctrl1::Vec
     to::Vec
 end
-
 
 function parsepathop(::Type{QuadCurveRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(QuadCurveRelPathOp, tokens, i, 4)
@@ -969,21 +800,16 @@ function parsepathop(::Type{QuadCurveRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 4)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::QuadCurveRelPathOp)
-    return QuadCurveRelPathOp(
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::QuadCurveRelPathOp) =
+        QuadCurveRelPathOp(
             (resolve(box, units, t, p.ctrl1[1]),
              resolve(box, units, t, p.ctrl1[2])),
             (resolve(box, units, t, p.to[1]),
              resolve(box, units, t, p.to[2])))
-end
-
 
 immutable QuadCurveShortAbsPathOp <: PathOp
     to::Vec
 end
-
 
 function parsepathop(::Type{QuadCurveShortAbsPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(QuadCurveShortAbsPathOp, tokens, i, 2)
@@ -991,17 +817,12 @@ function parsepathop(::Type{QuadCurveShortAbsPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::QuadCurveShortAbsPathOp)
-    return QuadCurveShortAbsPathOp(resolve(box, units, t, p.to))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::QuadCurveShortAbsPathOp) =
+        QuadCurveShortAbsPathOp(resolve(box, units, t, p.to))
 
 immutable QuadCurveShortRelPathOp <: PathOp
     to::Vec
 end
-
 
 function parsepathop(::Type{QuadCurveShortRelPathOp}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(QuadCurveShortRelPathOp, tokens, i, 2)
@@ -1009,14 +830,10 @@ function parsepathop(::Type{QuadCurveShortRelPathOp}, tokens::AbstractArray, i)
     return (op, i + 2)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::QuadCurveShortRelPathOp)
-    return QuadCurveShortRelPathOp(
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::QuadCurveShortRelPathOp) =
+        QuadCurveShortRelPathOp(
             (resolve(box, units, t, p.to[1]),
              resolve(box, units, t, p.to[2])))
-end
-
 
 immutable ArcAbsPathOp <: PathOp
     rx::Measure
@@ -1027,18 +844,14 @@ immutable ArcAbsPathOp <: PathOp
     to::Vec
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::ArcAbsPathOp)
-    return ArcAbsPathOp(
-        resolve(box, units, t, p.rx),
-        resolve(box, units, t, p.ry),
-        p.rotation,
-        p.largearc,
-        p.sweep,
-        resolve(box, units, t, p.to))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::ArcAbsPathOp) =
+        ArcAbsPathOp(
+            resolve(box, units, t, p.rx),
+            resolve(box, units, t, p.ry),
+            p.rotation,
+            p.largearc,
+            p.sweep,
+            resolve(box, units, t, p.to))
 
 immutable ArcRelPathOp <: PathOp
     rx::Measure
@@ -1048,7 +861,6 @@ immutable ArcRelPathOp <: PathOp
     sweep::Bool
     to::Vec
 end
-
 
 function parsepathop{T <: Union{ArcAbsPathOp, ArcRelPathOp}}(::Type{T}, tokens::AbstractArray, i)
     assert_pathop_tokens_len(T, tokens, i, 7)
@@ -1073,9 +885,7 @@ function parsepathop{T <: Union{ArcAbsPathOp, ArcRelPathOp}}(::Type{T}, tokens::
         error("sweep argument to the arc path operation must be boolean")
     end
 
-    if !isa(tokens[i + 2], Number)
-        error("path arc operation requires a numerical rotation")
-    end
+    isa(tokens[i + 2], Number) || error("path arc operation requires a numerical rotation")
 
     op = T(x_measure(tokens[i]),
            y_measure(tokens[i + 1]),
@@ -1086,19 +896,15 @@ function parsepathop{T <: Union{ArcAbsPathOp, ArcRelPathOp}}(::Type{T}, tokens::
     return (op, i + 7)
 end
 
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::ArcRelPathOp)
-    return ArcRelPathOp(
-        resolve(box, units, t, p.rx),
-        resolve(box, units, t, p.ry),
-        p.rotation,
-        p.largearc,
-        p.sweep,
-        (resolve(box, units, t, p.to[1]),
-         resolve(box, units, t, p.to[2])))
-end
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::ArcRelPathOp) =
+        ArcRelPathOp(
+            resolve(box, units, t, p.rx),
+            resolve(box, units, t, p.ry),
+            p.rotation,
+            p.largearc,
+            p.sweep,
+            (resolve(box, units, t, p.to[1]),
+             resolve(box, units, t, p.to[2])))
 
 const path_ops = @compat Dict(
      :M => MoveAbsPathOp,
@@ -1122,7 +928,6 @@ const path_ops = @compat Dict(
      :A => ArcAbsPathOp,
      :a => ArcRelPathOp
 )
-
 
 # A path is an array of symbols, numbers, and measures following SVGs path
 # mini-language.
@@ -1152,29 +957,18 @@ function parsepath(tokens::AbstractArray)
     return ops
 end
 
-
 immutable PathPrimitive <: FormPrimitive
     ops::Vector{PathOp}
 end
 
 const Path = Form{PathPrimitive}
 
+path(tokens::AbstractArray, tag=empty_tag) = Path([PathPrimitive(parsepath(tokens))], tag)
 
-function path(tokens::AbstractArray, tag=empty_tag)
-    return Path([PathPrimitive(parsepath(tokens))], tag)
-end
+path{T <: AbstractArray}(tokens::AbstractArray{T}, tag=empty_tag) =
+        Path([PathPrimitive(parsepath(ts)) for ts in tokens], tag)
 
-
-function path{T <: AbstractArray}(tokens::AbstractArray{T}, tag=empty_tag)
-    return Path([PathPrimitive(parsepath(ts)) for ts in tokens], tag)
-end
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PathPrimitive)
-    return PathPrimitive([resolve(box, units, t, op) for op in p.ops])
-end
-
-
-
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PathPrimitive) =
+        PathPrimitive([resolve(box, units, t, op) for op in p.ops])
 
 # TODO: boundingbox

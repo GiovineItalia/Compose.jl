@@ -1,4 +1,3 @@
-
 # Estimation of text extents using pango.
 
 import Fontconfig
@@ -16,11 +15,7 @@ const CAIRO_FONT_TYPE_USER = 4
 # Mirroring a #define in the pango header.
 const PANGO_SCALE = 1024.0
 
-
-function pango_fmt_float(x::Float64)
-    return @sprintf("%0.4f", x)
-end
-
+pango_fmt_float(x::Float64) = @sprintf("%0.4f", x)
 
 # Use the freetype/fontconfig backend to find the best match to a font
 # description.
@@ -38,8 +33,7 @@ let available_font_families = Set{AbstractString}()
         push!(available_font_families, lowercase(Fontconfig.format(font_pattern, "%{family}")))
     end
 
-    const meta_families = Set(["serif", "sans", "sans-serif", "monospace",
-                               "cursive", "fantasy"])
+    const meta_families = Set(["serif", "sans", "sans-serif", "monospace", "cursive", "fantasy"])
 
     global match_font
     function match_font(families::AbstractString, size::Float64)
@@ -52,24 +46,22 @@ let available_font_families = Set{AbstractString}()
         end
         family = Fontconfig.format(match(Fontconfig.Pattern(family=family)), "%{family}")
         desc = @sprintf("%s %fpx", family, size)
-        fd = ccall((:pango_font_description_from_string, libpango),
-                   Ptr{Void}, (Ptr{UInt8},), desc)
+        fd = ccall((:pango_font_description_from_string, libpango), Ptr{Void}, (Ptr{UInt8},), desc)
         return fd
     end
 end
 
-
 # Thin wrapper for a pango_layout object.
 type PangoLayout
     layout::Ptr{Void}
+end
 
-    function PangoLayout()
-        layout = ccall((:pango_layout_new, libpango),
-                       Ptr{Void}, (Ptr{Void},), pango_cairo_ctx)
-        # TODO: finalizer?
+function PangoLayout()
+    layout = ccall((:pango_layout_new, libpango),
+                   Ptr{Void}, (Ptr{Void},), pango_cairo_ctx)
+    # TODO: finalizer?
 
-        new(layout)
-    end
+    PangoLayout(layout)
 end
 
 # Set the layout's font.
@@ -78,7 +70,6 @@ function pango_set_font(pangolayout::PangoLayout, family::AbstractString, pts::N
     ccall((:pango_layout_set_font_description, libpango),
           Void, (Ptr{Void}, Ptr{Void}), pangolayout.layout, fd)
 end
-
 
 # Find the width and height of a string.
 #
@@ -102,7 +93,6 @@ function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
 
     width, height = (extents[3] / PANGO_SCALE)pt, (extents[4] / PANGO_SCALE)pt
 end
-
 
 # Find the minimum width and height needed to fit any of the given strings.
 #
@@ -131,25 +121,18 @@ end
 # Same as max_text_extents but with font_size in arbitrary absolute units.
 function max_text_extents(font_family::AbstractString, size::Measure,
                       texts::AbstractString...)
-    if !isa(size, AbsoluteLength)
-        error("text_extents requries font size be in absolute units")
-    end
+    isa(size, AbsoluteLength) || error("text_extents requries font size be in absolute units")
     return max_text_extents(font_family, size/pt, texts...)
 end
-
 
 # Return an array with the extents of each element
 function text_extents(font_family::AbstractString, pts::Float64, texts::AbstractString...)
     pango_set_font(pangolayout::PangoLayout, font_family, pts)
-    return [pango_text_extents(pangolayout::PangoLayout, text)
-            for text in texts]
+    return [pango_text_extents(pangolayout::PangoLayout, text) for text in texts]
 end
 
-
-function text_extents(font_family::AbstractString, size::Measure, texts::AbstractString...)
-    return text_extents(font_family, size/pt, texts...)
-end
-
+text_extents(font_family::AbstractString, size::Measure, texts::AbstractString...) =
+        text_extents(font_family, size/pt, texts...)
 
 const pango_attrs = [
     (:PANGO_ATTR_LANGUAGE,        :PangoAttrLanguage),
@@ -174,18 +157,15 @@ const pango_attrs = [
     (:PANGO_ATTR_GRAVITY,         :PangoAttrInt),
     (:PANGO_ATTR_GRAVITY_HINT,    :PangoAttrInt)]
 
-
 for (i, (attr, t)) in enumerate(pango_attrs)
     @eval begin
         const $attr = $i
     end
 end
 
-
 const PANGO_STYLE_NORMAL  = 0
 const PANGO_STYLE_OBLIQUE = 1
 const PANGO_STYLE_ITALIC  = 2
-
 
 const PANGO_WEIGHT_THIN = 100
 const PANGO_WEIGHT_ULTRALIGHT = 200
@@ -199,24 +179,17 @@ const PANGO_WEIGHT_ULTRABOLD = 800
 const PANGO_WEIGHT_HEAVY = 900
 const PANGO_WEIGHT_ULTRAHEAVY = 1000
 
-
 # A Julia manifestation of a set of pango attributes
 type PangoAttr
     rise::Maybe(Int)
     scale::Maybe(Float64)
     style::Maybe(Int)
     weight::Maybe(Int)
-
-    function PangoAttr()
-        new(nothing, nothing, nothing, nothing)
-    end
 end
 
+PangoAttr() = PangoAttr(nothing, nothing, nothing, nothing)
 
-function isempty(attr::PangoAttr)
-    all([getfield(attr, name) === nothing for name in fieldnames(PangoAttr)])
-end
-
+isempty(attr::PangoAttr) = all([getfield(attr, name) === nothing for name in fieldnames(PangoAttr)])
 
 # Set an attribute in a PangoAttr
 #
@@ -239,7 +212,6 @@ function update_pango_attr(attr::PangoAttr, attr_name::Symbol, value)
     end
     attr
 end
-
 
 # Unpack the first part of a pango attribute
 #
@@ -268,7 +240,6 @@ function unpack_pango_attr(ptr::Ptr{Void}, t::Symbol)
     (idx[1], idx[2], value)
 end
 
-
 # Unpack a pango int attribute.
 #
 # Args:
@@ -276,17 +247,8 @@ end
 #
 # Returns:
 #   And int value.
-function unpack_pango_int(ptr::Ptr{Void})
-    ptr = convert(Ptr{Int32}, ptr)
-    unsafe_wrap(Array, ptr, (1,), false)[1]
-end
-
-
-function unpack_pango_float(ptr::Ptr{Void})
-    ptr = convert(Ptr{Float64}, ptr)
-    unsafe_wrap(Array, ptr, (1,), false)[1]
-end
-
+unpack_pango_int(ptr::Ptr{Void}) = unsafe_wrap(Array, convert(Ptr{Int32}, ptr), (1,), false)[1]
+unpack_pango_float(ptr::Ptr{Void}) = unsafe_wrap(Array, convert(Ptr{Float64}, ptr), (1,), false)[1]
 
 #function unpack_pango_size(ptr::Ptr{Void})
     #ptr = convert(Ptr{Int32}, ptr)
@@ -297,7 +259,6 @@ end
     #println(size, absolute)
     #nothing
 #end
-
 
 # TODO: unpacking other attributes
 
@@ -336,7 +297,6 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
     attrs = Array{@compat Tuple{Int, PangoAttr}}(0)
 
     while attr_it_next() != 0
-
         attr = PangoAttr()
         local start_idx
 
@@ -370,9 +330,7 @@ function pango_to_svg(text::AbstractString)
                 text, -1, 0, c_attr_list, c_stripped_text,
                 C_NULL, C_NULL)
 
-    if ret == 0
-        error("Could not parse pango markup.")
-    end
+    ret == 0 && error("Could not parse pango markup.")
 
     # TODO: do c_stripped_text and c_attr_list need to be freed?
 
@@ -387,9 +345,7 @@ function pango_to_svg(text::AbstractString)
             write(io, text[last_idx:idx])
             last_idx = idx + 1
 
-            if open_tag
-                write(io, "</tspan>")
-            end
+            open_tag && write(io, "</tspan>")
 
             if isempty(attr) && baseline_shift == 0.0
                 open_tag = false
@@ -431,18 +387,14 @@ function pango_to_svg(text::AbstractString)
                 end
             end
 
-            if !(attr.weight === nothing)
-                @printf(io, " font-weight=\"%d\"", attr.weight)
-            end
+            attr.weight === nothing || @printf(io, " font-weight=\"%d\"", attr.weight)
 
             write(io, ">")
         end
 
         write(io, text[last_idx:end])
 
-        if open_tag
-            write(io, "</tspan>")
-        end
+        open_tag && write(io, "</tspan>")
     end
 
     tagged_text

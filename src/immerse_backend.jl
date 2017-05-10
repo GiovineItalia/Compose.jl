@@ -18,8 +18,8 @@ end
 
 root_box(backend::ImmerseBackend) = root_box(backend.cb)
 
-push_property_frame(backend::ImmerseBackend, properties) = push_property_frame(backend.cb, properties)
-
+push_property_frame(backend::ImmerseBackend, properties) =
+        push_property_frame(backend.cb, properties)
 pop_property_frame(backend::ImmerseBackend) = pop_property_frame(backend.cb)
 
 function draw(backend::ImmerseBackend, root_container::Container)
@@ -37,15 +37,17 @@ function register_coords(backend::ImmerseBackend, box, units, transform, form::F
 end
 
 function register_coords(backend::ImmerseBackend, box, units, transform, property::SVGClass)
-    if length(property.primitives) == 1 && property.primitives[1].value == "plotpanel"
-        push!(backend.panelcoords, (box, units, transform))
-    end
+    length(property.primitives) == 1 && property.primitives[1].value == "plotpanel" &&
+            push!(backend.panelcoords, (box, units, transform))
     nothing
 end
 
 absolute_native_units(backend::ImmerseBackend, u::Float64) = absolute_native_units(backend.cb, u)
-absolute_native_units(backend::ImmerseBackend, l::Length{:mm}) = absolute_native_units(backend.cb, l.value)
-absolute_native_units(backend::ImmerseBackend, l::Tuple{Length{:mm},Length{:mm}}) = (absolute_native_units(backend.cb, l[1].value), absolute_native_units(backend.cb, l[2].value))
+absolute_native_units(backend::ImmerseBackend, l::Length{:mm}) =
+        absolute_native_units(backend.cb, l.value)
+absolute_native_units(backend::ImmerseBackend, l::Tuple{Length{:mm},Length{:mm}}) =
+        (absolute_native_units(backend.cb, l[1].value),
+         absolute_native_units(backend.cb, l[2].value))
 
 surface(backend::ImmerseBackend) = surface(backend.cb)
 

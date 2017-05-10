@@ -1,9 +1,6 @@
-
 using JuMP
 
-function is_approx_integer(x::Float64)
-    return abs(x - round(x)) < 1e-8
-end
+is_approx_integer(x::Float64) = abs(x - round(x)) < 1e-8
 
 function realize(tbl::Table, drawctx::ParentDrawContext)
     model = Model()
@@ -56,9 +53,7 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
         end
 
         for k in 2:length(tbl.x_focus)
-            if isnan(tbl.x_prop[k])
-                continue
-            end
+            isnan(tbl.x_prop[k]) && continue
 
             j1 = tbl.x_focus[k1]
             jk = tbl.x_focus[k]
@@ -73,9 +68,7 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
         end
 
         for k in 2:length(tbl.y_focus)
-            if isnan(tbl.y_prop[k])
-                continue
-            end
+            isnan(tbl.y_prop[k]) && continue
 
             i1 = tbl.y_focus[k1]
             ik = tbl.y_focus[k]
@@ -86,17 +79,13 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     # fixed configuration constraints: constrain a set of cells
     # to have tho same configuration.
     for fixed_config in tbl.fixed_configs
-        if isempty(fixed_config)
-            continue
-        end
+        isempty(fixed_config) && continue
 
         (i0, j0) = fixed_config[1]
         config_count = length(tbl.children[i0, j0])
         for (i, j) in fixed_config[2:end]
             for k in 1:config_count
-                if !haskey(idx_cs, (i0, j0)) && !haskey(idx_cs, (i, j))
-                    continue
-                end
+                !haskey(idx_cs, (i0, j0)) && !haskey(idx_cs, (i, j)) && continue
                 idx_a = idx_cs[i0, j0][k]
                 idx_b = idx_cs[(i,j)][k]
                 @addConstraint(model, c[idx_a] == c[idx_b])
@@ -114,12 +103,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     for (l, (i, j, k)) in enumerate(c_indexes)
         minw = minwidth(tbl.children[i, j][k])
         minh = minheight(tbl.children[i, j][k])
-        if minw != nothing
-            @addConstraint(model, w[j] >= minw * c[l])
-        end
-
-        if minh != nothing
-            @addConstraint(model, h[i] >= minh * c[l])
+        minw == nothing || @addConstraint(model, w[j] >= minw * c[l])
+        minh == nothing || @addConstraint(model, h[i] >= minh * c[l])
         end
     end
 
@@ -128,12 +113,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
         if length(tbl.children[i, j]) == 1
             minw = minwidth(tbl.children[i, j][1])
             minh = minheight(tbl.children[i, j][1])
-            if minw != nothing
-                @addConstraint(model, w[j] >= minw)
-            end
-            if minh != nothing
-                @addConstraint(model, h[i] >= minh)
-            end
+            minw == nothing || @addConstraint(model, w[j] >= minw)
+            minh == nothing || @addConstraint(model, h[i] >= minh)
         end
     end
 
@@ -161,10 +142,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     x_solution = cumsum([w_solution[j] for j in 1:n]) .- w_solution
     y_solution = cumsum([h_solution[i] for i in 1:m]) .- h_solution
 
-    if tbl.aspect_ratio != nothing
-        force_aspect_ratio!(tbl, x_solution, y_solution,
-                            w_solution, h_solution)
-    end
+    tbl.aspect_ratio == nothing ||
+            force_aspect_ratio!(tbl, x_solution, y_solution, w_solution, h_solution)
 
     # set child positions according to layout solution
     feasible_eps = 1e-4
@@ -191,9 +170,7 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
         end
     end
 
-    if !feasible
-        warn("Graphic may not be drawn correctly at the given size.")
-    end
+    feasible || warn("Graphic may not be drawn correctly at the given size.")
 
     return root
 end

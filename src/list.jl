@@ -1,47 +1,26 @@
-
 # Basic list
 
 @compat abstract type List{T} end
 
 immutable ListNull{T} <: List{T} end
 
-
 copy{T}(l::ListNull{T}) = l
-
 
 type ListNode{T} <: List{T}
     head::T
     tail::List{T}
 end
 
-
 copy{T}(l::ListNode{T}) = ListNode{T}(l.head, l.tail)
-
 
 head(l::ListNode) = l.head
 tail(l::ListNode) = l.tail
 
-
 # iterator
-function start(l::List)
-    l
-end
-
-
-function next(::List, l::List)
-    (l.head, l.tail)
-end
-
-
-function done(::List, l::List)
-    typeof(l) <: ListNull
-end
-
-
-function cons{T}(value, l::List{T})
-    ListNode{T}(value, l)
-end
-
+start(l::List) = l
+next(::List, l::List) = (l.head, l.tail)
+done(::List, l::List) = typeof(l) <: ListNull
+cons{T}(value, l::List{T}) = ListNode{T}(value, l)
 
 function length{T}(l::List{T})
     n = 0
@@ -51,7 +30,6 @@ function length{T}(l::List{T})
     end
     n
 end
-
 
 function cat{T}(a::List{T}, b::List{T})
     if a === nothing
@@ -67,7 +45,6 @@ function cat{T}(a::List{T}, b::List{T})
         a
     end
 end
-
 
 function show{T}(io::IO, a::List{T})
     print(io, "List([")

@@ -10,7 +10,7 @@ srf = Cairo.CairoImageSurface(10, 10, Cairo.FORMAT_RGB24)
 ctx = compose(compose(context(), rectangle(0.0w, 0.0h, 0.8w, 0.7h, :rect)), fill("tomato"))
 be = Compose.ImmerseBackend(srf)
 draw(be, ctx)
-@test be.coords[:rect][2] == Compose.UnitBox{Float64,Float64,Float64,Float64}(0.0,0.0,1.0,1.0)
+@test be.coords[:rect][2] == Compose.UnitBox()
 
 ### Finding tagged objects
 const ContainersWithChildren = Union{Context,Compose.Table}

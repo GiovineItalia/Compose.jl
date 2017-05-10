@@ -1,4 +1,3 @@
-
 """
 A form batch is a vectorized form with n primitives transformed into a simpler
 representation: one primitive repositioned n times.
@@ -16,16 +15,12 @@ immutable FormBatch{P <: FormPrimitive}
     offsets::Vector{AbsoluteVec2}
 end
 
-
 """
 Attempt to batch a form. Return a Nullable{FormBatch} which is null if the Form
 could not be batched, and non-null if the original form can be replaced with teh
 resulting FormBatch.
 """
-function batch{P}(form::Form{P})
-    return Nullable{FormBatch{P}}()
-end
-
+batch{P}(form::Form{P}) = Nullable{FormBatch{P}}()
 
 # Note: in tests using random data, this optimization wasn't worth it. I'm
 # keeping it around out of hopes I find a more clever version that is
@@ -38,9 +33,7 @@ const offset_redundancy_threshold = 0.05
 Produce a new array of offsets in which near duplicate values have been removed.
 """
 function filter_redundant_offsets!(offsets::Vector{AbsoluteVec2})
-    if isempty(offsets)
-        return offsets
-    end
+    isempty(offsets) && return offsets
 
     sort!(offsets)
     nonredundant_offsets = AbsoluteVec2[offsets[1]]
@@ -48,24 +41,19 @@ function filter_redundant_offsets!(offsets::Vector{AbsoluteVec2})
         # use l1 distance for perf
         d = abs(offsets[i-1][1].value - offsets[i][1].value) +
             abs(offsets[i-1][2].value - offsets[i][2].value)
-        if d > offset_redundancy_threshold
-            push!(nonredundant_offsets, offsets[i])
-        end
+        d > offset_redundancy_threshold && push!(nonredundant_offsets, offsets[i])
     end
     @show (length(offsets), length(nonredundant_offsets))
 
     return nonredundant_offsets
 end
 
-
 function batch{T <: CirclePrimitive}(form::Form{T})
     # circles can be batched if they all have the same radius.
     r = form.primitives[1].radius
     n = length(form.primitives)
     for i in 2:n
-        if form.primitives[i].radius != r
-            return Nullable{FormBatch{CirclePrimitive}}()
-        end
+        form.primitives[i].radius == r || return Nullable{FormBatch{CirclePrimitive}}()
     end
 
     prim = CirclePrimitive((0mm, 0mm), r)
@@ -77,7 +65,6 @@ function batch{T <: CirclePrimitive}(form::Form{T})
     return Nullable(FormBatch(prim, offsets))
 end
 
-
 # TODO: same for polygon, rectangle, ellipse
 
 # TODO: batch needs to be exposed as something that users can construct and
@@ -88,7 +75,6 @@ end
 # Don't attempt to optimize for batching if the form is smaller than this.
 const batch_length_threshold = 100
 
-
 """
 Count the number of unique primitives in a property, stopping when max_count is
 exceeded.
@@ -97,14 +83,11 @@ function count_unique_primitives(property::Property, max_count::Int)
     unique_primitives = Set{eltype(property.primitives)}()
     for primitive in property.primitives
         push!(unique_primitives, primitive)
-        if length(unique_primitives) > max_count
-            break
-        end
+        length(unique_primitives) > max_count && break
     end
 
     return length(unique_primitives)
 end
-
 
 """
 Remove and return vector forms and vector properties from the Context.
@@ -149,7 +132,6 @@ function excise_vector_children!(ctx::Context)
     return (forms, properties)
 end
 
-
 """
 Attempt to transform a tree into an equivalent tree that can more easily be
 batched.
@@ -168,9 +150,7 @@ function optimize_batching(ctx::Context)
         form_child = form_child.tail
     end
 
-    if max_form_length < batch_length_threshold
-        return ctx
-    end
+    max_form_length < batch_length_threshold && return ctx
 
     # condition 2: has a 1 or more long vector properties each with a smaller
     # number of unique values
@@ -179,8 +159,7 @@ function optimize_batching(ctx::Context)
     prop_child = ctx.property_children
     while !isa(prop_child, ListNull)
         if length(prop_child.head.primitives) > 1
-            max_unique_primitives =
-                max(max_unique_primitives,
+            max_unique_primitives = max(max_unique_primitives,
                     count_unique_primitives(prop_child.head, max_count))
         end
         prop_child = prop_child.tail

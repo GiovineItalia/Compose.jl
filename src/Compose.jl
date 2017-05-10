@@ -27,8 +27,6 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
        boundingbox, Patchable
 
-
-
 function isinstalled(pkg, ge=v"0.0.0-")
     try
         # Pkg.installed might throw an error,
@@ -48,17 +46,13 @@ function isinstalled(pkg, ge=v"0.0.0-")
     end
 end
 
-
 @compat abstract type Backend end
-
 
 """
 Some backends can more efficiently draw forms by batching. If so, they
 shuld define a similar method that returns true.
 """
-function canbatch(::Backend)
-    return false
-end
+canbatch(::Backend) = false
 
 # Allow users to supply strings without deprecation warnings
 parse_colorant(c::Colorant) = c
@@ -97,19 +91,14 @@ function set_default_graphic_size(width::MeasureOrNumber,
     nothing
 end
 
-
 default_graphic_format = :html
 
 function set_default_graphic_format(fmt::Symbol)
-    if !(fmt in [:html, :png, :svg, :pdf, :ps, :pgf])
-        error("$(fmt) is not a supported plot format")
-    end
+    fmt in [:html, :png, :svg, :pdf, :ps, :pgf] || error("$(fmt) is not a supported plot format")
     global default_graphic_format
     default_graphic_format = fmt
     nothing
 end
-
-
 
 # Default means to include javascript dependencies in the SVGJS backend.
 default_jsmode = :embed
@@ -123,7 +112,6 @@ function set_default_jsmode(mode::Symbol)
     end
     nothing
 end
-
 
 function default_mime()
     if default_graphic_format == :png
@@ -149,7 +137,6 @@ default_font_size = 11pt
 default_line_width = 0.3mm
 default_stroke_color = nothing
 default_fill_color = colorant"black"
-
 
 # Use cairo for the PNG, PS, PDF if it's installed.
 macro missing_cairo_error(backend)
@@ -207,20 +194,17 @@ else
     include("fontfallback.jl")
 end
 
-@compat function show(io::IO, m::MIME"text/html", ctx::Context)
+@compat show(io::IO, m::MIME"text/html", ctx::Context) =
     draw(SVGJS(io, default_graphic_width, default_graphic_height, false,
                jsmode=default_jsmode), ctx)
-end
 
-@compat function show(io::IO, m::MIME"image/svg+xml", ctx::Context)
+@compat show(io::IO, m::MIME"image/svg+xml", ctx::Context) =
     draw(SVG(io, default_graphic_width, default_graphic_height, false), ctx)
-end
 
 try
     getfield(Compose, :Cairo) # throws if Cairo isn't being used
-    @compat function show(io::IO, ::MIME"image/png", ctx::Context)
+    @compat show(io::IO, ::MIME"image/png", ctx::Context) =
         draw(PNG(io, default_graphic_width, default_graphic_height), ctx)
-    end
 end
 
 function pad_outer(c::Context,
@@ -246,32 +230,25 @@ function pad_outer(c::Context,
     return compose!(root, c)
 end
 
+pad_outer(c::Context, padding::MeasureOrNumber) =
+        pad_outer(c, padding, padding, padding, padding)
 
-function pad_outer(c::Context, padding::MeasureOrNumber)
-    return pad_outer(c, padding, padding, padding, padding)
-end
-
-
-function pad_outer(cs::Vector{Context},
+pad_outer(cs::Vector{Context},
                    left_padding::MeasureOrNumber,
                    right_padding::MeasureOrNumber,
                    top_padding::MeasureOrNumber,
-                   bottom_padding::MeasureOrNumber)
-    return map(c -> pad_outer(c, left_padding, right_padding,
-                              top_padding, bottom_padding), cs)
-end
+                   bottom_padding::MeasureOrNumber) =
+        map(c -> pad_outer(c, left_padding, right_padding, top_padding, bottom_padding), cs)
 
-
-function pad_outer(cs::Vector{Context}, padding::MeasureOrNumber)
-    return pad_outer(cs, padding, padding, padding, padding)
-end
-
+pad_outer(cs::Vector{Context}, padding::MeasureOrNumber) =
+        pad_outer(cs, padding, padding, padding, padding)
 
 function pad_inner(c::Context,
                    left_padding::MeasureOrNumber,
                    right_padding::MeasureOrNumber,
                    top_padding::MeasureOrNumber,
                    bottom_padding::MeasureOrNumber)
+
     left_padding   = size_measure(left_padding)
     right_padding  = size_measure(right_padding)
     top_padding    = size_measure(top_padding)
@@ -288,25 +265,18 @@ function pad_inner(c::Context,
     return compose!(root, c)
 end
 
+pad_inner(c::Context, padding::MeasureOrNumber) =
+        pad_inner(c, padding, padding, padding, padding)
 
-function pad_inner(c::Context, padding::MeasureOrNumber)
-    return pad_inner(c, padding, padding, padding, padding)
-end
-
-
-function pad_inner(cs::Vector{Context}, left_padding::MeasureOrNumber,
+pad_inner(cs::Vector{Context},
+                   left_padding::MeasureOrNumber,
                    right_padding::MeasureOrNumber,
                    top_padding::MeasureOrNumber,
-                   bottom_padding::MeasureOrNumber)
-    return map(c -> pad_inner(c, left_padding, right_padding,
-                              top_padding, bottom_padding), cs)
-end
+                   bottom_padding::MeasureOrNumber) =
+        map(c -> pad_inner(c, left_padding, right_padding, top_padding, bottom_padding), cs)
 
-
-function pad_inner(cs::Vector{Context}, padding::MeasureOrNumber)
-    return pad_inner(cs, padding, padding, padding, padding)
-end
-
+pad_inner(cs::Vector{Context}, padding::MeasureOrNumber) =
+        pad_inner(cs, padding, padding, padding, padding)
 
 function gridstack(cs::Matrix{Context})
     m, n = size(cs)
@@ -316,7 +286,6 @@ function gridstack(cs::Matrix{Context})
     end
     return compose!(context(), t)
 end
-
 
 const pad = pad_outer
 

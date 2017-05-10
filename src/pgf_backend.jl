@@ -5,11 +5,9 @@ type PGFPropertyFrame
     # True if this property frame has scalar properties. Scalar properties are
     # emitted as a group {scope} that must be closed when the frame is popped.
     has_scalar_properties::Bool
-
-    function PGFPropertyFrame()
-        return new(Dict{Type, Property}(), false)
-    end
 end
+
+PGFPropertyFrame() = PGFPropertyFrame(Dict{Type, Property}(), false)
 
 type PGF <: Backend
     # Image size in millimeters.
@@ -76,66 +74,66 @@ type PGF <: Backend
 
     # Use default TeX fonts instead of fonts specified by the theme.
     texfonts::Bool
-
-    function PGF(out::IO,
-                 width::AbsoluteLength,
-                 height::AbsoluteLength,
-                 emit_on_finish::Bool=true,
-                 only_tikz = false;
-                 texfonts = false)
-
-        img = new()
-        img.buf = IOBuffer()
-        img.fill = default_fill_color
-        img.stroke = default_stroke_color
-        img.fill_opacity = 1.0
-        img.stroke_opacity = 1.0
-        img.width  = width
-        img.height = height
-        img.fontfamily = nothing
-        img.clippath = nothing
-        img.fontsize = 12.0
-        img.indentation = 0
-        img.out = out
-        img.color_set = Set{Color}([colorant"black"])
-        img.property_stack = Array{PGFPropertyFrame}(0)
-        img.vector_properties = Dict{Type, Nullable{Property}}()
-        # img.clippaths = Dict{ClipPrimitive, String}()
-        img.visible = true
-        img.finished = false
-        img.emit_on_finish = emit_on_finish
-        img.ownedfile = false
-        img.filename = nothing
-        img.only_tikz = only_tikz
-        img.texfonts = texfonts
-        return img
-    end
-
-    # Write to a file.
-    function PGF(filename::AbstractString, width, height, only_tikz = false; texfonts = false)
-        out = open(filename, "w")
-        img = PGF(out, width, height, true, only_tikz, texfonts = texfonts)
-        img.ownedfile = true
-        img.filename = filename
-        return img
-    end
-
-    # Write to buffer.
-    function PGF(width::MeasureOrNumber, height::MeasureOrNumber,
-                 emit_on_finish::Bool=true, only_tikz = false; texfonts = false)
-        return PGF(IOBuffer(), width, height, emit_on_finish, only_tikz, texfonts = texfonts)
-    end
 end
 
+function PGF(out::IO,
+             width::AbsoluteLength,
+             height::AbsoluteLength,
+             emit_on_finish::Bool=true,
+             only_tikz = false;
+
+             texfonts = false,
+             fill = default_fill_color,
+             fill_opacity = 1.0,
+             stroke = default_stroke_color,
+             stroke_opacity = 1.0,
+             fontfamily = nothing,
+             fontsize = 12.0,
+             indentation = 0,
+             buf = IOBuffer(),
+             visible = true,
+             color_set = Set{Color}([colorant"black"]),
+             property_stack = Array{PGFPropertyFrame}(0),
+             vector_properties = Dict{Type, Nullable{Property}}(),
+             clippath = nothing,
+             finished = false,
+             ownedfile = false,
+             filename = nothing)
+    PGF(width, height, out,
+        fill, fill_opacity,
+        stroke, stroke_opacity,
+        fontfamily, fontsize,
+        indentation,
+        buf,
+        visible,
+        color_set,
+        property_stack,
+        vector_properties,
+        clippath,
+        finished,
+        ownedfile,
+        filename,
+        emit_on_finish,
+        only_tikz,
+        texfonts)
+end
+
+# Write to a file.
+PGF(filename::AbstractString, width, height, only_tikz=false; texfonts=false) =
+        PGF(open(filename, "w"), width, height, true, only_tikz;
+            texfonts = texfonts, ownedfile=true, filename=filename)
+
+# Write to buffer.
+PGF(width::MeasureOrNumber, height::MeasureOrNumber,
+             emit_on_finish::Bool=true, only_tikz=false; texfonts=false) =
+        PGF(IOBuffer(), width, height, emit_on_finish, only_tikz, texfonts=texfonts)
+
 function finish(img::PGF)
-    if img.finished
-        return
-    end
+    img.finished && return
 
     while !isempty(img.property_stack)
         pop_property_frame(img)
     end
-
 
     # if length(img.clippaths) > 0
     #     for (clippath, id) in img.clippaths
@@ -159,31 +157,19 @@ function finish(img::PGF)
         """
         )
 
-    if method_exists(flush, (typeof(img.out),))
-        flush(img.out)
-    end
+    method_exists(flush, (typeof(img.out),)) && flush(img.out)
     close(img.buf)
 
-    if img.ownedfile
-        close(img.out)
-    end
+    img.ownedfile && close(img.out)
 
     img.finished = true
 
     # If we are writing to a buffer. Collect the string and emit it.
-    if img.emit_on_finish && typeof(img.out) == IOBuffer
-        display(img)
-    end
+    img.emit_on_finish && typeof(img.out) == IOBuffer && display(img)
 end
 
-
-function isfinished(img::PGF)
-    img.finished
-end
-
-function root_box(img::PGF)
-    BoundingBox(0mm, 0mm, img.width, img.height)
-end
+isfinished(img::PGF) = img.finished
+root_box(img::PGF) = BoundingBox(0mm, 0mm, img.width, img.height)
 
 function writeheader(img::PGF)
     !img.only_tikz && write(img.out,
@@ -240,42 +226,33 @@ function get_vector_properties(img::PGF, idx::Int)
     props_str = Compat.ASCIIString[]
     modifiers = Compat.ASCIIString[]
     for (propertytype, property) in img.vector_properties
-        if isnull(property)
-            continue
-        end
+        isnull(property) && continue
         primitives = get(property).primitives
-        if idx > length(primitives)
-            error("Vector form and vector property differ in length. Can't distribute.")
-        end
+        idx > length(primitives) &&
+                error("Vector form and vector property differ in length. Can't distribute.")
         push_property!(props_str, img, primitives[idx])
     end
 
     if !isnull(img.fill)
         push!(props_str, string("fill=mycolor",hex(get(img.fill))))
-        if img.fill_opacity < 1.0
-            push!(props_str, string("fill opacity=",svg_fmt_float(img.fill_opacity)))
-        end
+        img.fill_opacity < 1.0 &&
+                push!(props_str, string("fill opacity=",svg_fmt_float(img.fill_opacity)))
     end
 
     if !isnull(img.stroke)
         push!(props_str, string("draw=mycolor",hex(get(img.stroke))))
-        if img.stroke_opacity < 1.0
-            push!(props_str, string("draw opacity=",svg_fmt_float(img.stroke_opacity)))
-        end
+        img.stroke_opacity < 1.0 &&
+                push!(props_str, string("draw opacity=",svg_fmt_float(img.stroke_opacity)))
     end
 
     return modifiers, props_str
 end
 
-function push_property!(props_str, img::PGF, property::StrokeDashPrimitive)
-    if isempty(property.value)
-        return
-    else
-        push!(props_str, string("dash pattern=", join(map( v -> join(v, " "),
+push_property!(props_str, img::PGF, property::StrokeDashPrimitive) =
+        isempty(property.value) ||
+            push!(props_str, string("dash pattern=", join(map( v -> join(v, " "),
                 zip(Compat.Iterators.cycle(["on", "off"]),
-                    map(v -> string(svg_fmt_float(v.value), "mm"), property.value)) )," ")))
-    end
-end
+                map(v -> string(svg_fmt_float(v.value), "mm"), property.value)) )," ")))
 
 function push_property!(props_str, img::PGF, property::StrokePrimitive)
     if isa(property.color, TransparentColor)
@@ -285,9 +262,7 @@ function push_property!(props_str, img::PGF, property::StrokePrimitive)
         img.stroke = property.color
     end
 
-    if !isnull(img.stroke)
-        push!(img.color_set, convert(RGB, property.color))
-    end
+    isnull(img.stroke) || push!(img.color_set, convert(RGB, property.color))
 end
 
 function push_property!(props_str, img::PGF, property::FillPrimitive)
@@ -298,74 +273,42 @@ function push_property!(props_str, img::PGF, property::FillPrimitive)
         img.fill = property.color
     end
 
-    if !isnull(img.fill)
-        push!(img.color_set, convert(RGB, property.color))
-    end
+    isnull(img.fill) || push!(img.color_set, convert(RGB, property.color))
 end
 
-function push_property!(props_str, img::PGF, property::VisiblePrimitive)
-    img.visible = property.value
-end
-
-function push_property!(props_str, img::PGF, property::LineWidthPrimitive)
-    push!(props_str, string("line width=", svg_fmt_float(property.value.value), "mm"))
-end
+push_property!(props_str, img::PGF, property::VisiblePrimitive) =
+        img.visible = property.value
+push_property!(props_str, img::PGF, property::LineWidthPrimitive) =
+        push!(props_str, string("line width=", svg_fmt_float(property.value.value), "mm"))
 
 pgf_fmt_linecap(::LineCapButt) = "butt"
 pgf_fmt_linecap(::LineCapSquare) = "rect"
 pgf_fmt_linecap(::LineCapRound) = "round"
 
-function push_property!(props_str, img::PGF, property::StrokeLineCapPrimitive)
-    push!(props_str, string("line cap=", pgf_fmt_linecap(property.value)))
-end
-
-function push_property!(props_str, img::PGF, property::StrokeLineJoinPrimitive)
-    push!(props_str, string("line join=", svg_fmt_linejoin(property.value)))
-end
-
-function push_property!(props_str, img::PGF, property::FillOpacityPrimitive)
-    img.fill_opacity = property.value
-end
-
-function push_property!(props_str, img::PGF, property::StrokeOpacityPrimitive)
-    img.stroke_opacity = property.value
-end
-
-function push_property!(props_str, img::PGF, property::FontPrimitive)
-    # Can only only work with one font family for now
-
-    img.fontfamily = strip(split(escape_string(property.family),',')[1],'\'')
-end
-
-function push_property!(props_str, img::PGF, property::FontSizePrimitive)
-    img.fontsize = property.value.value
-end
-
-function push_property!(props_str, img::PGF, property::ClipPrimitive)
-    img.clippath = property
-    # Not quite sure how to handle clipping yet, stub for now
-end
+push_property!(props_str, img::PGF, property::StrokeLineCapPrimitive) =
+        push!(props_str, string("line cap=", pgf_fmt_linecap(property.value)))
+push_property!(props_str, img::PGF, property::StrokeLineJoinPrimitive) =
+        push!(props_str, string("line join=", svg_fmt_linejoin(property.value)))
+push_property!(props_str, img::PGF, property::FillOpacityPrimitive) =
+        img.fill_opacity = property.value
+push_property!(props_str, img::PGF, property::StrokeOpacityPrimitive) =
+        img.stroke_opacity = property.value
+# Can only only work with one font family for now
+push_property!(props_str, img::PGF, property::FontPrimitive) =
+        img.fontfamily = strip(split(escape_string(property.family),',')[1],'\'')
+push_property!(props_str, img::PGF, property::FontSizePrimitive) =
+        img.fontsize = property.value.value
+# Not quite sure how to handle clipping yet, stub for now
+push_property!(props_str, img::PGF, property::ClipPrimitive) =
+        img.clippath = property
 
 # Stubs for SVG and JS specific properties
-function push_property!(props_str, img::PGF, property::JSIncludePrimitive)
-end
-
-function push_property!(props_str, img::PGF, property::JSCallPrimitive)
-end
-
-function push_property!(props_str, img::PGF, property::SVGClassPrimitive)
-end
-
-function push_property!(props_str, img::PGF, property::SVGAttributePrimitive)
-end
-
-function iswithjs(img::PGF)
-    return false
-end
-
-function iswithousjs(img::PGF)
-    return true
-end
+push_property!(props_str, img::PGF, property::JSIncludePrimitive) = nothing
+push_property!(props_str, img::PGF, property::JSCallPrimitive) = nothing
+push_property!(props_str, img::PGF, property::SVGClassPrimitive) = nothing
+push_property!(props_str, img::PGF, property::SVGAttributePrimitive) = nothing
+iswithjs(img::PGF) = false
+iswithousjs(img::PGF) = true
 
 function draw(img::PGF, form::Form)
     for (idx, primitive) in enumerate(form.primitives)
@@ -374,12 +317,11 @@ function draw(img::PGF, form::Form)
 end
 
 function draw(img::PGF, prim::LinePrimitive, idx::Int)
-
     n = length(prim.points)
-    if n <= 1; return; end
+    n <= 1 && return
 
     modifiers, props = get_vector_properties(img, idx)
-    if !img.visible; return; end
+    img.visible || return
 
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","));
@@ -392,7 +334,7 @@ function draw(img::PGF, prim::RectanglePrimitive, idx::Int)
     height = max(prim.height.value, 0.01)
 
     modifiers, props = get_vector_properties(img, idx)
-    if !img.visible; return; end
+    img.visible || return
 
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","));
@@ -405,10 +347,10 @@ end
 
 function draw(img::PGF, prim::PolygonPrimitive, idx::Int)
     n = length(prim.points)
-    if n <= 1; return; end
+    n <= 1 || return
 
     modifiers, props = get_vector_properties(img, idx)
-    if !img.visible; return; end
+    img.visible || return
 
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","))
@@ -418,7 +360,7 @@ end
 
 function draw(img::PGF, prim::CirclePrimitive, idx::Int)
     modifiers, props = get_vector_properties(img, idx)
-    if !img.visible; return; end
+    img.visible || return
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","))
     @printf(img.buf, "(%s,%s) circle [radius=%s];\n",
@@ -428,9 +370,8 @@ function draw(img::PGF, prim::CirclePrimitive, idx::Int)
 end
 
 function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
-
     modifiers, props = get_vector_properties(img, idx)
-    if !img.visible; return; end
+    img.visible || return
 
     cx = prim.center[1].value
     cy = prim.center[2].value
@@ -441,10 +382,7 @@ function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
     theta = rad2deg(atan2(prim.x_point[2].value - cy,
                           prim.x_point[1].value - cx))
 
-
-    if !all(isfinite([cx, cy, rx, ry, theta]))
-        return
-    end
+    all(isfinite([cx, cy, rx, ry, theta])) || return
 
     modifiers, props = get_vector_properties(img, idx)
     write(img.buf, join(modifiers))
@@ -454,15 +392,13 @@ function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
         svg_fmt_float(cy),
         svg_fmt_float(rx),
         svg_fmt_float(ry))
-    if abs(theta) > 1e-4
-        @printf(img.buf, " rotate=%s", svg_fmt_float(theta))
-    end
+    abs(theta) > 1e-4 && @printf(img.buf, " rotate=%s", svg_fmt_float(theta))
     write(img.buf, "];\n")
 end
 
 function draw(img::PGF, prim::CurvePrimitive, idx::Int)
     modifiers, props = get_vector_properties(img, idx)
-    if !img.visible; return; end
+    img.visible || return
     write(img.buf, join(modifiers))
     @printf(img.buf, "\\path [%s] ", join(props, ","))
     @printf(img.buf, "(%s,%s) .. controls (%s,%s) and (%s,%s) .. (%s,%s);\n",
@@ -477,10 +413,9 @@ function draw(img::PGF, prim::CurvePrimitive, idx::Int)
 end
 
 function draw(img::PGF, prim::TextPrimitive, idx::Int)
-
     # Rotation direction is reversed!
     modifiers, props = get_vector_properties(img, idx)
-    if !img.visible; return; end
+    img.visible || return
     push!(props, string(
         "rotate around={",
             svg_fmt_float(-rad2deg(prim.rot.theta)),
@@ -507,19 +442,14 @@ function draw(img::PGF, prim::TextPrimitive, idx::Int)
     )
 end
 
-
 function indent(img::PGF)
     for i in 1:img.indentation
         write(img.buf, "  ")
     end
 end
 
-
-
 function push_property_frame(img::PGF, properties::Vector{Property})
-    if isempty(properties)
-        return
-    end
+    isempty(properties) && return
 
     frame = PGFPropertyFrame()
     applied_properties = Set{Type}()
@@ -537,9 +467,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
         end
     end
     push!(img.property_stack, frame)
-    if isempty(scalar_properties)
-        return
-    end
+    isempty(scalar_properties) && return
 
     write(img.buf, "\\begin{scope}\n")
     prop_str = AbstractString[]
@@ -554,11 +482,9 @@ function push_property_frame(img::PGF, properties::Vector{Property})
         print_pgf_path(img.buf, get(img.clippath).points)
         write(img.buf, ";\n")
     end
-   if !isnull(img.fontfamily) && !img.texfonts
-       @printf(img.buf, "\\fontspec{%s}\n", get(img.fontfamily))
-    end
+    (isnull(img.fontfamily) && !img.texfonts) ||
+            @printf(img.buf, "\\fontspec{%s}\n", get(img.fontfamily))
 end
-
 
 function pop_property_frame(img::PGF)
     @assert !isempty(img.property_stack)
@@ -584,7 +510,7 @@ function pop_property_frame(img::PGF)
         for i in length(img.property_stack):-1:1
             if haskey(img.property_stack[i].vector_properties, propertytype)
                 img.vector_properties[propertytype] =
-                    img.property_stack[i].vector_properties[propertytype]
+                        img.property_stack[i].vector_properties[propertytype]
             end
         end
     end
