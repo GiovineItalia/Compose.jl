@@ -20,5 +20,5 @@ c = draw_lines(caps)
 imgs = [SVG("linecaps.svg", 2cm, 3cm),
         PDF("linecaps.pdf", 2cm, 3cm)]
 for img = imgs
-    draw(img, compose(c, stroke(colorant"black"), linewidth(2mm)))
+    draw(img, compose(c, stroke("black"), linewidth(2mm)))
 end
