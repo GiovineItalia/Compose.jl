@@ -238,7 +238,7 @@ function SVG(out::IO,
              jsheader = AbstractString[],
              jsmodules = Tuple{AbstractString, AbstractString}[("Snap.svg", "Snap")],  # @compat
              scripts = AbstractString[],
-             withjs = false)
+             withjs = jsmode != :none)
 
     img = SVG(width,
               height,
