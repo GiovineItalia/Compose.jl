@@ -76,8 +76,10 @@ bm = bitmap("fake", rand(UInt8,10), 0, 1, 0.8, 0.7, :image)
 # Gadfly issue 857 and 436
 # make sure that newlines are respected by `text_extents`
 font_family = "'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif"
-@test text_extents(font_family, 8pt, "test test")[1][2]*2 ==
-                        text_extents(font_family, 8pt, "test\ntest")[1][2]
+oneline = text_extents(font_family, 8pt, "PegPeg")[1]
+twolines = text_extents(font_family, 8pt, "Peg\nPeg")[1]
+@test round(Int, oneline[1] / twolines[1]) == 2
+@test round(Int, twolines[2] / oneline[2]) == 2
 
 # PR 252
 @test Compose.parse_colorant("red") == RGB(1.0,0.0,0.0)
