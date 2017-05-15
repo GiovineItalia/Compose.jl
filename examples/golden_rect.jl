@@ -10,4 +10,4 @@ function golden_rect(n::Int)
 end
 
 draw(SVG("golden_rect.svg", φ * 3inch, 3inch),
-    compose(golden_rect(10), fill(nothing), stroke(colorant"white"), linewidth(0.2mm)))
+    compose(golden_rect(10), fill(nothing), stroke("white"), linewidth(0.2mm)))

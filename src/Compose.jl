@@ -57,8 +57,9 @@ canbatch(::Backend) = false
 # Allow users to supply strings without deprecation warnings
 parse_colorant(c::Colorant) = c
 parse_colorant(str::AbstractString) = parse(Colorant, str)
-parse_colorant_vec(c...) = to_vec(map(parse_colorant, c)...)
-@noinline to_vec(c...) = [c...]
+parse_colorant(c::Union{Tuple,Vector}) = [parse_colorant(x) for x in c]
+parse_colorant(c...) = parse_colorant(c)
+@deprecate parse_colorant_vec(c...) parse_colorant(c)
 
 include("misc.jl")
 include("measure.jl")

@@ -21,5 +21,5 @@ imgs = [SVG("linejoins.svg", 2cm, 3cm),
         PDF("linejoins.pdf", 2cm, 3cm),
         SVGJS("linejoins.js", 2cm, 3cm)]
 for img = imgs
-    draw(img, compose(c, stroke(colorant"black"), linewidth(2mm), fill(nothing)))
+    draw(img, compose(c, stroke("black"), linewidth(2mm), fill(nothing)))
 end

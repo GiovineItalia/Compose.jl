@@ -19,11 +19,11 @@ function sierpinski(n::Int)
 end
 
 img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
-draw(img, compose(sierpinski(2), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
+draw(img, compose(sierpinski(2), linewidth(0.1mm), fill(nothing), stroke("black")))
 
 img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
-@time draw(img, compose(sierpinski(8), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
+@time draw(img, compose(sierpinski(8), linewidth(0.1mm), fill(nothing), stroke("black")))
 
 #img = SVG("sierpinski.svg", 4inch, 4(√3/2)inch)
-#@profile draw(img, compose(sierpinski(10), linewidth(0.1mm), fill(nothing), stroke(colorant"black")))
+#@profile draw(img, compose(sierpinski(10), linewidth(0.1mm), fill(nothing), stroke("black")))
 #Profile.print()

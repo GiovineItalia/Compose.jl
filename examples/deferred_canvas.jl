@@ -16,5 +16,5 @@ function sierpinski(n::Int)
 end
 
 img = SVG("sierpinski_deferred.svg", 4inch, 4(√3/2)inch)
-draw(img, compose(context(), linewidth(0.1mm), fill(nothing), stroke(colorant"black"),
+draw(img, compose(context(), linewidth(0.1mm), fill(nothing), stroke("black"),
                   ctxpromise(c -> sierpinski(8))))

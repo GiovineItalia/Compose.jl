@@ -1,10 +1,9 @@
 using Colors, Base.Test
 
 # showcompact
-tomato_bisque =
-           compose(context(),
-                   (context(), circle(), fill(colorant"bisque")),
-                   (context(), rectangle(), fill(colorant"tomato")))
+tomato_bisque = compose(context(),
+            (context(), circle(), fill(colorant"bisque")),
+            (context(), rectangle(), fill(colorant"tomato")))
 
 io = IOBuffer()
 showcompact(io, tomato_bisque)
@@ -12,9 +11,7 @@ str = String(take!(io))
 @test str == "Context(Context(R,f),Context(C,f))"
 
 # Tagging
-function points(xa, ya)
-    [(x, y) for (x, y) in zip(xa, ya)]
-end
+points(xa, ya) = [(x, y) for (x, y) in zip(xa, ya)]
 
 pnts = points(rand(5), rand(5))
 p = polygon(pnts, :mypoints)
@@ -81,3 +78,11 @@ bm = bitmap("fake", rand(UInt8,10), 0, 1, 0.8, 0.7, :image)
 font_family = "'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif"
 @test text_extents(font_family, 8pt, "test test")[1][2]*2 ==
                         text_extents(font_family, 8pt, "test\ntest")[1][2]
+
+# PR 252
+@test Compose.parse_colorant("red") == RGB(1.0,0.0,0.0)
+@test Compose.parse_colorant(colorant"red") == RGB(1.0,0.0,0.0)
+@test Compose.parse_colorant(["red","blue"]) == [RGB(1.0,0.0,0.0), RGB(0.0,0.0,1.0)]
+@test Compose.parse_colorant(("red","blue")) == [RGB(1.0,0.0,0.0), RGB(0.0,0.0,1.0)]
+@test Compose.parse_colorant("red","blue") == [RGB(1.0,0.0,0.0), RGB(0.0,0.0,1.0)]
+@test Compose.parse_colorant("red",colorant"blue") == [RGB(1.0,0.0,0.0), RGB(0.0,0.0,1.0)]
