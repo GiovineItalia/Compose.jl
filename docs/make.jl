@@ -3,15 +3,16 @@ using Documenter, Compose
 makedocs(
     modules = [Compose],
     clean = true,
-    format = Documenter.Formats.HTML,
+    format = :html,
     sitename = "Compose.jl",
     pages = Any[
         "Home" => "index.md"
+        "Library" => "library.md"
     ]
 )
 
 deploydocs(
-    repo   = "github.com/dcjones/Compose.jl.git",
+    repo   = "github.com/GiovineItalia/Compose.jl.git",
     julia  = "0.5",
     osname = "linux",
     deps = nothing,
