@@ -32,10 +32,10 @@ attached as a child.
 
 That's enough to start drawing some simple shapes.
 
-```@example 1
-using Compose # hide
-set_default_graphic_size(4cm, 4cm) # hide
-set_default_jsmode(:exclude) # hide
+```@setup 1
+using Compose
+set_default_graphic_size(4cm, 4cm)
+set_default_jsmode(:exclude)
 ```
 
 ```@example 1
@@ -43,6 +43,7 @@ using Compose
 
 composition = compose(compose(context(), rectangle()), fill("tomato"))
 draw(SVG("tomato.svg", 4cm, 4cm), composition)
+nothing # hide
 ```
 
 ![](tomato.svg)
@@ -68,6 +69,7 @@ composition = compose(context(),
         (context(), circle(), fill("bisque")),
         (context(), rectangle(), fill("tomato")))
 draw(SVG("tomato_bisque.svg", 4cm, 4cm), composition)
+nothing # hide
 ```
 
 ![](tomato_bisque.svg)
@@ -121,8 +123,8 @@ In addition to forming internal nodes to group `Form` and `Property` children, a
 form. Here we'll reposition some circles by composing them with contexts using
 different coordinate systems.
 
-```@example 3
-using Compose # hide
+```@setup 3
+using Compose
 ```
 
 ```@example 3
@@ -130,6 +132,7 @@ composition = compose(context(), fill("tomato"),
         (context(0.0, 0.0, 0.5, 0.5), circle()),
         (context(0.5, 0.5, 0.5, 0.5), circle()))
 draw(SVG("tomatos.svg", 4cm, 4cm), composition)
+nothing # hide
 ```
 
 ![](tomatos.svg)
@@ -151,6 +154,7 @@ composition = compose(context(),
          polygon([(1, 1), (0.5, 1), (0.5, 0)]),
          fill("bisque")))
 draw(SVG("tomato_bisque_triangle.svg", 4cm, 4cm), composition)
+nothing # hide
 ```
 
 ![](tomato_bisque_triangle.svg)
@@ -192,8 +196,8 @@ circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
 The first of these creates only circle centered at `(x, y)` with radius `r`. The
 second form can succinctly create many circles (using the [Colors](https://github.com/JuliaLang/Colors.jl) package to specify the `LHCab` colorspace):
 
-```@example 4
-using Compose, Colors # hide
+```@setup 4
+using Compose, Colors
 ```
 
 ```@example 4
@@ -201,6 +205,7 @@ composition = compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1, 0.1, 0.1]),
         fill(LCHab(92, 10, 77)))
 draw(SVG("circles.svg", 4cm, 4cm), composition)
+nothing # hide
 ```
 
 ![](circles.svg)
@@ -214,6 +219,7 @@ composition = compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1]),
         fill(LCHab(92, 10, 77)))
 draw(SVG("cycled_circles.svg", 4cm, 4cm), composition)
+nothing # hide
 ```
 
 ![](cycled_circles.svg)
@@ -227,6 +233,7 @@ circles_fill_vectorized = compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1]),
         fill([LCHab(92, 10, 77), LCHab(68, 74, 192), LCHab(78, 84, 29)]))
 draw(SVG("circles_fill_vectorized.svg", 4cm, 4cm), circles_fill_vectorized)
+nothing # hide
 ```
 
 ![](circles_fill_vectorized.svg)
@@ -263,6 +270,7 @@ end
 
 composition = compose(sierpinski(6), fill(LCHab(92, 10, 77)))
 draw(SVG("sierpinski.svg", 8cm, 8*(sqrt(3)/2)*cm), composition)
+nothing # hide
 ```
 
 ![](sierpinski.svg)
@@ -313,6 +321,23 @@ These are basic constructors for the in-built forms - see `src/form.jl` for more
 Besides coordinate transformations, Compose also handles mixtures of relative
 and absolute coordinates. For example, `1w - 10mm` is a well formed expression,
 giving the width of the parent canvas minus ten millimeters.
+
+## Text
+
+Symbols can be used in text strings by inserting [HTML
+codes](http://www.ascii.cl/htmlcodes.htm).  More general formatting for the SVG
+backend is [documented here](https://www.w3.org/TR/SVG/text.html),
+whereas the Cairo backend uses a [Pango markup
+language](https://developer.gnome.org/pango/unstable/PangoMarkupFormat.html).
+
+```@example 6
+using Compose # hide
+cents_ina_dollar = compose(context(), text(0.5, 0.5,"100&#162; in a &#36;"))
+draw(SVG("dollar.svg",5cm,1cm), cents_ina_dollar)
+nothing # hide
+```
+
+![](dollar.svg)
 
 ## Influences
 
