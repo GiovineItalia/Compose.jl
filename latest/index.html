@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · Compose.jl documentation</title><link href="assets/documenter.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script></head><body><nav class="toc"><a href><img class="logo" src="assets/logo.png" alt="Compose.jl logo"/></a><h1>Compose.jl</h1><form class="search" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href="index.html">Home</a><ul class="internal"><li><a class="toctext" href="#Compose-is-declarative-1">Compose is declarative</a></li><li><a class="toctext" href="#Everything-is-a-tree-1">Everything is a tree</a></li><li><a class="toctext" href="#The-compose-function-accepts-S-expressions-1">The compose function accepts S-expressions</a></li><li><a class="toctext" href="#Trees-can-be-visualized-with-introspect-1">Trees can be visualized with introspect</a></li><li><a class="toctext" href="#Contexts-specify-a-coordinate-system-for-their-children-1">Contexts specify a coordinate system for their children</a></li><li><a class="toctext" href="#Measures-can-be-a-combination-of-absolute-and-relative-units-1">Measures can be a combination of absolute and relative units</a></li><li><a class="toctext" href="#Forms-and-Properties-can-be-vectorized-1">Forms and Properties can be vectorized</a></li><li><a class="toctext" href="#Compose-can-produce-arbitrary-directed-graphs-1">Compose can produce arbitrary directed graphs</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href="index.html">Home</a></li></ul><a class="edit-page" href="https://github.com/dcjones/Compose.jl/tree/25e45e96b919f144f61ae38a3482fda1ce9bdd88/docs/src/index.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/></header><h1><a class="nav-anchor" id="Compose-1" href="#Compose-1">Compose</a></h1><p>Compose is a declarative vector graphics system written in Julia. It&#39;s designed to simplify the creation of complex graphics and serves as the basis of the <a href="https://github.com/dcjones/Gadfly.jl">Gadfly</a> data visualization package.</p><h2><a class="nav-anchor" id="Compose-is-declarative-1" href="#Compose-is-declarative-1">Compose is declarative</a></h2><p>In a declarative graphics system, a figure is built without specifying the precise sequence of drawing commands but by arranging shapes and attaching properties. This makes it easy to break a complex graphic into manageable parts and then figure out how to combine the parts.</p><h2><a class="nav-anchor" id="Everything-is-a-tree-1" href="#Everything-is-a-tree-1">Everything is a tree</a></h2><p>Graphics in Compose are defined using a tree structure. It&#39;s not unlike SVG in this regard, but has simpler semantics. There are three important types that make up the nodes of the tree:</p><ul><li><p><code>Context</code>: An internal node.</p></li><li><p><code>Form</code>: A leaf node that defines some geometry, like a line or a polygon.</p></li><li><p><code>Property</code>: A leaf node that modifies how its parent&#39;s subtree is drawn, like fill color, font family, or line width.</p></li></ul><p>The all-important function in Compose, is called, not surprisingly, <code>compose</code>. Calling <code>compose(a, b)</code> will return a new tree rooted at <code>a</code> and with <code>b</code> attached as a child.</p><p>That&#39;s enough to start drawing some simple shapes.</p><div></div><div><pre><code class="language-julia">using Compose
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · Compose.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Ubuntu+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/highlightjs/default.css" rel="stylesheet" type="text/css"/><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="index.html"><img class="logo" src="assets/logo.png" alt="Compose.jl logo"/></a><h1>Compose.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href="index.html">Home</a><ul class="internal"><li><a class="toctext" href="#Compose-is-declarative-1">Compose is declarative</a></li><li><a class="toctext" href="#Everything-is-a-tree-1">Everything is a tree</a></li><li><a class="toctext" href="#The-compose-function-accepts-S-expressions-1">The compose function accepts S-expressions</a></li><li><a class="toctext" href="#Trees-can-be-visualized-with-introspect-1">Trees can be visualized with introspect</a></li><li><a class="toctext" href="#Contexts-specify-a-coordinate-system-for-their-children-1">Contexts specify a coordinate system for their children</a></li><li><a class="toctext" href="#Measures-can-be-a-combination-of-absolute-and-relative-units-1">Measures can be a combination of absolute and relative units</a></li><li><a class="toctext" href="#Forms-and-Properties-can-be-vectorized-1">Forms and Properties can be vectorized</a></li><li><a class="toctext" href="#Compose-can-produce-arbitrary-directed-graphs-1">Compose can produce arbitrary directed graphs</a></li><li><a class="toctext" href="#Fancier-compositions-1">Fancier compositions</a></li><li><a class="toctext" href="#Forms-1">Forms</a></li><li><a class="toctext" href="#Coordinates-1">Coordinates</a></li><li><a class="toctext" href="#Text-1">Text</a></li><li><a class="toctext" href="#Influences-1">Influences</a></li></ul></li><li><a class="toctext" href="library.html">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href="index.html">Home</a></li></ul><a class="edit-page" href="https://github.com/GiovineItalia/Compose.jl/tree/7786bccfe9be94783727c041437c676014b1eedc/docs/src/index.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/></header><h1><a class="nav-anchor" id="Compose-1" href="#Compose-1">Compose</a></h1><p>Compose is a declarative vector graphics system written in Julia. It&#39;s designed to simplify the creation of complex graphics and serves as the basis of the <a href="https://github.com/dcjones/Gadfly.jl">Gadfly</a> data visualization package.</p><h2><a class="nav-anchor" id="Compose-is-declarative-1" href="#Compose-is-declarative-1">Compose is declarative</a></h2><p>In a declarative graphics system, a figure is built without specifying the precise sequence of drawing commands but by arranging shapes and attaching properties. This makes it easy to break a complex graphic into manageable parts and then figure out how to combine the parts.</p><h2><a class="nav-anchor" id="Everything-is-a-tree-1" href="#Everything-is-a-tree-1">Everything is a tree</a></h2><p>Graphics in Compose are defined using a tree structure. It&#39;s not unlike SVG in this regard, but has simpler semantics. There are three important types that make up the nodes of the tree:</p><ul><li><p><code>Context</code>: An internal node.</p></li><li><p><code>Form</code>: A leaf node that defines some geometry, like a line or a polygon.</p></li><li><p><code>Property</code>: A leaf node that modifies how its parent&#39;s subtree is drawn, like fill color, font family, or line width.</p></li></ul><p>The all-important function in Compose, is called, not surprisingly, <code>compose</code>. Calling <code>compose(a, b)</code> will return a new tree rooted at <code>a</code> and with <code>b</code> attached as a child.</p><p>That&#39;s enough to start drawing some simple shapes.</p><div></div><div><pre><code class="language-julia">using Compose
 
 composition = compose(compose(context(), rectangle()), fill(&quot;tomato&quot;))
 draw(SVG(&quot;tomato.svg&quot;, 4cm, 4cm), composition)</code></pre></div><p><img src="tomato.svg" alt/></p><h2><a class="nav-anchor" id="The-compose-function-accepts-S-expressions-1" href="#The-compose-function-accepts-S-expressions-1">The compose function accepts S-expressions</a></h2><p>In the first example, we had to call <code>compose</code> twice just to draw a lousy red square. Fortunately <code>compose</code> has a few tricks up its sleeve. As everyone from lisp hackers and <a href="http://en.wikipedia.org/wiki/Newick_format">phylogeneticists</a> knows, trees can be defined most tersely using S-expressions. We can rewrite our first example like:</p><pre><code class="language-julia"># equivalent to compose(compose(context(), rectangle()), fill(&quot;tomato&quot;)))
@@ -21,10 +21,10 @@ introspect(tomato_bisque)</code></pre><?xml version="1.0" encoding="UTF-8"?>
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="#303030" id="img-bfd4b29d-1">
+<g fill="#303030" id="img-fb5d6b95-1">
   <rect x="0" y="0" width="60" height="60"/>
 </g>
-<g stroke="#F4E6D6" id="img-bfd4b29d-2">
+<g stroke="#F4E6D6" id="img-fb5d6b95-2">
   <path fill="none" d="M22.5,30 L 52.5 50"/>
   <path fill="none" d="M22.5,30 L 37.5 50"/>
   <path fill="none" d="M7.5,30 L 22.5 50"/>
@@ -32,43 +32,43 @@ introspect(tomato_bisque)</code></pre><?xml version="1.0" encoding="UTF-8"?>
   <path fill="none" d="M7.5,10 L 22.5 30"/>
   <path fill="none" d="M7.5,10 L 7.5 30"/>
 </g>
-<g stroke-width="0.5" stroke="#303030" id="img-bfd4b29d-3">
-  <g fill="#FF6B69" id="img-bfd4b29d-4">
+<g stroke-width="0.5" stroke="#303030" id="img-fb5d6b95-3">
+  <g fill="#FF6B69" id="img-fb5d6b95-4">
     <path d="M49.5,47 L 55.5 47 52.5 53 z"/>
   </g>
-  <g fill="#00C5C0" id="img-bfd4b29d-5">
+  <g fill="#00C5C0" id="img-fb5d6b95-5">
     <rect x="34.5" y="47" width="6" height="6"/>
   </g>
-  <g fill="#000000" id="img-bfd4b29d-6">
+  <g fill="#000000" id="img-fb5d6b95-6">
     <text x="37.5" y="50" text-anchor="middle" dy="0.35em">C</text>
   </g>
-  <g fill="#FF6B69" id="img-bfd4b29d-7">
+  <g fill="#FF6B69" id="img-fb5d6b95-7">
     <path d="M19.5,47 L 25.5 47 22.5 53 z"/>
   </g>
-  <g fill="#00C5C0" id="img-bfd4b29d-8">
+  <g fill="#00C5C0" id="img-fb5d6b95-8">
     <rect x="4.5" y="47" width="6" height="6"/>
   </g>
-  <g fill="#000000" id="img-bfd4b29d-9">
+  <g fill="#000000" id="img-fb5d6b95-9">
     <text x="7.5" y="50" text-anchor="middle" dy="0.35em">R</text>
   </g>
-  <g fill="#F4E6D6" id="img-bfd4b29d-10">
-    <use xlink:href="#img-bfd4b29d-11" x="22.5" y="30"/>
+  <g fill="#F4E6D6" id="img-fb5d6b95-10">
+    <use xlink:href="#img-fb5d6b95-11" x="22.5" y="30"/>
   </g>
-  <g fill="#F4E6D6" id="img-bfd4b29d-12">
-    <use xlink:href="#img-bfd4b29d-13" x="7.5" y="30"/>
+  <g fill="#F4E6D6" id="img-fb5d6b95-12">
+    <use xlink:href="#img-fb5d6b95-13" x="7.5" y="30"/>
   </g>
-  <g fill="#F4E6D6" id="img-bfd4b29d-14">
-    <use xlink:href="#img-bfd4b29d-15" x="7.5" y="10"/>
+  <g fill="#F4E6D6" id="img-fb5d6b95-14">
+    <use xlink:href="#img-fb5d6b95-15" x="7.5" y="10"/>
   </g>
 </g>
 <defs>
-  <g id="img-bfd4b29d-11">
+  <g id="img-fb5d6b95-11">
     <circle cx="0" cy="0" r="3"/>
   </g>
-  <g id="img-bfd4b29d-13">
+  <g id="img-fb5d6b95-13">
     <circle cx="0" cy="0" r="3"/>
   </g>
-  <g id="img-bfd4b29d-15">
+  <g id="img-fb5d6b95-15">
     <circle cx="0" cy="0" r="3"/>
   </g>
 </defs>
@@ -124,4 +124,5 @@ draw(SVG(&quot;circles_fill_vectorized.svg&quot;, 4cm, 4cm), circles_fill_vector
 end
 
 composition = compose(sierpinski(6), fill(LCHab(92, 10, 77)))
-draw(SVG(&quot;sierpinski.svg&quot;, 8cm, 8*(sqrt(3)/2)*cm), composition)</code></pre></div><p><img src="sierpinski.svg" alt/></p><p>There are no safeguards to check for cycles. You can produce a graph with a cycle and Compose will run in an infinite loop trying to draw it. In most applications, this isn&#39;t a concern.</p><footer><hr/></footer></article></body></html>
+draw(SVG(&quot;sierpinski.svg&quot;, 8cm, 8*(sqrt(3)/2)*cm), composition)</code></pre></div><p><img src="sierpinski.svg" alt/></p><p>There are no safeguards to check for cycles. You can produce a graph with a cycle and Compose will run in an infinite loop trying to draw it. In most applications, this isn&#39;t a concern.</p><h2><a class="nav-anchor" id="Fancier-compositions-1" href="#Fancier-compositions-1">Fancier compositions</a></h2><p>There are fancier forms of the <code>compose</code> function, in particular, variadic <code>compose</code>, which is roughly defined as:</p><pre><code class="language-julia">compose(a, b, cs...) = compose(compose(a, b), cs...)</code></pre><p>Compose over tuples or arrays:</p><pre><code class="language-julia">compose((as...)) = compose(as...)</code></pre><p>In effect, this lets one write a complex series of compose operations as an S-expression. For example:</p><pre><code class="language-julia">compose(a, b, ((c, d), (e, f), g))</code></pre><p>Since all we are doing is building trees, this syntax tends to be pretty convenient.</p><h2><a class="nav-anchor" id="Forms-1" href="#Forms-1">Forms</a></h2><p>These are basic constructors for the in-built forms - see <code>src/form.jl</code> for more constructors.</p><ul><li><p><code>polygon(points)</code></p></li><li><p><code>rectangle(x0, y0, width, height)</code></p></li><li><p><code>circle(x, y, r)</code></p></li><li><p><code>ellipse(x, y, x_radius, y_radius)</code></p></li><li><p><code>text(x, y, value)</code></p></li><li><p><code>line(points)</code></p></li><li><p><code>curve(anchor0, ctrl0, ctrl1, anchor1)</code></p></li><li><p><code>bitmap(mime, data, x0, y0, width, height)</code></p></li></ul><h2><a class="nav-anchor" id="Coordinates-1" href="#Coordinates-1">Coordinates</a></h2><p>Besides coordinate transformations, Compose also handles mixtures of relative and absolute coordinates. For example, <code>1w - 10mm</code> is a well formed expression, giving the width of the parent canvas minus ten millimeters.</p><h2><a class="nav-anchor" id="Text-1" href="#Text-1">Text</a></h2><p>Symbols can be used in text strings by inserting <a href="http://www.ascii.cl/htmlcodes.htm">HTML codes</a>.  More general formatting for the SVG backend is <a href="https://www.w3.org/TR/SVG/text.html">documented here</a>, whereas the Cairo backend uses a <a href="https://developer.gnome.org/pango/unstable/PangoMarkupFormat.html">Pango markup language</a>.</p><div><pre><code class="language-julia">cents_ina_dollar = compose(context(), text(0.5, 0.5,&quot;100&amp;#162; in a &amp;#36;&quot;))
+draw(SVG(&quot;dollar.svg&quot;,5cm,1cm), cents_ina_dollar)</code></pre></div><p><img src="dollar.svg" alt/></p><h2><a class="nav-anchor" id="Influences-1" href="#Influences-1">Influences</a></h2><p>Compose is intended as a futuristic version of the R library <a href="http://www.stat.auckland.ac.nz/~paul/grid/grid.html">grid</a>, and so takes a few ideas from grid. The Compose canvas is roughly equivalent to a viewport in grid, for example. Compose was also inspired by the admirable Haskell library <a href="http://projects.haskell.org/diagrams/">Diagrams</a>.</p><footer><hr/><a class="next" href="library.html"><span class="direction">Next</span><span class="title">Library</span></a></footer></article></body></html>
