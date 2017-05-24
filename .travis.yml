@@ -17,5 +17,5 @@ script:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
     - julia -e 'Pkg.clone(pwd()); Pkg.build("Compose"); Pkg.test("Compose"; coverage=true)'
 after_success:
-    - julia -e 'cd(Pkg.dir("Compose")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+    - julia -e 'cd(Pkg.dir("Compose")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
     - julia -e 'cd(Pkg.dir("Compose")); map(x -> Pkg.add(strip(x)), readlines(open(joinpath("docs", "REQUIRE")))); include(joinpath("docs", "make.jl"))'

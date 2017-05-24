@@ -1,6 +1,6 @@
 # Compose!
 
-[![][docs-latest-img]][docs-latest-url][![][pkg-0.5-img]][pkg-0.5-url] [![][pkg-0.6-img]][pkg-0.6-url][![][travis-img]][travis-url]
+[![][docs-latest-img]][docs-latest-url] [![][pkg-0.5-img]][pkg-0.5-url] [![][pkg-0.6-img]][pkg-0.6-url] [![][travis-img]][travis-url] [![][codecov-img]][codecov-url]
 
 Compose is a vector graphics library for Julia.
 It forms the basis for the statistical graphics system
@@ -31,3 +31,5 @@ consistent and powerful means of building vector graphics.
 
 [travis-img]: http://img.shields.io/travis/GiovineItalia/Compose.jl.svg
 [travis-url]: https://travis-ci.org/GiovineItalia/Compose.jl
+[codecov-img]: https://codecov.io/gh/GiovineItalia/Compose.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/GiovineItalia/Compose.jl
