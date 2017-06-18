@@ -187,6 +187,10 @@ const PDF = Image{PDFBackend}
 const PS  = Image{PSBackend}
 const CAIROSURFACE = Image{CairoBackend}
 
+function (img::Image)(x)
+    draw(img, x)
+end
+
 function canbatch(img::Image)
     for vp in values(img.vector_properties)
         isnull(vp) || return false
