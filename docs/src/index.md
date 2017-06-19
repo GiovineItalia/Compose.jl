@@ -46,6 +46,10 @@ draw(SVG("tomato.svg", 4cm, 4cm), composition)
 nothing # hide
 ```
 
+The last line renders the composition to specificied backend, here the SVG
+backend. This can also be written like
+`composition |> SVG("tomato.svg", 4cm, 4cm)`.
+
 ![](tomato.svg)
 
 ## The compose function accepts S-expressions
@@ -68,7 +72,7 @@ parenthesis or brackets.
 composition = compose(context(),
         (context(), circle(), fill("bisque")),
         (context(), rectangle(), fill("tomato")))
-draw(SVG("tomato_bisque.svg", 4cm, 4cm), composition)
+composition |> SVG("tomato_bisque.svg", 4cm, 4cm)
 nothing # hide
 ```
 
@@ -131,7 +135,7 @@ using Compose
 composition = compose(context(), fill("tomato"),
         (context(0.0, 0.0, 0.5, 0.5), circle()),
         (context(0.5, 0.5, 0.5, 0.5), circle()))
-draw(SVG("tomatos.svg", 4cm, 4cm), composition)
+composition |> SVG("tomatos.svg", 4cm, 4cm)
 nothing # hide
 ```
 
@@ -153,7 +157,7 @@ composition = compose(context(),
         (context(),
          polygon([(1, 1), (0.5, 1), (0.5, 0)]),
          fill("bisque")))
-draw(SVG("tomato_bisque_triangle.svg", 4cm, 4cm), composition)
+composition |> SVG("tomato_bisque_triangle.svg", 4cm, 4cm)
 nothing # hide
 ```
 
@@ -204,7 +208,7 @@ using Compose, Colors
 composition = compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1, 0.1, 0.1]),
         fill(LCHab(92, 10, 77)))
-draw(SVG("circles.svg", 4cm, 4cm), composition)
+composition |> SVG("circles.svg", 4cm, 4cm)
 nothing # hide
 ```
 
@@ -218,7 +222,7 @@ specifying the radius just once.
 composition = compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1]),
         fill(LCHab(92, 10, 77)))
-draw(SVG("cycled_circles.svg", 4cm, 4cm), composition)
+composition |> SVG("cycled_circles.svg", 4cm, 4cm)
 nothing # hide
 ```
 
@@ -232,7 +236,7 @@ colors to each circle.
 circles_fill_vectorized = compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1]),
         fill([LCHab(92, 10, 77), LCHab(68, 74, 192), LCHab(78, 84, 29)]))
-draw(SVG("circles_fill_vectorized.svg", 4cm, 4cm), circles_fill_vectorized)
+circles_fill_vectorized |> SVG("circles_fill_vectorized.svg", 4cm, 4cm)
 nothing # hide
 ```
 
@@ -269,7 +273,7 @@ function sierpinski(n)
 end
 
 composition = compose(sierpinski(6), fill(LCHab(92, 10, 77)))
-draw(SVG("sierpinski.svg", 8cm, 8*(sqrt(3)/2)*cm), composition)
+composition |> SVG("sierpinski.svg", 8cm, 8*(sqrt(3)/2)*cm)
 nothing # hide
 ```
 
@@ -333,7 +337,7 @@ language](https://developer.gnome.org/pango/unstable/PangoMarkupFormat.html).
 ```@example 6
 using Compose # hide
 cents_ina_dollar = compose(context(), text(0.5, 0.5,"100&#162; in a &#36;"))
-draw(SVG("dollar.svg",5cm,1cm), cents_ina_dollar)
+cents_ina_dollar |> SVG("dollar.svg",5cm,1cm)
 nothing # hide
 ```
 
