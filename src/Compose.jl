@@ -3,7 +3,7 @@ VERSION >= v"0.4.0-dev+6521" && __precompile__()
 module Compose
 
 using Colors
-using Iterators
+using IterTools
 using DataStructures
 using Compat
 using Measures
