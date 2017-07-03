@@ -128,6 +128,10 @@ PGF(width::MeasureOrNumber, height::MeasureOrNumber,
              emit_on_finish::Bool=true, only_tikz=false; texfonts=false) =
         PGF(IOBuffer(), width, height, emit_on_finish, only_tikz, texfonts=texfonts)
 
+function (img::PGF)(x)
+    draw(img, x)
+end
+
 function finish(img::PGF)
     img.finished && return
 

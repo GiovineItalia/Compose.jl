@@ -16,6 +16,10 @@ function ImmerseBackend(c::CairoSurface)
     ImmerseBackend(cb, Dict{Symbol,Any}(), Any[])
 end
 
+function (img::ImmerseBackend)(x)
+    draw(img, x)
+end
+
 root_box(backend::ImmerseBackend) = root_box(backend.cb)
 
 push_property_frame(backend::ImmerseBackend, properties) =

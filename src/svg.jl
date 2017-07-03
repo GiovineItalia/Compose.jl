@@ -279,6 +279,10 @@ SVG(width::MeasureOrNumber, height::MeasureOrNumber, emit_on_finish::Bool=true, 
 canbatch(img::SVG) = true
 iswithjs(img::SVG) = img.withjs
 
+function (img::SVG)(x)
+    draw(img, x)
+end
+
 # Return the next unique element ID. Sort of like gensym for SVG elements.
 function genid(img::SVG)
     img.id_count += 1
