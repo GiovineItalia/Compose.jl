@@ -8,11 +8,11 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<use xlink:href="#img-4e12fe63-1" x="10" y="10" fill="#F4E6D6"/>
-<use xlink:href="#img-4e12fe63-1" x="20" y="20" fill="#00C5C0"/>
-<use xlink:href="#img-4e12fe63-1" x="30" y="30" fill="#FF7C7A"/>
+<use xlink:href="#img-c9f4b4ae-1" x="10" y="10" fill="#F4E6D6"/>
+<use xlink:href="#img-c9f4b4ae-1" x="20" y="20" fill="#00C5C0"/>
+<use xlink:href="#img-c9f4b4ae-1" x="30" y="30" fill="#FF7C7A"/>
 <defs>
-  <g id="img-4e12fe63-1">
+  <g id="img-c9f4b4ae-1">
     <circle cx="0" cy="0" r="4"/>
   </g>
 </defs>
