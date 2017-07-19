@@ -45,7 +45,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Trees can be visualized with introspect",
     "category": "section",
-    "text": "A useful function for visualizing the graphic that you've constructed is introspect. It takes a Context defining a graphic and returns a new graphic with a schematic of the tree.using Compose # hide\nset_default_graphic_size(6cm, 6cm) # hide\n\ntomato_bisque =\n    compose(context(),\n            (context(), circle(), fill(\"bisque\")),\n            (context(), rectangle(), fill(\"tomato\")))\n\nintrospect(tomato_bisque)This is a little cryptic, but you can use this limited edition decoder ring:using Compose, Colors, Measures # hide\nset_default_graphic_size(6cm, 4cm) # hide\n\nfigsize = 6mm\nt = table(3, 2, 1:3, 2:2, y_prop=[1.0, 1.0, 1.0])\nt[1,1] = [compose(context(minwidth=figsize + 2mm, minheight=figsize),\n                  circle(0.5, 0.5, figsize/2), fill(LCHab(92, 10, 77)))]\nt[2,1] = [compose(context(minwidth=figsize + 2mm, minheight=figsize),\n                  rectangle(0.5cx - figsize/2, 0.5cy - figsize/2, figsize, figsize),\n                  fill(LCHab(68, 74, 192)))]\nt[3,1] = [compose(context(minwidth=figsize + 2mm, minheight=figsize),\n                  polygon([(0.5cx - figsize/2, 0.5cy - figsize/2),\n                           (0.5cx + figsize/2, 0.5cy - figsize/2),\n                           (0.5, 0.5cy + figsize/2)]),\n                  fill(LCHab(68, 74, 29)))]\nt[1,2] = [compose(context(), text(0, 0.5, \"Context\", hleft, vcenter))]\nt[2,2] = [compose(context(), text(0, 0.5, \"Form\", hleft, vcenter))]\nt[3,2] = [compose(context(), text(0, 0.5, \"Property\", hleft, vcenter))]\ncompose(context(), t, fill(LCHab(92, 10, 77)), fontsize(10pt))"
+    "text": "A useful function for visualizing the graphic that you've constructed is introspect. It takes a Context defining a graphic and returns a new graphic with a schematic of the tree.using Compose # hide\nset_default_graphic_size(6cm, 6cm) # hide\n\ntomato_bisque =\n    compose(context(),\n            (context(), circle(), fill(\"bisque\")),\n            (context(), rectangle(), fill(\"tomato\")))\n\nintrospect(tomato_bisque)This is a little cryptic, but you can use this limited edition decoder ring:using Compose, Colors, Measures # hide\nset_default_graphic_size(6cm, 4cm) # hide\n\nfigsize = 6mm\nt = table(3, 2, 1:3, 2:2, y_prop=[1.0, 1.0, 1.0])\nt[1,1] = [compose(context(minwidth=figsize + 2mm, minheight=figsize),\n                  circle(0.5, 0.5, figsize/2), fill(LCHab(92, 10, 77)))]\nt[2,1] = [compose(context(minwidth=figsize + 2mm, minheight=figsize),\n                  rectangle(0.5cx - figsize/2, 0.5cy - figsize/2, figsize, figsize),\n                  fill(LCHab(68, 74, 192)))]\nt[3,1] = [compose(context(minwidth=figsize + 2mm, minheight=figsize),\n                  polygon([(0.5cx - figsize/2, 0.5cy - figsize/2),\n                           (0.5cx + figsize/2, 0.5cy - figsize/2),\n                           (0.5cx, 0.5cy + figsize/2)]),\n                  fill(LCHab(68, 74, 29)))]\nt[1,2] = [compose(context(), text(0, 0.5, \"Context\", hleft, vcenter))]\nt[2,2] = [compose(context(), text(0, 0.5, \"Form\", hleft, vcenter))]\nt[3,2] = [compose(context(), text(0, 0.5, \"Property\", hleft, vcenter))]\ncompose(context(), t, fill(LCHab(92, 10, 77)), fontsize(10pt))"
 },
 
 {
@@ -181,7 +181,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.text",
     "category": "Function",
-    "text": "text(xs, ys, values [,halgins::HAlignment [,valgins::VAlignment [,rots::Rotation]]])\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n"
+    "text": "text(x, y, value [,halgin::HAlignment [,valgin::VAlignment [,rot::Rotation]]])\n\nDraw the text value at the position (x,y) relative to the current context.\n\nThe default alignment of the text is hleft vbottom. The vertical and horizontal alignment is specified by passing hleft, hcenter or hright and vtop, vcenter or vbottom as values for halgin and valgin respectively.\n\n\n\n"
 },
 
 {
@@ -189,7 +189,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.text",
     "category": "Function",
-    "text": "text(x, y, value [,halgin::HAlignment [,valgin::VAlignment [,rot::Rotation]]])\n\nDraw the text value at the position (x,y) relative to the current context.\n\nThe default alignment of the text is hleft vbottom. The vertical and horizontal alignment is specified by passing hleft, hcenter or hright and vtop, vcenter or vbottom as values for halgin and valgin respectively.\n\n\n\n"
+    "text": "text(xs, ys, values [,halgins::HAlignment [,valgins::VAlignment [,rots::Rotation]]])\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n"
 },
 
 {
