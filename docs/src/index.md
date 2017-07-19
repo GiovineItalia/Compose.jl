@@ -112,7 +112,7 @@ t[2,1] = [compose(context(minwidth=figsize + 2mm, minheight=figsize),
 t[3,1] = [compose(context(minwidth=figsize + 2mm, minheight=figsize),
                   polygon([(0.5cx - figsize/2, 0.5cy - figsize/2),
                            (0.5cx + figsize/2, 0.5cy - figsize/2),
-                           (0.5, 0.5cy + figsize/2)]),
+                           (0.5cx, 0.5cy + figsize/2)]),
                   fill(LCHab(68, 74, 29)))]
 t[1,2] = [compose(context(), text(0, 0.5, "Context", hleft, vcenter))]
 t[2,2] = [compose(context(), text(0, 0.5, "Form", hleft, vcenter))]
