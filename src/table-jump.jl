@@ -83,13 +83,11 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
 
         (i0, j0) = fixed_config[1]
         config_count = length(tbl.children[i0, j0])
-        for (i, j) in fixed_config[2:end]
-            for k in 1:config_count
-                !haskey(idx_cs, (i0, j0)) && !haskey(idx_cs, (i, j)) && continue
-                idx_a = idx_cs[i0, j0][k]
-                idx_b = idx_cs[(i,j)][k]
-                @addConstraint(model, c[idx_a] == c[idx_b])
-            end
+        for (i, j) in fixed_config[2:end], k in 1:config_count
+            !haskey(idx_cs, (i0, j0)) && !haskey(idx_cs, (i, j)) && continue
+            idx_a = idx_cs[i0, j0][k]
+            idx_b = idx_cs[(i,j)][k]
+            @addConstraint(model, c[idx_a] == c[idx_b])
         end
     end
 
@@ -105,7 +103,6 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
         minh = minheight(tbl.children[i, j][k])
         minw == nothing || @addConstraint(model, w[j] >= minw * c[l])
         minh == nothing || @addConstraint(model, h[i] >= minh * c[l])
-        end
     end
 
     # minimum cell size constraint for fixed cells
@@ -128,8 +125,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     h_solution = getValue(h)[:]
     c_solution = getValue(c)
 
-    if status == :Infeasible || !all([is_approx_integer(c_solution[l])
-                                      for l in 1:length(c_indexes)])
+    if status == :Infeasible ||
+            !all([is_approx_integer(c_solution[l]) for l in 1:length(c_indexes)])
         #println(STDERR, "JuMP: Infeasible")
         # The brute force solver is better able to select between various
         # non-feasible solutions. So we let it have a go.
