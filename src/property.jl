@@ -337,7 +337,7 @@ Base.hash(primitive::SVGIDPrimitive, h::UInt) = hash(primitive.value, h)
 # --------
 
 immutable SVGClassPrimitive <: PropertyPrimitive
-    value::Compat.UTF8String
+    value::Compat.String
 end
 
 const SVGClass = Property{SVGClassPrimitive}
@@ -363,8 +363,8 @@ Base.hash(primitive::SVGClassPrimitive, h::UInt) = hash(primitive.value, h)
 # ------------
 
 immutable SVGAttributePrimitive <: PropertyPrimitive
-    attribute::Compat.ASCIIString
-    value::Compat.ASCIIString
+    attribute::Compat.String
+    value::Compat.String
 end
 
 const SVGAttribute = Property{SVGAttributePrimitive}

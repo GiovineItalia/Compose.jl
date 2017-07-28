@@ -88,3 +88,6 @@ twolines = text_extents(font_family, 8pt, "Peg\nPeg")[1]
 @test Compose.parse_colorant(("red","blue")) == [RGB(1.0,0.0,0.0), RGB(0.0,0.0,1.0)]
 @test Compose.parse_colorant("red","blue") == [RGB(1.0,0.0,0.0), RGB(0.0,0.0,1.0)]
 @test Compose.parse_colorant("red",colorant"blue") == [RGB(1.0,0.0,0.0), RGB(0.0,0.0,1.0)]
+
+# PR 263
+@test Compose.pango_to_svg("hello world") == "hello world"

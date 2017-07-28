@@ -361,7 +361,7 @@ end
 @compat const Text{P<:TextPrimitive} = Form{P}
 
 """
-    text(x, y, value [,halgin::HAlignment [,valgin::VAlignment [,rot::Rotation]]])
+    text(x, y, value [,halign::HAlignment [,valign::VAlignment [,rot::Rotation]]])
 
 Draw the text `value` at the position (`x`,`y`) relative to the current context.
 
@@ -384,7 +384,7 @@ function text(x, y, value,
 end
 
 """
-    text(xs, ys, values [,halgins::HAlignment [,valgins::VAlignment [,rots::Rotation]]])
+    text(xs, ys, values [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])
 
 Arguments can be passed in arrays in order to perform multiple drawing operations at once.
 """
