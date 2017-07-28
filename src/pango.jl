@@ -81,7 +81,7 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
-    textarray = convert(Vector{UInt8}, convert(Compat.UTF8String, text))
+    textarray = convert(Vector{UInt8}, convert(Compat.String, text))
     ccall((:pango_layout_set_markup, libpango),
           Void, (Ptr{Void}, Ptr{UInt8}, Int32),
           pangolayout.layout, textarray, length(textarray))
