@@ -343,6 +343,22 @@ nothing # hide
 
 ![](dollar.svg)
 
+Use the `font` and `fontsize` properties to change the appearance of type:
+
+```@example 7
+using Compose # hide
+compose(context(),
+       (context(), text(0.2,0.5,"big"), fontsize(18pt)),
+       (context(), text(0.4,0.5,"small"), fontsize(6pt)),
+       (context(), text(0.6,0.5,"bold"), font("Helvetica-Bold")),
+       (context(), text(0.8,0.5,"oblique"), font("Helvetica-Oblique"))) |>
+    SVG("font_fontsize.svg",15cm,1cm)
+nothing # hide
+```
+
+![](font_fontsize.svg)
+
+
 ## Influences
 
 Compose is intended as a futuristic version of the R library
