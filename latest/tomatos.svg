@@ -8,15 +8,15 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="#FF6347" id="img-db161249-1">
-  <use xlink:href="#img-db161249-2" x="30" y="30"/>
-  <use xlink:href="#img-db161249-3" x="10" y="10"/>
+<g fill="#FF6347" id="img-681f3696-1">
+  <use xlink:href="#img-681f3696-2" x="30" y="30"/>
+  <use xlink:href="#img-681f3696-3" x="10" y="10"/>
 </g>
 <defs>
-  <g id="img-db161249-2">
+  <g id="img-681f3696-2">
     <circle cx="0" cy="0" r="10"/>
   </g>
-  <g id="img-db161249-3">
+  <g id="img-681f3696-3">
     <circle cx="0" cy="0" r="10"/>
   </g>
 </defs>

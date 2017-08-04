@@ -109,7 +109,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Text",
     "category": "section",
-    "text": "Symbols can be used in text strings by inserting HTML codes.  More general formatting for the SVG backend is documented here, whereas the Cairo backend uses a Pango markup language.using Compose # hide\ncents_ina_dollar = compose(context(), text(0.5, 0.5,\"100&#162; in a &#36;\"))\ncents_ina_dollar |> SVG(\"dollar.svg\",5cm,1cm)\nnothing # hide(Image: )"
+    "text": "Symbols can be used in text strings by inserting HTML codes.  More general formatting for the SVG backend is documented here, whereas the Cairo backend uses a Pango markup language.using Compose # hide\ncents_ina_dollar = compose(context(), text(0.5, 0.5,\"100&#162; in a &#36;\"))\ncents_ina_dollar |> SVG(\"dollar.svg\",5cm,1cm)\nnothing # hide(Image: )Use the font and fontsize properties to change the appearance of type:using Compose # hide\ncompose(context(),\n       (context(), text(0.2,0.5,\"big\"), fontsize(18pt)),\n       (context(), text(0.4,0.5,\"small\"), fontsize(6pt)),\n       (context(), text(0.6,0.5,\"bold\"), font(\"Helvetica-Bold\")),\n       (context(), text(0.8,0.5,\"oblique\"), font(\"Helvetica-Oblique\"))) |>\n    SVG(\"font_fontsize.svg\",15cm,1cm)\nnothing # hide(Image: )"
 },
 
 {

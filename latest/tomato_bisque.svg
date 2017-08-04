@@ -8,14 +8,14 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="#FF6347" id="img-76dc7999-1">
+<g fill="#FF6347" id="img-79c09ec3-1">
   <rect x="0" y="0" width="40" height="40"/>
 </g>
-<g fill="#FFE4C4" id="img-76dc7999-2">
-  <use xlink:href="#img-76dc7999-3" x="20" y="20"/>
+<g fill="#FFE4C4" id="img-79c09ec3-2">
+  <use xlink:href="#img-79c09ec3-3" x="20" y="20"/>
 </g>
 <defs>
-  <g id="img-76dc7999-3">
+  <g id="img-79c09ec3-3">
     <circle cx="0" cy="0" r="20"/>
   </g>
 </defs>
