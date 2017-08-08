@@ -269,11 +269,13 @@ function SVG(out::IO,
 end
 
 # Write to a file.
-SVG(filename::AbstractString, width, height, jsmode::Symbol=:none) =
+SVG(filename::AbstractString, width=default_graphic_width, height=default_graphic_height,
+        jsmode::Symbol=:none) =
         SVG(open(filename, "w"), width, height, true, jsmode; ownedfile=true, filename=filename)
 
 # Write to buffer.
-SVG(width::MeasureOrNumber, height::MeasureOrNumber, emit_on_finish::Bool=true, jsmode::Symbol=:none) =
+SVG(width::MeasureOrNumber=default_graphic_width, height::MeasureOrNumber=default_graphic_height,
+        emit_on_finish::Bool=true, jsmode::Symbol=:none) =
         SVG(IOBuffer(), width, height, emit_on_finish, jsmode)
 
 canbatch(img::SVG) = true
@@ -290,12 +292,13 @@ function genid(img::SVG)
 end
 
 # Constructors that turn javascript extensions on
-SVGJS(out::IO, width, height, emit_on_finish::Bool=true; jsmode::Symbol=:embed) =
+SVGJS(out::IO, width=default_graphic_width, height=default_graphic_height,
+        emit_on_finish::Bool=true; jsmode::Symbol=:embed) =
         SVG(out, width, height, emit_on_finish, jsmode)
-SVGJS(filename::AbstractString, width, height; jsmode::Symbol=:embed) =
-        SVG(filename, width, height, jsmode)
-SVGJS(width::MeasureOrNumber, height::MeasureOrNumber,
-               emit_on_finish::Bool=true, jsmode::Symbol=:embed) =
+SVGJS(filename::AbstractString, width=default_graphic_width, height=default_graphic_height;
+        jsmode::Symbol=:embed) = SVG(filename, width, height, jsmode)
+SVGJS(width::MeasureOrNumber=default_graphic_width, height::MeasureOrNumber=default_graphic_height,
+        emit_on_finish::Bool=true, jsmode::Symbol=:embed) =
         SVG(width, height, emit_on_finish, jsmode)
 
 function writeheader(img::SVG)

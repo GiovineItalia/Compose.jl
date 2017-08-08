@@ -151,7 +151,8 @@ end
         Image{B}(surface, CairoContext(surface))
 
 function (::Type{Image{B}}){B<:ImageBackend}(out::IO,
-            width::MeasureOrNumber, height::MeasureOrNumber,
+            width::MeasureOrNumber=default_graphic_width,
+            height::MeasureOrNumber=default_graphic_height,
             emit_on_finish::Bool=true;
             dpi = (B==PNGBackend ? 96 : 72),
             kwargs...)
@@ -173,11 +174,13 @@ function (::Type{Image{B}}){B<:ImageBackend}(out::IO,
 end
 
 (::Type{Image{B}}){B<:ImageBackend}(filename::AbstractString,
-            width::MeasureOrNumber, height::MeasureOrNumber;
+            width::MeasureOrNumber=default_graphic_width,
+            height::MeasureOrNumber=default_graphic_height;
             dpi = (B==PNGBackend ? 96 : 72)) =
         Image{B}(open(filename, "w"), width, height, dpi=dpi; ownedfile=true, filename=filename)
 
-(::Type{Image{B}}){B<:ImageBackend}(width::MeasureOrNumber, height::MeasureOrNumber,
+(::Type{Image{B}}){B<:ImageBackend}(width::MeasureOrNumber=default_graphic_width,
+            height::MeasureOrNumber=default_graphic_height,
             emit_on_finish::Bool=true;
             dpi = (B==PNGBackend ? 96 : 72)) =
         Image{B}(IOBuffer(), width, height, emit_on_finish, dpi=dpi)
