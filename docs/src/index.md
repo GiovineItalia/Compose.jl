@@ -46,11 +46,21 @@ draw(SVG("tomato.svg", 4cm, 4cm), composition)
 nothing # hide
 ```
 
+![](tomato.svg)
+
 The last line renders the composition to specificied backend, here the SVG
 backend. This can also be written like
 `composition |> SVG("tomato.svg", 4cm, 4cm)`.
+Alternatively, if multiple compositions of the same size are to be
+generated, this can be abbreviated even further to
 
-![](tomato.svg)
+```
+set_default_plot_size(4cm, 4cm)
+composition |> SVG("tomato.svg")
+composition2 |> SVG("celery.svg")
+composition3 |> SVG("rutabaga.svg")  # etc...
+```
+
 
 ## The compose function accepts S-expressions
 
@@ -72,7 +82,7 @@ parenthesis or brackets.
 composition = compose(context(),
         (context(), circle(), fill("bisque")),
         (context(), rectangle(), fill("tomato")))
-composition |> SVG("tomato_bisque.svg", 4cm, 4cm)
+composition |> SVG("tomato_bisque.svg")
 nothing # hide
 ```
 
@@ -99,8 +109,8 @@ introspect(tomato_bisque)
 This is a little cryptic, but you can use this limited edition decoder ring:
 
 ```julia
-using Compose, Colors, Measures # hide
-set_default_graphic_size(6cm, 4cm) # hide
+using Compose, Colors, Measures
+set_default_graphic_size(6cm, 4cm)
 
 figsize = 6mm
 t = table(3, 2, 1:3, 2:2, y_prop=[1.0, 1.0, 1.0])
@@ -129,13 +139,14 @@ different coordinate systems.
 
 ```@setup 3
 using Compose
+set_default_graphic_size(4cm, 4cm)
 ```
 
 ```@example 3
 composition = compose(context(), fill("tomato"),
         (context(0.0, 0.0, 0.5, 0.5), circle()),
         (context(0.5, 0.5, 0.5, 0.5), circle()))
-composition |> SVG("tomatos.svg", 4cm, 4cm)
+composition |> SVG("tomatos.svg")
 nothing # hide
 ```
 
@@ -157,7 +168,7 @@ composition = compose(context(),
         (context(),
          polygon([(1, 1), (0.5, 1), (0.5, 0)]),
          fill("bisque")))
-composition |> SVG("tomato_bisque_triangle.svg", 4cm, 4cm)
+composition |> SVG("tomato_bisque_triangle.svg")
 nothing # hide
 ```
 
@@ -202,13 +213,14 @@ second form can succinctly create many circles (using the [Colors](https://githu
 
 ```@setup 4
 using Compose, Colors
+set_default_graphic_size(4cm, 4cm)
 ```
 
 ```@example 4
 composition = compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1, 0.1, 0.1]),
         fill(LCHab(92, 10, 77)))
-composition |> SVG("circles.svg", 4cm, 4cm)
+composition |> SVG("circles.svg")
 nothing # hide
 ```
 
@@ -222,7 +234,7 @@ specifying the radius just once.
 composition = compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1]),
         fill(LCHab(92, 10, 77)))
-composition |> SVG("cycled_circles.svg", 4cm, 4cm)
+composition |> SVG("cycled_circles.svg")
 nothing # hide
 ```
 
@@ -236,7 +248,7 @@ colors to each circle.
 circles_fill_vectorized = compose(context(),
         circle([0.25, 0.5, 0.75], [0.25, 0.5, 0.75], [0.1]),
         fill([LCHab(92, 10, 77), LCHab(68, 74, 192), LCHab(78, 84, 29)]))
-circles_fill_vectorized |> SVG("circles_fill_vectorized.svg", 4cm, 4cm)
+circles_fill_vectorized |> SVG("circles_fill_vectorized.svg")
 nothing # hide
 ```
 
