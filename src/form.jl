@@ -8,7 +8,7 @@ immutable Form{P <: FormPrimitive} <: ComposeNode
     primitives::Vector{P}
     tag::Symbol
 
-    @compat (::Type{Form{P}}){P}(prim, tag::Symbol=empty_tag) = new{P}(prim, tag)
+    (::Type{Form{P}}){P}(prim, tag::Symbol=empty_tag) = new{P}(prim, tag)
 end
 
 Form{P<:FormPrimitive}(primitives::Vector{P}, tag::Symbol=empty_tag) = Form{P}(primitives, tag)
@@ -906,7 +906,7 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::ArcRelPathOp) =
             (resolve(box, units, t, p.to[1]),
              resolve(box, units, t, p.to[2])))
 
-const path_ops = @compat Dict(
+const path_ops = Dict(
      :M => MoveAbsPathOp,
      :m => MoveRelPathOp,
      :Z => ClosePathOp,

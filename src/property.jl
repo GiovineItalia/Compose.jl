@@ -52,8 +52,8 @@ end
 
 const Stroke = Property{StrokePrimitive}
 
-stroke(c::(@compat Void)) = Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
-stroke(c::@compat(Union{Colorant, AbstractString})) = Stroke([StrokePrimitive(parse_colorant(c))])
+stroke(c::(Void)) = Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
+stroke(c::Union{Colorant, AbstractString}) = Stroke([StrokePrimitive(parse_colorant(c))])
 stroke(cs::AbstractArray) = Stroke([StrokePrimitive(c == nothing ?
         RGBA{Float64}(0, 0, 0, 0) : parse_colorant(c)) for c in cs])
 
@@ -69,8 +69,8 @@ end
 
 const Fill = Property{FillPrimitive}
 
-fill(c::(@compat Void)) = Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
-fill(c::@compat(Union{Colorant, AbstractString})) = Fill([FillPrimitive(parse_colorant(c))])
+fill(c::(Void)) = Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
+fill(c::Union{Colorant, AbstractString}) = Fill([FillPrimitive(parse_colorant(c))])
 fill(cs::AbstractArray) = Fill([FillPrimitive(c == nothing ?
         RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs])
 
@@ -112,7 +112,7 @@ StrokeLineCapPrimitive(value::Type{LineCap}) = StrokeLineCapPrimitive(value())
 
 const StrokeLineCap = Property{StrokeLineCapPrimitive}
 
-strokelinecap(value::@compat(Union{LineCap, Type{LineCap}})) =
+strokelinecap(value::Union{LineCap, Type{LineCap}}) =
         StrokeLineCap([StrokeLineCapPrimitive(value)])
 strokelinecap(values::AbstractArray) =
         StrokeLineCap([StrokeLineCapPrimitive(value) for value in values])
@@ -136,7 +136,7 @@ StrokeLineCapPrimitive(value::Type{LineJoin}) = new(value())
 
 const StrokeLineJoin = Property{StrokeLineJoinPrimitive}
 
-strokelinejoin(value::@compat(Union{LineJoin, Type{LineJoin}})) =
+strokelinejoin(value::Union{LineJoin, Type{LineJoin}}) =
         StrokeLineJoin([StrokeLineJoinPrimitive(value)])
 strokelinejoin(values::AbstractArray) =
         StrokeLineJoin([StrokeLineJoinPrimitive(value) for value in values])
@@ -157,7 +157,7 @@ end
 
 const LineWidth = Property{LineWidthPrimitive}
 
-linewidth(value::@compat(Union{Measure, Number})) = LineWidth([LineWidthPrimitive(value)])
+linewidth(value::Union{Measure, Number}) = LineWidth([LineWidthPrimitive(value)])
 linewidth(values::AbstractArray) =
         LineWidth([LineWidthPrimitive(value) for value in values])
 
@@ -189,7 +189,7 @@ immutable FillOpacityPrimitive <: PropertyPrimitive
     value::Float64
 
     function FillOpacityPrimitive(value_::Number)
-        value = @compat Float64(value_)
+        value = Float64(value_)
         (value < 0.0 || value > 1.0) && error("Opacity must be between 0 and 1.")
         return new(value)
     end
@@ -211,7 +211,7 @@ immutable StrokeOpacityPrimitive <: PropertyPrimitive
     value::Float64
 
     function StrokeOpacityPrimitive(value_::Number)
-        value = @compat Float64(value_)
+        value = Float64(value_)
         (value < 0.0 || value > 1.0) && error("Opacity must be between 0 and 1.")
         return new(value)
     end
@@ -304,7 +304,7 @@ end
 
 const FontSize = Property{FontSizePrimitive}
 
-fontsize(value::@compat(Union{Number, Measure})) = FontSize([FontSizePrimitive(value)])
+fontsize(value::Union{Number, Measure}) = FontSize([FontSizePrimitive(value)])
 
 fontsize(values::AbstractArray) = FontSize([FontSizePrimitive(value) for value in values])
 
@@ -396,7 +396,7 @@ end
 
 immutable JSIncludePrimitive <: PropertyPrimitive
     value::AbstractString
-    jsmodule::@compat(Union{(@compat Void), @compat Tuple{AbstractString, AbstractString}})
+    jsmodule::Union{(Void), Tuple{AbstractString, AbstractString}}
 end
 
 const JSInclude = Property{JSIncludePrimitive}

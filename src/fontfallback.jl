@@ -118,7 +118,7 @@ function text_extents(font_family::AbstractString, size::Measure, texts::Abstrac
     glyphwidths = glyphsizes[font_family]["widths"]
     fontsize = size/pt
 
-    extents = Array{@compat Tuple{Measure, Measure}}(length(texts))
+    extents = Array{Tuple{Measure, Measure}}(length(texts))
     for (i, text) in enumerate(texts)
         chunkwidths = Float64[]
         textheight = 0.0

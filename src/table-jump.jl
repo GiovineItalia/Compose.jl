@@ -10,8 +10,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     abswidth = drawctx.box.a[1].value
     absheight = drawctx.box.a[2].value
 
-    c_indexes = @compat Tuple{Int, Int, Int}[]
-    idx_cs = Dict{(@compat Tuple{Int, Int}), Vector{Int}}()
+    c_indexes = Tuple{Int, Int, Int}[]
+    idx_cs = Dict{(Tuple{Int, Int}), Vector{Int}}()
     for i in 1:m, j in 1:n
         if length(tbl.children[i, j]) > 1
             for k in 1:length(tbl.children[i, j])

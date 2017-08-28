@@ -71,7 +71,7 @@ type Image{B<:ImageBackend} <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::@compat(Union{AbstractString, (@compat Void)})
+    filename::Union{AbstractString, (Void)}
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -274,9 +274,9 @@ isfinished(img::Image) = img.finished
 
 root_box(img::Image) = BoundingBox(width(img), height(img))
 
-@compat show(io::IO, ::MIME"image/png", img::PNG) = write(io, String(take!(img.out)))
-@compat show(io::IO, ::MIME"application/pdf", img::PDF) = write(io, String(take!(img.out)))
-@compat show(io::IO, ::MIME"application/postscript", img::PS) = write(io, String(take!(img.out)))
+show(io::IO, ::MIME"image/png", img::PNG) = write(io, String(take!(img.out)))
+show(io::IO, ::MIME"application/pdf", img::PDF) = write(io, String(take!(img.out)))
+show(io::IO, ::MIME"application/postscript", img::PS) = write(io, String(take!(img.out)))
 
 
 # Applying Properties

@@ -83,7 +83,7 @@ end
 
 # Format a color for SVG.
 svg_fmt_color(c::Color) = string("#", hex(c))
-svg_fmt_color(c::(@compat Void)) = "none"
+svg_fmt_color(c::(Void)) = "none"
 
 # Replace newlines in a string with the appropriate SVG tspan tags.
 function svg_newlines(input::AbstractString, x::Float64)
@@ -147,7 +147,7 @@ type SVG <: Backend
     out::IO
 
     # Save output from IOBuffers to allow multiple calls to writemime
-    cached_out::@compat(Union{AbstractString, (@compat Void)})
+    cached_out::Union{AbstractString, (Void)}
 
     # Unique ID for the figure.
     id::AbstractString
@@ -161,7 +161,7 @@ type SVG <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, @compat(Union{(@compat Void), Property})}
+    vector_properties::Dict{Type, Union{(Void), Property}}
 
     # Clip-paths that need to be defined at the end of the document.
     clippaths::Dict{ClipPrimitive, Compat.String}
@@ -180,7 +180,7 @@ type SVG <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::@compat(Union{AbstractString, (@compat Void)})
+    filename::Union{AbstractString, (Void)}
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -197,7 +197,7 @@ type SVG <: Backend
     jsheader::Vector{AbstractString}
 
     # (Name, binding) pairs of javascript modules the embedded code depends on
-    jsmodules::Vector{@compat Tuple{AbstractString, AbstractString}}
+    jsmodules::Vector{Tuple{AbstractString, AbstractString}}
 
     # User javascript from JSCall attributes
     scripts::Vector{AbstractString}
@@ -225,7 +225,7 @@ function SVG(out::IO,
              id = string("img-", string(Base.Random.uuid4())[1:8]),
              indentation = 0,
              property_stack = Array{SVGPropertyFrame}(0),
-             vector_properties = Dict{Type, @compat(Union{(@compat Void), Property})}(),
+             vector_properties = Dict{Type, Union{(Void), Property}}(),
              clippaths = Dict{ClipPrimitive, Compat.String}(),
              batches = Array{Tuple{FormPrimitive, Compat.String}}(0),
              embobj = Set{AbstractString}(),
@@ -474,14 +474,14 @@ end
 
 isfinished(img::SVG) = img.finished
 
-@compat function show(io::IO, ::MIME"text/html", img::SVG)
+function show(io::IO, ::MIME"text/html", img::SVG)
     if img.cached_out === nothing
         img.cached_out = String(take!(img.out))
     end
     write(io, img.cached_out)
 end
 
-@compat function show(io::IO, ::MIME"image/svg+xml", img::SVG)
+function show(io::IO, ::MIME"image/svg+xml", img::SVG)
     if img.cached_out === nothing
         img.cached_out = String(take!(img.out))
     end
@@ -895,7 +895,7 @@ function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
     print_vector_properties(img, idx)
 
     print(img.out, " xlink:href=\"data:", prim.mime, ";base64,")
-    b64pipe = @compat Base64EncodePipe(img.out)
+    b64pipe = Base64EncodePipe(img.out)
     write(b64pipe, prim.data)
     close(b64pipe)
     print(img.out, "\"></image>\n")
