@@ -307,14 +307,14 @@ compose(a::Context, b, c, ds...) = compose(compose(a, b), c, ds...)
 compose(a::Context, bs::AbstractArray) = compose(a, compose(bs...))
 compose(a::Context, bs::Tuple) = compose(a, compose(bs...))
 compose(a::Context) = a
-compose(a, b::(@compat Void)) = a
+compose(a, b::(Void)) = a
 
-for (f, S, T) in [(:compose!, Property, (@compat Void)),
-                  (:compose!, Form, (@compat Void)),
+for (f, S, T) in [(:compose!, Property, (Void)),
+                  (:compose!, Form, (Void)),
                   (:compose!, Property, Any),
                   (:compose!, Form, Any),
-                  (:compose, Property, (@compat Void)),
-                  (:compose, Form, (@compat Void)),
+                  (:compose, Property, (Void)),
+                  (:compose, Form, (Void)),
                   (:compose, Property, Any),
                   (:compose, Form, Any)]
     eval(
@@ -459,7 +459,7 @@ function drawpart(backend::Backend, container::Container,
     end
 
     if ordered_children
-        container_children = Array{@compat Tuple{Int, Int, Container}}(0)
+        container_children = Array{Tuple{Int, Int, Container}}(0)
         child = ctx.container_children
         while !isa(child, ListNull)
             push!(container_children,
@@ -492,14 +492,14 @@ end
 #   A Context giving a tree diagram.
 #
 function introspect(root::Context)
-    positions = Dict{ComposeNode, @compat(Tuple{Float64, Float64})}()
+    positions = Dict{ComposeNode, Tuple{Float64, Float64}}()
     level_count = Int[]
     max_level = 0
 
     # TODO: It would be nice if we can try to do a better job of positioning
     # nodes within their levels
 
-    q = Queue(@compat(Tuple{ComposeNode, Int}))
+    q = Queue(Tuple{ComposeNode, Int})
     enqueue!(q, (root, 1))
     figs = compose!(context(), stroke("#333"), linewidth(0.5mm))
     figsize = 6mm

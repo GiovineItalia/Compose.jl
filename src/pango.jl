@@ -202,13 +202,13 @@ isempty(attr::PangoAttr) = all([getfield(attr, name) === nothing for name in fie
 #   The attr.
 function update_pango_attr(attr::PangoAttr, attr_name::Symbol, value)
     if attr_name == :PANGO_ATTR_RISE
-        attr.rise = @compat Int64(value)
+        attr.rise = Int64(value)
     elseif attr_name == :PANGO_ATTR_SCALE
         attr.scale = value
     elseif attr_name == :PANGO_ATTR_STYLE
-        attr.style = @compat Int64(value)
+        attr.style = Int64(value)
     elseif attr_name == :PANGO_ATTR_WEIGHT
-        attr.weight = @compat Int64(value)
+        attr.weight = Int64(value)
     end
     attr
 end
@@ -294,7 +294,7 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
     end
 
 
-    attrs = Array{@compat Tuple{Int, PangoAttr}}(0)
+    attrs = Array{Tuple{Int, PangoAttr}}(0)
 
     while attr_it_next() != 0
         attr = PangoAttr()

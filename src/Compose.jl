@@ -9,7 +9,7 @@ using Compat
 using Measures
 import JSON
 
-@compat import Base: length, start, next, done, isempty, getindex, setindex!,
+import Base: length, start, next, done, isempty, getindex, setindex!,
     display, show, showcompact, convert, zero, isless, max, fill, size, copy,
     min, max, abs, +, -, *, /, ==
 
@@ -146,16 +146,10 @@ macro missing_cairo_error(backend)
       Pkg.add("Cairo")
       Pkg.add("Fontconfig")
     """
-    msg2 = if VERSION >= v"0.4.0-dev+6521"
-        """
+    msg2 = """
         You also have to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji"))
         and restart your REPL session afterwards.
         """
-    else
-        """
-        You also have to restart your REPL session afterwards.
-        """
-    end
     string(msg1, msg2)
 end
 
@@ -195,16 +189,16 @@ else
     include("fontfallback.jl")
 end
 
-@compat show(io::IO, m::MIME"text/html", ctx::Context) =
+show(io::IO, m::MIME"text/html", ctx::Context) =
     draw(SVGJS(io, default_graphic_width, default_graphic_height, false,
                jsmode=default_jsmode), ctx)
 
-@compat show(io::IO, m::MIME"image/svg+xml", ctx::Context) =
+show(io::IO, m::MIME"image/svg+xml", ctx::Context) =
     draw(SVG(io, default_graphic_width, default_graphic_height, false), ctx)
 
 try
     getfield(Compose, :Cairo) # throws if Cairo isn't being used
-    @compat show(io::IO, ::MIME"image/png", ctx::Context) =
+    show(io::IO, ::MIME"image/png", ctx::Context) =
         draw(PNG(io, default_graphic_width, default_graphic_height), ctx)
 end
 
