@@ -2,13 +2,11 @@
 <svg xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
      version="1.2"
-     width="40mm" height="40mm" viewBox="0 0 40 40"
+     width="50mm" height="10mm" viewBox="0 0 50 10"
      stroke="none"
      fill="#000000"
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="#FF6347" id="img-c99b2f0e-1">
-  <rect x="0" y="0" width="40" height="40"/>
-</g>
+<text x="25" y="5">100&#162; in a &#36;</text>
 </svg>
