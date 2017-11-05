@@ -164,7 +164,7 @@ type SVG <: Backend
     vector_properties::Dict{Type, Union{(Void), Property}}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::Dict{ClipPrimitive, Compat.String}
+    clippaths::OrderedDict{ClipPrimitive, Compat.String}
 
     # Batched forms to be included within <def> tags.
     batches::Vector{Tuple{FormPrimitive, Compat.String}}
@@ -226,7 +226,7 @@ function SVG(out::IO,
              indentation = 0,
              property_stack = Array{SVGPropertyFrame}(0),
              vector_properties = Dict{Type, Union{(Void), Property}}(),
-             clippaths = Dict{ClipPrimitive, Compat.String}(),
+             clippaths = OrderedDict{ClipPrimitive, Compat.String}(),
              batches = Array{Tuple{FormPrimitive, Compat.String}}(0),
              embobj = Set{AbstractString}(),
              finished = false,
