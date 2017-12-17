@@ -363,9 +363,15 @@ function finish(img::SVG)
 
     for (clippath, id) in img.clippaths
         indent(img)
-        write(img.out, "<clipPath id=\"$(id)\">\n  <path d=\"")
+        img.indentation += 1
+        write(img.out, "<clipPath id=\"$(id)\">\n")
+        indent(img)
+        write(img.out, "<path d=\"")
         print_svg_path(img.out, clippath.points)
-        write(img.out, "\" />\n</clipPath>\n")
+        write(img.out, "\" />\n")
+        img.indentation -= 1
+        indent(img)
+        write(img.out, "</clipPath>\n")
     end
 
     for (primitive, id) in img.batches
@@ -1118,6 +1124,8 @@ function push_property_frame(img::SVG, properties::Vector{Property})
         elseif isscalar(property) && isa(property, Clip)
             # clip-path needs to be in it's own group. Otherwise it can cause
             # problems if we apply a transform to the group.
+            indent(img)
+            img.indentation += 1
             write(img.out, "<g")
             print_property(img, property.primitives[1])
             write(img.out, ">\n")
@@ -1171,7 +1179,11 @@ function pop_property_frame(img::SVG)
         write(img.out, "\n")
     end
 
-    frame.has_scalar_clip && write(img.out, "</g>\n")
+    if frame.has_scalar_clip
+        img.indentation -= 1
+        indent(img)
+        write(img.out, "</g>\n")
+    end
 
     for (propertytype, property) in frame.vector_properties
         img.vector_properties[propertytype] = nothing
