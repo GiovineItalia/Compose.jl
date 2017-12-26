@@ -213,6 +213,8 @@ type SVG <: Backend
     #    linkrel: link to external libraries (relative path)
     #
     jsmode::Symbol
+
+    panelcoords::Tuple
 end
 
 function SVG(out::IO,
@@ -238,7 +240,8 @@ function SVG(out::IO,
              jsheader = AbstractString[],
              jsmodules = Tuple{AbstractString, AbstractString}[("Snap.svg", "Snap")],  # @compat
              scripts = AbstractString[],
-             withjs = jsmode != :none)
+             withjs = jsmode != :none,
+             panelcoords = ())
 
     img = SVG(width,
               height,
@@ -262,7 +265,8 @@ function SVG(out::IO,
               jsmodules,
               scripts,
               withjs,
-              jsmode)
+              jsmode,
+              panelcoords)
 
     writeheader(img)
     return img
@@ -327,6 +331,13 @@ function writeheader(img::SVG)
     img.withjs && write(img.out, "\n     id=\"$(img.id)\"")
     write(img.out, ">\n")
     return img
+end
+
+function register_coords(backend::SVG, box, units, transform, property::SVGClass)
+    if length(property.primitives) == 1 && property.primitives[1].value == "plotpanel"
+        backend.panelcoords = (box, units, transform)
+    end
+    nothing
 end
 
 function reset(img::SVG)
@@ -1118,6 +1129,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     frame = SVGPropertyFrame()
     applied_properties = Set{Type}()
     scalar_properties = Array{Property}(0)
+    isplotpanel = false
     for property in properties
         if !isrepeatable(property) && (typeof(property) in applied_properties)
             continue
@@ -1138,6 +1150,8 @@ function push_property_frame(img::SVG, properties::Vector{Property})
             frame.vector_properties[typeof(property)] = property
             img.vector_properties[typeof(property)] = property
         end
+        isplotpanel |= typeof(property)==SVGClass &&
+                length(property.primitives)==1 && property.primitives[1].value=="plotpanel"
     end
     push!(img.property_stack, frame)
     isempty(scalar_properties) && return
@@ -1164,6 +1178,21 @@ function push_property_frame(img::SVG, properties::Vector{Property})
     write(img.out, ">\n");
     img.has_current_id = false
     img.indentation += 1
+
+    if isplotpanel
+        indent(img)
+        write(img.out, "<metadata>\n")
+        boundingBox = string(img.panelcoords[1].x0[1], ' ', img.panelcoords[1].x0[2], ' ',
+                          img.panelcoords[1].a[1], ' ', img.panelcoords[1].a[2])
+        unitBox = string(img.panelcoords[2].x0, ' ', img.panelcoords[2].y0, ' ',
+                          img.panelcoords[2].width, ' ', img.panelcoords[2].height)
+        indent(img)
+        write(img.out, "  <boundingbox value=\"$boundingBox\"/>\n")
+        indent(img)
+        write(img.out, "  <unitbox value=\"$unitBox\"/>\n")
+        indent(img)
+        write(img.out, "</metadata>\n")
+    end
 end
 
 function pop_property_frame(img::SVG)
