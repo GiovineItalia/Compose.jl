@@ -55,7 +55,7 @@ Alternatively, if multiple compositions of the same size are to be
 generated, this can be abbreviated even further to
 
 ```
-set_default_plot_size(4cm, 4cm)
+set_default_graphic_size(4cm, 4cm)
 composition |> SVG("tomato.svg")
 composition2 |> SVG("celery.svg")
 composition3 |> SVG("rutabaga.svg")  # etc...
