@@ -730,36 +730,72 @@ function draw{T}(img::SVG, form::Form{T})
 end
 
 function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
-    indent(img)
-
     # SVG will hide rectangles with zero height or width. We'd prefer to have
     # zero width/height rectangles stroked, so this is a work-around.
-    width = max(prim.width.value, 0.01)
-    height = max(prim.height.value, 0.01)
+    width = max(prim.width, 0.01mm)
+    height = max(prim.height, 0.01mm)
 
-    print(img.out, "<rect x=\"")
-    svg_print_float(img.out, prim.corner[1].value)
-    print(img.out, "\" y=\"")
-    svg_print_float(img.out, prim.corner[2].value)
-    print(img.out, "\" width=\"")
-    svg_print_float(img.out, width)
-    print(img.out, "\" height=\"")
-    svg_print_float(img.out, height)
-    print(img.out, '"')
+    x0 = prim.corner[1] + width/2
+    y0 = prim.corner[2] + height/2
+    translated_path = [(-width/2,-height/2), ( width/2,-height/2),
+                       ( width/2, height/2), (-width/2, height/2)]
+
+    indent(img)
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
+    svg_print_float(img.out, x0.value)
+    print(img.out, ",")
+    svg_print_float(img.out, y0.value)
+    print(img.out, ")\"")
     print_vector_properties(img, idx)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<path d=\"")
+    print_svg_path(img.out, translated_path)
+    write(img.out, " z\"")
+    print(img.out, " class=\"primitive\"")
     print(img.out, "/>\n")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
 end
 
 function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
     n = length(prim.points)
     n <= 1 && return
 
+    x0, y0 = prim.points[1][1], prim.points[1][2]
+    for p in prim.points[2:end]
+        x0 += p[1]
+        y0 += p[2]
+    end
+    x0, y0 = x0/n, y0/n
+    translated_path = [(p[1]-x0,p[2]-y0) for p in prim.points]
+
     indent(img)
-    write(img.out, "<path d=\"")
-    print_svg_path(img.out, prim.points, true)
-    write(img.out, " z\"")
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
+    svg_print_float(img.out, x0.value)
+    print(img.out, ",")
+    svg_print_float(img.out, y0.value)
+    print(img.out, ")\"")
     print_vector_properties(img, idx)
+    print(img.out, ">\n")
+    indent(img)
+
+    write(img.out, "<path d=\"")
+    print_svg_path(img.out, translated_path, true)
+    write(img.out, " z\"")
+    print(img.out, " class=\"primitive\"")
     write(img.out, "/>\n")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
 end
 
 function draw(img::SVG, prim::ComplexPolygonPrimitive, idx::Int)
@@ -776,15 +812,26 @@ end
 
 function draw(img::SVG, prim::CirclePrimitive, idx::Int)
     indent(img)
-    print(img.out, "<circle cx=\"")
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
     svg_print_float(img.out, prim.center[1].value)
-    print(img.out, "\" cy=\"")
+    print(img.out, ",")
     svg_print_float(img.out, prim.center[2].value)
-    print(img.out, "\" r=\"")
+    print(img.out, ")\"")
+    print_vector_properties(img, idx)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<circle cx=\"0\" cy=\"0\" r=\"")
     svg_print_float(img.out, prim.radius.value)
     print(img.out, "\"")
-    print_vector_properties(img, idx)
+    print(img.out, " class=\"primitive\"")
     print(img.out, "/>\n")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
 end
 
 function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
@@ -797,14 +844,21 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
     theta = rad2deg(atan2(prim.x_point[2].value - cy,
                           prim.x_point[1].value - cx))
 
-    all(isfinite([cx, cy, rx, ry, theta])) || return
+    all(isfinite,[cx, cy, rx, ry, theta]) || return
 
     indent(img)
-    print(img.out, "<ellipse cx=\"")
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
     svg_print_float(img.out, cx)
-    print(img.out, "\" cy=\"")
+    print(img.out, ",")
     svg_print_float(img.out, cy)
-    print(img.out, "\" rx=\"")
+    print(img.out, ")\"")
+    print_vector_properties(img, idx)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<ellipse cx=\"0\" cy=\"0\" rx=\"")
     svg_print_float(img.out, rx)
     print(img.out, "\" ry=\"")
     svg_print_float(img.out, ry)
@@ -812,35 +866,68 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
     if abs(theta) > 1e-4
         print(img.out, " transform=\"rotate(")
         svg_print_float(img.out, theta)
-        print(img.out, ' ')
-        svg_print_float(img.out, cx)
-        print(img.out, ' ')
-        svg_print_float(img.out, cy)
         print(img.out, ")\"")
 
     end
+    print(img.out, " class=\"primitive\"")
     print(img.out, "/>\n")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
 end
 
 function draw(img::SVG, prim::LinePrimitive, idx::Int)
-    n = length(prim.points)
-    n <= 1 && return
+    length(prim.points)<=1 && return
+
+    x0, y0, n = prim.points[1][1], prim.points[1][2], 1
+    for p in prim.points[2:end]
+        if isfinite(p[1].value) && isfinite(p[2].value)
+            x0 += p[1]
+            y0 += p[2]
+            n +=1
+        end
+    end
+    x0, y0 = x0/n, y0/n
+    translated_path = [(p[1]-x0,p[2]-y0) for p in prim.points]
 
     indent(img)
-    print(img.out, "<path fill=\"none\" d=\"")
-    print_svg_path(img.out, prim.points, true)
-    print(img.out, "\"")
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
+    svg_print_float(img.out, x0.value)
+    print(img.out, ",")
+    svg_print_float(img.out, y0.value)
+    print(img.out, ")\"")
     print_vector_properties(img, idx, true)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<path fill=\"none\" d=\"")
+    print_svg_path(img.out, translated_path, true)
+    print(img.out, "\"")
+    print(img.out, " class=\"primitive\"")
     print(img.out, "/>\n")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
 end
 
 function draw(img::SVG, prim::TextPrimitive, idx::Int)
     indent(img)
-    print(img.out, "<text x=\"")
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
     svg_print_float(img.out, prim.position[1].value)
-    print(img.out, "\" y=\"")
+    print(img.out, ",")
     svg_print_float(img.out, prim.position[2].value)
-    print(img.out, '"')
+    print(img.out, ")\"")
+    print_vector_properties(img, idx, true)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<text")
 
     if prim.halign === hcenter
         print(img.out, " text-anchor=\"middle\"")
@@ -863,48 +950,83 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
         print(img.out, " transform=\"rotate(")
         svg_print_float(img.out, rad2deg(prim.rot.theta))
         print(img.out, ", ")
-        svg_print_float(img.out, prim.rot.offset[1].value)
+        svg_print_float(img.out, prim.rot.offset[1].value-prim.position[1].value)
         print(img.out, ", ")
-        svg_print_float(img.out, prim.rot.offset[2].value)
+        svg_print_float(img.out, prim.rot.offset[2].value-prim.position[2].value)
         print(img.out, ")\"")
     end
-    print_vector_properties(img, idx)
+    print(img.out, " class=\"primitive\"")
 
     @printf(img.out, ">%s</text>\n",
             svg_newlines(pango_to_svg(prim.value), prim.position[1].value))
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
 end
 
 function draw(img::SVG, prim::CurvePrimitive, idx::Int)
+    x0, y0 = prim.anchor0[1], prim.anchor0[2]
+    x0, y0 += prim.ctrl0[1], prim.ctrl0[2]
+    x0, y0 += prim.ctrl1[1], prim.ctrl1[2]
+    x0, y0 += prim.anchor1[1], prim.anchor1[2]
+    x0, y0 = x0/4, y0/4
+    translated_anchor0 = [prim.anchor0...] - [x0,y0]
+    translated_ctrl0 = [prim.ctrl0...] - [x0,y0]
+    translated_ctrl1 = [prim.ctrl1...] - [x0,y0]
+    translated_anchor1 = [prim.anchor1...] - [x0,y0]
+
     indent(img)
-    print(img.out, "<path fill=\"none\" d=\"M")
-    svg_print_float(img.out, prim.anchor0[1].value)
-    print(img.out, ',')
-    svg_print_float(img.out, prim.anchor0[2].value)
-    print(img.out, " C")
-    svg_print_float(img.out, prim.ctrl0[1].value)
-    print(img.out, ',')
-    svg_print_float(img.out, prim.ctrl0[2].value)
-    print(img.out, ' ')
-    svg_print_float(img.out, prim.ctrl1[1].value)
-    print(img.out, ',')
-    svg_print_float(img.out, prim.ctrl1[2].value)
-    print(img.out, ' ')
-    svg_print_float(img.out, prim.anchor1[1].value)
-    print(img.out, ',')
-    svg_print_float(img.out, prim.anchor1[2].value)
-    print(img.out, ' ')
-    print(img.out, '"')
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
+    svg_print_float(img.out, x0.value)
+    print(img.out, ",")
+    svg_print_float(img.out, y0.value)
+    print(img.out, ")\"")
     print_vector_properties(img, idx, true)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<path fill=\"none\" d=\"M")
+    svg_print_float(img.out, translated_anchor0[1].value)
+    print(img.out, ',')
+    svg_print_float(img.out, translated_anchor0[2].value)
+    print(img.out, " C")
+    svg_print_float(img.out, translated_ctrl0[1].value)
+    print(img.out, ',')
+    svg_print_float(img.out, translated_ctrl0[2].value)
+    print(img.out, ' ')
+    svg_print_float(img.out, translated_ctrl1[1].value)
+    print(img.out, ',')
+    svg_print_float(img.out, translated_ctrl1[2].value)
+    print(img.out, ' ')
+    svg_print_float(img.out, translated_anchor1[1].value)
+    print(img.out, ',')
+    svg_print_float(img.out, translated_anchor1[2].value)
+    print(img.out, '"')
+    print(img.out, " class=\"primitive\"")
     print(img.out, "/>\n")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
 end
 
 function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
     indent(img)
-    print(img.out, "<image x=\"")
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
     svg_print_float(img.out, prim.corner[1].value)
-    print(img.out, "\" y=\"")
+    print(img.out, ",")
     svg_print_float(img.out, prim.corner[2].value)
-    print(img.out, "\" width=\"")
+    print(img.out, ")\"")
+    print_vector_properties(img, idx, true)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<image x=\"0\" y=\"0\" width=\"")
     svg_print_float(img.out, prim.width.value)
     print(img.out, "\" height=\"")
     svg_print_float(img.out, prim.height.value)
@@ -915,7 +1037,13 @@ function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
     b64pipe = Base64EncodePipe(img.out)
     write(b64pipe, prim.data)
     close(b64pipe)
-    print(img.out, "\"></image>\n")
+    print(img.out, "\"")
+    print(img.out, " class=\"primitive\"")
+    print(img.out, "/>\n")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
 end
 
 function svg_print_path_op(io::IO, op::MoveAbsPathOp)

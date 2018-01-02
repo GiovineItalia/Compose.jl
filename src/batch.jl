@@ -48,6 +48,7 @@ function filter_redundant_offsets!(offsets::Vector{AbsoluteVec2})
     return nonredundant_offsets
 end
 
+#=
 function batch{T <: CirclePrimitive}(form::Form{T})
     # circles can be batched if they all have the same radius.
     r = form.primitives[1].radius
@@ -64,6 +65,7 @@ function batch{T <: CirclePrimitive}(form::Form{T})
 
     return Nullable(FormBatch(prim, offsets))
 end
+=#
 
 # TODO: same for polygon, rectangle, ellipse
 
