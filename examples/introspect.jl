@@ -7,4 +7,4 @@ tomato_bisque =
                    (context(), rectangle(), fill("tomato")))
 img = SVG("introspect.svg", 4inch, 4(sqrt(3)/2)inch)
 
-tomato_bisque |> img
+introspect(tomato_bisque) |> img
