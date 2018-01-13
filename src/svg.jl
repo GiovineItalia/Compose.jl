@@ -194,10 +194,10 @@ type SVG <: Backend
     id_count::Int
 
     # Filenames of javsacript to include before any JSCall code.
-    jsheader::Vector{AbstractString}
+    jsheader::Set{AbstractString}
 
     # (Name, binding) pairs of javascript modules the embedded code depends on
-    jsmodules::Vector{Tuple{AbstractString, AbstractString}}
+    jsmodules::Set{Tuple{AbstractString, AbstractString}}
 
     # User javascript from JSCall attributes
     scripts::Vector{AbstractString}
@@ -237,8 +237,8 @@ function SVG(out::IO,
              current_id = "",
              has_current_id = false,
              id_count = 0,
-             jsheader = AbstractString[],
-             jsmodules = Tuple{AbstractString, AbstractString}[("Snap.svg", "Snap")],  # @compat
+             jsheader = Set{AbstractString}(),
+             jsmodules = Set{Tuple{AbstractString, AbstractString}}((("Snap.svg", "Snap"),)),  # @compat
              scripts = AbstractString[],
              withjs = jsmode != :none,
              panelcoords = ())
