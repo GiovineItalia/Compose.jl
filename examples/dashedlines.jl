@@ -30,7 +30,8 @@ patterns = Array[
 c = draw_lines(patterns)
 
 imgs = [PDF("dash.pdf", 4inch, 4(sqrt(3)/2)inch),
-        PGF("dash.pgf", 4inch, 4(sqrt(3)/2)inch)]
+        PGF("dash.pgf", 4inch, 4(sqrt(3)/2)inch),
+        PGF("dash_texfonts.pgf", 4inch, 4(sqrt(3)/2)inch; texfonts=true)]
 for img = imgs
   compose(c, stroke("black"), linewidth(1mm)) |> img
 end

@@ -486,8 +486,9 @@ function push_property_frame(img::PGF, properties::Vector{Property})
         print_pgf_path(img.buf, get(img.clippath).points)
         write(img.buf, ";\n")
     end
-    (isnull(img.fontfamily) && !img.texfonts) ||
-            @printf(img.buf, "\\fontspec{%s}\n", get(img.fontfamily))
+    if (!img.texfonts && !isnull(img.fontfamily))
+        @printf(img.buf, "\\fontspec{%s}\n", get(img.fontfamily))
+    end
 end
 
 function pop_property_frame(img::PGF)
