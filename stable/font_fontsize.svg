@@ -8,16 +8,16 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<g font-family="Helvetica-Oblique" id="img-5ecd1e19-1">
+<g font-family="Helvetica-Oblique" id="img-126cfa8d-1">
   <text x="120" y="5">oblique</text>
 </g>
-<g font-family="Helvetica-Bold" id="img-5ecd1e19-2">
+<g font-family="Helvetica-Bold" id="img-126cfa8d-2">
   <text x="90" y="5">bold</text>
 </g>
-<g font-size="2.12" id="img-5ecd1e19-3">
+<g font-size="2.12" id="img-126cfa8d-3">
   <text x="60" y="5">small</text>
 </g>
-<g font-size="6.35" id="img-5ecd1e19-4">
+<g font-size="6.35" id="img-126cfa8d-4">
   <text x="30" y="5">big</text>
 </g>
 </svg>

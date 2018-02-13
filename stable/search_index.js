@@ -29,7 +29,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Everything is a tree",
     "category": "section",
-    "text": "Graphics in Compose are defined using a tree structure. It's not unlike SVG in this regard, but has simpler semantics. There are three important types that make up the nodes of the tree:Context: An internal node.\nForm: A leaf node that defines some geometry, like a line or a polygon.\nProperty: A leaf node that modifies how its parent's subtree is drawn, like fill color, font family, or line width.The all-important function in Compose, is called, not surprisingly, compose. Calling compose(a, b) will return a new tree rooted at a and with b attached as a child.That's enough to start drawing some simple shapes.using Compose\nset_default_graphic_size(4cm, 4cm)\nset_default_jsmode(:exclude)using Compose\n\ncomposition = compose(compose(context(), rectangle()), fill(\"tomato\"))\ndraw(SVG(\"tomato.svg\", 4cm, 4cm), composition)\nnothing # hide(Image: )The last line renders the composition to specificied backend, here the SVG backend. This can also be written like composition |> SVG(\"tomato.svg\", 4cm, 4cm). Alternatively, if multiple compositions of the same size are to be generated, this can be abbreviated even further toset_default_plot_size(4cm, 4cm)\ncomposition |> SVG(\"tomato.svg\")\ncomposition2 |> SVG(\"celery.svg\")\ncomposition3 |> SVG(\"rutabaga.svg\")  # etc..."
+    "text": "Graphics in Compose are defined using a tree structure. It's not unlike SVG in this regard, but has simpler semantics. There are three important types that make up the nodes of the tree:Context: An internal node.\nForm: A leaf node that defines some geometry, like a line or a polygon.\nProperty: A leaf node that modifies how its parent's subtree is drawn, like fill color, font family, or line width.The all-important function in Compose, is called, not surprisingly, compose. Calling compose(a, b) will return a new tree rooted at a and with b attached as a child.That's enough to start drawing some simple shapes.using Compose\nset_default_graphic_size(4cm, 4cm)\nset_default_jsmode(:exclude)using Compose\n\ncomposition = compose(compose(context(), rectangle()), fill(\"tomato\"))\ndraw(SVG(\"tomato.svg\", 4cm, 4cm), composition)\nnothing # hide(Image: )The last line renders the composition to specificied backend, here the SVG backend. This can also be written like composition |> SVG(\"tomato.svg\", 4cm, 4cm). Alternatively, if multiple compositions of the same size are to be generated, this can be abbreviated even further toset_default_graphic_size(4cm, 4cm)\ncomposition |> SVG(\"tomato.svg\")\ncomposition2 |> SVG(\"celery.svg\")\ncomposition3 |> SVG(\"rutabaga.svg\")  # etc..."
 },
 
 {
@@ -181,7 +181,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.text",
     "category": "Function",
-    "text": "text(xs, ys, values [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n"
+    "text": "text(x, y, value [,halign::HAlignment [,valign::VAlignment [,rot::Rotation]]])\n\nDraw the text value at the position (x,y) relative to the current context.\n\nThe default alignment of the text is hleft vbottom. The vertical and horizontal alignment is specified by passing hleft, hcenter or hright and vtop, vcenter or vbottom as values for halgin and valgin respectively.\n\n\n\n"
 },
 
 {
@@ -189,7 +189,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.text",
     "category": "Function",
-    "text": "text(x, y, value [,halign::HAlignment [,valign::VAlignment [,rot::Rotation]]])\n\nDraw the text value at the position (x,y) relative to the current context.\n\nThe default alignment of the text is hleft vbottom. The vertical and horizontal alignment is specified by passing hleft, hcenter or hright and vtop, vcenter or vbottom as values for halgin and valgin respectively.\n\n\n\n"
+    "text": "text(xs, ys, values [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n"
 },
 
 {
