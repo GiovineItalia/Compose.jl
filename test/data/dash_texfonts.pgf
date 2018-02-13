@@ -1,0 +1,51 @@
+\documentclass{minimal}
+\usepackage{pgfplots}
+
+\usepackage{amsmath}
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\begin{document}
+\begin{tikzpicture}[x=1mm,y=-1mm]
+\definecolor{mycolor000000}{rgb}{0,0,0}
+\begin{scope}
+[line width=1mm,dash pattern=on 5mm off 5mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,0) -- (101.6,0);
+\begin{scope}
+[dash pattern=on 5mm off 10mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,8.8) -- (101.6,8.8);
+\begin{scope}
+[dash pattern=on 10mm off 5mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,17.6) -- (101.6,17.6);
+\begin{scope}
+[dash pattern=on 5mm off 1mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,26.4) -- (101.6,26.4);
+\begin{scope}
+[dash pattern=on 1mm off 5mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,35.2) -- (101.6,35.2);
+\begin{scope}
+[dash pattern=on 0.9mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,43.99) -- (101.6,43.99);
+\begin{scope}
+[dash pattern=on 15mm off 10mm on 5mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,52.79) -- (101.6,52.79);
+\begin{scope}
+[dash pattern=on 15mm off 10mm on 5mm off 10mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,61.59) -- (101.6,61.59);
+\begin{scope}
+[dash pattern=on 15mm off 10mm on 5mm off 10mm on 15mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,70.39) -- (101.6,70.39);
+\begin{scope}
+[dash pattern=on 5mm off 5mm on 1mm off 5mm]
+\path [fill=mycolor000000,draw=mycolor000000]  (0,79.19) -- (101.6,79.19);
+\end{scope}
+\end{scope}
+\end{scope}
+\end{scope}
+\end{scope}
+\end{scope}
+\end{scope}
+\end{scope}
+\end{scope}
+\end{scope}
+\end{tikzpicture}
+\end{document}
