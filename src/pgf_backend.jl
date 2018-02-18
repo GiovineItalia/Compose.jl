@@ -119,13 +119,14 @@ function PGF(out::IO,
 end
 
 # Write to a file.
-PGF(filename::AbstractString, width, height, only_tikz=false; texfonts=false) =
+PGF(filename::AbstractString, width=default_graphic_width, height=default_graphic_height,
+            only_tikz=false; texfonts=false) =
         PGF(open(filename, "w"), width, height, true, only_tikz;
             texfonts = texfonts, ownedfile=true, filename=filename)
 
 # Write to buffer.
-PGF(width::MeasureOrNumber, height::MeasureOrNumber,
-             emit_on_finish::Bool=true, only_tikz=false; texfonts=false) =
+PGF(width::MeasureOrNumber=default_graphic_width, height::MeasureOrNumber=default_graphic_height,
+            emit_on_finish::Bool=true, only_tikz=false; texfonts=false) =
         PGF(IOBuffer(), width, height, emit_on_finish, only_tikz, texfonts=texfonts)
 
 function (img::PGF)(x)
