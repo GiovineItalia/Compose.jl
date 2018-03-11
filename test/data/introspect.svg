@@ -46,7 +46,9 @@
   </g>
   <g fill="#000000" id="img-e6c61b5b-6">
     <g transform="translate(63.5,73.32)">
-      <text text-anchor="middle" dy="0.35em" class="primitive">C</text>
+      <g class="primitive">
+        <text text-anchor="middle" dy="0.35em">C</text>
+      </g>
     </g>
   </g>
   <g fill="#FF6B69" id="img-e6c61b5b-7">
@@ -61,7 +63,9 @@
   </g>
   <g fill="#000000" id="img-e6c61b5b-9">
     <g transform="translate(12.7,73.32)">
-      <text text-anchor="middle" dy="0.35em" class="primitive">R</text>
+      <g class="primitive">
+        <text text-anchor="middle" dy="0.35em">R</text>
+      </g>
     </g>
   </g>
   <g fill="#F4E6D6" id="img-e6c61b5b-10">

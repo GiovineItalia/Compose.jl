@@ -347,7 +347,7 @@ const vtop    = VTop()
 const vcenter = VCenter()
 const vbottom = VBottom()
 
-immutable TextPrimitive{P<:Vec, R<:Rotation} <: FormPrimitive
+immutable TextPrimitive{P<:Vec, R<:Rotation, O<:Vec} <: FormPrimitive
     position::P
     value::AbstractString
     halign::HAlignment
@@ -356,6 +356,8 @@ immutable TextPrimitive{P<:Vec, R<:Rotation} <: FormPrimitive
     # Text forms need their own rotation field unfortunately, since there is no
     # way to give orientation with just a position point.
     rot::R
+
+    offset::O
 end
 
 @compat const Text{P<:TextPrimitive} = Form{P}
@@ -371,16 +373,20 @@ alignment is specified by passing `hleft`, `hcenter` or `hright` and `vtop`,
 """
 function text(x, y, value::AbstractString,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
-              rot=Rotation(); tag::Symbol=empty_tag)
-    prim = TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot)
-    return Text{typeof(prim)}([prim], tag)
+              rot=Rotation(), offset::Vec2=(0mm,0mm);
+              tag::Symbol=empty_tag)
+    moffset = (x_measure(offset[1]), y_measure(offset[2]))
+    prim = TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot, moffset)
+    Text{typeof(prim)}([prim], tag)
 end
 
 function text(x, y, value,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
-              rot=Rotation(); tag::Symbol=empty_tag)
-    prim = TextPrimitive((x_measure(x), y_measure(y)), string(value), halign, valign, rot)
-    return Text{typeof(prim)}([prim], tag)
+              rot=Rotation(), offset::Vec2=(0mm,0mm);
+              tag::Symbol=empty_tag)
+    moffset = (x_measure(offset[1]), y_measure(offset[2]))
+    prim = TextPrimitive((x_measure(x), y_measure(y)), string(value), halign, valign, rot, moffset)
+    Text{typeof(prim)}([prim], tag)
 end
 
 """
@@ -390,22 +396,23 @@ Arguments can be passed in arrays in order to perform multiple drawing operation
 """
 text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray{AbstractString},
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
-              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag) =
-    @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-        TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot) tag
+              rots::AbstractArray=[Rotation()], offsets::AbstractArray=[(0mm,0mm)];
+              tag::Symbol=empty_tag) =
+    @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots, offset in offsets),
+        TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot, (x_measure(offset[1]), y_measure(offset[2]))) tag
 
 text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
               haligns::AbstractArray=[hleft], valigns::AbstractArray=[vbottom],
-              rots::AbstractArray=[Rotation()]; tag::Symbol=empty_tag) =
-    @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots),
-        TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot) tag
+              rots::AbstractArray=[Rotation()], offsets::AbstractArray=[(0mm,0mm)];
+              tag::Symbol=empty_tag) =
+    @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots, offset in offsets),
+        TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot, (x_measure(offset[1]), y_measure(offset[2]))) tag
 
-function resolve{P, R}(box::AbsoluteBox, units::UnitBox, t::Transform,
-                       p::TextPrimitive{P, R})
+function resolve{P,R,O}(box::AbsoluteBox, units::UnitBox, t::Transform, p::TextPrimitive{P,R,O})
     rot = resolve(box, units, t, p.rot)
-    return TextPrimitive{AbsoluteVec2, typeof(rot)}(
+    return TextPrimitive{AbsoluteVec2, typeof(rot), O}(
                 resolve(box, units, t, p.position),
-                p.value, p.halign, p.valign, rot)
+                p.value, p.halign, p.valign, rot, p.offset)
 end
 
 function boundingbox(form::TextPrimitive, linewidth::Measure,
@@ -429,8 +436,8 @@ function boundingbox(form::TextPrimitive, linewidth::Measure,
         y0 = form.position.y
     end
 
-    return BoundingBox(x0 - linewidth,
-                       y0 - linewidth,
+    return BoundingBox(x0 - linewidth + form.offset[1],
+                       y0 - linewidth + form.offset[2],
                        width + linewidth,
                        height + linewidth)
 end

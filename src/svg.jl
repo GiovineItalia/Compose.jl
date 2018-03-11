@@ -927,6 +927,9 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
     print(img.out, ">\n")
     indent(img)
 
+    print(img.out, "<g class=\"primitive\">\n")
+    img.indentation += 1
+    indent(img)
     print(img.out, "<text")
 
     if prim.halign === hcenter
@@ -946,20 +949,33 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
         #print(img.out, " style=\"dominant-baseline:text-before-edge\"")
     end
 
-    if abs(prim.rot.theta) > 1e-4
-        print(img.out, " transform=\"rotate(")
-        svg_print_float(img.out, rad2deg(prim.rot.theta))
-        print(img.out, ", ")
-        svg_print_float(img.out, prim.rot.offset[1].value-prim.position[1].value)
-        print(img.out, ", ")
-        svg_print_float(img.out, prim.rot.offset[2].value-prim.position[2].value)
-        print(img.out, ")\"")
+    if abs(prim.rot.theta) > 1e-4 || sum(abs.(prim.offset)) > 1e-4mm
+        print(img.out, " transform=\"")
+        if abs(prim.rot.theta) > 1e-4
+            print(img.out, "rotate(")
+            svg_print_float(img.out, rad2deg(prim.rot.theta))
+            print(img.out, ",")
+            svg_print_float(img.out, prim.rot.offset[1].value-prim.position[1].value)
+            print(img.out, ", ")
+            svg_print_float(img.out, prim.rot.offset[2].value-prim.position[2].value)
+            print(img.out, ")")
+        end
+        if sum(abs.(prim.offset)) > 1e-4mm
+            print(img.out, "translate(")
+            svg_print_float(img.out, prim.offset[1].value)
+            print(img.out, ",")
+            svg_print_float(img.out, prim.offset[2].value)
+            print(img.out, ")")
+        end
+        print(img.out, "\"")
     end
-    print(img.out, " class=\"primitive\"")
 
     @printf(img.out, ">%s</text>\n",
             svg_newlines(pango_to_svg(prim.value), prim.position[1].value))
 
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
     img.indentation -= 1
     indent(img)
     print(img.out, "</g>\n")
