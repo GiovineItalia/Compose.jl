@@ -10,11 +10,17 @@
 
      id="img-7c17cb36">
 <g fill="#000000" fill-opacity="0.000" stroke-width="2" stroke="#000000" stroke-linejoin="round" id="img-7c17cb36-1">
-  <path fill="none" d="M5,5 L 10 10 15 5"/>
+  <g transform="translate(10,6.67)">
+    <path fill="none" d="M-5,-1.67 L 0 3.33 5 -1.67" class="primitive"/>
+  </g>
   <g stroke-linejoin="miter" id="img-7c17cb36-2">
-    <path fill="none" d="M5,10 L 10 15 15 10"/>
+    <g transform="translate(10,11.67)">
+      <path fill="none" d="M-5,-1.67 L 0 3.33 5 -1.67" class="primitive"/>
+    </g>
     <g stroke-linejoin="bevel" id="img-7c17cb36-3">
-      <path fill="none" d="M5,15 L 10 20 15 15"/>
+      <g transform="translate(10,16.67)">
+        <path fill="none" d="M-5,-1.67 L 0 3.33 5 -1.67" class="primitive"/>
+      </g>
     </g>
   </g>
 </g>

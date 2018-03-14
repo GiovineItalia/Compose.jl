@@ -9,25 +9,45 @@
      font-size="3.88"
 >
 <g stroke-width="0.2" stroke="#FFFFFF" fill="#000000" fill-opacity="0.000" id="img-e6c61b5b-1">
-  <rect x="0" y="0" width="123.29" height="76.2"/>
+  <g transform="translate(61.65,38.1)">
+    <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+  </g>
   <g fill="#CDD3FF" id="img-e6c61b5b-2">
-    <rect x="0" y="0" width="123.29" height="76.2"/>
+    <g transform="translate(61.65,38.1)">
+      <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+    </g>
     <g fill="#FFC3FF" id="img-e6c61b5b-3">
-      <rect x="0" y="0" width="123.29" height="76.2"/>
+      <g transform="translate(61.65,38.1)">
+        <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+      </g>
       <g fill="#FFB3FF" id="img-e6c61b5b-4">
-        <rect x="0" y="0" width="123.29" height="76.2"/>
+        <g transform="translate(61.65,38.1)">
+          <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+        </g>
         <g fill="#FFA5FF" id="img-e6c61b5b-5">
-          <rect x="0" y="0" width="123.29" height="76.2"/>
+          <g transform="translate(61.65,38.1)">
+            <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+          </g>
           <g fill="#FF9CF3" id="img-e6c61b5b-6">
-            <rect x="0" y="0" width="123.29" height="76.2"/>
+            <g transform="translate(61.65,38.1)">
+              <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+            </g>
             <g fill="#FF9BCC" id="img-e6c61b5b-7">
-              <rect x="0" y="0" width="123.29" height="76.2"/>
+              <g transform="translate(61.65,38.1)">
+                <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+              </g>
               <g fill="#FFA1A6" id="img-e6c61b5b-8">
-                <rect x="0" y="0" width="123.29" height="76.2"/>
+                <g transform="translate(61.65,38.1)">
+                  <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+                </g>
                 <g fill="#FFAD84" id="img-e6c61b5b-9">
-                  <rect x="0" y="0" width="123.29" height="76.2"/>
+                  <g transform="translate(61.65,38.1)">
+                    <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+                  </g>
                   <g fill="#FFBC65" id="img-e6c61b5b-10">
-                    <rect x="0" y="0" width="123.29" height="76.2"/>
+                    <g transform="translate(61.65,38.1)">
+                      <path d="M-61.65,-38.1 L 61.65 -38.1 61.65 38.1 -61.65 38.1 z" class="primitive"/>
+                    </g>
                   </g>
                 </g>
               </g>
