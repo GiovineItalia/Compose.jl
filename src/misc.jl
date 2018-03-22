@@ -1,4 +1,4 @@
-iszero{T}(x::T) = x == zero(T)
+iszero(x::T) where T = x == zero(T)
 
 Maybe(T::Type) = Union{T,Void}
 
@@ -117,11 +117,10 @@ macro makeprimitives(args)
 end
 
 
-narrow_polygon_point_types{XM <: Measure, YM <: Measure}(
-            point_arrays::AbstractArray{Vector{Tuple{XM, YM}}}) = (XM, YM)
+narrow_polygon_point_types(point_arrays::AbstractArray{Vector{Tuple{XM, YM}}}) where {XM <: Measure, YM <: Measure} = (XM, YM)
 
-type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (Any, Any)
-type_params{XM <: Measure, YM <: Measure}(p::Type{Tuple{XM, YM}}) = (XM, YM)
+type_params(p::Type{Tuple{XM, YM}}) where {XM, YM} = (Any, Any)
+type_params(p::Type{Tuple{XM, YM}}) where {XM <: Measure, YM <: Measure} = (XM, YM)
 type_params(p::Type{Union{}}) = (Any, Any)
 
 function narrow_polygon_point_types(point_arrays::AbstractArray)
@@ -136,8 +135,8 @@ function narrow_polygon_point_types(point_arrays::AbstractArray)
     end
 end
 
-function narrow_polygon_point_types{P <: Tuple}(ring_arrays::Vector{Vector{Vector{P}}})
-    type_params{XM, YM}(p::Type{Tuple{XM, YM}}) = (XM, YM)
+function narrow_polygon_point_types(ring_arrays::Vector{Vector{Vector{P}}}) where P <: Tuple
+    type_params(p::Type{Tuple{XM, YM}}) where {XM, YM} = (XM, YM)
 
     xm = nothing
     ym = nothing
@@ -161,47 +160,47 @@ end
 
 # Hacks to make Dates time work as coordinates
 
-if !method_exists(/, (Dates.Day, Dates.Day))
+if !hasmethod(/, (Dates.Day, Dates.Day))
     /(a::Dates.Day, b::Dates.Day) = a.value / b.value
 end
 
-if !method_exists(/, (Dates.Day, Real))
+if !hasmethod(/, (Dates.Day, Real))
     /(a::Dates.Day, b::Real) = Dates.Day(round(Int64, (a.value / b)))
 end
 /(a::Dates.Day, b::AbstractFloat) = convert(Dates.Millisecond, a) / b
 
-if !method_exists(/, (Dates.Millisecond, Dates.Millisecond))
+if !hasmethod(/, (Dates.Millisecond, Dates.Millisecond))
     /(a::Dates.Millisecond, b::Dates.Millisecond) = a.value / b.value
 end
 
-if !method_exists(/, (Dates.Millisecond, Real))
+if !hasmethod(/, (Dates.Millisecond, Real))
     /(a::Dates.Millisecond, b::Real) = Dates.Millisecond(round(Int64, (a.value / b)))
 end
 /(a::Dates.Millisecond, b::AbstractFloat) = Dates.Millisecond(round(Int64, (a.value / b)))
 
 
-if !method_exists(-, (Dates.Date, Dates.DateTime))
+if !hasmethod(-, (Dates.Date, Dates.DateTime))
     -(a::Dates.Date, b::Dates.DateTime) = convert(Dates.DateTime, a) - b
 end
 
 +(a::Dates.Date, b::Dates.Millisecond) = convert(Dates.DateTime, a) + b
 
-if !method_exists(-, (Dates.DateTime, Dates.Date))
+if !hasmethod(-, (Dates.DateTime, Dates.Date))
     -(a::Dates.DateTime, b::Dates.Date) = a - convert(Dates.DateTime, b)
 end
 
 
-if !method_exists(/, (Dates.Day, Dates.Millisecond))
+if !hasmethod(/, (Dates.Day, Dates.Millisecond))
     /(a::Dates.Day, b::Dates.Millisecond) = convert(Dates.Millisecond, a) / b
 end
 
-if !method_exists(/, (Dates.Millisecond, Dates.Day))
-    /(a::Dates.Millisecond, b::Dates.Day) = a / convert(Dates.Millisecond, b) 
+if !hasmethod(/, (Dates.Millisecond, Dates.Day))
+    /(a::Dates.Millisecond, b::Dates.Day) = a / convert(Dates.Millisecond, b)
 end
 
 
 for T in [Dates.Hour, Dates.Minute, Dates.Second, Dates.Millisecond]
-    if !method_exists(-, (Dates.Date, T))
+    if !hasmethod(-, (Dates.Date, T))
         @eval begin
             -(a::Dates.Date, b::$(T)) = convert(Dates.DateTime, a) - b
         end

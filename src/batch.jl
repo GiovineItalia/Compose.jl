@@ -10,7 +10,7 @@ Batching is an optimization transform that happens at draw time. There's
 currently no mechanism to manually batch. E.g. contexts cannot have FormBatch
 children.
 """
-immutable FormBatch{P <: FormPrimitive}
+struct FormBatch{P <: FormPrimitive}
     primitive::P
     offsets::Vector{AbsoluteVec2}
 end

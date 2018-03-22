@@ -7,6 +7,7 @@ using IterTools
 using DataStructures
 using Compat
 using Measures
+using Compat.Dates
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!,
@@ -69,7 +70,7 @@ include("list.jl")
 @compat abstract type ComposeNode end
 
 # Used to mark null child pointers
-immutable NullNode <: ComposeNode end
+struct NullNode <: ComposeNode end
 nullnode = NullNode()
 
 include("form.jl")

@@ -2,7 +2,7 @@
 
 @compat abstract type List{T} end
 
-immutable ListNull{T} <: List{T} end
+struct ListNull{T} <: List{T} end
 
 copy{T}(l::ListNull{T}) = l
 

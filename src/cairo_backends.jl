@@ -226,7 +226,7 @@ function finish{B<:ImageBackend}(img::Image{B})
 
     img.finished = true
     img.emit_on_finish && typeof(img.out) == IOBuffer && display(img)
-    method_exists(flush, (typeof(img.out),)) && flush(img.out)
+    hasmethod(flush, (typeof(img.out),)) && flush(img.out)
     img.ownedfile && close(img.out)
 end
 

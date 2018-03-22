@@ -231,7 +231,7 @@ end
 @compat abstract type ContainerPromise <: Container end
 
 # This information is passed to a container promise at drawtime.
-immutable ParentDrawContext
+struct ParentDrawContext
     t::Transform
     units::UnitBox
     box::Absolute2DBox
@@ -334,7 +334,7 @@ end
 
 register_coords(backend::Backend, box, units, transform, form) = nothing
 
-immutable DrawState
+struct DrawState
     pop_poperty::Bool
     container::Container
     parent_transform::Transform

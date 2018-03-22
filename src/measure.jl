@@ -107,7 +107,7 @@ end
 # The same type-signature is used for a box used to assign
 # a custom coordinate system to a canvas.
 
-immutable UnitBox{S,T,U,V}
+struct UnitBox{S,T,U,V}
     x0::S
     y0::T
     width::U
@@ -171,10 +171,10 @@ hasunits(T::Type, x::Measures.BinaryOp) = hasunits(T, x.a) || hasunits(T, x.b)
 
 @compat abstract type Transform end
 
-immutable IdentityTransform <: Transform
+struct IdentityTransform <: Transform
 end
 
-immutable MatrixTransform <: Transform
+struct MatrixTransform <: Transform
     M::Matrix{Float64}
 end
 
@@ -184,7 +184,7 @@ combine(a::MatrixTransform, b::IdentityTransform) = a
 combine(a::MatrixTransform, b::MatrixTransform) = MatrixTransform(a.M * b.M)
 
 # Rotation about a point.
-immutable Rotation{P <: Vec}
+struct Rotation{P <: Vec}
     theta::Float64
     offset::P
 end
@@ -213,7 +213,7 @@ function convert(::Type{Transform}, rot::Rotation)
 end
 
 # Mirror about a point at a given angle
-type Mirror
+mutable struct Mirror
     theta::Float64
     point::Vec
 end
