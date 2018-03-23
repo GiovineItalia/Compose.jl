@@ -4,14 +4,14 @@
 
 struct ListNull{T} <: List{T} end
 
-copy{T}(l::ListNull{T}) = l
+copy(l::ListNull{T}) where {T} = l
 
-type ListNode{T} <: List{T}
+mutable struct ListNode{T} <: List{T}
     head::T
     tail::List{T}
 end
 
-copy{T}(l::ListNode{T}) = ListNode{T}(l.head, l.tail)
+copy(l::ListNode{T}) where {T} = ListNode{T}(l.head, l.tail)
 
 head(l::ListNode) = l.head
 tail(l::ListNode) = l.tail
@@ -20,9 +20,9 @@ tail(l::ListNode) = l.tail
 start(l::List) = l
 next(::List, l::List) = (l.head, l.tail)
 done(::List, l::List) = typeof(l) <: ListNull
-cons{T}(value, l::List{T}) = ListNode{T}(value, l)
+cons(value, l::List{T}) where T = ListNode{T}(value, l)
 
-function length{T}(l::List{T})
+function length(l::List{T}) where T
     n = 0
     while typeof(l) != ListNull{T}
         n += 1
@@ -31,7 +31,7 @@ function length{T}(l::List{T})
     n
 end
 
-function cat{T}(a::List{T}, b::List{T})
+function cat(a::List{T}, b::List{T}) where T
     if a === nothing
         b
     else
@@ -46,7 +46,7 @@ function cat{T}(a::List{T}, b::List{T})
     end
 end
 
-function show{T}(io::IO, a::List{T})
+function show(io::IO, a::List{T}) where T
     print(io, "List([")
     while typeof(a) != ListNull{T}
         print(io, a.head)

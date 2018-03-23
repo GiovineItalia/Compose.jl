@@ -7,12 +7,15 @@ using IterTools
 using DataStructures
 using Compat
 using Measures
-using Compat.Dates
 import JSON
 
 import Base: length, start, next, done, isempty, getindex, setindex!,
     display, show, showcompact, convert, zero, isless, max, fill, size, copy,
     min, max, abs, +, -, *, /, ==
+
+using Compat.Dates
+using Compat.Printf
+using Compat.Pkg
 
 import Measures: resolve, w, h
 

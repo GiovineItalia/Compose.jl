@@ -6,8 +6,8 @@ using Measures: Add, Min, Max, Div, Mul, Neg
 const cx = Length{:cx}
 const cy = Length{:cy}
 
-*{T}(a::T, b::Type{cx}) = x_measure(a)
-*{T}(a::T, b::Type{cy}) = y_measure(a)
+*(a::T, b::Type{cx}) where T = x_measure(a)
+*(a::T, b::Type{cy}) where T = y_measure(a)
 
 # Pixels are not typically used in Compose in preference of absolute
 # measurements or measurements relative to parent canvases. So for the
@@ -25,14 +25,14 @@ const XYTupleOrVec = Union{Tuple{MeasureOrNumber,MeasureOrNumber}, Vec}
 # --------------------------
 
 # Compute the length of the given type.
-sum_component{T <: Length}(::Type{T}, l) = 0.0
-sum_component{T <: Length}(::Type{T}, l::T) = l.value
-sum_component{T <: Length}(::Type{T}, l::Add) = sum_component(T, l.a) + sum_component(T, l.b)
+sum_component(::Type{T}, l) where T <: Length = 0.0
+sum_component(::Type{T}, l::T) where T <: Length = l.value
+sum_component(::Type{T}, l::Add) where T <: Length = sum_component(T, l.a) + sum_component(T, l.b)
 
 # Scale a length component by some factor.
-scale_component{T <: Length}(::Type{T}, scale, l) = l
-scale_component{T <: Length}(::Type{T}, scale, l::T) = T(scale * l.value)
-scale_component{T <: Length}(::Type{T}, scale, l::Add) =
+scale_component(::Type{T}, scale, l) where T <: Length = l
+scale_component(::Type{T}, scale, l::T) where T <: Length = T(scale * l.value)
+scale_component(::Type{T}, scale, l::Add) where T <: Length =
         scale_component(T, scale, l.a) + scale_component(T, scale, l.b)
 
 
@@ -40,15 +40,15 @@ scale_component{T <: Length}(::Type{T}, scale, l::Add) =
 # ------------------------------
 
 x_measure(a::Measure) = a
-x_measure{T}(a::T) = Length{:cx, T}(a)
+x_measure(a::T) where T = Length{:cx, T}(a)
 
 y_measure(a::Measure) = a
-y_measure{T}(a::T) = Length{:cy, T}(a)
+y_measure(a::T) where T = Length{:cy, T}(a)
 
-x_measure{T<:Measure}(a::Vector{T}) = a
+x_measure(a::Vector{T}) where T <: Measure = a
 x_measure(a::Vector) = Measure[x_measure(x) for x in a]
 
-y_measure{T<:Measure}(a::Vector{T}) = a
+y_measure(a::Vector{T}) where T <: Measure = a
 y_measure(a::Vector) = Measure[y_measure(y) for y in a]
 
 size_measure(a::Measure) = a
@@ -130,7 +130,7 @@ end
 
 UnitBox() = UnitBox(0.0, 0.0, 1.0, 1.0)
 
-const NullUnitBox = Nullable{UnitBox}
+@compat const NullUnitBox = Union{UnitBox, Nothing}
 
 # copy with substitution
 UnitBox(units::UnitBox;
@@ -157,10 +157,10 @@ Measures.height(units::UnitBox) = units.height
 ispadded(units::UnitBox) = units.leftpad != 0mm || units.rightpad != 0mm ||
         units.toppad != 0mm || units.bottompad != 0mm
 
-isxflipped{S, T, U, V}(units::UnitBox{S, T, U, V}) = units.width < zero(U)
-isyflipped{S, T, U, V}(units::UnitBox{S, T, U, V}) = units.height < zero(V)
+isxflipped(units::UnitBox{S, T, U, V}) where {S, T, U, V} = units.width < zero(U)
+isyflipped(units::UnitBox{S, T, U, V}) where {S, T, U, V} = units.height < zero(V)
 hasunits(::Type, x::Measure) = false
-hasunits{u, T}(::Type{Length{u}}, x::Length{u, T}) = true
+hasunits(::Type{Length{u}}, x::Length{u, T}) where {u, T} = true
 hasunits(T::Type, x::Measures.BinaryOp) = hasunits(T, x.a) || hasunits(T, x.b)
 
 

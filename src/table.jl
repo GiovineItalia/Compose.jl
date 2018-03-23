@@ -1,6 +1,6 @@
 # A special kind of container promise that performs table layout optimization.
 
-type Table <: ContainerPromise
+mutable struct Table <: ContainerPromise
     # Direct children must be Contexts, and not just Containers. If
     # children[i,j] has a vector with multiple children it indicates multiple
     # possible layouts for that cell in the table.
@@ -14,17 +14,17 @@ type Table <: ContainerPromise
 
     # If non-nothing, constrain the focused cells to have a proportional
     # relationship.
-    x_prop::Union{(Void), Vector{Float64}}
-    y_prop::Union{(Void), Vector{Float64}}
+    @compat x_prop::Union{Vector{Float64}, Nothing}
+    @compat y_prop::Union{Vector{Float64}, Nothing}
 
     # If non-nothing, constrain the focused cells to have a fixed aspect ratio.
-    aspect_ratio::Union{(Void), Float64}
+    @compat aspect_ratio::Union{Float64, Nothing}
 
     # fixed configuration
     fixed_configs::Vector
 
     # Coordinate system used for children
-    units::Nullable{UnitBox}
+    @compat units::Union{UnitBox, Nothing}
 
     # Z-order of this context relative to its siblings.
     order::Int

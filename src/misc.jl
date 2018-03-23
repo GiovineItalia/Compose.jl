@@ -1,6 +1,6 @@
 iszero(x::T) where T = x == zero(T)
 
-Maybe(T::Type) = Union{T,Void}
+Maybe(T::Type) = @compat Union{T, Nothing}
 
 function in_expr_args(ex::Expr)
     ex.head === :in && return ex.args[1], ex.args[2]
