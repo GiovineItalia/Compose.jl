@@ -1,6 +1,6 @@
 # A form is something that ends up as geometry in the graphic.
 
-@compat abstract type FormPrimitive end
+abstract type FormPrimitive end
 
 const empty_tag = Symbol("")
 
@@ -8,7 +8,7 @@ struct Form{P <: FormPrimitive} <: ComposeNode
     primitives::Vector{P}
     tag::Symbol
 
-    (::Type{Form{P}})(prim, tag::Symbol=empty_tag) where P = new{P}(prim, tag)
+    Form{P}(prim, tag::Symbol=empty_tag) where P = new{P}(prim, tag)
 end
 
 Form(primitives::Vector{P}, tag::Symbol=empty_tag) where P <: FormPrimitive =
@@ -33,7 +33,7 @@ struct SimplePolygonPrimitive{P <: Vec} <: FormPrimitive
     points::Vector{P}
 end
 
-@compat const SimplePolygon{P<:SimplePolygonPrimitive} = Form{P}
+const SimplePolygon{P<:SimplePolygonPrimitive} = Form{P}
 
 const Polygon = SimplePolygon
 const PolygonPrimitive = SimplePolygonPrimitive
@@ -95,7 +95,7 @@ struct ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
     rings::Vector{Vector{P}}
 end
 
-@compat const ComplexPolygon{P<:ComplexPolygonPrimitive} = Form{P}
+const ComplexPolygon{P<:ComplexPolygonPrimitive} = Form{P}
 
 complexpolygon() = ComplexPolygon([ComplexPolygonPrimitive(Vec[])])
 
@@ -139,7 +139,7 @@ struct RectanglePrimitive{P <: Vec, M1 <: Measure, M2 <: Measure} <: FormPrimiti
     height::M2
 end
 
-@compat const Rectangle{P<:RectanglePrimitive} = Form{P}
+const Rectangle{P<:RectanglePrimitive} = Form{P}
 
 """
     rectangle()
@@ -220,7 +220,7 @@ end
 CirclePrimitive(center::P, radius::M) where {P, M} = CirclePrimitive{P, M}(center, radius)
 CirclePrimitive(x, y, r) = CirclePrimitive((x_measure(x), y_measure(y)), x_measure(r))
 
-@compat const Circle{P<:CirclePrimitive} = Form{P}
+const Circle{P<:CirclePrimitive} = Form{P}
 
 """
     circle()
@@ -279,7 +279,7 @@ struct EllipsePrimitive{P1<:Vec, P2<:Vec, P3<:Vec} <: FormPrimitive
     y_point::P3
 end
 
-@compat const Ellipse{P<:EllipsePrimitive} = Form{P}
+const Ellipse{P<:EllipsePrimitive} = Form{P}
 
 function ellipse()
     prim = EllipsePrimitive((0.5w, 0.5h),
@@ -330,7 +330,7 @@ form_string(::Ellipse) = "E"
 # Text
 # ----
 
-@compat abstract type HAlignment end
+abstract type HAlignment end
 struct HLeft   <: HAlignment end
 struct HCenter <: HAlignment end
 struct HRight  <: HAlignment end
@@ -339,7 +339,7 @@ const hleft   = HLeft()
 const hcenter = HCenter()
 const hright  = HRight()
 
-@compat abstract type VAlignment end
+abstract type VAlignment end
 struct VTop    <: VAlignment end
 struct VCenter <: VAlignment end
 struct VBottom <: VAlignment end
@@ -361,7 +361,7 @@ struct TextPrimitive{P<:Vec, R<:Rotation, O<:Vec} <: FormPrimitive
     offset::O
 end
 
-@compat const Text{P<:TextPrimitive} = Form{P}
+const Text{P<:TextPrimitive} = Form{P}
 
 """
     text(x, y, value [,halign::HAlignment [,valign::VAlignment [,rot::Rotation]]])
@@ -452,7 +452,7 @@ struct LinePrimitive{P<:Vec} <: FormPrimitive
     points::Vector{P}
 end
 
-@compat const Line{P<:LinePrimitive} = Form{P}
+const Line{P<:LinePrimitive} = Form{P}
 
 function line()
     prim = LinePrimitive(Vec[])
@@ -508,7 +508,7 @@ struct CurvePrimitive{P1<:Vec, P2<:Vec, P3<:Vec, P4<:Vec} <: FormPrimitive
     anchor1::P4
 end
 
-@compat const Curve{P<:CurvePrimitive} = Form{P}
+const Curve{P<:CurvePrimitive} = Form{P}
 
 function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
                ctrl1::XYTupleOrVec, anchor1::XYTupleOrVec, tag=empty_tag)
@@ -547,7 +547,7 @@ struct BitmapPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimitive
     height::YM
 end
 
-@compat const Bitmap{P<:BitmapPrimitive} = Form{P}
+const Bitmap{P<:BitmapPrimitive} = Form{P}
 
 function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height, tag=empty_tag)
     corner = (x_measure(x0), y_measure(y0))
@@ -580,7 +580,7 @@ form_string(::Bitmap) = "B"
 
 # An implementation of the SVG path mini-language.
 
-@compat abstract type PathOp end
+abstract type PathOp end
 
 struct MoveAbsPathOp <: PathOp
     to::Vec

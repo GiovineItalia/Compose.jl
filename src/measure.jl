@@ -130,7 +130,7 @@ end
 
 UnitBox() = UnitBox(0.0, 0.0, 1.0, 1.0)
 
-@compat const NullUnitBox = Union{UnitBox, Nothing}
+const NullUnitBox = Union{UnitBox, Nothing}
 
 # copy with substitution
 UnitBox(units::UnitBox;
@@ -169,7 +169,7 @@ hasunits(T::Type, x::Measures.BinaryOp) = hasunits(T, x.a) || hasunits(T, x.b)
 
 # Transform matrix in absolute coordinates
 
-@compat abstract type Transform end
+abstract type Transform end
 
 struct IdentityTransform <: Transform
 end

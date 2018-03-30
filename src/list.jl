@@ -1,6 +1,6 @@
 # Basic list
 
-@compat abstract type List{T} end
+abstract type List{T} end
 
 struct ListNull{T} <: List{T} end
 

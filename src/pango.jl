@@ -52,7 +52,7 @@ let available_font_families = Set{AbstractString}()
 end
 
 # Thin wrapper for a pango_layout object.
-type PangoLayout
+mutable struct PangoLayout
     layout::Ptr{Void}
 end
 
@@ -180,7 +180,7 @@ const PANGO_WEIGHT_HEAVY = 900
 const PANGO_WEIGHT_ULTRAHEAVY = 1000
 
 # A Julia manifestation of a set of pango attributes
-type PangoAttr
+mutable struct PangoAttr
     rise::Maybe(Int)
     scale::Maybe(Float64)
     style::Maybe(Int)

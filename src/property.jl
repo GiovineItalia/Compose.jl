@@ -1,4 +1,4 @@
-@compat abstract type PropertyPrimitive end
+abstract type PropertyPrimitive end
 
 # Meaningless isless function used to sort in optimize_batching
 function Base.isless(a::T, b::T) where T <: PropertyPrimitive
@@ -51,7 +51,7 @@ end
 
 const Stroke = Property{StrokePrimitive}
 
-stroke(@compat c::Nothing) = Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
+stroke(c::Nothing) = Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
 stroke(c::Union{Colorant, AbstractString}) = Stroke([StrokePrimitive(parse_colorant(c))])
 stroke(cs::AbstractArray) = Stroke([StrokePrimitive(c == nothing ?
         RGBA{Float64}(0, 0, 0, 0) : parse_colorant(c)) for c in cs])
@@ -68,7 +68,7 @@ end
 
 const Fill = Property{FillPrimitive}
 
-fill(@compat c::Nothing) = Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
+fill(c::Nothing) = Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
 fill(c::Union{Colorant, AbstractString}) = Fill([FillPrimitive(parse_colorant(c))])
 fill(cs::AbstractArray) = Fill([FillPrimitive(c == nothing ?
         RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs])
@@ -98,7 +98,7 @@ prop_string(::StrokeDash) = "sd"
 # StrokeLineCap
 # -------------
 
-@compat abstract type LineCap end
+abstract type LineCap end
 struct LineCapButt <: LineCap end
 struct LineCapSquare <: LineCap end
 struct LineCapRound <: LineCap end
@@ -122,7 +122,7 @@ prop_string(::StrokeLineCap) = "slc"
 # StrokeLineJoin
 # --------------
 
-@compat abstract type LineJoin end
+abstract type LineJoin end
 struct LineJoinMiter <: LineJoin end
 struct LineJoinRound <: LineJoin end
 struct LineJoinBevel <: LineJoin end
@@ -395,7 +395,7 @@ end
 
 struct JSIncludePrimitive <: PropertyPrimitive
     value::AbstractString
-    @compat jsmodule::Union{Nothing, Tuple{AbstractString, AbstractString}}
+    jsmodule::Union{Nothing, Tuple{AbstractString, AbstractString}}
 end
 
 const JSInclude = Property{JSIncludePrimitive}

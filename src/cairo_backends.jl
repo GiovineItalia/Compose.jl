@@ -7,14 +7,14 @@ using Cairo: CairoContext, CairoSurface, CairoARGBSurface,
              CairoEPSSurface, CairoPDFSurface, CairoSVGSurface,
              CairoImageSurface
 
-@compat abstract type ImageBackend end
-@compat abstract type PNGBackend <: ImageBackend end
+abstract type ImageBackend end
+abstract type PNGBackend <: ImageBackend end
 
-@compat abstract type VectorImageBackend <: ImageBackend end
-@compat abstract type SVGBackend <: VectorImageBackend end
-@compat abstract type PDFBackend <: VectorImageBackend end
-@compat abstract type PSBackend  <: VectorImageBackend end
-@compat abstract type CairoBackend <: VectorImageBackend end
+abstract type VectorImageBackend <: ImageBackend end
+abstract type SVGBackend <: VectorImageBackend end
+abstract type PDFBackend <: VectorImageBackend end
+abstract type PSBackend  <: VectorImageBackend end
+abstract type CairoBackend <: VectorImageBackend end
 
 mutable struct ImagePropertyState
     stroke::RGBA{Float64}
@@ -87,7 +87,7 @@ mutable struct Image{B<:ImageBackend} <: Backend
     last_ctrl2_point::Nullable{AbsoluteVec2}
 end
 
-function (::Type{Image{B}}){B<:ImageBackend}(surface::CairoSurface,
+function Image{B}(surface::CairoSurface,
                ctx::CairoContext,
                out::IO;
 
@@ -115,7 +115,7 @@ function (::Type{Image{B}}){B<:ImageBackend}(surface::CairoSurface,
                emit_on_finish = false,
                ppmm = 72 / 25.4,
                last_ctrl1_point = Nullable{AbsoluteVec2}(),
-               last_ctrl2_point = Nullable{AbsoluteVec2}())
+               last_ctrl2_point = Nullable{AbsoluteVec2}()) where B<:ImageBackend
 
     Image{B}(out,
           surface,
@@ -145,17 +145,17 @@ function (::Type{Image{B}}){B<:ImageBackend}(surface::CairoSurface,
           last_ctrl2_point)
 end
 
-(::Type{Image{B}}){B<:ImageBackend}(surface::CairoSurface, ctx::CairoContext) =
+Image{B}(surface::CairoSurface, ctx::CairoContext) where {B<:ImageBackend} =
         Image{B}(surface, ctx, IOBuffer())
-(::Type{Image{B}}){B<:ImageBackend}(surface::CairoSurface) =
+Image{B}(surface::CairoSurface) where {B<:ImageBackend} =
         Image{B}(surface, CairoContext(surface))
 
-function (::Type{Image{B}}){B<:ImageBackend}(out::IO,
+function Image{B}(out::IO,
             width::MeasureOrNumber=default_graphic_width,
             height::MeasureOrNumber=default_graphic_height,
             emit_on_finish::Bool=true;
             dpi = (B==PNGBackend ? 96 : 72),
-            kwargs...)
+            kwargs...) where B<:ImageBackend
     width = size_measure(width)
     height = size_measure(height)
 
@@ -173,16 +173,16 @@ function (::Type{Image{B}}){B<:ImageBackend}(out::IO,
                 kwargs...)
 end
 
-(::Type{Image{B}}){B<:ImageBackend}(filename::AbstractString,
+Image{B}(filename::AbstractString,
             width::MeasureOrNumber=default_graphic_width,
             height::MeasureOrNumber=default_graphic_height;
-            dpi = (B==PNGBackend ? 96 : 72)) =
+            dpi = (B==PNGBackend ? 96 : 72)) where {B<:ImageBackend} =
         Image{B}(open(filename, "w"), width, height, dpi=dpi; ownedfile=true, filename=filename)
 
-(::Type{Image{B}}){B<:ImageBackend}(width::MeasureOrNumber=default_graphic_width,
+Image{B}(width::MeasureOrNumber=default_graphic_width,
             height::MeasureOrNumber=default_graphic_height,
             emit_on_finish::Bool=true;
-            dpi = (B==PNGBackend ? 96 : 72)) =
+            dpi = (B==PNGBackend ? 96 : 72)) where {B<:ImageBackend} =
         Image{B}(IOBuffer(), width, height, emit_on_finish, dpi=dpi)
 
 const PNG = Image{PNGBackend}
@@ -214,10 +214,10 @@ Measures.height(img::Image) = (Cairo.height(img.surface) / img.ppmm) * mm
 iswithjs(img::Image) = false
 iswithousjs(img::Image) = true
 
-finish{B<:ImageBackend}(::Type{B}, img::Image) = nothing
+finish(::Type{B}, img::Image) where {B<:ImageBackend} = nothing
 finish(::Type{PNGBackend}, img::Image) = Cairo.write_to_png(img.surface, img.out)
 
-function finish{B<:ImageBackend}(img::Image{B})
+function finish(img::Image{B}) where B<:ImageBackend
     img.finished && return
 
     img.owns_surface && Cairo.destroy(img.ctx)
@@ -230,7 +230,7 @@ function finish{B<:ImageBackend}(img::Image{B})
     img.ownedfile && close(img.out)
 end
 
-function newsurface{B}(::Type{B}, out, width, height)
+function newsurface(::Type{B}, out, width, height) where B
     local surface::CairoSurface
     if B == SVGBackend
         surface = CairoSVGSurface(out, width, height)
@@ -251,7 +251,7 @@ function newsurface{B}(::Type{B}, out, width, height)
     surface
 end
 
-function reset{B}(img::Image{B})
+function reset(img::Image{B}) where B
     img.owns_surface ||
             error("Backend can't be reused since an external cairo surface is being used.")
 
