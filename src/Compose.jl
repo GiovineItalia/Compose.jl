@@ -13,6 +13,10 @@ import Base: length, start, next, done, isempty, getindex, setindex!,
     display, show, showcompact, convert, zero, isless, max, fill, size, copy,
     min, max, abs, +, -, *, /, ==
 
+using Compat.Dates
+using Compat.Printf
+using Compat.Pkg
+
 import Measures: resolve, w, h
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
@@ -69,7 +73,7 @@ include("list.jl")
 @compat abstract type ComposeNode end
 
 # Used to mark null child pointers
-immutable NullNode <: ComposeNode end
+struct NullNode <: ComposeNode end
 nullnode = NullNode()
 
 include("form.jl")

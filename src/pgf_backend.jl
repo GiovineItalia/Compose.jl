@@ -162,7 +162,7 @@ function finish(img::PGF)
         """
         )
 
-    method_exists(flush, (typeof(img.out),)) && flush(img.out)
+    hasmethod(flush, (typeof(img.out),)) && flush(img.out)
     close(img.buf)
 
     img.ownedfile && close(img.out)

@@ -479,7 +479,7 @@ function finish(img::SVG)
     end
 
     write(img.out, "</svg>\n")
-    method_exists(flush, (typeof(img.out),)) && flush(img.out)
+    hasmethod(flush, (typeof(img.out),)) && flush(img.out)
 
     img.ownedfile && close(img.out)
 

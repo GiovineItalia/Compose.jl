@@ -10,7 +10,7 @@ Batching is an optimization transform that happens at draw time. There's
 currently no mechanism to manually batch. E.g. contexts cannot have FormBatch
 children.
 """
-immutable FormBatch{P <: FormPrimitive}
+struct FormBatch{P <: FormPrimitive}
     primitive::P
     offsets::Vector{AbsoluteVec2}
 end
@@ -20,7 +20,7 @@ Attempt to batch a form. Return a Nullable{FormBatch} which is null if the Form
 could not be batched, and non-null if the original form can be replaced with teh
 resulting FormBatch.
 """
-batch{P}(form::Form{P}) = Nullable{FormBatch{P}}()
+batch(form::Form{P}) where P = Nullable{FormBatch{P}}()
 
 # Note: in tests using random data, this optimization wasn't worth it. I'm
 # keeping it around out of hopes I find a more clever version that is

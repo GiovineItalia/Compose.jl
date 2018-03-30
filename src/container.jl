@@ -4,18 +4,18 @@
 
 
 # The basic Container which defines a coordinate transform for its children.
-type Context <: Container
+mutable struct Context <: Container
     # Bounding box relative to the parent's coordinates
     box::BoundingBox
 
     # Context coordinates used for children
-    units::Nullable{UnitBox}
+    @compat units::Union{UnitBox, Nothing}
 
     # Rotation is degrees of
-    rot::Nullable{Rotation}
+    @compat rot::Union{Rotation, Nothing}
 
     # Maybe mirror about a line, after rotation
-    mir::Nullable{Mirror}
+    @compat mir::Union{Mirror, Nothing}
 
     # Container children
     container_children::List{Container}
@@ -70,8 +70,8 @@ end
 
 Context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
             units=NullUnitBox(),
-            rotation=Nullable{Rotation}(),
-            mirror=Nullable{Mirror}(),
+            rotation=Rotation(),
+            mirror=Mirror(),
             order=0,
             clip=false,
             withjs=false,
@@ -231,7 +231,7 @@ end
 @compat abstract type ContainerPromise <: Container end
 
 # This information is passed to a container promise at drawtime.
-immutable ParentDrawContext
+struct ParentDrawContext
     t::Transform
     units::UnitBox
     box::Absolute2DBox
@@ -242,7 +242,7 @@ end
 # since we can that way avoid realizing layout possibilities that are not used.
 # That means we need to be able to express size constraints on these.
 
-type AdhocContainerPromise <: ContainerPromise
+mutable struct AdhocContainerPromise <: ContainerPromise
     # A function of the form:
     #   f(parent::ParentDrawContext) → Container
     f::Function
@@ -307,14 +307,14 @@ compose(a::Context, b, c, ds...) = compose(compose(a, b), c, ds...)
 compose(a::Context, bs::AbstractArray) = compose(a, compose(bs...))
 compose(a::Context, bs::Tuple) = compose(a, compose(bs...))
 compose(a::Context) = a
-compose(a, b::(Void)) = a
+compose(a, @compat b::Nothing) = a
 
-for (f, S, T) in [(:compose!, Property, (Void)),
-                  (:compose!, Form, (Void)),
+for (f, S, T) in [(:compose!, Property, @compat Nothing),
+                  (:compose!, Form, @compat Nothing),
                   (:compose!, Property, Any),
                   (:compose!, Form, Any),
-                  (:compose, Property, (Void)),
-                  (:compose, Form, (Void)),
+                  (:compose, Property, @compat Nothing),
+                  (:compose, Form, @compat Nothing),
                   (:compose, Property, Any),
                   (:compose, Form, Any)]
     eval(
@@ -334,7 +334,7 @@ end
 
 register_coords(backend::Backend, box, units, transform, form) = nothing
 
-immutable DrawState
+struct DrawState
     pop_poperty::Bool
     container::Container
     parent_transform::Transform
@@ -589,7 +589,7 @@ function showcompact_array(io::IO, a::AbstractArray)
     end
     print(io, "]")
 end
-showcompact_array(io::IO, a::Range) = showcompact(io, a)
+showcompact_array(io::IO, a::AbstractRange) = showcompact(io, a)
 showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
 showcompact(io::IO, p::Compose.Property) = print(io, Compose.prop_string(p))
 showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)

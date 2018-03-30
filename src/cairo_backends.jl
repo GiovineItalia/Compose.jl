@@ -16,7 +16,7 @@ using Cairo: CairoContext, CairoSurface, CairoARGBSurface,
 @compat abstract type PSBackend  <: VectorImageBackend end
 @compat abstract type CairoBackend <: VectorImageBackend end
 
-type ImagePropertyState
+mutable struct ImagePropertyState
     stroke::RGBA{Float64}
     fill::RGBA{Float64}
     stroke_dash::Array{Float64,1}
@@ -29,7 +29,7 @@ type ImagePropertyState
     clip::Nullable{ClipPrimitive}
 end
 
-type ImagePropertyFrame
+mutable struct ImagePropertyFrame
     # Vector properties in this frame.
     vector_properties::Dict{Type, Property}
 
@@ -39,7 +39,7 @@ type ImagePropertyFrame
 end
 ImagePropertyFrame() = ImagePropertyFrame(Dict{Type, Property}(), false)
 
-type Image{B<:ImageBackend} <: Backend
+mutable struct Image{B<:ImageBackend} <: Backend
     out::IO
     surface::CairoSurface
     ctx::CairoContext
@@ -226,7 +226,7 @@ function finish{B<:ImageBackend}(img::Image{B})
 
     img.finished = true
     img.emit_on_finish && typeof(img.out) == IOBuffer && display(img)
-    method_exists(flush, (typeof(img.out),)) && flush(img.out)
+    hasmethod(flush, (typeof(img.out),)) && flush(img.out)
     img.ownedfile && close(img.out)
 end
 

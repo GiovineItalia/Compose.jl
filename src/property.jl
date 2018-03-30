@@ -1,7 +1,7 @@
 @compat abstract type PropertyPrimitive end
 
 # Meaningless isless function used to sort in optimize_batching
-function Base.isless{T <: PropertyPrimitive}(a::T, b::T)
+function Base.isless(a::T, b::T) where T <: PropertyPrimitive
     for field in fieldnames(T)
         x = getfield(a, field)
         y = getfield(b, field)
@@ -23,20 +23,19 @@ function Base.isless{T <: PropertyPrimitive}(a::T, b::T)
 end
 
 
-immutable Property{P <: PropertyPrimitive} <: ComposeNode
+struct Property{P <: PropertyPrimitive} <: ComposeNode
     primitives::Vector{P}
 end
 
 isempty(p::Property) = isempty(p.primitives)
 
-isscalar(p::Property) =
-        length(p.primitives) == 1
+isscalar(p::Property) = length(p.primitives) == 1
 
 
 # Some properties can be applied multiple times, most cannot.
 isrepeatable(p::Property) = false
 
-resolve{T}(box::AbsoluteBox, units::UnitBox, t::Transform, p::Property{T}) =
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Property{T}) where T =
         Property{T}([resolve(box, units, t, primitive) for primitive in p.primitives])
 
 # Property primitive catchall: most properties don't need measure transforms
@@ -46,13 +45,13 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, primitive::PropertyPrimi
 # Stroke
 # ------
 
-immutable StrokePrimitive <: PropertyPrimitive
+struct StrokePrimitive <: PropertyPrimitive
 	color::RGBA{Float64}
 end
 
 const Stroke = Property{StrokePrimitive}
 
-stroke(c::(Void)) = Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
+stroke(@compat c::Nothing) = Stroke([StrokePrimitive(RGBA{Float64}(0, 0, 0, 0))])
 stroke(c::Union{Colorant, AbstractString}) = Stroke([StrokePrimitive(parse_colorant(c))])
 stroke(cs::AbstractArray) = Stroke([StrokePrimitive(c == nothing ?
         RGBA{Float64}(0, 0, 0, 0) : parse_colorant(c)) for c in cs])
@@ -63,13 +62,13 @@ prop_string(::Stroke) = "s"
 # Fill
 # ----
 
-immutable FillPrimitive <: PropertyPrimitive
+struct FillPrimitive <: PropertyPrimitive
 	color::RGBA{Float64}
 end
 
 const Fill = Property{FillPrimitive}
 
-fill(c::(Void)) = Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
+fill(@compat c::Nothing) = Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
 fill(c::Union{Colorant, AbstractString}) = Fill([FillPrimitive(parse_colorant(c))])
 fill(cs::AbstractArray) = Fill([FillPrimitive(c == nothing ?
         RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs])
@@ -80,7 +79,7 @@ prop_string(::Fill) = "f"
 # StrokeDash
 # ----------
 
-immutable StrokeDashPrimitive <: PropertyPrimitive
+struct StrokeDashPrimitive <: PropertyPrimitive
     value::Vector{Measure}
 end
 
@@ -100,11 +99,11 @@ prop_string(::StrokeDash) = "sd"
 # -------------
 
 @compat abstract type LineCap end
-immutable LineCapButt <: LineCap end
-immutable LineCapSquare <: LineCap end
-immutable LineCapRound <: LineCap end
+struct LineCapButt <: LineCap end
+struct LineCapSquare <: LineCap end
+struct LineCapRound <: LineCap end
 
-immutable StrokeLineCapPrimitive <: PropertyPrimitive
+struct StrokeLineCapPrimitive <: PropertyPrimitive
     value::LineCap
 end
 
@@ -124,11 +123,11 @@ prop_string(::StrokeLineCap) = "slc"
 # --------------
 
 @compat abstract type LineJoin end
-immutable LineJoinMiter <: LineJoin end
-immutable LineJoinRound <: LineJoin end
-immutable LineJoinBevel <: LineJoin end
+struct LineJoinMiter <: LineJoin end
+struct LineJoinRound <: LineJoin end
+struct LineJoinBevel <: LineJoin end
 
-immutable StrokeLineJoinPrimitive <: PropertyPrimitive
+struct StrokeLineJoinPrimitive <: PropertyPrimitive
     value::LineJoin
 end
 
@@ -147,7 +146,7 @@ prop_string(::StrokeLineJoin) = "slj"
 # LineWidth
 # ---------
 
-immutable LineWidthPrimitive <: PropertyPrimitive
+struct LineWidthPrimitive <: PropertyPrimitive
     value::Measure
 
     function LineWidthPrimitive(value)
@@ -170,7 +169,7 @@ prop_string(::LineWidth) = "lw"
 # Visible
 # -------
 
-immutable VisiblePrimitive <: PropertyPrimitive
+struct VisiblePrimitive <: PropertyPrimitive
     value::Bool
 end
 
@@ -185,7 +184,7 @@ prop_string(::Visible) = "v"
 # FillOpacity
 # -----------
 
-immutable FillOpacityPrimitive <: PropertyPrimitive
+struct FillOpacityPrimitive <: PropertyPrimitive
     value::Float64
 
     function FillOpacityPrimitive(value_::Number)
@@ -207,7 +206,7 @@ prop_string(::FillOpacity) = "fo"
 # StrokeOpacity
 # -------------
 
-immutable StrokeOpacityPrimitive <: PropertyPrimitive
+struct StrokeOpacityPrimitive <: PropertyPrimitive
     value::Float64
 
     function StrokeOpacityPrimitive(value_::Number)
@@ -229,7 +228,7 @@ prop_string(::StrokeOpacity) = "so"
 # Clip
 # ----
 
-immutable ClipPrimitive{P <: Vec} <: PropertyPrimitive
+struct ClipPrimitive{P <: Vec} <: PropertyPrimitive
     points::Vector{P}
 end
 
@@ -237,7 +236,7 @@ const Clip = Property{ClipPrimitive}
 
 clip() = Clip([ClipPrimitive(Array{Vec}(0))])
 
-function clip{T <: XYTupleOrVec}(points::AbstractArray{T})
+function clip(points::AbstractArray{T}) where T <: XYTupleOrVec
     XM, YM = narrow_polygon_point_types(Vector[points])
     if XM == Any
         XM = Length{:cx, Float64}
@@ -274,7 +273,7 @@ prop_string(::Clip) = "clp"
 # Font
 # ----
 
-immutable FontPrimitive <: PropertyPrimitive
+struct FontPrimitive <: PropertyPrimitive
     family::AbstractString
 end
 
@@ -294,7 +293,7 @@ Base.hash(primitive::FontPrimitive, h::UInt) = hash(primitive.family, h)
 # FontSize
 # --------
 
-immutable FontSizePrimitive <: PropertyPrimitive
+struct FontSizePrimitive <: PropertyPrimitive
     value::Measure
 
     function FontSizePrimitive(value)
@@ -317,7 +316,7 @@ prop_string(::FontSize) = "fsz"
 # SVGID
 # -----
 
-immutable SVGIDPrimitive <: PropertyPrimitive
+struct SVGIDPrimitive <: PropertyPrimitive
     value::AbstractString
 end
 
@@ -336,7 +335,7 @@ Base.hash(primitive::SVGIDPrimitive, h::UInt) = hash(primitive.value, h)
 # SVGClass
 # --------
 
-immutable SVGClassPrimitive <: PropertyPrimitive
+struct SVGClassPrimitive <: PropertyPrimitive
     value::Compat.String
 end
 
@@ -362,7 +361,7 @@ Base.hash(primitive::SVGClassPrimitive, h::UInt) = hash(primitive.value, h)
 # SVGAttribute
 # ------------
 
-immutable SVGAttributePrimitive <: PropertyPrimitive
+struct SVGAttributePrimitive <: PropertyPrimitive
     attribute::Compat.String
     value::Compat.String
 end
@@ -394,9 +393,9 @@ end
 # JSInclude
 # ---------
 
-immutable JSIncludePrimitive <: PropertyPrimitive
+struct JSIncludePrimitive <: PropertyPrimitive
     value::AbstractString
-    jsmodule::Union{(Void), Tuple{AbstractString, AbstractString}}
+    @compat jsmodule::Union{Nothing, Tuple{AbstractString, AbstractString}}
 end
 
 const JSInclude = Property{JSIncludePrimitive}
@@ -412,7 +411,7 @@ prop_string(::JSInclude) = "jsip"
 # JSCall
 # ------
 
-immutable JSCallPrimitive <: PropertyPrimitive
+struct JSCallPrimitive <: PropertyPrimitive
     code::AbstractString
     args::Vector{Measure}
 end

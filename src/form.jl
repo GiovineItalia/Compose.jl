@@ -4,14 +4,15 @@
 
 const empty_tag = Symbol("")
 
-immutable Form{P <: FormPrimitive} <: ComposeNode
+struct Form{P <: FormPrimitive} <: ComposeNode
     primitives::Vector{P}
     tag::Symbol
 
-    (::Type{Form{P}}){P}(prim, tag::Symbol=empty_tag) = new{P}(prim, tag)
+    (::Type{Form{P}})(prim, tag::Symbol=empty_tag) where P = new{P}(prim, tag)
 end
 
-Form{P<:FormPrimitive}(primitives::Vector{P}, tag::Symbol=empty_tag) = Form{P}(primitives, tag)
+Form(primitives::Vector{P}, tag::Symbol=empty_tag) where P <: FormPrimitive =
+        Form{P}(primitives, tag)
 
 isempty(f::Form) = isempty(f.primitives)
 
@@ -21,14 +22,14 @@ isscalar(f::Form) =
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, form::Form) =
         Form([resolve(box, units, t, primitive) for primitive in form.primitives])
 
-Base.similar{T}(f::Form{T}) = Form{T}(T[])
+Base.similar(f::Form{T}) where T = Form{T}(T[])
 
 form_string(::Form) = "FORM"  # fallback definition
 
 # Polygon
 # -------
 
-immutable SimplePolygonPrimitive{P <: Vec} <: FormPrimitive
+struct SimplePolygonPrimitive{P <: Vec} <: FormPrimitive
     points::Vector{P}
 end
 
@@ -45,7 +46,7 @@ polygon() = Form([PolygonPrimitive(Vec[])])
 Define a polygon. `points` is an array of `(x,y)` tuples
 that specify the corners of the polygon.
 """
-function polygon{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
+function polygon(points::AbstractArray{T}, tag=empty_tag) where T <: XYTupleOrVec
     XM, YM = narrow_polygon_point_types(Vector[points])
     if XM == Any
         XM = Measure
@@ -90,7 +91,7 @@ end
 
 form_string(::SimplePolygon) = "SP"
 
-immutable ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
+struct ComplexPolygonPrimitive{P <: Vec} <: FormPrimitive
     rings::Vector{Vector{P}}
 end
 
@@ -132,7 +133,7 @@ form_string(::ComplexPolygon) = "CP"
 # Rectangle
 # ---------
 
-immutable RectanglePrimitive{P <: Vec, M1 <: Measure, M2 <: Measure} <: FormPrimitive
+struct RectanglePrimitive{P <: Vec, M1 <: Measure, M2 <: Measure} <: FormPrimitive
     corner::P
     width::M1
     height::M2
@@ -211,12 +212,12 @@ form_string(::Rectangle) = "R"
 # Circle
 # ------
 
-immutable CirclePrimitive{P <: Vec, M <: Measure} <: FormPrimitive
+struct CirclePrimitive{P <: Vec, M <: Measure} <: FormPrimitive
     center::P
     radius::M
 end
 
-CirclePrimitive{P, M}(center::P, radius::M) = CirclePrimitive{P, M}(center, radius)
+CirclePrimitive(center::P, radius::M) where {P, M} = CirclePrimitive{P, M}(center, radius)
 CirclePrimitive(x, y, r) = CirclePrimitive((x_measure(x), y_measure(y)), x_measure(r))
 
 @compat const Circle{P<:CirclePrimitive} = Form{P}
@@ -272,7 +273,7 @@ form_string(::Circle) = "C"
 # Ellipse
 # -------
 
-immutable EllipsePrimitive{P1<:Vec, P2<:Vec, P3<:Vec} <: FormPrimitive
+struct EllipsePrimitive{P1<:Vec, P2<:Vec, P3<:Vec} <: FormPrimitive
     center::P1
     x_point::P2
     y_point::P3
@@ -330,24 +331,24 @@ form_string(::Ellipse) = "E"
 # ----
 
 @compat abstract type HAlignment end
-immutable HLeft   <: HAlignment end
-immutable HCenter <: HAlignment end
-immutable HRight  <: HAlignment end
+struct HLeft   <: HAlignment end
+struct HCenter <: HAlignment end
+struct HRight  <: HAlignment end
 
 const hleft   = HLeft()
 const hcenter = HCenter()
 const hright  = HRight()
 
 @compat abstract type VAlignment end
-immutable VTop    <: VAlignment end
-immutable VCenter <: VAlignment end
-immutable VBottom <: VAlignment end
+struct VTop    <: VAlignment end
+struct VCenter <: VAlignment end
+struct VBottom <: VAlignment end
 
 const vtop    = VTop()
 const vcenter = VCenter()
 const vbottom = VBottom()
 
-immutable TextPrimitive{P<:Vec, R<:Rotation, O<:Vec} <: FormPrimitive
+struct TextPrimitive{P<:Vec, R<:Rotation, O<:Vec} <: FormPrimitive
     position::P
     value::AbstractString
     halign::HAlignment
@@ -408,7 +409,7 @@ text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray,
     @makeform (x in xs, y in ys, value in values, halign in haligns, valign in valigns, rot in rots, offset in offsets),
         TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot, (x_measure(offset[1]), y_measure(offset[2]))) tag
 
-function resolve{P,R,O}(box::AbsoluteBox, units::UnitBox, t::Transform, p::TextPrimitive{P,R,O})
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::TextPrimitive{P,R,O}) where {P,R,O}
     rot = resolve(box, units, t, p.rot)
     return TextPrimitive{AbsoluteVec2, typeof(rot), O}(
                 resolve(box, units, t, p.position),
@@ -447,7 +448,7 @@ form_string(::Text) = "T"
 # Line
 # ----
 
-immutable LinePrimitive{P<:Vec} <: FormPrimitive
+struct LinePrimitive{P<:Vec} <: FormPrimitive
     points::Vector{P}
 end
 
@@ -458,7 +459,7 @@ function line()
     return Line{typeof(prim)}([prim])
 end
 
-function line{T <: XYTupleOrVec}(points::AbstractArray{T}, tag=empty_tag)
+function line(points::AbstractArray{T}, tag=empty_tag) where T <: XYTupleOrVec
     XM, YM = narrow_polygon_point_types(Vector[points])
     VecType = XM == YM == Any ? Vec2 : Tuple{XM, YM}
     prim = LinePrimitive(VecType[(x_measure(point[1]), y_measure(point[2])) for point in points])
@@ -500,7 +501,7 @@ form_string(::Line) = "L"
 # Curve
 # -----
 
-immutable CurvePrimitive{P1<:Vec, P2<:Vec, P3<:Vec, P4<:Vec} <: FormPrimitive
+struct CurvePrimitive{P1<:Vec, P2<:Vec, P3<:Vec, P4<:Vec} <: FormPrimitive
     anchor0::P1
     ctrl0::P2
     ctrl1::P3
@@ -538,7 +539,7 @@ form_string(::Curve) = "CV"
 # Bitmap
 # ------
 
-immutable BitmapPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimitive
+struct BitmapPrimitive{P <: Vec, XM <: Measure, YM <: Measure} <: FormPrimitive
     mime::AbstractString
     data::Vector{UInt8}
     corner::P
@@ -581,7 +582,7 @@ form_string(::Bitmap) = "B"
 
 @compat abstract type PathOp end
 
-immutable MoveAbsPathOp <: PathOp
+struct MoveAbsPathOp <: PathOp
     to::Vec
 end
 
@@ -600,7 +601,7 @@ end
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::MoveAbsPathOp) =
         MoveAbsPathOp(resolve(box, units, t, p.to))
 
-immutable MoveRelPathOp <: PathOp
+struct MoveRelPathOp <: PathOp
     to::Vec
 end
 
@@ -619,14 +620,14 @@ end
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::MoveRelPathOp) =
         MoveRelPathOp(resolve_offset(box, units, t, p.to))
 
-immutable ClosePathOp <: PathOp
+struct ClosePathOp <: PathOp
 end
 
 parsepathop(::Type{ClosePathOp}, tokens::AbstractArray, i) = (ClosePathOp(), i)
 
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::ClosePathOp) = p
 
-immutable LineAbsPathOp <: PathOp
+struct LineAbsPathOp <: PathOp
     to::Vec
 end
 
@@ -639,7 +640,7 @@ end
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::LineAbsPathOp) =
         LineAbsPathOp(resolve(box, units, t, p.to))
 
-immutable LineRelPathOp <: PathOp
+struct LineRelPathOp <: PathOp
     to::Vec
 end
 
@@ -652,7 +653,7 @@ end
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::LineRelPathOp) =
         LineRelPathOp(resolve(box, units, t, p.to))
 
-immutable HorLineAbsPathOp <: PathOp
+struct HorLineAbsPathOp <: PathOp
     x::Measure
 end
 
@@ -665,7 +666,7 @@ end
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::HorLineAbsPathOp) =
         HorLineAbsPathOp(resolve(box, units, t, (p.x, 0mm))[1])
 
-immutable HorLineRelPathOp <: PathOp
+struct HorLineRelPathOp <: PathOp
     Δx::Measure
 end
 
@@ -678,7 +679,7 @@ end
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::HorLineRelPathOp) =
         HorLineRelPathOp(resolve(box, units, t, p.Δx))
 
-immutable VertLineAbsPathOp <: PathOp
+struct VertLineAbsPathOp <: PathOp
     y::Measure
 end
 
@@ -691,7 +692,7 @@ end
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::VertLineAbsPathOp) =
         VertLineAbsPathOp(resolve(box, units, t, (0mm, p.y))[2])
 
-immutable VertLineRelPathOp <: PathOp
+struct VertLineRelPathOp <: PathOp
     Δy::Measure
 end
 
@@ -704,7 +705,7 @@ end
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::VertLineRelPathOp) =
         VertLineAbsPathOp(resolve(box, units, t, (0mmm, p.Δy))[2])
 
-immutable CubicCurveAbsPathOp <: PathOp
+struct CubicCurveAbsPathOp <: PathOp
     ctrl1::Vec
     ctrl2::Vec
     to::Vec
@@ -724,7 +725,7 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CubicCurveAbsPathOp) 
             resolve(box, units, t, p.ctrl2),
             resolve(box, units, t, p.to))
 
-immutable CubicCurveRelPathOp <: PathOp
+struct CubicCurveRelPathOp <: PathOp
     ctrl1::Vec
     ctrl2::Vec
     to::Vec
@@ -744,7 +745,7 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CubicCurveRelPathOp) 
             resolve(box, units, t, p.ctrl2),
             resolve(box, units, t, p.to))
 
-immutable CubicCurveShortAbsPathOp <: PathOp
+struct CubicCurveShortAbsPathOp <: PathOp
     ctrl2::Vec
     to::Vec
 end
@@ -761,7 +762,7 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CubicCurveShortAbsPat
             resolve_offset(box, units, t, p.ctrl2),
             resolve_offset(box, units, t, p.to))
 
-immutable CubicCurveShortRelPathOp <: PathOp
+struct CubicCurveShortRelPathOp <: PathOp
     ctrl2::Vec
     to::Vec
 end
@@ -778,7 +779,7 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::CubicCurveShortRelPat
             resolve(box, units, t, p.ctrl2),
             resolve(box, units, t, p.to))
 
-immutable QuadCurveAbsPathOp <: PathOp
+struct QuadCurveAbsPathOp <: PathOp
     ctrl1::Vec
     to::Vec
 end
@@ -795,7 +796,7 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::QuadCurveAbsPathOp) =
             resolve(box, units, t, p.ctrl1),
             resolve(box, units, t, p.to))
 
-immutable QuadCurveRelPathOp <: PathOp
+struct QuadCurveRelPathOp <: PathOp
     ctrl1::Vec
     to::Vec
 end
@@ -814,7 +815,7 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::QuadCurveRelPathOp) =
             (resolve(box, units, t, p.to[1]),
              resolve(box, units, t, p.to[2])))
 
-immutable QuadCurveShortAbsPathOp <: PathOp
+struct QuadCurveShortAbsPathOp <: PathOp
     to::Vec
 end
 
@@ -827,7 +828,7 @@ end
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::QuadCurveShortAbsPathOp) =
         QuadCurveShortAbsPathOp(resolve(box, units, t, p.to))
 
-immutable QuadCurveShortRelPathOp <: PathOp
+struct QuadCurveShortRelPathOp <: PathOp
     to::Vec
 end
 
@@ -842,7 +843,7 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::QuadCurveShortRelPath
             (resolve(box, units, t, p.to[1]),
              resolve(box, units, t, p.to[2])))
 
-immutable ArcAbsPathOp <: PathOp
+struct ArcAbsPathOp <: PathOp
     rx::Measure
     ry::Measure
     rotation::Float64
@@ -860,7 +861,7 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::ArcAbsPathOp) =
             p.sweep,
             resolve(box, units, t, p.to))
 
-immutable ArcRelPathOp <: PathOp
+struct ArcRelPathOp <: PathOp
     rx::Measure
     ry::Measure
     rotation::Float64
@@ -869,7 +870,7 @@ immutable ArcRelPathOp <: PathOp
     to::Vec
 end
 
-function parsepathop{T <: Union{ArcAbsPathOp, ArcRelPathOp}}(::Type{T}, tokens::AbstractArray, i)
+function parsepathop(::Type{T}, tokens::AbstractArray, i) where T <: Union{ArcAbsPathOp, ArcRelPathOp}
     assert_pathop_tokens_len(T, tokens, i, 7)
 
     if isa(tokens[i + 3], Bool)
@@ -964,7 +965,7 @@ function parsepath(tokens::AbstractArray)
     return ops
 end
 
-immutable PathPrimitive <: FormPrimitive
+struct PathPrimitive <: FormPrimitive
     ops::Vector{PathOp}
 end
 
@@ -972,7 +973,7 @@ const Path = Form{PathPrimitive}
 
 path(tokens::AbstractArray, tag=empty_tag) = Path([PathPrimitive(parsepath(tokens))], tag)
 
-path{T <: AbstractArray}(tokens::AbstractArray{T}, tag=empty_tag) =
+path(tokens::AbstractArray{T}, tag=empty_tag) where T <: AbstractArray =
         Path([PathPrimitive(parsepath(ts)) for ts in tokens], tag)
 
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::PathPrimitive) =
