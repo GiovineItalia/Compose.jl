@@ -9,13 +9,13 @@ mutable struct Context <: Container
     box::BoundingBox
 
     # Context coordinates used for children
-    units::Union{UnitBox, Nothing}
+    units::Nullable{UnitBox}
 
     # Rotation is degrees of
-    rot::Union{Rotation, Nothing}
+    rot::Nullable{Rotation}
 
     # Maybe mirror about a line, after rotation
-    mir::Union{Mirror, Nothing}
+    mir::Nullable{Mirror}
 
     # Container children
     container_children::List{Container}
@@ -69,9 +69,9 @@ mutable struct Context <: Container
 end
 
 Context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
-            units=NullUnitBox(),
-            rotation=Rotation(),
-            mirror=Mirror(),
+            units=Nullable{UnitBox}(),
+            rotation=Nullable{Rotation}(),
+            mirror=Nullable{Mirror}(),
             order=0,
             clip=false,
             withjs=false,

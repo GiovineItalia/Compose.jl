@@ -130,7 +130,7 @@ end
 
 UnitBox() = UnitBox(0.0, 0.0, 1.0, 1.0)
 
-const NullUnitBox = Union{UnitBox, Nothing}
+const NullUnitBox = Nullable{UnitBox}
 
 # copy with substitution
 UnitBox(units::UnitBox;

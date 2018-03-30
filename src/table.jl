@@ -24,7 +24,7 @@ mutable struct Table <: ContainerPromise
     fixed_configs::Vector
 
     # Coordinate system used for children
-    units::Union{UnitBox, Nothing}
+    units::Nullable{UnitBox}
 
     # Z-order of this context relative to its siblings.
     order::Int
