@@ -115,7 +115,7 @@ escape_script(js::AbstractString) = replace(js, "]]", "] ]")
 
 # When subtree rooted at a context is drawn, it pushes its property children
 # in the form of a property frame.
-type SVGPropertyFrame
+mutable struct SVGPropertyFrame
     # Vector properties in this frame.
     vector_properties::Dict{Type, Property}
 
@@ -138,7 +138,7 @@ end
 
 SVGPropertyFrame() = SVGPropertyFrame(Dict{Type, Property}(), false, false, false, false)
 
-type SVG <: Backend
+mutable struct SVG <: Backend
     # Image size in millimeters.
     width::AbsoluteLength
     height::AbsoluteLength
@@ -723,7 +723,7 @@ end
 # Form Drawing
 # ------------
 
-function draw{T}(img::SVG, form::Form{T})
+function draw(img::SVG, form::Form{T}) where T
     for i in 1:length(form.primitives)
         draw(img, form.primitives[i], i)
     end

@@ -5,7 +5,7 @@
 
 export ImmerseBackend
 
-type ImmerseBackend <: Backend
+mutable struct ImmerseBackend <: Backend
     cb::CAIROSURFACE
     coords::Dict{Symbol,Any}
     panelcoords::Vector
