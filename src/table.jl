@@ -14,17 +14,17 @@ mutable struct Table <: ContainerPromise
 
     # If non-nothing, constrain the focused cells to have a proportional
     # relationship.
-    @compat x_prop::Union{Vector{Float64}, Nothing}
-    @compat y_prop::Union{Vector{Float64}, Nothing}
+    x_prop::Union{Vector{Float64}, Nothing}
+    y_prop::Union{Vector{Float64}, Nothing}
 
     # If non-nothing, constrain the focused cells to have a fixed aspect ratio.
-    @compat aspect_ratio::Union{Float64, Nothing}
+    aspect_ratio::Union{Float64, Nothing}
 
     # fixed configuration
     fixed_configs::Vector
 
     # Coordinate system used for children
-    @compat units::Union{UnitBox, Nothing}
+    units::Nullable{UnitBox}
 
     # Z-order of this context relative to its siblings.
     order::Int

@@ -1,4 +1,4 @@
-type PGFPropertyFrame
+mutable struct PGFPropertyFrame
     # Vector properties in this frame.
     vector_properties::Dict{Type, Property}
 
@@ -9,7 +9,7 @@ end
 
 PGFPropertyFrame() = PGFPropertyFrame(Dict{Type, Property}(), false)
 
-type PGF <: Backend
+mutable struct PGF <: Backend
     # Image size in millimeters.
     width::AbsoluteLength
     height::AbsoluteLength

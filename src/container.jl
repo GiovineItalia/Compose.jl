@@ -1,6 +1,6 @@
 # A container is a node in the tree that can have Forms, Properties, or other
 # Containers as children.
-@compat abstract type Container <: ComposeNode end
+abstract type Container <: ComposeNode end
 
 
 # The basic Container which defines a coordinate transform for its children.
@@ -9,13 +9,13 @@ mutable struct Context <: Container
     box::BoundingBox
 
     # Context coordinates used for children
-    @compat units::Union{UnitBox, Nothing}
+    units::Nullable{UnitBox}
 
     # Rotation is degrees of
-    @compat rot::Union{Rotation, Nothing}
+    rot::Nullable{Rotation}
 
     # Maybe mirror about a line, after rotation
-    @compat mir::Union{Mirror, Nothing}
+    mir::Nullable{Mirror}
 
     # Container children
     container_children::List{Container}
@@ -69,9 +69,9 @@ mutable struct Context <: Container
 end
 
 Context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
-            units=NullUnitBox(),
-            rotation=Rotation(),
-            mirror=Mirror(),
+            units=Nullable{UnitBox}(),
+            rotation=Nullable{Rotation}(),
+            mirror=Nullable{Mirror}(),
             order=0,
             clip=false,
             withjs=false,
@@ -228,7 +228,7 @@ end
 # absolute size, or it is one many possible layout that we want to decide
 # between before rendering. A ContainerPromise lets us defer computing a subtree
 # until the graphic is actually being rendered.
-@compat abstract type ContainerPromise <: Container end
+abstract type ContainerPromise <: Container end
 
 # This information is passed to a container promise at drawtime.
 struct ParentDrawContext
@@ -307,14 +307,14 @@ compose(a::Context, b, c, ds...) = compose(compose(a, b), c, ds...)
 compose(a::Context, bs::AbstractArray) = compose(a, compose(bs...))
 compose(a::Context, bs::Tuple) = compose(a, compose(bs...))
 compose(a::Context) = a
-compose(a, @compat b::Nothing) = a
+compose(a, b::Nothing) = a
 
-for (f, S, T) in [(:compose!, Property, @compat Nothing),
-                  (:compose!, Form, @compat Nothing),
+for (f, S, T) in [(:compose!, Property, Nothing),
+                  (:compose!, Form, Nothing),
                   (:compose!, Property, Any),
                   (:compose!, Form, Any),
-                  (:compose, Property, @compat Nothing),
-                  (:compose, Form, @compat Nothing),
+                  (:compose, Property, Nothing),
+                  (:compose, Form, Nothing),
                   (:compose, Property, Any),
                   (:compose, Form, Any)]
     eval(
