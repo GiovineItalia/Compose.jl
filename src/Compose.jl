@@ -151,8 +151,8 @@ macro missing_cairo_error(backend)
       Pkg.add("Fontconfig")
     """
     msg2 = """
-        You also have to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji"))
-        and restart your REPL session afterwards.
+        You also have to delete ~/.julia/lib/v0.6/Compose.ji and restart your
+        REPL session afterwards.
         """
     string(msg1, msg2)
 end
