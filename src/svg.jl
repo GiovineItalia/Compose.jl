@@ -83,7 +83,7 @@ end
 
 # Format a color for SVG.
 svg_fmt_color(c::Color) = string("#", hex(c))
-svg_fmt_color(c::(Void)) = "none"
+svg_fmt_color(c::Nothing) = "none"
 
 # Replace newlines in a string with the appropriate SVG tspan tags.
 function svg_newlines(input::AbstractString, x::Float64)
@@ -147,7 +147,7 @@ mutable struct SVG <: Backend
     out::IO
 
     # Save output from IOBuffers to allow multiple calls to writemime
-    cached_out::Union{AbstractString, (Void)}
+    cached_out::Union{AbstractString, Nothing}
 
     # Unique ID for the figure.
     id::AbstractString
@@ -161,7 +161,7 @@ mutable struct SVG <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, Union{(Void), Property}}
+    vector_properties::Dict{Type, Union{Property, Nothing}}
 
     # Clip-paths that need to be defined at the end of the document.
     clippaths::OrderedDict{ClipPrimitive, Compat.String}
@@ -180,7 +180,7 @@ mutable struct SVG <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union{AbstractString, (Void)}
+    filename::Union{AbstractString, Nothing}
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -227,7 +227,7 @@ function SVG(out::IO,
              id = string("img-", string(Base.Random.uuid4())[1:8]),
              indentation = 0,
              property_stack = Array{SVGPropertyFrame}(0),
-             vector_properties = Dict{Type, Union{(Void), Property}}(),
+             vector_properties = Dict{Type, Union{Property, Nothing}}(),
              clippaths = OrderedDict{ClipPrimitive, Compat.String}(),
              batches = Array{Tuple{FormPrimitive, Compat.String}}(0),
              embobj = Set{AbstractString}(),

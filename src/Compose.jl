@@ -182,11 +182,11 @@ if isinstalled("Fontconfig")
     function __init__()
         global pango_cairo_ctx
         global pangolayout
-        ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
+        ccall((:g_type_init, Cairo._jl_libgobject), Cvoid, ())
         pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
-                                 Ptr{Void}, ())
+                                 Ptr{Cvoid}, ())
         pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
-                                 Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
+                                 Ptr{Cvoid}, (Ptr{Cvoid},), pango_cairo_fm)
         pangolayout = PangoLayout()
     end
 else

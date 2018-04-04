@@ -405,13 +405,13 @@ function apply_property(img::Image, property::FontPrimitive)
     img.font = property.family
 
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
-                      Ptr{Void}, (Ptr{Void},), img.ctx.layout)
+                      Ptr{Cvoid}, (Ptr{Cvoid},), img.ctx.layout)
 
     if font_desc == C_NULL
         size = absolute_native_units(img, default_font_size.value)
     else
         size = ccall((:pango_font_description_get_size, Cairo._jl_libpango),
-                     Cint, (Ptr{Void},), font_desc)
+                     Cint, (Ptr{Cvoid},), font_desc)
     end
 
     Cairo.set_font_face(img.ctx,
@@ -422,13 +422,13 @@ function apply_property(img::Image, property::FontSizePrimitive)
     img.fontsize = property.value
 
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
-                      Ptr{Void}, (Ptr{Void},), img.ctx.layout)
+                      Ptr{Cvoid}, (Ptr{Cvoid},), img.ctx.layout)
 
     if font_desc == C_NULL
         family = "sans"
     else
         family = ccall((:pango_font_description_get_family, Cairo._jl_libpango),
-                       Ptr{UInt8}, (Ptr{Void},), font_desc)
+                       Ptr{UInt8}, (Ptr{Cvoid},), font_desc)
         family = unsafe_string(family)
     end
 
@@ -462,8 +462,8 @@ apply_property(img::Image, property::SVGAttributePrimitive) = nothing
 function current_point(img::Image)
     x = Array{Float64}(1)
     y = Array{Float64}(1)
-    ccall((:cairo_get_current_point, Cairo._jl_libcairo), Void,
-          (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
+    ccall((:cairo_get_current_point, Cairo._jl_libcairo), Cvoid,
+          (Ptr{Cvoid}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
     return ((x[1] / img.ppmm)*mm, (x[2] / img.ppmm)*mm)
 end
 
