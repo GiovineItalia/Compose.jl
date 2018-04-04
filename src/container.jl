@@ -9,13 +9,13 @@ mutable struct Context <: Container
     box::BoundingBox
 
     # Context coordinates used for children
-    units::Nullable{UnitBox}
+    units::Union{UnitBox, Nothing}
 
     # Rotation is degrees of
-    rot::Nullable{Rotation}
+    rot::Union{Rotation, Nothing}
 
     # Maybe mirror about a line, after rotation
-    mir::Nullable{Mirror}
+    mir::Union{Mirror, Nothing}
 
     # Container children
     container_children::List{Container}
@@ -69,9 +69,9 @@ mutable struct Context <: Container
 end
 
 Context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
-            units=Nullable{UnitBox}(),
-            rotation=Nullable{Rotation}(),
-            mirror=Nullable{Mirror}(),
+            units=Union{UnitBox, Nothing}(),
+            rotation=Union{Rotation, Nothing}(),
+            mirror=Union{Mirror, Nothing}(),
             order=0,
             clip=false,
             withjs=false,
@@ -91,8 +91,8 @@ Context(ctx::Context) = Context(ctx.box, ctx.units, ctx.rot, ctx.mir,
             ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
 
 context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
-            units=NullUnitBox(),
-            rotation=Nullable{Rotation}(),
+            units=nothing,
+            rotation=nothing,
             mirror=nothing,
             order=0,
             clip=false,
@@ -104,9 +104,7 @@ context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
             penalty=0.0,
             tag=empty_tag) =
         Context(BoundingBox(x_measure(x0), y_measure(y0), x_measure(width), y_measure(height)),
-            isa(units, Nullable) ? units : Nullable{UnitBox}(units),
-            isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
-            mirror,
+            units, rotation, mirror,
             ListNull{Container}(), ListNull{Form}(), ListNull{Property}(),
             order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
 
@@ -370,13 +368,13 @@ function drawpart(backend::Backend, container::Container,
     box = resolve(parent_box, units, parent_transform, ctx.box)
 
     transform = parent_transform
-    if !isnull(ctx.rot)
-        rot = resolve(box, units, parent_transform, get(ctx.rot))
+    if ctx.rot !== nothing
+        rot = resolve(box, units, parent_transform, ctx.rot)
         transform = combine(convert(Transform, rot), transform)
     end
 
-    if !isnull(ctx.mir)
-        mir = resolve(box, units, parent_transform, get(ctx.mir))
+    if ctx.mir !== nothing
+        mir = resolve(box, units, parent_transform, ctx.mir)
         transform = combine(convert(Transform, mir), transform)
     end
 
@@ -395,8 +393,8 @@ function drawpart(backend::Backend, container::Container,
         return
     end
 
-    if !isnull(ctx.units)
-        units = resolve(box, units, transform, get(ctx.units))
+    if ctx.units !== nothing
+        units = resolve(box, units, transform, ctx.units)
     end
 
     has_properties = false
@@ -436,8 +434,8 @@ function drawpart(backend::Backend, container::Container,
 
         if trybatch
             b = batch(form)
-            if !isnull(b)
-                draw(backend, get(b))
+            if b !== nothing
+                draw(backend, b)
                 child = child.tail
                 continue
             end

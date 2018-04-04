@@ -24,7 +24,7 @@ mutable struct Table <: ContainerPromise
     fixed_configs::Vector
 
     # Coordinate system used for children
-    units::Nullable{UnitBox}
+    units::Union{UnitBox, Nothing}
 
     # Z-order of this context relative to its siblings.
     order::Int
@@ -40,7 +40,7 @@ end
 function Table(m::Integer, n::Integer, y_focus::UnitRange{Int}, x_focus::UnitRange{Int};
                y_prop=nothing, x_prop=nothing,
                aspect_ratio=nothing,
-               units=NullUnitBox(), order=0, withjs=false, withoutjs=false,
+               units=nothing, order=0, withjs=false, withoutjs=false,
                fixed_configs=Any[])
 
     if x_prop != nothing
