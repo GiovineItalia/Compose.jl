@@ -130,26 +130,24 @@ end
 
 UnitBox() = UnitBox(0.0, 0.0, 1.0, 1.0)
 
-const NullUnitBox = Nullable{UnitBox}
-
 # copy with substitution
 UnitBox(units::UnitBox;
-                 x0=Nullable{Measure}(),
-                 y0=Nullable{Measure}(),
-                 width=Nullable{Measure}(),
-                 height=Nullable{Measure}(),
-                 leftpad=Nullable{AbsoluteLength}(),
-                 rightpad=Nullable{AbsoluteLength}(),
-                 toppad=Nullable{AbsoluteLength}(),
-                 bottompad=Nullable{AbsoluteLength}()) =
-        UnitBox(ifelse(isa(x0, Nullable)     && isnull(x0),     units.x0,     x0),
-            ifelse(isa(y0, Nullable)     && isnull(y0),     units.y0,     y0),
-            ifelse(isa(width, Nullable)  && isnull(width),  units.width,  width),
-            ifelse(isa(height, Nullable) && isnull(height), units.height, height),
-            leftpad   = ifelse(isa(leftpad,   Nullable) && isnull(leftpad),   units.leftpad,   leftpad),
-            rightpad  = ifelse(isa(rightpad,  Nullable) && isnull(rightpad),  units.rightpad,  rightpad),
-            toppad    = ifelse(isa(toppad,    Nullable) && isnull(toppad),    units.toppad,    toppad),
-            bottompad = ifelse(isa(bottompad, Nullable) && isnull(bottompad), units.bottompad, bottompad))
+                 x0=nothing,
+                 y0=nothing,
+                 width=nothing,
+                 height=nothing,
+                 leftpad=nothing,
+                 rightpad=nothing,
+                 toppad=nothing,
+                 bottompad=nothing) =
+        UnitBox(ifelse(x0 === nothing,     units.x0,     x0),
+            ifelse(y0 === nothing,     units.y0,     y0),
+            ifelse(width === nothing,  units.width,  width),
+            ifelse(height === nothing, units.height, height),
+            leftpad   = ifelse(leftpad === nothing,   units.leftpad,   leftpad),
+            rightpad  = ifelse(rightpad === nothing,  units.rightpad,  rightpad),
+            toppad    = ifelse(toppad === nothing,    units.toppad,    toppad),
+            bottompad = ifelse(bottompad === nothing, units.bottompad, bottompad))
 
 Measures.width(units::UnitBox) = units.width
 Measures.height(units::UnitBox) = units.height

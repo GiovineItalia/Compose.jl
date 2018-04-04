@@ -1,4 +1,5 @@
-using Colors, Base.Test
+using Test, Random
+using Colors
 
 # showcompact
 tomato_bisque = compose(context(),

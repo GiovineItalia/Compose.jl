@@ -16,11 +16,10 @@ struct FormBatch{P <: FormPrimitive}
 end
 
 """
-Attempt to batch a form. Return a Nullable{FormBatch} which is null if the Form
-could not be batched, and non-null if the original form can be replaced with teh
-resulting FormBatch.
+Attempt to batch a form. Return a Nothing singleton if the Form could not be
+batched, and FormBatch object if the original form can be replaced.
 """
-batch(form::Form{P}) where P = Nullable{FormBatch{P}}()
+batch(form::Form{P}) where P = nothing
 
 # Note: in tests using random data, this optimization wasn't worth it. I'm
 # keeping it around out of hopes I find a more clever version that is
@@ -54,7 +53,7 @@ function batch{T <: CirclePrimitive}(form::Form{T})
     r = form.primitives[1].radius
     n = length(form.primitives)
     for i in 2:n
-        form.primitives[i].radius == r || return Nullable{FormBatch{CirclePrimitive}}()
+        form.primitives[i].radius == r || return @compat Nothing
     end
 
     prim = CirclePrimitive((0mm, 0mm), r)
@@ -63,7 +62,7 @@ function batch{T <: CirclePrimitive}(form::Form{T})
         offsets[i] = form.primitives[i].center
     end
 
-    return Nullable(FormBatch(prim, offsets))
+    return FormBatch(prim, offsets)
 end
 =#
 

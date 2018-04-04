@@ -26,7 +26,7 @@ mutable struct ImagePropertyState
     linewidth::AbsoluteLength
     fontsize::AbsoluteLength
     font::AbstractString
-    clip::Nullable{ClipPrimitive}
+    clip::Union{ClipPrimitive, Nothing}
 end
 
 mutable struct ImagePropertyFrame
@@ -57,12 +57,12 @@ mutable struct Image{B<:ImageBackend} <: Backend
     linewidth::AbsoluteLength
     fontsize::AbsoluteLength
     font::AbstractString
-    clip::Nullable{ClipPrimitive}
+    clip::Union{ClipPrimitive, Nothing}
 
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
     property_stack::Vector{ImagePropertyFrame}
-    vector_properties::Dict{Type, Nullable{Property}}
+    vector_properties::Dict{Type, Union{Property, Nothing}}
 
     # Close the surface when finished
     owns_surface::Bool
@@ -71,7 +71,7 @@ mutable struct Image{B<:ImageBackend} <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union{AbstractString, (Void)}
+    filename::Union{AbstractString, Nothing}
 
     # True when finish has been called and no more drawing should occur
     finished::Bool
@@ -83,8 +83,8 @@ mutable struct Image{B<:ImageBackend} <: Backend
     ppmm::Float64
 
     # For use with the t/T and s/S commands in SVG-style paths
-    last_ctrl1_point::Nullable{AbsoluteVec2}
-    last_ctrl2_point::Nullable{AbsoluteVec2}
+    last_ctrl1_point::Union{AbsoluteVec2, Nothing}
+    last_ctrl2_point::Union{AbsoluteVec2, Nothing}
 end
 
 function Image{B}(surface::CairoSurface,
@@ -104,18 +104,18 @@ function Image{B}(surface::CairoSurface,
                linewidth = default_line_width,
                fontsize = default_font_size,
                font = default_font_family,
-               clip = Nullable{ClipPrimitive}(),
+               clip = nothing,
                state_stack = Array{ImagePropertyState}(0),
                property_stack = Array{ImagePropertyFrame}(0),
-               vector_properties = Dict{Type, Nullable{Property}}(),
+               vector_properties = Dict{Type, Union{Property, Nothing}}(),
                owns_surface = false,
                ownedfile = false,
                filename = nothing,
                finished = false,
                emit_on_finish = false,
                ppmm = 72 / 25.4,
-               last_ctrl1_point = Nullable{AbsoluteVec2}(),
-               last_ctrl2_point = Nullable{AbsoluteVec2}()) where B<:ImageBackend
+               last_ctrl1_point = nothing,
+               last_ctrl2_point = nothing) where B<:ImageBackend
 
     Image{B}(out,
           surface,
@@ -196,7 +196,7 @@ end
 
 function canbatch(img::Image)
     for vp in values(img.vector_properties)
-        isnull(vp) || return false
+        (vp === nothing) || return false
     end
     return true
 end
@@ -314,7 +314,7 @@ function pop_property_frame(img::Image)
     frame.has_scalar_properties && restore_property_state(img)
 
     for (propertytype, property) in frame.vector_properties
-        img.vector_properties[propertytype] = Nullable{Property}()
+        img.vector_properties[propertytype] = Union{Property, Nothing}()
         for i in length(img.property_stack):-1:1
             if haskey(img.property_stack[i].vector_properties, propertytype)
                 img.vector_properties[propertytype] =
@@ -369,8 +369,8 @@ end
 function push_vector_properties(img::Image, idx::Int)
     save_property_state(img)
     for (propertytype, property) in img.vector_properties
-        isnull(property) && continue
-        primitives = get(property).primitives
+        (property === nothing) && continue
+        primitives = property.primitives
         idx > length(primitives) &&
                 error("Vector form and vector property differ in length. Can't distribute.")
         apply_property(img, primitives[idx])
@@ -405,13 +405,13 @@ function apply_property(img::Image, property::FontPrimitive)
     img.font = property.family
 
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
-                      Ptr{Void}, (Ptr{Void},), img.ctx.layout)
+                      Ptr{Cvoid}, (Ptr{Cvoid},), img.ctx.layout)
 
     if font_desc == C_NULL
         size = absolute_native_units(img, default_font_size.value)
     else
         size = ccall((:pango_font_description_get_size, Cairo._jl_libpango),
-                     Cint, (Ptr{Void},), font_desc)
+                     Cint, (Ptr{Cvoid},), font_desc)
     end
 
     Cairo.set_font_face(img.ctx,
@@ -422,13 +422,13 @@ function apply_property(img::Image, property::FontSizePrimitive)
     img.fontsize = property.value
 
     font_desc = ccall((:pango_layout_get_font_description, Cairo._jl_libpango),
-                      Ptr{Void}, (Ptr{Void},), img.ctx.layout)
+                      Ptr{Cvoid}, (Ptr{Cvoid},), img.ctx.layout)
 
     if font_desc == C_NULL
         family = "sans"
     else
         family = ccall((:pango_font_description_get_family, Cairo._jl_libpango),
-                       Ptr{UInt8}, (Ptr{Void},), font_desc)
+                       Ptr{UInt8}, (Ptr{Cvoid},), font_desc)
         family = unsafe_string(family)
     end
 
@@ -462,8 +462,8 @@ apply_property(img::Image, property::SVGAttributePrimitive) = nothing
 function current_point(img::Image)
     x = Array{Float64}(1)
     y = Array{Float64}(1)
-    ccall((:cairo_get_current_point, Cairo._jl_libcairo), Void,
-          (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
+    ccall((:cairo_get_current_point, Cairo._jl_libcairo), Cvoid,
+          (Ptr{Cvoid}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
     return ((x[1] / img.ppmm)*mm, (x[2] / img.ppmm)*mm)
 end
 
@@ -596,8 +596,8 @@ function draw(img::Image, form::Form)
     else
         for (idx, primitive) in enumerate(form.primitives)
             for (propertytype, property) in img.vector_properties
-                isnull(property) && continue
-                primitives = get(property).primitives
+                (property === nothing) && continue
+                primitives = property.primitives
                 idx > length(primitives) &&
                         error("Vector form and vector property differ in length. Can't distribute.")
                 apply_property(img, primitives[idx])
@@ -840,7 +840,7 @@ function draw_path_op(img::Image, op::QuadCurveShortAbsPathOp)
     x2, y2 = op.to[1].value, op.to[2].value
 
     ctrl1 = img.last_ctrl1_point
-    if isnull(img.last_ctrl1_point)
+    if img.last_ctrl1_point === nothing
         ctrl1 = xy
     else
         ctrl1 = (Measure(abs=2*x1 - ctrl1[1].value),
@@ -969,8 +969,8 @@ function draw(img::Image, batch::FormBatch)
     Cairo.restore(img.ctx)
 
     # reapply the clipping region we just reset
-    if !isnull(img.clip)
-        apply_property(img, get(img.clip))
+    if img.clip !== nothing
+        apply_property(img, img.clip)
     end
 
     Cairo.set_antialias(img.ctx, Cairo.ANTIALIAS_NONE)
