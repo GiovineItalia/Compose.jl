@@ -110,7 +110,7 @@ context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
             ListNull{Container}(), ListNull{Form}(), ListNull{Property}(),
             order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
 
-children(ctx::Context) = chain(ctx.container_children, ctx.form_children, ctx.property_children)
+children(ctx::Context) = Iterators.flatten((ctx.container_children, ctx.form_children, ctx.property_children))
 
 # Updating context fields
 
