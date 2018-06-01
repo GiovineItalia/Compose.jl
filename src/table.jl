@@ -248,45 +248,47 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     group_choices = [l == 0 ? (0:0) : (1:l) for l in num_group_choices]
     choice = zeros(Int, m * n)
     optimal_choice = nothing
-    for group_choice in product(group_choices...)
-        it_count += 1
-        for (l, k) in enumerate(group_choice)
-            for p in fixed_configs[l]
-                choice[p] = k
+    if !isempty(group_choices)
+        for group_choice in Iterators.product(group_choices...)
+            it_count += 1
+            for (l, k) in enumerate(group_choice)
+                for p in fixed_configs[l]
+                    choice[p] = k
+                end
             end
-        end
 
-        penalty = update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
+            penalty = update_mincolrow_sizes!(choice, minrowheights, mincolwidths)
 
-        minheightval = sum(minrowheights)
-        minwidthval = sum(mincolwidths)
+            minheightval = sum(minrowheights)
+            minwidthval = sum(mincolwidths)
 
-        update_focused_col_widths!(focused_col_widths)
-        update_focused_row_heights!(focused_row_heights)
+            update_focused_col_widths!(focused_col_widths)
+            update_focused_row_heights!(focused_row_heights)
 
-        objective = sum(focused_col_widths) + sum(focused_row_heights) - penalty
+            objective = sum(focused_col_widths) + sum(focused_row_heights) - penalty
 
-        # feasible?
-        if minwidthval < drawctx.box.a[1].value && minheightval < drawctx.box.a[2].value &&
-           all(focused_col_widths .>= mincolwidths[tbl.x_focus]) &&
-           all(focused_row_heights .>= minrowheights[tbl.y_focus])
-            if objective > maxobjective || !feasible
-                maxobjective = objective
-                minbadness = 0.0
+            # feasible?
+            if minwidthval < drawctx.box.a[1].value && minheightval < drawctx.box.a[2].value &&
+               all(focused_col_widths .>= mincolwidths[tbl.x_focus]) &&
+               all(focused_row_heights .>= minrowheights[tbl.y_focus])
+                if objective > maxobjective || !feasible
+                    maxobjective = objective
+                    minbadness = 0.0
+                    optimal_choice = copy(choice)
+                end
+                feasible = true
+            else
+                badness = max(minwidthval - drawctx.box.a[1].value, 0.0) +
+                          max(minheightval - drawctx.box.a[2].value, 0.0)
+                if badness < minbadness && !feasible
+                    minbadness = badness
+                    optimal_choice = copy(choice)
+                end
+            end
+
+            if optimal_choice === nothing
                 optimal_choice = copy(choice)
             end
-            feasible = true
-        else
-            badness = max(minwidthval - drawctx.box.a[1].value, 0.0) +
-                      max(minheightval - drawctx.box.a[2].value, 0.0)
-            if badness < minbadness && !feasible
-                minbadness = badness
-                optimal_choice = copy(choice)
-            end
-        end
-
-        if optimal_choice === nothing
-            optimal_choice = copy(choice)
         end
     end
 
