@@ -694,10 +694,9 @@ end
 function draw(img::Image, prim::TextPrimitive)
     (!img.visible || (img.fill.alpha == 0.0 && img.stroke.alpha == 0.0)) && return
 
-    pos = prim.position
     Cairo.set_text(img.ctx, prim.value, true)
     width, height = get_layout_size(img)
-    pos = (pos[1], pos[2] - height)
+    pos = (prim.position[1]+prim.offset[1], prim.position[2]+prim.offset[2] - height)
 
     if prim.halign != hleft || prim.valign != vbottom
         if prim.halign == hcenter
