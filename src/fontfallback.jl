@@ -1,10 +1,12 @@
+using Compat
+
 # Font handling when pango and fontconfig are not available.
 
 # Define this even if we're not calling pango, since cairo needs it.
 const PANGO_SCALE = 1024.0
 
 # Serialized glyph sizes for commont fonts.
-const glyphsizes = open(fd -> JSON.parse(readstring(fd)),
+const glyphsizes = open(fd -> JSON.parse(Compat.read(fd, String)),
                         joinpath(dirname(@__FILE__), "..", "data", "glyphsize.json"))
 
 # It's better to overestimate text extents than to underestimes, since the later
@@ -16,8 +18,8 @@ const text_extents_scale_y = 1.0
 
 # Normalized Levenshtein distance between two strings.
 function levenshtein(a::AbstractString, b::AbstractString)
-    a = replace(lowercase(a), r"\s+", "")
-    b = replace(lowercase(b), r"\s+", "")
+    a = Compat.replace(lowercase(a), r"\s+"=>"")
+    b = Compat.replace(lowercase(b), r"\s+"=>"")
     n = length(a)
     m = length(b)
     D = zeros(UInt, n + 1, m + 1)
@@ -72,7 +74,7 @@ end
 #   Approximate text width in millimeters.
 #
 function text_width(widths::Dict, text::AbstractString, size::Float64)
-    stripped_text = replace(text, r"<[^>]*>", "")
+    stripped_text = Compat.replace(text, r"<[^>]*>"=>"")
     width = 0
     for c in stripped_text
         width += get(widths, string(c), widths["w"])
@@ -118,7 +120,7 @@ function text_extents(font_family::AbstractString, size::Measure, texts::Abstrac
     glyphwidths = glyphsizes[font_family]["widths"]
     fontsize = size/pt
 
-    extents = Array{Tuple{Measure, Measure}}(length(texts))
+    extents = Array{Tuple{Measure, Measure}}(undef, length(texts))
     for (i, text) in enumerate(texts)
         chunkwidths = Float64[]
         textheight = 0.0

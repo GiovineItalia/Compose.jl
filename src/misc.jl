@@ -70,7 +70,7 @@ macro makeform(args...)
         prim1 = $(constructor)
         T = typeof(prim1)
 
-        primitives = Array{T}(n)
+        primitives = Array{T}(undef, n)
         primitives[1] = prim1
         for i in 2:n
             $(iter_ex)

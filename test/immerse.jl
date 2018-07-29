@@ -2,7 +2,8 @@
 # need to edit these tests to make them pass, that's fine, but please
 # submit the corresponding fix to Immerse.
 
-using Compose, Base.Test
+using Test
+using Compose
 import Cairo
 
 ### The Immerse backend
