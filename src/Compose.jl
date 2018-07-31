@@ -164,7 +164,7 @@ function link_fontconfig()
 end
 
 function link_cairo()
-    @info "Loading Cairo backend into Compose.jl"
+    Compat.@info "Loading Cairo backend into Compose.jl"
     include("cairo_backends.jl")
     include("immerse_backend.jl")
 end
