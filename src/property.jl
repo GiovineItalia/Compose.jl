@@ -86,7 +86,7 @@ end
 const StrokeDash = Property{StrokeDashPrimitive}
 
 strokedash(values::AbstractArray) = StrokeDash([StrokeDashPrimitive(collect(Measure, values))])
-strokedash(values::AbstractArray{AbstractArray}) =
+strokedash(values::AbstractArray{<:AbstractArray}) =
         StrokeDash([StrokeDashPrimitive(collect(Measure, value)) for value in values])
 
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, primitive::StrokeDashPrimitive) =
