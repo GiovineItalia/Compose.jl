@@ -5,6 +5,7 @@
 using Test
 using Compose
 import Cairo
+import Measures
 
 ### The Immerse backend
 srf = Cairo.CairoImageSurface(10, 10, Cairo.FORMAT_RGB24)

@@ -1,6 +1,10 @@
 # Estimation of text extents using pango.
 
-import Fontconfig
+if VERSION < v"0.7-"
+    import Fontconfig
+else
+    topimport(:Fontconfig)
+end
 
 const libpangocairo = Cairo._jl_libpangocairo
 const libpango = Cairo._jl_libpango
