@@ -124,6 +124,37 @@ default_line_width = 0.3mm
 default_stroke_color = nothing
 default_fill_color = colorant"black"
 
+if VERSION >= v"0.7-"
+# Methods for handling optional backend packages
+function _findmod(f::Symbol)
+    for (u,v) in Base.loaded_modules
+        (Symbol(v) == f) && return u
+    end
+    nothing
+end
+function topimport(modname)
+    @eval Base.__toplevel__  import $modname
+    u = _findmod(modname)
+    @eval $modname = Base.loaded_modules[$u]
+end
+
+function checked_import(pkg::Symbol)
+    # kludge for test suite
+    if isdefined(Main, pkg)
+        m1 = getfield(Main, pkg)
+        isa(m1, Module) && return m1
+    end
+    if isdefined(FileIO, pkg)
+        m1 = getfield(FileIO, pkg)
+        isa(m1, Module) && return m1
+    end
+    m = _findmod(pkg)
+    m == nothing || return Base.loaded_modules[m]
+    topimport(pkg)
+    return Base.loaded_modules[_findmod(pkg)]
+end
+end
+
 # Use cairo for the PNG, PS, PDF if it's installed.
 macro missing_cairo_error(backend)
     msg1 = """
@@ -138,10 +169,10 @@ macro missing_cairo_error(backend)
     string(msg1, msg2)
 end
 
-global PDF
-PNG(args...) = error(@missing_cairo_error "PNG")
-PS(args...) = error(@missing_cairo_error "PS")
-PDF(args...) = error(@missing_cairo_error "PDF")
+#global PDF
+PNG(::Any, args...) = error(@missing_cairo_error "PNG")
+PS(::Any, args...) = error(@missing_cairo_error "PS")
+PDF(::Any, args...) = error(@missing_cairo_error "PDF")
 
 include("svg.jl")
 include("pgf_backend.jl")
