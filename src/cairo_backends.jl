@@ -1,11 +1,16 @@
 using Compat
 
 # Cairo backend for compose
-import Cairo
+if VERSION < v"0.7-"
+    import Cairo
+end
+# in later versions, Requires does the import for us, but resolution is tricky
 
-using Cairo: CairoContext, CairoSurface, CairoARGBSurface,
-             CairoEPSSurface, CairoPDFSurface, CairoSVGSurface,
-             CairoImageSurface
+for name in (:CairoContext, :CairoSurface, :CairoARGBSurface, :CairoEPSSurface,
+             :CairoPDFSurface, :CairoSVGSurface, :CairoImageSurface)
+    val = getfield(Cairo,name)
+    @eval const $name = $val
+end
 
 abstract type ImageBackend end
 abstract type PNGBackend <: ImageBackend end
@@ -185,9 +190,15 @@ Image{B}(width::MeasureOrNumber=default_graphic_width,
             dpi = (B==PNGBackend ? 96 : 72)) where {B<:ImageBackend} =
         Image{B}(IOBuffer(), width, height, emit_on_finish, dpi=dpi)
 
-const PNG = Image{PNGBackend}
-const PDF = Image{PDFBackend}
-const PS  = Image{PSBackend}
+PNG(x::Union{CairoSurface,IO,AbstractString,MeasureOrNumber}, args...) =
+    Image{PNGBackend}(x, args...)
+
+PDF(x::Union{CairoSurface,IO,AbstractString,MeasureOrNumber}, args...) =
+    Image{PDFBackend}(x, args...)
+
+PS(x::Union{CairoSurface,IO,AbstractString,MeasureOrNumber}, args...) =
+    Image{PSBackend}(x, args...)
+
 const CAIROSURFACE = Image{CairoBackend}
 
 function (img::Image)(x)
@@ -274,9 +285,9 @@ isfinished(img::Image) = img.finished
 
 root_box(img::Image) = BoundingBox(width(img), height(img))
 
-show(io::IO, ::MIME"image/png", img::PNG) = write(io, String(take!(img.out)))
-show(io::IO, ::MIME"application/pdf", img::PDF) = write(io, String(take!(img.out)))
-show(io::IO, ::MIME"application/postscript", img::PS) = write(io, String(take!(img.out)))
+show(io::IO, ::MIME"image/png", img::Image{PNGBackend}) = write(io, String(take!(img.out)))
+show(io::IO, ::MIME"application/pdf", img::Image{PDFBackend}) = write(io, String(take!(img.out)))
+show(io::IO, ::MIME"application/postscript", img::Image{PSBackend}) = write(io, String(take!(img.out)))
 
 
 # Applying Properties
