@@ -125,6 +125,7 @@ default_stroke_color = nothing
 default_fill_color = colorant"black"
 
 # Use cairo for the PNG, PS, PDF if it's installed.
+if VERSION < v"0.7-"
 macro missing_cairo_error(backend)
     msg1 = """
     Cairo and Fontconfig are necessary for the $(backend) backend. Run:
@@ -137,11 +138,22 @@ macro missing_cairo_error(backend)
         """
     string(msg1, msg2)
 end
+else
+macro missing_cairo_error(backend)
+    msg1 = """
+    The Cairo and Fontconfig packages are necessary for the $(backend) backend.
+    Add them with the package manager if necessary, then run:
+      import Cairo, Fontconfig
+    before invoking $(backend).
+    """
+    string(msg1)
+end
+end
 
-global PDF
-PNG(args...) = error(@missing_cairo_error "PNG")
-PS(args...) = error(@missing_cairo_error "PS")
-PDF(args...) = error(@missing_cairo_error "PDF")
+#global PDF
+PNG(::Any, args...) = error(@missing_cairo_error "PNG")
+PS(::Any, args...) = error(@missing_cairo_error "PS")
+PDF(::Any, args...) = error(@missing_cairo_error "PDF")
 
 include("svg.jl")
 include("pgf_backend.jl")
@@ -155,7 +167,7 @@ function link_fontconfig()
     pango_cairo_ctx = C_NULL
     include("pango.jl")
 
-    ccall((:g_type_init, Cairo._jl_libgobject), Cvoid, ())
+    ccall((:g_type_init, libgobject), Cvoid, ())
     pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
                              Ptr{Cvoid}, ())
     pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),

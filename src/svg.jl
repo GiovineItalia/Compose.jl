@@ -1,4 +1,9 @@
 using Compat
+if VERSION < v"0.7-"
+    import Base.Random.uuid4
+else
+    import UUIDs: uuid4
+end
 
 const snapsvgjs = joinpath(dirname(@__FILE__), "..", "data", "snap.svg-min.js")
 
@@ -223,7 +228,7 @@ function SVG(out::IO,
              jsmode::Symbol=:none;
 
              cached_out = nothing,
-             id = string("img-", string(Base.Random.uuid4())[1:8]),
+             id = string("img-", string(uuid4())[1:8]),
              indentation = 0,
              property_stack = Array{SVGPropertyFrame}(0),
              vector_properties = Dict{Type, Union{Property, Nothing}}(),
