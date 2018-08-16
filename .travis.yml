@@ -5,6 +5,7 @@ sudo: required
 dist: trusty
 julia:
     - 0.6
+    - 1.0
     - nightly
 notifications:
     email: false
