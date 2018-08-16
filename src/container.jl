@@ -400,7 +400,7 @@ function drawpart(backend::Backend, container::Container,
     has_properties = false
     if !isa(ctx.property_children, ListNull) || ctx.clip
         has_properties = true
-        properties = Array{Property}(0)
+        properties = Array{Property}(undef, 0)
 
         child = ctx.property_children
         while !isa(child, ListNull)
@@ -457,7 +457,7 @@ function drawpart(backend::Backend, container::Container,
     end
 
     if ordered_children
-        container_children = Array{Tuple{Int, Int, Container}}(0)
+        container_children = Array{Tuple{Int, Int, Container}}(undef, 0)
         child = ctx.container_children
         while !isa(child, ListNull)
             push!(container_children,
@@ -497,7 +497,7 @@ function introspect(root::Context)
     # TODO: It would be nice if we can try to do a better job of positioning
     # nodes within their levels
 
-    q = Queue(Tuple{ComposeNode, Int})
+    q = Queue{Tuple{ComposeNode, Int}}()
     enqueue!(q, (root, 1))
     figs = compose!(context(), stroke("#333"), linewidth(0.5mm))
     figsize = 6mm

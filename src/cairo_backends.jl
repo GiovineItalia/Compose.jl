@@ -110,8 +110,8 @@ function Image{B}(surface::CairoSurface,
                fontsize = default_font_size,
                font = default_font_family,
                clip = nothing,
-               state_stack = Array{ImagePropertyState}(0),
-               property_stack = Array{ImagePropertyFrame}(0),
+               state_stack = Array{ImagePropertyState}(undef, 0),
+               property_stack = Array{ImagePropertyFrame}(undef, 0),
                vector_properties = Dict{Type, Union{Property, Nothing}}(),
                owns_surface = false,
                ownedfile = false,
@@ -298,7 +298,7 @@ function push_property_frame(img::Image, properties::Vector{Property})
 
     frame = ImagePropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array{Property}(0)
+    scalar_properties = Array{Property}(undef, 0)
     for property in properties
         if isscalar(property) && !(typeof(property) in applied_properties)
             push!(scalar_properties, property)
@@ -471,8 +471,8 @@ apply_property(img::Image, property::SVGAttributePrimitive) = nothing
 # --------------
 
 function current_point(img::Image)
-    x = Array{Float64}(1)
-    y = Array{Float64}(1)
+    x = Array{Float64}(undef, 1)
+    y = Array{Float64}(undef, 1)
     ccall((:cairo_get_current_point, Cairo._jl_libcairo), Cvoid,
           (Ptr{Cvoid}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
     return ((x[1] / img.ppmm)*mm, (x[2] / img.ppmm)*mm)
@@ -667,8 +667,8 @@ function draw(img::Image, prim::EllipsePrimitive)
               (prim.x_point[2].value - cy)^2)
     ry = sqrt((prim.y_point[1].value - cx)^2 +
               (prim.y_point[2].value - cy)^2)
-    theta = atan2(prim.x_point[2].value - cy,
-                  prim.x_point[1].value - cx)
+    theta = atan(prim.x_point[2].value - cy,
+                 prim.x_point[1].value - cx)
 
     all(isfinite([cx, cy, rx, ry, theta])) || return
 

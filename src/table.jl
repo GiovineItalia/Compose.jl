@@ -53,14 +53,14 @@ function Table(m::Integer, n::Integer, y_focus::UnitRange{Int}, x_focus::UnitRan
         y_prop ./= sum(filter(x -> !isnan(x), y_prop))
     end
 
-    tbl = Table(Array{Vector{Context}}((m, n)),
+    tbl = Table(Array{Vector{Context}}(undef, (m, n)),
               x_focus, y_focus,
               x_prop, y_prop,
               aspect_ratio,
               fixed_configs,
               units, order, withjs, withoutjs)
     for i in 1:m, j in 1:n
-        tbl.children[i, j] = Array{Context}(0)
+        tbl.children[i, j] = Array{Context}(undef, 0)
     end
     return tbl
 end
@@ -127,12 +127,12 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     # which is basically "size needed" - "size available".
     minbadness = Inf
 
-    focused_col_widths = Array{Float64}(length(tbl.x_focus))
-    focused_row_heights = Array{Float64}(length(tbl.y_focus))
+    focused_col_widths = Array{Float64}(undef, length(tbl.x_focus))
+    focused_row_heights = Array{Float64}(undef, length(tbl.y_focus))
 
     # minimum sizes for each column and row
-    minrowheights = Array{Float64}(m)
-    mincolwidths = Array{Float64}(n)
+    minrowheights = Array{Float64}(undef, m)
+    mincolwidths = Array{Float64}(undef, n)
 
     # convert tbl.fixed_configs to linear indexing
     fixed_configs = Any[

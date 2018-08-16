@@ -95,7 +95,7 @@ macro makeprimitives(args)
 
         push!(maxlen_ex.args, quote
             if isempty($(esc(arr)))
-                primitives = Array{$(T)}(0)
+                primitives = Array{$(T)}(undef, 0)
                 @goto done
             end end)
         push!(maxlen_ex.args, quote n = max(n, length($(esc(arr)))) end)
@@ -106,7 +106,7 @@ macro makeprimitives(args)
 
     quote
         $(maxlen_ex)
-        primitives = Array{$(esc(T))}(n)
+        primitives = Array{$(esc(T))}(undef, n)
         for i in 1:n
             $(iter_ex)
             primitives[i] = $(esc(constructor))

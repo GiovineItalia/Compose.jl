@@ -2,6 +2,7 @@
 
 using Colors
 using Compose
+using Compat.MathConstants
 
 function golden_rect(n::Int)
     if n == 0 return context() end

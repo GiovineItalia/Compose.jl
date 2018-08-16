@@ -26,7 +26,7 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
         end
     end
 
-    penalties = Array{Float64}(length(c_indexes))
+    penalties = Array{Float64}(undef, length(c_indexes))
     for (l, (i, j, k)) in enumerate(c_indexes)
         penalties[l] = tbl.children[i, j][k].penalty
     end

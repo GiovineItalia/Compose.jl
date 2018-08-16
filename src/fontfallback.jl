@@ -18,8 +18,8 @@ const text_extents_scale_y = 1.0
 
 # Normalized Levenshtein distance between two strings.
 function levenshtein(a::AbstractString, b::AbstractString)
-    a = Compat.replace(lowercase(a), r"\s+"=>"")
-    b = Compat.replace(lowercase(b), r"\s+"=>"")
+    a = replace(lowercase(a), r"\s+"=>"")
+    b = replace(lowercase(b), r"\s+"=>"")
     n = length(a)
     m = length(b)
     D = zeros(UInt, n + 1, m + 1)
@@ -74,7 +74,7 @@ end
 #   Approximate text width in millimeters.
 #
 function text_width(widths::Dict, text::AbstractString, size::Float64)
-    stripped_text = Compat.replace(text, r"<[^>]*>"=>"")
+    stripped_text = replace(text, r"<[^>]*>"=>"")
     width = 0
     for c in stripped_text
         width += get(widths, string(c), widths["w"])
@@ -144,7 +144,7 @@ end
 # Amazingly crude fallback to parse pango markup into svg.
 function pango_to_svg(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
-    input = convert(Array{UInt8}, text)
+    input = codeunits(text)
     output = IOBuffer()
     lastpos = 1
 

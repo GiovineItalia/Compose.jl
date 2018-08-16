@@ -1,9 +1,6 @@
 using Compat
-if VERSION < v"0.7-"
-    import Base.Random.uuid4
-else
-    import UUIDs: uuid4
-end
+using Compat.Base64
+using Compat.UUIDs
 
 const snapsvgjs = joinpath(dirname(@__FILE__), "..", "data", "snap.svg-min.js")
 
@@ -60,7 +57,7 @@ function svg_print_float(io::IO, x::AbstractFloat)
     end
 end
 
-let a = Array{UInt8}(20)
+let a = Array{UInt8}(undef, 20)
     global svg_print_uint
     function svg_print_uint(io::IO, x::Unsigned, width = 0, drop = false)
         n = length(a)
@@ -115,7 +112,7 @@ end
 #=end=#
 
 # Javascript contained to CDATA block needs to avoid ']]'
-escape_script(js::AbstractString) = replace(js, "]]", "] ]")
+escape_script(js::AbstractString) = replace(js, "]]"=>"] ]")
 
 # When subtree rooted at a context is drawn, it pushes its property children
 # in the form of a property frame.
@@ -230,10 +227,10 @@ function SVG(out::IO,
              cached_out = nothing,
              id = string("img-", string(uuid4())[1:8]),
              indentation = 0,
-             property_stack = Array{SVGPropertyFrame}(0),
+             property_stack = Array{SVGPropertyFrame}(undef, 0),
              vector_properties = Dict{Type, Union{Property, Nothing}}(),
              clippaths = OrderedDict{ClipPrimitive, Compat.String}(),
-             batches = Array{Tuple{FormPrimitive, Compat.String}}(0),
+             batches = Array{Tuple{FormPrimitive, Compat.String}}(undef, 0),
              embobj = Set{AbstractString}(),
              finished = false,
              ownedfile = false,
@@ -409,7 +406,7 @@ function finish(img::SVG)
             write(img.out,
                 """
                 <script> <![CDATA[
-                $(escape_script(readstring(snapsvgjs)))
+                $(escape_script(read(snapsvgjs, String)))
                 ]]> </script>
                 """)
         elseif img.jsmode == :linkabs
@@ -428,7 +425,7 @@ function finish(img::SVG)
             if img.jsmode == :embed
                 write(img.out, "<script> <![CDATA[\n")
                 for script in img.jsheader
-                    write(img.out, escape_script(readstring(script)), "\n")
+                    write(img.out, escape_script(read(script, String)), "\n")
                 end
             elseif img.jsmode == :linkabs
                 for script in img.jsheader
@@ -845,8 +842,8 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
               (prim.x_point[2].value - cy)^2)
     ry = sqrt((prim.y_point[1].value - cx)^2 +
               (prim.y_point[2].value - cy)^2)
-    theta = rad2deg(atan2(prim.x_point[2].value - cy,
-                          prim.x_point[1].value - cx))
+    theta = rad2deg(atan(prim.x_point[2].value - cy,
+                         prim.x_point[1].value - cx))
 
     all(isfinite,[cx, cy, rx, ry, theta]) || return
 
@@ -1276,7 +1273,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
 
     frame = SVGPropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array{Property}(0)
+    scalar_properties = Array{Property}(undef, 0)
     isplotpanel = false
     for property in properties
         if !isrepeatable(property) && (typeof(property) in applied_properties)

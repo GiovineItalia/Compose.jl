@@ -91,7 +91,7 @@ function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
           Cvoid, (Ptr{Cvoid}, Ptr{UInt8}, Int32),
           pangolayout.layout, textarray, length(textarray))
 
-    extents = Array{Int32}(4)
+    extents = Array{Int32}(undef, 4)
     ccall((:pango_layout_get_extents, libpango),
           Cvoid, (Ptr{Cvoid}, Ptr{Int32}, Ptr{Int32}),
           pangolayout.layout, extents, C_NULL)
@@ -290,8 +290,8 @@ function unpack_pango_attr_list(ptr::Ptr{Cvoid})
                                      attr_it, eval(attr_name))
 
     attr_it_range = () -> begin
-        start_idx = Array{Int32}(1)
-        end_idx = Array{Int32}(1)
+        start_idx = Array{Int32}(undef, 1)
+        end_idx = Array{Int32}(undef, 1)
         ccall((:pango_attr_iterator_range, libpango),
               Cvoid, (Ptr{Cvoid}, Ptr{Int32}, Ptr{Int32}),
               attr_it, start_idx, end_idx)
@@ -299,7 +299,7 @@ function unpack_pango_attr_list(ptr::Ptr{Cvoid})
     end
 
 
-    attrs = Array{Tuple{Int, PangoAttr}}(0)
+    attrs = Array{Tuple{Int, PangoAttr}}(undef, 0)
 
     while attr_it_next() != 0
         attr = PangoAttr()
@@ -339,7 +339,7 @@ function pango_to_svg(text::AbstractString)
 
     # TODO: do c_stripped_text and c_attr_list need to be freed?
 
-    text = convert(Vector{UInt8}, unsafe_string(c_stripped_text[]))
+    text = unsafe_wrap(Array, c_stripped_text[])
 
     last_idx = 1
     open_tag = false

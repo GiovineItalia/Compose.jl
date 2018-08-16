@@ -13,11 +13,12 @@ for ex in readdir(exampledir)
     endswith(ex, ".jl") || continue
     file = joinpath(exampledir, ex)
     expr = quote
-        module $(Symbol(replace(ex, ".", "_")))
+        module $(Symbol(replace(ex, "."=>"_")))
         using Compose
         using Colors
         using Compat
-        srand(1) #Needed so that SVG uuid is reproducible
+        using Compat.Random
+        Random.seed!(1) #Needed so that SVG uuid is reproducible
         include($file)
         end
     end

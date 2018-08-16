@@ -1,4 +1,4 @@
-using Test, Random
+using Test, Compat.Random
 using Colors
 
 # showcompact

@@ -93,7 +93,7 @@ function PGF(out::IO,
              buf = IOBuffer(),
              visible = true,
              color_set = Set{Color}([colorant"black"]),
-             property_stack = Array{PGFPropertyFrame}(0),
+             property_stack = Array{PGFPropertyFrame}(undef, 0),
              vector_properties = Dict{Type, Union{Property, Nothing}}(),
              clippath = nothing,
              finished = false,
@@ -384,8 +384,8 @@ function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
               (prim.x_point[2].value - cy)^2)
     ry = sqrt((prim.y_point[1].value - cx)^2 +
               (prim.y_point[2].value - cy)^2)
-    theta = rad2deg(atan2(prim.x_point[2].value - cy,
-                          prim.x_point[1].value - cx))
+    theta = rad2deg(atan(prim.x_point[2].value - cy,
+                         prim.x_point[1].value - cx))
 
     all(isfinite([cx, cy, rx, ry, theta])) || return
 
@@ -458,7 +458,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
 
     frame = PGFPropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array{Property}(0)
+    scalar_properties = Array{Property}(undef, 0)
     for property in properties
         if !isrepeatable(property) && (typeof(property) in applied_properties)
             continue
