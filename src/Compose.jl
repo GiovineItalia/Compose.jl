@@ -10,8 +10,8 @@ using Measures
 using Requires
 import JSON
 
-import Base: length, start, next, done, isempty, getindex, setindex!,
-    display, show, showcompact, convert, zero, isless, max, fill, size, copy,
+import Base: length, isempty, getindex, setindex!,
+    display, show, convert, zero, isless, max, fill, size, copy,
     min, max, abs, +, -, *, /, ==
 
 using Compat.Dates

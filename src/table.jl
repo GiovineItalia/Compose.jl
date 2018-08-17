@@ -351,16 +351,20 @@ end
 realize(tbl::Table, drawctx::ParentDrawContext) = realize_brute_force(tbl, drawctx)
 #end
 
-function showcompact(io::IO, t::Table)
-    println(io,"$(size(t.children,1))x$(size(t.children,2)) Table:")
-    for i = 1:size(t.children,1)
-        print(io, "  ")
-        first = true
-        for j = 1:size(t.children,2)
-            first || print(io, ",")
-            first = false
-            showcompact(io, t.children[i,j])
+function show(io::IO, t::Table)
+    if get(io, :compact, false)
+        println(io,"$(size(t.children,1))x$(size(t.children,2)) Table:")
+        for i = 1:size(t.children,1)
+            print(io, "  ")
+            first = true
+            for j = 1:size(t.children,2)
+                first || print(io, ",")
+                first = false
+                show(io, t.children[i,j])
+            end
+            println(io)
         end
-        println(io)
+    else
+        print(io, t)
     end
 end

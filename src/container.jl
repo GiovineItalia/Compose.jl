@@ -566,15 +566,19 @@ function introspect(root::Context)
                     lines_ctx, figs)
 end
 
-function showcompact(io::IO, ctx::Context)
-    print(io, "Context(")
-    first = true
-    for c in children(ctx)
-        first || print(io, ",")
-        first = false
-        isa(c, AbstractArray) ? showcompact_array(io, c) : showcompact(io, c)
+function show(io::IO, ctx::Context)
+    if get(io, :compact, false)
+        print(io, "Context(")
+        first = true
+        for c in children(ctx)
+            first || print(io, ",")
+            first = false
+            isa(c, AbstractArray) ? showcompact_array(io, c) : show(io, c)
+        end
+        print(io, ")")
+    else
+        print(io, ctx)
     end
-    print(io, ")")
 end
 
 function showcompact_array(io::IO, a::AbstractArray)
@@ -583,11 +587,11 @@ function showcompact_array(io::IO, a::AbstractArray)
     for c in a
         first || print(io, ",")
         first = false
-        showcompact(io, c)
+        show(io, c)
     end
     print(io, "]")
 end
-showcompact_array(io::IO, a::AbstractRange) = showcompact(io, a)
-showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
-showcompact(io::IO, p::Compose.Property) = print(io, Compose.prop_string(p))
-showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)
+showcompact_array(io::IO, a::AbstractRange) = show(io, a)
+show(io::IO, f::Compose.Form) = get(io, :compact, false) ? print(io, Compose.form_string(f)) : print(io, f) 
+show(io::IO, p::Compose.Property) = get(io, :compact, false) ? print(io, Compose.prop_string(p)) : print(io, p) 
+show(io::IO, cp::ContainerPromise) = get(io, :compact, false) ? print(io, typeof(cp).name.name) : print(io, cp) 
