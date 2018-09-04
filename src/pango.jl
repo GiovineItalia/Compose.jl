@@ -33,7 +33,7 @@ let available_font_families = Set{AbstractString}()
         push!(available_font_families, lowercase(Fontconfig.format(font_pattern, "%{family}")))
     end
 
-    const meta_families = Set(["serif", "sans", "sans-serif", "monospace", "cursive", "fantasy"])
+    meta_families = Set(["serif", "sans", "sans-serif", "monospace", "cursive", "fantasy"])
 
     global match_font
     function match_font(families::AbstractString, size::Float64)

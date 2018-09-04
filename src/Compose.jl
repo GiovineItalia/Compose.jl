@@ -1,4 +1,4 @@
-VERSION >= v"0.4.0-dev+6521" && __precompile__()
+__precompile__()
 
 module Compose
 
@@ -204,6 +204,7 @@ try
     getfield(Compose, :Cairo) # throws if Cairo isn't being used
     show(io::IO, ::MIME"image/png", ctx::Context) =
         draw(PNG(io, default_graphic_width, default_graphic_height), ctx)
+catch
 end
 
 function pad_outer(c::Context,
