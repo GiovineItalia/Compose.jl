@@ -18,6 +18,5 @@ before_install:
         sudo apt-get install -y libcairo2 libfontconfig1 libpango1.0-0 libpng12-0 libpng12-dev libpixman-1-0 gettext;
       fi
 after_success:
-  - julia --project=docs -e 'using Pkg; Pkg.instantiate()'
-  - julia --project=docs docs/make.jl
-  - julia -e 'cd("test"); include("coverage.jl")'
+   - julia -e 'using Pkg; Pkg.add("Documenter"); include(joinpath("docs", "make.jl"))'
+   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'

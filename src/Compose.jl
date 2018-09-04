@@ -1,22 +1,18 @@
-__precompile__()
-
 module Compose
 
 using Colors
 using IterTools
 using DataStructures
-using Compat
 using Measures
 using Requires
+using Dates
+using Printf
+using Base.Iterators
 import JSON
 
 import Base: length, isempty, getindex, setindex!,
     display, show, convert, zero, isless, max, fill, size, copy,
     min, max, abs, +, -, *, /, ==
-
-using Compat.Dates
-using Compat.Printf
-
 import Measures: resolve, w, h
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
@@ -125,20 +121,6 @@ default_stroke_color = nothing
 default_fill_color = colorant"black"
 
 # Use cairo for the PNG, PS, PDF if it's installed.
-if VERSION < v"0.7-"
-macro missing_cairo_error(backend)
-    msg1 = """
-    Cairo and Fontconfig are necessary for the $(backend) backend. Run:
-      Pkg.add("Cairo")
-      Pkg.add("Fontconfig")
-    """
-    msg2 = """
-        You also have to delete ~/.julia/lib/v0.6/Compose.ji and restart your
-        REPL session afterwards.
-        """
-    string(msg1, msg2)
-end
-else
 macro missing_cairo_error(backend)
     msg1 = """
     The Cairo and Fontconfig packages are necessary for the $(backend) backend.
@@ -147,7 +129,6 @@ macro missing_cairo_error(backend)
     before invoking $(backend).
     """
     string(msg1)
-end
 end
 
 #global PDF
@@ -164,6 +145,7 @@ include("pgf_backend.jl")
 include("fontfallback.jl")
 
 function link_fontconfig()
+    @info "Loading Fontconfig backend into Compose.jl"
     pango_cairo_ctx = C_NULL
     include("pango.jl")
 
@@ -176,7 +158,7 @@ function link_fontconfig()
 end
 
 function link_cairo()
-    Compat.@info "Loading Cairo backend into Compose.jl"
+    @info "Loading Cairo backend into Compose.jl"
     include("cairo_backends.jl")
     include("immerse_backend.jl")
 end

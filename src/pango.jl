@@ -1,11 +1,5 @@
 # Estimation of text extents using pango.
 
-if VERSION < v"0.7-"
-    import Fontconfig
-end
-# In later versions, Requires does the import for us.
-# Qualified uses of Fontconfig and Cairo entities are not problematic.
-
 const libpangocairo = Cairo._jl_libpangocairo
 const libpango = Cairo._jl_libpango
 const libgobject = Cairo._jl_libgobject
@@ -38,7 +32,7 @@ let available_font_families = Set{AbstractString}()
         push!(available_font_families, lowercase(Fontconfig.format(font_pattern, "%{family}")))
     end
 
-    const meta_families = Set(["serif", "sans", "sans-serif", "monospace", "cursive", "fantasy"])
+    meta_families = Set(["serif", "sans", "sans-serif", "monospace", "cursive", "fantasy"])
 
     global match_font
     function match_font(families::AbstractString, size::Float64)
@@ -86,7 +80,7 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
-    textarray = convert(Vector{UInt8}, convert(Compat.String, text))
+    textarray = convert(Vector{UInt8}, convert(String, text))
     ccall((:pango_layout_set_markup, libpango),
           Cvoid, (Ptr{Cvoid}, Ptr{UInt8}, Int32),
           pangolayout.layout, textarray, length(textarray))

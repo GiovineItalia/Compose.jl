@@ -1,6 +1,5 @@
-using Compat
-using Compat.Base64
-using Compat.UUIDs
+using Base64
+using UUIDs
 
 const snapsvgjs = joinpath(dirname(@__FILE__), "..", "data", "snap.svg-min.js")
 
@@ -165,10 +164,10 @@ mutable struct SVG <: Backend
     vector_properties::Dict{Type, Union{Property, Nothing}}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::OrderedDict{ClipPrimitive, Compat.String}
+    clippaths::OrderedDict{ClipPrimitive, String}
 
     # Batched forms to be included within <def> tags.
-    batches::Vector{Tuple{FormPrimitive, Compat.String}}
+    batches::Vector{Tuple{FormPrimitive, String}}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -229,8 +228,8 @@ function SVG(out::IO,
              indentation = 0,
              property_stack = Array{SVGPropertyFrame}(undef, 0),
              vector_properties = Dict{Type, Union{Property, Nothing}}(),
-             clippaths = OrderedDict{ClipPrimitive, Compat.String}(),
-             batches = Array{Tuple{FormPrimitive, Compat.String}}(undef, 0),
+             clippaths = OrderedDict{ClipPrimitive, String}(),
+             batches = Array{Tuple{FormPrimitive, String}}(undef, 0),
              embobj = Set{AbstractString}(),
              finished = false,
              ownedfile = false,
@@ -239,7 +238,7 @@ function SVG(out::IO,
              has_current_id = false,
              id_count = 0,
              jsheader = Set{AbstractString}(),
-             jsmodules = Set{Tuple{AbstractString, AbstractString}}((("Snap.svg", "Snap"),)),  # @compat
+             jsmodules = Set{Tuple{AbstractString, AbstractString}}((("Snap.svg", "Snap"),)), 
              scripts = AbstractString[],
              withjs = jsmode != :none,
              panelcoords = ())

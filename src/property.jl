@@ -336,7 +336,7 @@ Base.hash(primitive::SVGIDPrimitive, h::UInt) = hash(primitive.value, h)
 # --------
 
 struct SVGClassPrimitive <: PropertyPrimitive
-    value::Compat.String
+    value::String
 end
 
 const SVGClass = Property{SVGClassPrimitive}
@@ -362,8 +362,8 @@ Base.hash(primitive::SVGClassPrimitive, h::UInt) = hash(primitive.value, h)
 # ------------
 
 struct SVGAttributePrimitive <: PropertyPrimitive
-    attribute::Compat.String
-    value::Compat.String
+    attribute::String
+    value::String
 end
 
 const SVGAttribute = Property{SVGAttributePrimitive}

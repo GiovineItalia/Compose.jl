@@ -1,11 +1,3 @@
-using Compat
-
-# Cairo backend for compose
-if VERSION < v"0.7-"
-    import Cairo
-end
-# in later versions, Requires does the import for us, but resolution is tricky
-
 for name in (:CairoContext, :CairoSurface, :CairoARGBSurface, :CairoEPSSurface,
              :CairoPDFSurface, :CairoSVGSurface, :CairoImageSurface)
     val = getfield(Cairo,name)
@@ -325,7 +317,7 @@ function pop_property_frame(img::Image)
     frame.has_scalar_properties && restore_property_state(img)
 
     for (propertytype, property) in frame.vector_properties
-        img.vector_properties[propertytype] = Union{Property, Nothing}()
+        img.vector_properties[propertytype] = nothing
         for i in length(img.property_stack):-1:1
             if haskey(img.property_stack[i].vector_properties, propertytype)
                 img.vector_properties[propertytype] =

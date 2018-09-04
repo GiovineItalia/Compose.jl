@@ -53,7 +53,7 @@ function batch{T <: CirclePrimitive}(form::Form{T})
     r = form.primitives[1].radius
     n = length(form.primitives)
     for i in 2:n
-        form.primitives[i].radius == r || return @compat Nothing
+        form.primitives[i].radius == r || return Nothing
     end
 
     prim = CirclePrimitive((0mm, 0mm), r)

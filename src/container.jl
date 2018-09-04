@@ -378,7 +378,7 @@ function drawpart(backend::Backend, container::Container,
         transform = combine(convert(Transform, mir), transform)
     end
 
-    if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
+    if ctx.raster && @isdefined(Cairo) && isa(backend, SVG)
         bitmapbackend = PNG(box.a[1], box.a[2], false)
         draw(bitmapbackend, ctx)
         f = bitmap("image/png", take!(bitmapbackend.out),

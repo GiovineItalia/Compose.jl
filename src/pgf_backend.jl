@@ -228,8 +228,8 @@ function print_pgf_path(out::IO, points::Vector{AbsoluteVec2},
 end
 
 function get_vector_properties(img::PGF, idx::Int)
-    props_str = Compat.String[]
-    modifiers = Compat.String[]
+    props_str = String[]
+    modifiers = String[]
     for (propertytype, property) in img.vector_properties
         (property === nothing) && continue
         primitives = property.primitives
@@ -256,7 +256,7 @@ end
 push_property!(props_str, img::PGF, property::StrokeDashPrimitive) =
         isempty(property.value) ||
             push!(props_str, string("dash pattern=", join(map( v -> join(v, " "),
-                zip(Compat.Iterators.cycle(["on", "off"]),
+                zip(Iterators.cycle(["on", "off"]),
                 map(v -> string(svg_fmt_float(v.value), "mm"), property.value)) )," ")))
 
 function push_property!(props_str, img::PGF, property::StrokePrimitive)

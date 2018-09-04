@@ -13,7 +13,7 @@ end
 function cyclezip(xs::AbstractArray...)
     any(map(isempty, xs)) && return Any[]
     n = maximum([length(x) for x in xs])
-    return takestrict(zip([Compat.Iterators.cycle(x) for x in xs]...), n)
+    return takestrict(zip([Iterators.cycle(x) for x in xs]...), n)
 end
 
 

@@ -93,9 +93,9 @@ function force_aspect_ratio!(tbl::Table,
     if adj > 1.0
         w = w0 / adj
         delta = w0 - w
-        x_solution[1:tbl.x_focus.stop] += delta/2
-        x_solution[tbl.x_focus.stop+1:end] -= delta/2
-        w_solution[tbl.x_focus] /= adj
+        x_solution[1:tbl.x_focus.stop] .+= delta/2
+        x_solution[tbl.x_focus.stop+1:end] .-= delta/2
+        w_solution[tbl.x_focus] ./= adj
     else
         w = w0
         h = h0 * adj
@@ -238,8 +238,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             end
         end
 
-        minrowheights[isfinite.(minrowheights) .== false] = 0.0
-        mincolwidths[isfinite.(mincolwidths) .== false] = 0.0
+        minrowheights[isfinite.(minrowheights) .== false] .= 0.0
+        mincolwidths[isfinite.(mincolwidths) .== false] .= 0.0
 
         return penalty
     end
