@@ -69,9 +69,9 @@ mutable struct Context <: Container
 end
 
 Context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
-            units=Union{UnitBox, Nothing}(),
-            rotation=Union{Rotation, Nothing}(),
-            mirror=Union{Mirror, Nothing}(),
+            units=nothing,
+            rotation=nothing,
+            mirror=nothing,
             order=0,
             clip=false,
             withjs=false,
