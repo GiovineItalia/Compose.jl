@@ -577,7 +577,7 @@ function show(io::IO, ctx::Context)
         end
         print(io, ")")
     else
-        print(io, ctx)
+        invoke(show, Tuple{IO, Any}, io, ctx)
     end
 end
 
@@ -592,6 +592,6 @@ function showcompact_array(io::IO, a::AbstractArray)
     print(io, "]")
 end
 showcompact_array(io::IO, a::AbstractRange) = show(io, a)
-show(io::IO, f::Compose.Form) = get(io, :compact, false) ? print(io, Compose.form_string(f)) : print(io, f) 
-show(io::IO, p::Compose.Property) = get(io, :compact, false) ? print(io, Compose.prop_string(p)) : print(io, p) 
-show(io::IO, cp::ContainerPromise) = get(io, :compact, false) ? print(io, typeof(cp).name.name) : print(io, cp) 
+show(io::IO, f::Compose.Form) = get(io, :compact, false) ? print(io, Compose.form_string(f)) : invoke(show, Tuple{IO, Any}, io, f)
+show(io::IO, p::Compose.Property) = get(io, :compact, false) ? print(io, Compose.prop_string(p)) : invoke(show, Tuple{IO, Any}, io, p)
+show(io::IO, cp::ContainerPromise) = get(io, :compact, false) ? print(io, typeof(cp).name.name) : invoke(show, Tuple{IO, Any}, io, cp)
