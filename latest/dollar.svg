@@ -8,5 +8,9 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<text x="25" y="5">100&#162; in a &#36;</text>
+<g transform="translate(25,5)">
+  <g class="primitive">
+    <text>100&#162; in a &#36;</text>
+  </g>
+</g>
 </svg>

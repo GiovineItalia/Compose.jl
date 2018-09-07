@@ -8,7 +8,9 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="#FF6347" id="img-2c931af2-1">
-  <rect x="0" y="0" width="40" height="40"/>
+<g fill="#FF6347" id="img-ac6b1d35-1">
+  <g transform="translate(20,20)">
+    <path d="M-20,-20 L 20 -20 20 20 -20 20 z" class="primitive"/>
+  </g>
 </g>
 </svg>
