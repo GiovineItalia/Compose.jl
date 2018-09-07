@@ -92,3 +92,8 @@ twolines = text_extents(font_family, 8pt, "Peg\nPeg")[1]
 
 # PR 263
 @test Compose.pango_to_svg("hello world") == "hello world"
+
+@testset "pango" begin
+    @test Compose.escape_tex_chars("\\") == "\\textbackslash{}"
+    @test Compose.pango_to_pgf("hello\\") == "\\text{hello\\textbackslash{}}"
+end

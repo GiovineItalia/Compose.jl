@@ -434,7 +434,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, primitive::JSCa
     i = 1
     validx = 1
     while true
-        j = findnext(primitive.code, '%', i)
+        j = findnext(primitive.code, "%", i)
 
         if j === nothing
             write(newcode, primitive.code[i:end])

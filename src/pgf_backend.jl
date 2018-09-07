@@ -440,7 +440,7 @@ function draw(img::PGF, prim::TextPrimitive, idx::Int)
     @printf(img.buf, "\\draw (%s,%s) node [%s]{\\fontsize{%smm}{%smm}\\selectfont \$%s\$};\n",
         svg_fmt_float(prim.position[1].value),
         svg_fmt_float(prim.position[2].value),
-        replace(join(props, ","), "fill", "text"),
+        replace(join(props, ","), "fill"=>"text"),
         svg_fmt_float(img.fontsize),
         svg_fmt_float(1.2*img.fontsize),
         pango_to_pgf(prim.value)
@@ -527,7 +527,7 @@ end
 # FIX ME!
 function pango_to_pgf(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
-    input = convert(Array{UInt8}, escape_tex_chars(text))
+    input = Array{UInt8}(escape_tex_chars(text))
     output = IOBuffer()
     lastpos = 1
     for mat in eachmatch(pat, text)
@@ -572,15 +572,15 @@ end
 function escape_tex_chars(text::AbstractString)
 	# see http://www.cespedes.org/blog/85/how-to-escape-latex-special-characters
 	escaped_str = text
-	escaped_str = replace(escaped_str, "\\", "\\textbackslash{}")
-	escaped_str = replace(escaped_str, "#", "\\#")
-	escaped_str = replace(escaped_str, "\$", "\\\$")
-	escaped_str = replace(escaped_str, "%", "\\%")
-	escaped_str = replace(escaped_str, "&", "\\&")
-	escaped_str = replace(escaped_str, "_", "\\_")
-	escaped_str = replace(escaped_str, "{", "\\{")
-	escaped_str = replace(escaped_str, "}", "\\}")
-	escaped_str = replace(escaped_str, "^", "\\textasciicircum{}")
-	escaped_str = replace(escaped_str, "~", "\\textasciitilde{}")
-	escaped_str = replace(escaped_str, "\\textbackslash\\{\\}", "\\textbackslash{}")
+	escaped_str = replace(escaped_str, "\\"=>"\\textbackslash{}")
+	escaped_str = replace(escaped_str, "#"=>"\\#")
+	escaped_str = replace(escaped_str, "\$"=>"\\\$")
+	escaped_str = replace(escaped_str, "%"=>"\\%")
+	escaped_str = replace(escaped_str, "&"=>"\\&")
+	escaped_str = replace(escaped_str, "_"=>"\\_")
+	escaped_str = replace(escaped_str, "{"=>"\\{")
+	escaped_str = replace(escaped_str, "}"=>"\\}")
+	escaped_str = replace(escaped_str, "^"=>"\\textasciicircum{}")
+	escaped_str = replace(escaped_str, "~"=>"\\textasciitilde{}")
+	escaped_str = replace(escaped_str, "\\textbackslash\\{\\}"=>"\\textbackslash{}")
 end

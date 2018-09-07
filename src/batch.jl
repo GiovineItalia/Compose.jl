@@ -192,7 +192,7 @@ function optimize_batching(ctx::Context)
 
         if !haskey(grouped_forms, h)
             grouped_forms[h] = Form[similar(form) for form in forms]
-            group_prop = Array{Property}(length(properties))
+            group_prop = Array{Property}(undef, length(properties))
             for j in 1:length(properties)
                 group_prop[j] = Property([properties[j].primitives[i]])
             end
