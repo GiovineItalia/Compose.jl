@@ -24,7 +24,7 @@ mutable struct Table <: ContainerPromise
     fixed_configs::Vector
 
     # Coordinate system used for children
-    units::Nullable{UnitBox}
+    units::Union{UnitBox, Nothing}
 
     # Z-order of this context relative to its siblings.
     order::Int
@@ -40,7 +40,7 @@ end
 function Table(m::Integer, n::Integer, y_focus::UnitRange{Int}, x_focus::UnitRange{Int};
                y_prop=nothing, x_prop=nothing,
                aspect_ratio=nothing,
-               units=NullUnitBox(), order=0, withjs=false, withoutjs=false,
+               units=nothing, order=0, withjs=false, withoutjs=false,
                fixed_configs=Any[])
 
     if x_prop != nothing
@@ -53,14 +53,14 @@ function Table(m::Integer, n::Integer, y_focus::UnitRange{Int}, x_focus::UnitRan
         y_prop ./= sum(filter(x -> !isnan(x), y_prop))
     end
 
-    tbl = Table(Array{Vector{Context}}((m, n)),
+    tbl = Table(Array{Vector{Context}}(undef, (m, n)),
               x_focus, y_focus,
               x_prop, y_prop,
               aspect_ratio,
               fixed_configs,
               units, order, withjs, withoutjs)
     for i in 1:m, j in 1:n
-        tbl.children[i, j] = Array{Context}(0)
+        tbl.children[i, j] = Array{Context}(undef, 0)
     end
     return tbl
 end
@@ -93,9 +93,9 @@ function force_aspect_ratio!(tbl::Table,
     if adj > 1.0
         w = w0 / adj
         delta = w0 - w
-        x_solution[1:tbl.x_focus.stop] += delta/2
-        x_solution[tbl.x_focus.stop+1:end] -= delta/2
-        w_solution[tbl.x_focus] /= adj
+        x_solution[1:tbl.x_focus.stop] .+= delta/2
+        x_solution[tbl.x_focus.stop+1:end] .-= delta/2
+        w_solution[tbl.x_focus] ./= adj
     else
         w = w0
         h = h0 * adj
@@ -127,12 +127,12 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
     # which is basically "size needed" - "size available".
     minbadness = Inf
 
-    focused_col_widths = Array{Float64}(length(tbl.x_focus))
-    focused_row_heights = Array{Float64}(length(tbl.y_focus))
+    focused_col_widths = Array{Float64}(undef, length(tbl.x_focus))
+    focused_row_heights = Array{Float64}(undef, length(tbl.y_focus))
 
     # minimum sizes for each column and row
-    minrowheights = Array{Float64}(m)
-    mincolwidths = Array{Float64}(n)
+    minrowheights = Array{Float64}(undef, m)
+    mincolwidths = Array{Float64}(undef, n)
 
     # convert tbl.fixed_configs to linear indexing
     fixed_configs = Any[
@@ -238,8 +238,8 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             end
         end
 
-        minrowheights[isfinite.(minrowheights) .== false] = 0.0
-        mincolwidths[isfinite.(mincolwidths) .== false] = 0.0
+        minrowheights[isfinite.(minrowheights) .== false] .= 0.0
+        mincolwidths[isfinite.(mincolwidths) .== false] .= 0.0
 
         return penalty
     end
@@ -351,16 +351,20 @@ end
 realize(tbl::Table, drawctx::ParentDrawContext) = realize_brute_force(tbl, drawctx)
 #end
 
-function showcompact(io::IO, t::Table)
-    println(io,"$(size(t.children,1))x$(size(t.children,2)) Table:")
-    for i = 1:size(t.children,1)
-        print(io, "  ")
-        first = true
-        for j = 1:size(t.children,2)
-            first || print(io, ",")
-            first = false
-            showcompact(io, t.children[i,j])
+function show(io::IO, t::Table)
+    if get(io, :compact, false)
+        println(io,"$(size(t.children,1))x$(size(t.children,2)) Table:")
+        for i = 1:size(t.children,1)
+            print(io, "  ")
+            first = true
+            for j = 1:size(t.children,2)
+                first || print(io, ",")
+                first = false
+                show(io, t.children[i,j])
+            end
+            println(io)
         end
-        println(io)
+    else
+        print(io, t)
     end
 end

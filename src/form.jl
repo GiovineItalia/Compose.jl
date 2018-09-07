@@ -65,7 +65,7 @@ function polygon(point_arrays::AbstractArray, tag=empty_tag)
     VecType = XM == YM == Any ? Vec : Tuple{XM, YM}
     PrimType = XM == YM == Any ? PolygonPrimitive : PolygonPrimitive{VecType}
 
-    polyprims = Array{PrimType}(length(point_arrays))
+    polyprims = Array{PrimType}(undef, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
         polyprims[i] = PrimType(VecType[(x_measure(point[1]), y_measure(point[2]))
                                         for point in point_array])
@@ -471,7 +471,7 @@ function line(point_arrays::AbstractArray, tag=empty_tag)
     VecType = XM == YM == Any ? Vec2 : Tuple{XM, YM}
     PrimType = XM == YM == Any ? LinePrimitive : LinePrimitive{VecType}
 
-    lineprims = Array{PrimType}(length(point_arrays))
+    lineprims = Array{PrimType}(undef, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
         p = PrimType(VecType[(x_measure(point[1]), y_measure(point[2]))
                              for point in point_array])

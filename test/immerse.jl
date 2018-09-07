@@ -2,8 +2,10 @@
 # need to edit these tests to make them pass, that's fine, but please
 # submit the corresponding fix to Immerse.
 
-using Compose, Base.Test
+using Test
+using Compose
 import Cairo
+import Measures
 
 ### The Immerse backend
 srf = Cairo.CairoImageSurface(10, 10, Cairo.FORMAT_RGB24)

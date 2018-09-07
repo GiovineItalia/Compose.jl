@@ -9,10 +9,10 @@ for output in readdir(cachedout)
     if same
         lsame = Bool[cached[i] == genned[i] for i = 1:n]
         if !all(lsame)
-            for idx in find(lsame.==false)
+            for idx in findall(lsame.==false)
                 # Don't worry about lines that are due to
                 # Creator/Producer (e.g., Cairo versions)
-                if !isempty(search(cached[idx], creator_producer))
+                if findfirst(isequal(creator_producer), cached[idx]) !== nothing
                     lsame[idx] = true
                 end
             end
@@ -31,7 +31,7 @@ if length(differentfiles)>0
     #Capture diffs
     diffs = map(
         output -> output * ":\n" *
-            readstring(ignorestatus(`diff $(joinpath(cachedout, output)) $(joinpath(testdir, output))`)) *
+            read(ignorestatus(`diff $(joinpath(cachedout, output)) $(joinpath(testdir, output))`), String) *
             "\n\n",
         differentfiles)
     error(string("Generated output differs from cached test output:\n",

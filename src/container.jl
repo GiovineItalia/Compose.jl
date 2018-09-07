@@ -9,13 +9,13 @@ mutable struct Context <: Container
     box::BoundingBox
 
     # Context coordinates used for children
-    units::Nullable{UnitBox}
+    units::Union{UnitBox, Nothing}
 
     # Rotation is degrees of
-    rot::Nullable{Rotation}
+    rot::Union{Rotation, Nothing}
 
     # Maybe mirror about a line, after rotation
-    mir::Nullable{Mirror}
+    mir::Union{Mirror, Nothing}
 
     # Container children
     container_children::List{Container}
@@ -69,9 +69,9 @@ mutable struct Context <: Container
 end
 
 Context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
-            units=Nullable{UnitBox}(),
-            rotation=Nullable{Rotation}(),
-            mirror=Nullable{Mirror}(),
+            units=nothing,
+            rotation=nothing,
+            mirror=nothing,
             order=0,
             clip=false,
             withjs=false,
@@ -91,8 +91,8 @@ Context(ctx::Context) = Context(ctx.box, ctx.units, ctx.rot, ctx.mir,
             ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
 
 context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
-            units=NullUnitBox(),
-            rotation=Nullable{Rotation}(),
+            units=nothing,
+            rotation=nothing,
             mirror=nothing,
             order=0,
             clip=false,
@@ -104,9 +104,7 @@ context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
             penalty=0.0,
             tag=empty_tag) =
         Context(BoundingBox(x_measure(x0), y_measure(y0), x_measure(width), y_measure(height)),
-            isa(units, Nullable) ? units : Nullable{UnitBox}(units),
-            isa(rotation, Nullable) ? rotation : Nullable{Rotation}(rotation),
-            mirror,
+            units, rotation, mirror,
             ListNull{Container}(), ListNull{Form}(), ListNull{Property}(),
             order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
 
@@ -370,17 +368,17 @@ function drawpart(backend::Backend, container::Container,
     box = resolve(parent_box, units, parent_transform, ctx.box)
 
     transform = parent_transform
-    if !isnull(ctx.rot)
-        rot = resolve(box, units, parent_transform, get(ctx.rot))
+    if ctx.rot !== nothing
+        rot = resolve(box, units, parent_transform, ctx.rot)
         transform = combine(convert(Transform, rot), transform)
     end
 
-    if !isnull(ctx.mir)
-        mir = resolve(box, units, parent_transform, get(ctx.mir))
+    if ctx.mir !== nothing
+        mir = resolve(box, units, parent_transform, ctx.mir)
         transform = combine(convert(Transform, mir), transform)
     end
 
-    if ctx.raster && isdefined(:Cairo) && isa(backend, SVG)
+    if ctx.raster && @isdefined(Cairo) && isa(backend, SVG)
         bitmapbackend = PNG(box.a[1], box.a[2], false)
         draw(bitmapbackend, ctx)
         f = bitmap("image/png", take!(bitmapbackend.out),
@@ -395,14 +393,14 @@ function drawpart(backend::Backend, container::Container,
         return
     end
 
-    if !isnull(ctx.units)
-        units = resolve(box, units, transform, get(ctx.units))
+    if ctx.units !== nothing
+        units = resolve(box, units, transform, ctx.units)
     end
 
     has_properties = false
     if !isa(ctx.property_children, ListNull) || ctx.clip
         has_properties = true
-        properties = Array{Property}(0)
+        properties = Array{Property}(undef, 0)
 
         child = ctx.property_children
         while !isa(child, ListNull)
@@ -436,8 +434,8 @@ function drawpart(backend::Backend, container::Container,
 
         if trybatch
             b = batch(form)
-            if !isnull(b)
-                draw(backend, get(b))
+            if b !== nothing
+                draw(backend, b)
                 child = child.tail
                 continue
             end
@@ -459,7 +457,7 @@ function drawpart(backend::Backend, container::Container,
     end
 
     if ordered_children
-        container_children = Array{Tuple{Int, Int, Container}}(0)
+        container_children = Array{Tuple{Int, Int, Container}}(undef, 0)
         child = ctx.container_children
         while !isa(child, ListNull)
             push!(container_children,
@@ -499,7 +497,7 @@ function introspect(root::Context)
     # TODO: It would be nice if we can try to do a better job of positioning
     # nodes within their levels
 
-    q = Queue(Tuple{ComposeNode, Int})
+    q = Queue{Tuple{ComposeNode, Int}}()
     enqueue!(q, (root, 1))
     figs = compose!(context(), stroke("#333"), linewidth(0.5mm))
     figsize = 6mm
@@ -568,15 +566,19 @@ function introspect(root::Context)
                     lines_ctx, figs)
 end
 
-function showcompact(io::IO, ctx::Context)
-    print(io, "Context(")
-    first = true
-    for c in children(ctx)
-        first || print(io, ",")
-        first = false
-        isa(c, AbstractArray) ? showcompact_array(io, c) : showcompact(io, c)
+function show(io::IO, ctx::Context)
+    if get(io, :compact, false)
+        print(io, "Context(")
+        first = true
+        for c in children(ctx)
+            first || print(io, ",")
+            first = false
+            isa(c, AbstractArray) ? showcompact_array(io, c) : show(io, c)
+        end
+        print(io, ")")
+    else
+        invoke(show, Tuple{IO, Any}, io, ctx)
     end
-    print(io, ")")
 end
 
 function showcompact_array(io::IO, a::AbstractArray)
@@ -585,11 +587,11 @@ function showcompact_array(io::IO, a::AbstractArray)
     for c in a
         first || print(io, ",")
         first = false
-        showcompact(io, c)
+        show(io, c)
     end
     print(io, "]")
 end
-showcompact_array(io::IO, a::AbstractRange) = showcompact(io, a)
-showcompact(io::IO, f::Compose.Form) = print(io, Compose.form_string(f))
-showcompact(io::IO, p::Compose.Property) = print(io, Compose.prop_string(p))
-showcompact(io::IO, cp::ContainerPromise) = print(io, typeof(cp).name.name)
+showcompact_array(io::IO, a::AbstractRange) = show(io, a)
+show(io::IO, f::Compose.Form) = get(io, :compact, false) ? print(io, Compose.form_string(f)) : invoke(show, Tuple{IO, Any}, io, f)
+show(io::IO, p::Compose.Property) = get(io, :compact, false) ? print(io, Compose.prop_string(p)) : invoke(show, Tuple{IO, Any}, io, p)
+show(io::IO, cp::ContainerPromise) = get(io, :compact, false) ? print(io, typeof(cp).name.name) : invoke(show, Tuple{IO, Any}, io, cp)

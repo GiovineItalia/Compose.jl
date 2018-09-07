@@ -1,4 +1,5 @@
-using Compat
+using Base64
+using UUIDs
 
 const snapsvgjs = joinpath(dirname(@__FILE__), "..", "data", "snap.svg-min.js")
 
@@ -6,11 +7,12 @@ const snapsvgjs = joinpath(dirname(@__FILE__), "..", "data", "snap.svg-min.js")
 # SVG.
 const xmlns = Dict()
 
+# All svg (in our use) coordinates are in millimeters. This number gives the
+# largest deviation from the true position allowed in millimeters.
+const eps = 0.01
+
 # Format a floating point number into a decimal string of reasonable precision.
 function svg_fmt_float(x::Fractional)
-    # All svg (in our use) coordinates are in millimeters. This number gives the
-    # largest deviation from the true position allowed in millimeters.
-    const eps = 0.01
     a = @sprintf("%0.8f", round(x / eps) * eps)
     n = length(a)
 
@@ -28,9 +30,7 @@ end
 # A much faster version of svg_fmt_float. This does not allocate any
 # temporary buffers, because it writes directly to the output.
 function svg_print_float(io::IO, x::AbstractFloat)
-    const ndig = 2
-    const eps = 0.01
-    #const eps = 1.0/10^ndig
+    ndig = 2
 
     if isfinite(x)
         if x < 0
@@ -56,7 +56,7 @@ function svg_print_float(io::IO, x::AbstractFloat)
     end
 end
 
-let a = Array{UInt8}(20)
+let a = Array{UInt8}(undef, 20)
     global svg_print_uint
     function svg_print_uint(io::IO, x::Unsigned, width = 0, drop = false)
         n = length(a)
@@ -83,7 +83,7 @@ end
 
 # Format a color for SVG.
 svg_fmt_color(c::Color) = string("#", hex(c))
-svg_fmt_color(c::(Void)) = "none"
+svg_fmt_color(c::Nothing) = "none"
 
 # Replace newlines in a string with the appropriate SVG tspan tags.
 function svg_newlines(input::AbstractString, x::Float64)
@@ -111,7 +111,7 @@ end
 #=end=#
 
 # Javascript contained to CDATA block needs to avoid ']]'
-escape_script(js::AbstractString) = replace(js, "]]", "] ]")
+escape_script(js::AbstractString) = replace(js, "]]"=>"] ]")
 
 # When subtree rooted at a context is drawn, it pushes its property children
 # in the form of a property frame.
@@ -147,7 +147,7 @@ mutable struct SVG <: Backend
     out::IO
 
     # Save output from IOBuffers to allow multiple calls to writemime
-    cached_out::Union{AbstractString, (Void)}
+    cached_out::Union{AbstractString, Nothing}
 
     # Unique ID for the figure.
     id::AbstractString
@@ -161,13 +161,13 @@ mutable struct SVG <: Backend
     # SVG forbids defining the same property twice, so we have to keep track
     # of which vector property of which type is in effect. If two properties of
     # the same type are in effect, the one higher on the stack takes precedence.
-    vector_properties::Dict{Type, Union{(Void), Property}}
+    vector_properties::Dict{Type, Union{Property, Nothing}}
 
     # Clip-paths that need to be defined at the end of the document.
-    clippaths::OrderedDict{ClipPrimitive, Compat.String}
+    clippaths::OrderedDict{ClipPrimitive, String}
 
     # Batched forms to be included within <def> tags.
-    batches::Vector{Tuple{FormPrimitive, Compat.String}}
+    batches::Vector{Tuple{FormPrimitive, String}}
 
     # Embedded objects included immediately before the </svg> tag, such as extra
     # javascript or css.
@@ -180,7 +180,7 @@ mutable struct SVG <: Backend
     ownedfile::Bool
 
     # Filename when ownedfile is true
-    filename::Union{AbstractString, (Void)}
+    filename::Union{AbstractString, Nothing}
 
     # Emit the graphic on finish when writing to a buffer.
     emit_on_finish::Bool
@@ -224,12 +224,12 @@ function SVG(out::IO,
              jsmode::Symbol=:none;
 
              cached_out = nothing,
-             id = string("img-", string(Base.Random.uuid4())[1:8]),
+             id = string("img-", string(uuid4())[1:8]),
              indentation = 0,
-             property_stack = Array{SVGPropertyFrame}(0),
-             vector_properties = Dict{Type, Union{(Void), Property}}(),
-             clippaths = OrderedDict{ClipPrimitive, Compat.String}(),
-             batches = Array{Tuple{FormPrimitive, Compat.String}}(0),
+             property_stack = Array{SVGPropertyFrame}(undef, 0),
+             vector_properties = Dict{Type, Union{Property, Nothing}}(),
+             clippaths = OrderedDict{ClipPrimitive, String}(),
+             batches = Array{Tuple{FormPrimitive, String}}(undef, 0),
              embobj = Set{AbstractString}(),
              finished = false,
              ownedfile = false,
@@ -238,7 +238,7 @@ function SVG(out::IO,
              has_current_id = false,
              id_count = 0,
              jsheader = Set{AbstractString}(),
-             jsmodules = Set{Tuple{AbstractString, AbstractString}}((("Snap.svg", "Snap"),)),  # @compat
+             jsmodules = Set{Tuple{AbstractString, AbstractString}}((("Snap.svg", "Snap"),)), 
              scripts = AbstractString[],
              withjs = jsmode != :none,
              panelcoords = ())
@@ -405,7 +405,7 @@ function finish(img::SVG)
             write(img.out,
                 """
                 <script> <![CDATA[
-                $(escape_script(readstring(snapsvgjs)))
+                $(escape_script(read(snapsvgjs, String)))
                 ]]> </script>
                 """)
         elseif img.jsmode == :linkabs
@@ -424,7 +424,7 @@ function finish(img::SVG)
             if img.jsmode == :embed
                 write(img.out, "<script> <![CDATA[\n")
                 for script in img.jsheader
-                    write(img.out, escape_script(readstring(script)), "\n")
+                    write(img.out, escape_script(read(script, String)), "\n")
                 end
             elseif img.jsmode == :linkabs
                 for script in img.jsheader
@@ -841,8 +841,8 @@ function draw(img::SVG, prim::EllipsePrimitive, idx::Int)
               (prim.x_point[2].value - cy)^2)
     ry = sqrt((prim.y_point[1].value - cx)^2 +
               (prim.y_point[2].value - cy)^2)
-    theta = rad2deg(atan2(prim.x_point[2].value - cy,
-                          prim.x_point[1].value - cx))
+    theta = rad2deg(atan(prim.x_point[2].value - cy,
+                         prim.x_point[1].value - cx))
 
     all(isfinite,[cx, cy, rx, ry, theta]) || return
 
@@ -1272,7 +1272,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
 
     frame = SVGPropertyFrame()
     applied_properties = Set{Type}()
-    scalar_properties = Array{Property}(0)
+    scalar_properties = Array{Property}(undef, 0)
     isplotpanel = false
     for property in properties
         if !isrepeatable(property) && (typeof(property) in applied_properties)

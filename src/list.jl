@@ -17,9 +17,9 @@ head(l::ListNode) = l.head
 tail(l::ListNode) = l.tail
 
 # iterator
-start(l::List) = l
-next(::List, l::List) = (l.head, l.tail)
-done(::List, l::List) = typeof(l) <: ListNull
+function Base.iterate(l::List, state=l)
+    return typeof(state) <: ListNull ? nothing : (state.head, state.tail)
+end
 cons(value, l::List{T}) where T = ListNode{T}(value, l)
 
 function length(l::List{T}) where T

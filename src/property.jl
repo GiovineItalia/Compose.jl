@@ -234,7 +234,7 @@ end
 
 const Clip = Property{ClipPrimitive}
 
-clip() = Clip([ClipPrimitive(Array{Vec}(0))])
+clip() = Clip([ClipPrimitive(Array{Vec}(undef, 0))])
 
 function clip(points::AbstractArray{T}) where T <: XYTupleOrVec
     XM, YM = narrow_polygon_point_types(Vector[points])
@@ -255,7 +255,7 @@ function clip(point_arrays::AbstractArray...)
     VecType = XM == YM == Any ? Vec : Vec{XM, YM}
     PrimType = XM == YM == Any ? ClipPrimitive : ClipPrimitive{VecType}
 
-    clipprims = Array{PrimType}(length(point_arrays))
+    clipprims = Array{PrimType}(undef, length(point_arrays))
     for (i, point_array) in enumerate(point_arrays)
         clipprims[i] = ClipPrimitive(VecType[(x_measure(point[1]), y_measure(point[2]))
                                              for point in point_array])
@@ -336,7 +336,7 @@ Base.hash(primitive::SVGIDPrimitive, h::UInt) = hash(primitive.value, h)
 # --------
 
 struct SVGClassPrimitive <: PropertyPrimitive
-    value::Compat.String
+    value::String
 end
 
 const SVGClass = Property{SVGClassPrimitive}
@@ -362,8 +362,8 @@ Base.hash(primitive::SVGClassPrimitive, h::UInt) = hash(primitive.value, h)
 # ------------
 
 struct SVGAttributePrimitive <: PropertyPrimitive
-    attribute::Compat.String
-    value::Compat.String
+    attribute::String
+    value::String
 end
 
 const SVGAttribute = Property{SVGAttributePrimitive}
@@ -434,9 +434,9 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, primitive::JSCa
     i = 1
     validx = 1
     while true
-        j = search(primitive.code, '%', i)
+        j = findnext(primitive.code, '%', i)
 
-        if j == 0
+        if j === nothing
             write(newcode, primitive.code[i:end])
             break
         end

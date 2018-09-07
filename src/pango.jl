@@ -1,9 +1,8 @@
 # Estimation of text extents using pango.
 
-import Fontconfig
-
 const libpangocairo = Cairo._jl_libpangocairo
 const libpango = Cairo._jl_libpango
+const libgobject = Cairo._jl_libgobject
 
 # Cairo text backend
 const CAIRO_FONT_TYPE_TOY = 0
@@ -33,7 +32,7 @@ let available_font_families = Set{AbstractString}()
         push!(available_font_families, lowercase(Fontconfig.format(font_pattern, "%{family}")))
     end
 
-    const meta_families = Set(["serif", "sans", "sans-serif", "monospace", "cursive", "fantasy"])
+    meta_families = Set(["serif", "sans", "sans-serif", "monospace", "cursive", "fantasy"])
 
     global match_font
     function match_font(families::AbstractString, size::Float64)
@@ -46,19 +45,19 @@ let available_font_families = Set{AbstractString}()
         end
         family = Fontconfig.format(match(Fontconfig.Pattern(family=family)), "%{family}")
         desc = @sprintf("%s %fpx", family, size)
-        fd = ccall((:pango_font_description_from_string, libpango), Ptr{Void}, (Ptr{UInt8},), desc)
+        fd = ccall((:pango_font_description_from_string, libpango), Ptr{Cvoid}, (Ptr{UInt8},), desc)
         return fd
     end
 end
 
 # Thin wrapper for a pango_layout object.
 mutable struct PangoLayout
-    layout::Ptr{Void}
+    layout::Ptr{Cvoid}
 end
 
 function PangoLayout()
     layout = ccall((:pango_layout_new, libpango),
-                   Ptr{Void}, (Ptr{Void},), pango_cairo_ctx)
+                   Ptr{Cvoid}, (Ptr{Cvoid},), pango_cairo_ctx)
     # TODO: finalizer?
 
     PangoLayout(layout)
@@ -68,7 +67,7 @@ end
 function pango_set_font(pangolayout::PangoLayout, family::AbstractString, pts::Number)
     fd = match_font(family, pts)
     ccall((:pango_layout_set_font_description, libpango),
-          Void, (Ptr{Void}, Ptr{Void}), pangolayout.layout, fd)
+          Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), pangolayout.layout, fd)
 end
 
 # Find the width and height of a string.
@@ -81,14 +80,14 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
-    textarray = convert(Vector{UInt8}, convert(Compat.String, text))
+    textarray = convert(Vector{UInt8}, convert(String, text))
     ccall((:pango_layout_set_markup, libpango),
-          Void, (Ptr{Void}, Ptr{UInt8}, Int32),
+          Cvoid, (Ptr{Cvoid}, Ptr{UInt8}, Int32),
           pangolayout.layout, textarray, length(textarray))
 
-    extents = Array{Int32}(4)
+    extents = Array{Int32}(undef, 4)
     ccall((:pango_layout_get_extents, libpango),
-          Void, (Ptr{Void}, Ptr{Int32}, Ptr{Int32}),
+          Cvoid, (Ptr{Cvoid}, Ptr{Int32}, Ptr{Int32}),
           pangolayout.layout, extents, C_NULL)
 
     width, height = (extents[3] / PANGO_SCALE)pt, (extents[4] / PANGO_SCALE)pt
@@ -222,12 +221,12 @@ end
 # Returns:
 #   A tuple of the form (start_idx, end_idx, value)
 #
-function unpack_pango_attr(ptr::Ptr{Void}, t::Symbol)
-    ptr += sizeof(Ptr{Void}) # skip `klass` pointer
+function unpack_pango_attr(ptr::Ptr{Cvoid}, t::Symbol)
+    ptr += sizeof(Ptr{Cvoid}) # skip `klass` pointer
     ptr = convert(Ptr{UInt32}, ptr)
     idx = unsafe_wrap(Array, ptr, (2,), false)
     ptr += 2 * sizeof(UInt32)
-    ptr = convert(Ptr{Void}, ptr)
+    ptr = convert(Ptr{Cvoid}, ptr)
 
     if t == :PangoAttrInt
         value = unpack_pango_int(ptr)
@@ -247,10 +246,10 @@ end
 #
 # Returns:
 #   And int value.
-unpack_pango_int(ptr::Ptr{Void}) = unsafe_wrap(Array, convert(Ptr{Int32}, ptr), (1,), false)[1]
-unpack_pango_float(ptr::Ptr{Void}) = unsafe_wrap(Array, convert(Ptr{Float64}, ptr), (1,), false)[1]
+unpack_pango_int(ptr::Ptr{Cvoid}) = unsafe_wrap(Array, convert(Ptr{Int32}, ptr), (1,), false)[1]
+unpack_pango_float(ptr::Ptr{Cvoid}) = unsafe_wrap(Array, convert(Ptr{Float64}, ptr), (1,), false)[1]
 
-#function unpack_pango_size(ptr::Ptr{Void})
+#function unpack_pango_size(ptr::Ptr{Cvoid})
     #ptr = convert(Ptr{Int32}, ptr)
     #size = point_to_array(ptr, (1,))[1]
     #ptr = convert(Ptr{UInt32}, ptr)
@@ -272,29 +271,29 @@ unpack_pango_float(ptr::Ptr{Void}) = unsafe_wrap(Array, convert(Ptr{Float64}, pt
 #   values are increasing and the attribute is a set of attributes that
 #   should be applied starting at that position.
 #
-function unpack_pango_attr_list(ptr::Ptr{Void})
+function unpack_pango_attr_list(ptr::Ptr{Cvoid})
     attr_it = ccall((:pango_attr_list_get_iterator, libpango),
-                    Ptr{Void}, (Ptr{Void},), ptr)
+                    Ptr{Cvoid}, (Ptr{Cvoid},), ptr)
 
     # Alias some ugly C calls.
     attr_it_next = () -> ccall((:pango_attr_iterator_next, libpango),
-                               Int32, (Ptr{Void},), attr_it)
+                               Int32, (Ptr{Cvoid},), attr_it)
 
     attr_it_get = attr_name -> ccall((:pango_attr_iterator_get, libpango),
-                                     Ptr{Void}, (Ptr{Void}, Int32),
+                                     Ptr{Cvoid}, (Ptr{Cvoid}, Int32),
                                      attr_it, eval(attr_name))
 
     attr_it_range = () -> begin
-        start_idx = Array{Int32}(1)
-        end_idx = Array{Int32}(1)
+        start_idx = Array{Int32}(undef, 1)
+        end_idx = Array{Int32}(undef, 1)
         ccall((:pango_attr_iterator_range, libpango),
-              Void, (Ptr{Void}, Ptr{Int32}, Ptr{Int32}),
+              Cvoid, (Ptr{Cvoid}, Ptr{Int32}, Ptr{Int32}),
               attr_it, start_idx, end_idx)
         (start_idx[1], end_idx[1])
     end
 
 
-    attrs = Array{Tuple{Int, PangoAttr}}(0)
+    attrs = Array{Tuple{Int, PangoAttr}}(undef, 0)
 
     while attr_it_next() != 0
         attr = PangoAttr()
@@ -314,7 +313,7 @@ function unpack_pango_attr_list(ptr::Ptr{Void})
     end
 
     ccall((:pango_attr_iterator_destroy, libpango),
-          Void, (Ptr{Void},), attr_it)
+          Cvoid, (Ptr{Cvoid},), attr_it)
 
   attrs
 end
@@ -322,11 +321,11 @@ end
 
 function pango_to_svg(text::AbstractString)
     c_stripped_text = Ref{Ptr{UInt8}}()
-    c_attr_list = Ref{Ptr{Void}}()
+    c_attr_list = Ref{Ptr{Cvoid}}()
 
     ret = ccall((:pango_parse_markup, libpango),
-                Int32, (Cstring, Int32, UInt32, Ptr{Ptr{Void}},
-                        Ptr{Ptr{UInt8}}, Ptr{UInt32}, Ptr{Void}),
+                Int32, (Cstring, Int32, UInt32, Ptr{Ptr{Cvoid}},
+                        Ptr{Ptr{UInt8}}, Ptr{UInt32}, Ptr{Cvoid}),
                 text, -1, 0, c_attr_list, c_stripped_text,
                 C_NULL, C_NULL)
 
@@ -334,7 +333,7 @@ function pango_to_svg(text::AbstractString)
 
     # TODO: do c_stripped_text and c_attr_list need to be freed?
 
-    text = convert(Vector{UInt8}, unsafe_string(c_stripped_text[]))
+    text = unsafe_wrap(Array, c_stripped_text[])
 
     last_idx = 1
     open_tag = false

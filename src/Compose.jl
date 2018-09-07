@@ -1,22 +1,18 @@
-VERSION >= v"0.4.0-dev+6521" && __precompile__()
-
 module Compose
 
 using Colors
 using IterTools
 using DataStructures
-using Compat
 using Measures
+using Requires
+using Dates
+using Printf
+using Base.Iterators
 import JSON
 
-import Base: length, start, next, done, isempty, getindex, setindex!,
-    display, show, showcompact, convert, zero, isless, max, fill, size, copy,
+import Base: length, isempty, getindex, setindex!,
+    display, show, convert, zero, isless, max, fill, size, copy,
     min, max, abs, +, -, *, /, ==
-
-using Compat.Dates
-using Compat.Printf
-using Compat.Pkg
-
 import Measures: resolve, w, h
 
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
@@ -30,25 +26,6 @@ export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirro
        hstack, vstack, gridstack, LineCapButt, LineCapSquare, LineCapRound,
        CAIROSURFACE, introspect, set_default_graphic_size, set_default_jsmode,
        boundingbox, Patchable
-
-function isinstalled(pkg, ge=v"0.0.0-")
-    try
-        # Pkg.installed might throw an error,
-        # we need to account for it to be able to precompile
-        ver = Pkg.installed(pkg)
-        ver == nothing && try
-            # Assume the version is new enough if the package is in LOAD_PATH
-            ex = Expr(:import, Symbol(pkg))
-            @eval $ex
-            return true
-        catch
-            return false
-        end
-        return ver >= ge
-    catch
-        return false
-    end
-end
 
 abstract type Backend end
 
@@ -146,51 +123,49 @@ default_fill_color = colorant"black"
 # Use cairo for the PNG, PS, PDF if it's installed.
 macro missing_cairo_error(backend)
     msg1 = """
-    Cairo and Fontconfig are necessary for the $(backend) backend. Run:
-      Pkg.add("Cairo")
-      Pkg.add("Fontconfig")
+    The Cairo and Fontconfig packages are necessary for the $(backend) backend.
+    Add them with the package manager if necessary, then run:
+      import Cairo, Fontconfig
+    before invoking $(backend).
     """
-    msg2 = """
-        You also have to delete $(joinpath(Base.LOAD_CACHE_PATH[1], "Compose.ji"))
-        and restart your REPL session afterwards.
-        """
-    string(msg1, msg2)
+    string(msg1)
 end
 
-if isinstalled("Cairo")
-    include("cairo_backends.jl")
-    include("immerse_backend.jl")
-else
-    global PNG
-    global PS
-    global PDF
+#global PDF
+PNG(::Any, args...) = error(@missing_cairo_error "PNG")
+PS(::Any, args...) = error(@missing_cairo_error "PS")
+PDF(::Any, args...) = error(@missing_cairo_error "PDF")
 
-    PNG(args...) = error(@missing_cairo_error "PNG")
-    PS(args...) = error(@missing_cairo_error "PS")
-    PDF(args...) = error(@missing_cairo_error "PDF")
-end
 include("svg.jl")
 include("pgf_backend.jl")
 
 # If available, pango and fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 
-if isinstalled("Fontconfig")
+include("fontfallback.jl")
+
+function link_fontconfig()
+    @info "Loading Fontconfig backend into Compose.jl"
     pango_cairo_ctx = C_NULL
     include("pango.jl")
 
-    function __init__()
-        global pango_cairo_ctx
-        global pangolayout
-        ccall((:g_type_init, Cairo._jl_libgobject), Void, ())
-        pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
-                                 Ptr{Void}, ())
-        pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
-                                 Ptr{Void}, (Ptr{Void},), pango_cairo_fm)
-        pangolayout = PangoLayout()
-    end
-else
-    include("fontfallback.jl")
+    ccall((:g_type_init, libgobject), Cvoid, ())
+    pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
+                             Ptr{Cvoid}, ())
+    pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
+                             Ptr{Cvoid}, (Ptr{Cvoid},), pango_cairo_fm)
+    pangolayout = PangoLayout()
+end
+
+function link_cairo()
+    @info "Loading Cairo backend into Compose.jl"
+    include("cairo_backends.jl")
+    include("immerse_backend.jl")
+end
+
+function __init__()
+    @require Cairo="159f3aea-2a34-519c-b102-8c37f9878175" link_cairo()
+    @require Fontconfig="186bb1d3-e1f7-5a2c-a377-96d770f13627" link_fontconfig()
 end
 
 show(io::IO, m::MIME"text/html", ctx::Context) =
@@ -199,12 +174,6 @@ show(io::IO, m::MIME"text/html", ctx::Context) =
 
 show(io::IO, m::MIME"image/svg+xml", ctx::Context) =
     draw(SVG(io, default_graphic_width, default_graphic_height, false), ctx)
-
-try
-    getfield(Compose, :Cairo) # throws if Cairo isn't being used
-    show(io::IO, ::MIME"image/png", ctx::Context) =
-        draw(PNG(io, default_graphic_width, default_graphic_height), ctx)
-end
 
 function pad_outer(c::Context,
                    left_padding::MeasureOrNumber,

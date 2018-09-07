@@ -1,4 +1,5 @@
-using Colors, Base.Test
+using Test, Random
+using Colors
 
 # showcompact
 tomato_bisque = compose(context(),
@@ -6,7 +7,7 @@ tomato_bisque = compose(context(),
             (context(), rectangle(), fill(colorant"tomato")))
 
 io = IOBuffer()
-showcompact(io, tomato_bisque)
+show(IOContext(io, :compact=>true), tomato_bisque)
 str = String(take!(io))
 @test str == "Context(Context(R,f),Context(C,f))"
 
