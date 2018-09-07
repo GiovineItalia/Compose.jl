@@ -694,6 +694,9 @@ function get_layout_size(img::Image)
     return ((width / img.ppmm) * mm, (height / img.ppmm) * mm)
 end
 
+show(io::IO, ::MIME"image/png", ctx::Context) =
+    draw(PNG(io, default_graphic_width, default_graphic_height), ctx)
+
 function draw(img::Image, prim::TextPrimitive)
     (!img.visible || (img.fill.alpha == 0.0 && img.stroke.alpha == 0.0)) && return
 

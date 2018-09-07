@@ -175,13 +175,6 @@ show(io::IO, m::MIME"text/html", ctx::Context) =
 show(io::IO, m::MIME"image/svg+xml", ctx::Context) =
     draw(SVG(io, default_graphic_width, default_graphic_height, false), ctx)
 
-try
-    getfield(Compose, :Cairo) # throws if Cairo isn't being used
-    show(io::IO, ::MIME"image/png", ctx::Context) =
-        draw(PNG(io, default_graphic_width, default_graphic_height), ctx)
-catch
-end
-
 function pad_outer(c::Context,
                    left_padding::MeasureOrNumber,
                    right_padding::MeasureOrNumber,
