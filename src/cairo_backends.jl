@@ -518,6 +518,7 @@ curve_to(img::Image, ctrl1::AbsoluteVec2, ctrl2::AbsoluteVec2, anchor::AbsoluteV
             absolute_native_units(img, anchor[2].value))
 
 close_path(img::Image) = Cairo.close_path(img.ctx)
+new_sub_path(img::Image) = Cairo.new_sub_path(img.ctx)
 
 arc(img::Image, x::Float64, y::Float64, radius::Float64, angle1::Float64, angle2::Float64) =
         Cairo.arc(img.ctx,
@@ -648,11 +649,13 @@ function draw(img::Image, prim::Compose.ComplexPolygonPrimitive)
 end
 
 function draw(img::Image, prim::CirclePrimitive)
+    new_sub_path(img)
     circle(img, prim.center, prim.radius)
     fillstroke(img)
 end
 
 function draw(img::Image, prim::EllipsePrimitive)
+    new_sub_path(img)
     cx = prim.center[1].value
     cy = prim.center[2].value
     rx = sqrt((prim.x_point[1].value - cx)^2 +
@@ -662,7 +665,7 @@ function draw(img::Image, prim::EllipsePrimitive)
     theta = atan(prim.x_point[2].value - cy,
                  prim.x_point[1].value - cx)
 
-    all(isfinite([cx, cy, rx, ry, theta])) || return
+    all(isfinite,[cx, cy, rx, ry, theta]) || return
 
     save_property_state(img)
     translate(img, cx, cy)
