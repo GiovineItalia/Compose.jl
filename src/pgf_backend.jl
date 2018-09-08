@@ -387,7 +387,7 @@ function draw(img::PGF, prim::EllipsePrimitive, idx::Int)
     theta = rad2deg(atan(prim.x_point[2].value - cy,
                          prim.x_point[1].value - cx))
 
-    all(isfinite([cx, cy, rx, ry, theta])) || return
+    all(isfinite,[cx, cy, rx, ry, theta]) || return
 
     modifiers, props = get_vector_properties(img, idx)
     write(img.buf, join(modifiers))
