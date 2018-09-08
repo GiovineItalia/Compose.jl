@@ -4,7 +4,6 @@ os:
 sudo: required
 dist: trusty
 julia:
-    - 0.7
     - 1.0
     - nightly
 matrix:
@@ -19,4 +18,4 @@ before_install:
       fi
 after_success:
    - julia -e 'using Pkg; Pkg.add("Documenter"); include(joinpath("docs", "make.jl"))'
-   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
