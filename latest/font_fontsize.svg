@@ -8,28 +8,28 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<g font-family="Helvetica-Oblique" id="img-2f9c253b-1">
+<g font-family="Helvetica-Oblique" id="img-a1e9ec67-1">
   <g transform="translate(120,5)">
     <g class="primitive">
       <text>oblique</text>
     </g>
   </g>
 </g>
-<g font-family="Helvetica-Bold" id="img-2f9c253b-2">
+<g font-family="Helvetica-Bold" id="img-a1e9ec67-2">
   <g transform="translate(90,5)">
     <g class="primitive">
       <text>bold</text>
     </g>
   </g>
 </g>
-<g font-size="2.12" id="img-2f9c253b-3">
+<g font-size="2.12" id="img-a1e9ec67-3">
   <g transform="translate(60,5)">
     <g class="primitive">
       <text>small</text>
     </g>
   </g>
 </g>
-<g font-size="6.35" id="img-2f9c253b-4">
+<g font-size="6.35" id="img-a1e9ec67-4">
   <g transform="translate(30,5)">
     <g class="primitive">
       <text>big</text>
