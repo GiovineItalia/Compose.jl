@@ -321,7 +321,7 @@ convenient.
 
 ## Forms
 
-These are basic constructors for the in-built forms - see `src/form.jl` for more constructors.
+These are basic constructors for the in-built forms - see `src/form.jl` for more info.
 
 * `polygon(points)`
 * `rectangle(x0, y0, width, height)`
@@ -331,6 +331,8 @@ These are basic constructors for the in-built forms - see `src/form.jl` for more
 * `line(points)`
 * `curve(anchor0, ctrl0, ctrl1, anchor1)`
 * `bitmap(mime, data, x0, y0, width, height)`
+* `arc(x, y, r, angle1, angle2, slice)`
+* `slice(x, y, r, angle1, angle2)`
 
 ## Coordinates
 

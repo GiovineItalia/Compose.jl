@@ -1062,184 +1062,6 @@ function draw(img::SVG, prim::BitmapPrimitive, idx::Int)
     print(img.out, "</g>\n")
 end
 
-function svg_print_path_op(io::IO, op::MoveAbsPathOp)
-    print(io, 'M')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::MoveRelPathOp)
-    print(io, 'm')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-svg_print_path_op(io::IO, op::ClosePathOp) = print(io, 'z')
-
-function svg_print_path_op(io::IO, op::LineAbsPathOp)
-    print(io, 'L')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::LineRelPathOp)
-    print(io, 'l')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::HorLineAbsPathOp)
-    print(io, 'H')
-    svg_print_float(io, op.x.value)
-end
-
-function svg_print_path_op(io::IO, op::HorLineRelPathOp)
-    print(io, 'h')
-    svg_print_float(io, op.Δx.value)
-end
-
-function svg_print_path_op(io::IO, op::VertLineAbsPathOp)
-    print(io, 'V')
-    svg_print_float(io, op.y.value)
-end
-
-function svg_print_path_op(io::IO, op::VertLineRelPathOp)
-    print(io, 'v')
-    svg_print_float(io, op.Δy.value)
-end
-
-function svg_print_path_op(io::IO, op::CubicCurveAbsPathOp)
-    print(io, 'C')
-    svg_print_float(io, op.ctrl1[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl1[2].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl2[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl2[2].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::CubicCurveRelPathOp)
-    print(io, 'c')
-    svg_print_float(io, op.ctrl1[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl1[2].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl2[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl2[2].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::CubicCurveShortAbsPathOp)
-    print(io, 'S')
-    svg_print_float(io, op.ctrl2[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl2[2].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::CubicCurveShortRelPathOp)
-    print(io, 's')
-    svg_print_float(io, op.ctrl2[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl2[2].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::QuadCurveAbsPathOp)
-    print(io, 'Q')
-    svg_print_float(io, op.ctrl1[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl1[2].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::QuadCurveRelPathOp)
-    print(io, 'q')
-    svg_print_float(io, op.ctrl1[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.ctrl1[2].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::QuadCurveShortAbsPathOp)
-    print(io, 'T')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::QuadCurveShortRelPathOp)
-    print(io, 't')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::ArcAbsPathOp)
-    print(io, 'A')
-    svg_print_float(io, op.rx.value)
-    print(io, ' ')
-    svg_print_float(io, op.ry.value)
-    print(io, ' ')
-    svg_print_float(io, op.rotation)
-    print(io, ' ',
-          op.largearc ? 1 : 0, ' ',
-          op.sweep ? 1 : 0, ' ')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function svg_print_path_op(io::IO, op::ArcRelPathOp)
-    print(io, 'a')
-    svg_print_float(io, op.rx.value)
-    print(io, ' ')
-    svg_print_float(io, op.ry.value)
-    print(io, ' ')
-    svg_print_float(io, op.rotation)
-    print(io, ' ',
-          op.largearc ? 1 : 0, ' ',
-          op.sweep ? 1 : 0, ' ')
-    svg_print_float(io, op.to[1].value)
-    print(io, ' ')
-    svg_print_float(io, op.to[2].value)
-end
-
-function draw(img::SVG, prim::PathPrimitive, idx::Int)
-    indent(img)
-    print(img.out, "<path d=\"")
-    for op in prim.ops
-        svg_print_path_op(img.out, op)
-    end
-    print(img.out, '"')
-    print_vector_properties(img, idx)
-    print(img.out, "/>\n")
-end
 
 
 # FormBatch Drawing
@@ -1368,3 +1190,57 @@ function pop_property_frame(img::SVG)
         end
     end
 end
+
+
+function Compose.draw(img::SVG, prim::ArcPrimitive, idx::Int)
+    xc = prim.center[1].value
+    yc = prim.center[2].value
+    rx = ry = prim.radius.value
+    x1 =  rx*cos(prim.angle1)
+    y1 =  ry*sin(prim.angle1)
+    x2 =  rx*cos(prim.angle2)
+    y2 =  ry*sin(prim.angle2)
+    dθ = prim.angle2 - prim.angle1
+    dθ += 2π*(dθ<0)
+    
+    indent(img)
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
+    svg_print_float(img.out, xc)
+    print(img.out, ",")
+    svg_print_float(img.out, yc)
+    print(img.out, ")\"")
+    print_vector_properties(img, idx)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<path d=\"M")
+    prim.slice && print(img.out,"0,0 L") 
+    svg_print_float(img.out, x1)
+    print(img.out, ",")
+    svg_print_float(img.out, y1)
+    print(img.out, " A")
+    svg_print_float(img.out, rx)
+    print(img.out, ",")
+    svg_print_float(img.out, ry)
+    print(img.out, ' ', 0, ' ', dθ>π ? 1 : 0,' ',1,' ')
+    svg_print_float(img.out, x2)
+    print(img.out, ",")
+    svg_print_float(img.out, y2)
+    prim.slice && print(img.out, "L0,0")
+    print(img.out, '"')
+    print(img.out, " class=\"primitive\"")
+    print(img.out, "/>\n")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
+end
+
+
+
+
+
+
+
+
