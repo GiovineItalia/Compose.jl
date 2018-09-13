@@ -6,7 +6,11 @@ makedocs(
     format = :html,
     sitename = "Compose.jl",
     pages = Any[
-        "Home" => "index.md"
+        "Home" => "index.md",
+        "Tutorial" => "tutorial.md",
+        "Gallery" => Any[
+            "Forms" => "gallery/forms.md",
+            ],
         "Library" => "library.md"
     ]
 )
