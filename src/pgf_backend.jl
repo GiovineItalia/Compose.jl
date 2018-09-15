@@ -584,3 +584,28 @@ function escape_tex_chars(text::AbstractString)
 	escaped_str = replace(escaped_str, "~"=>"\\textasciitilde{}")
 	escaped_str = replace(escaped_str, "\\textbackslash\\{\\}"=>"\\textbackslash{}")
 end
+
+
+
+function draw(img::PGF, prim::ArcPrimitive, idx::Int)
+    
+    angle2 = prim.angle2 + (prim.angle2<prim.angle1)*2π
+    modifiers, props = get_vector_properties(img, idx)
+    img.visible || return
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\path [%s] (%s,%s) ",
+        join(props, ","), 
+        svg_fmt_float(prim.center[1].value),
+        svg_fmt_float(prim.center[2].value) )
+    prim.slice && write(img.buf, "-- ")
+    @printf(img.buf, "+(%s:%s) ",
+        svg_fmt_float(rad2deg(prim.angle1)),
+        svg_fmt_float(prim.radius.value) )
+    @printf(img.buf,  "arc [radius=%s, start angle=%s, end angle=%s]",
+        svg_fmt_float(prim.radius.value),
+        svg_fmt_float(rad2deg(prim.angle1)),
+        svg_fmt_float(rad2deg(angle2)) )
+    prim.slice && write(img.buf, " -- cycle")
+    write(img.buf, ";\n")
+end
+
