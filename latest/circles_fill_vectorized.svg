@@ -8,14 +8,13 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="#FF6347" id="img-394fe413-1">
-  <g transform="translate(20,20)">
-    <path d="M-20,-20 L 20 -20 20 20 -20 20 z" class="primitive"/>
-  </g>
+<g transform="translate(10,10)" fill="#F4E6D6">
+  <circle cx="0" cy="0" r="4" class="primitive"/>
 </g>
-<g fill="#FFE4C4" id="img-394fe413-2">
-  <g transform="translate(20,20)">
-    <circle cx="0" cy="0" r="20" class="primitive"/>
-  </g>
+<g transform="translate(20,20)" fill="#00C5C0">
+  <circle cx="0" cy="0" r="4" class="primitive"/>
+</g>
+<g transform="translate(30,30)" fill="#FF7C7A">
+  <circle cx="0" cy="0" r="4" class="primitive"/>
 </g>
 </svg>
