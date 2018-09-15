@@ -365,6 +365,6 @@ function show(io::IO, t::Table)
             println(io)
         end
     else
-        print(io, t)
+        invoke(show, Tuple{IO, Any}, io, t)
     end
 end
