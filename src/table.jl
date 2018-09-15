@@ -100,8 +100,8 @@ function force_aspect_ratio!(tbl::Table,
         w = w0
         h = h0 * adj
         delta = h0 - h
-        y_solution[1:tbl.y_focus.stop] += delta/2
-        y_solution[tbl.y_focus.stop+1:end] -= delta/2
+        y_solution[1:tbl.y_focus.stop] .+= delta/2
+        y_solution[tbl.y_focus.stop+1:end] .-= delta/2
         h_solution[tbl.y_focus] *= adj
     end
 end

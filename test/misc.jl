@@ -121,3 +121,19 @@ twolines = text_extents(font_family, 8pt, "Peg\nPeg")[1]
     @test Compose.escape_tex_chars("\\") == "\\textbackslash{}"
     @test Compose.pango_to_pgf("hello\\") == "\\text{hello\\textbackslash{}}"
 end
+
+@testset "table" begin
+    @testset "force aspect ratio" begin
+        tbl = Compose.Table(1, 1, UnitRange(1,1), UnitRange(3:3), aspect_ratio=1.6);
+        x_solution = [0.0, 5.8, 11.8]
+        w_solution = [5.8, 6.0, 119.6]
+        y_solution = [0.0, 85.3]
+        h_solution = [85.3, 4.7]
+        x0, w0 = copy(x_solution), copy(w_solution)
+        Compose.force_aspect_ratio!(tbl, x_solution, y_solution, w_solution, h_solution)
+        @test x_solution == x0
+        @test w_solution == w0
+        @test y_solution ≈ [5.275, 80.025]
+        @test h_solution == [74.75, 4.7]
+    end
+end
