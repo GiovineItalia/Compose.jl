@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Forms · Compose.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="Compose.jl logo"/></a><h1>Compose.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><a class="toctext" href="../tutorial.html">Tutorial</a></li><li><span class="toctext">Gallery</span><ul><li class="current"><a class="toctext" href="forms.html">Forms</a><ul class="internal"><li><a class="toctext" href="#[arc](@ref)-1"><code>arc</code></a></li><li><a class="toctext" href="#bitmap-1"><code>bitmap</code></a></li><li><a class="toctext" href="#[circle](@ref)-1"><code>circle</code></a></li><li><a class="toctext" href="#curve-1"><code>curve</code></a></li><li><a class="toctext" href="#ellipse-1"><code>ellipse</code></a></li><li><a class="toctext" href="#line-1"><code>line</code></a></li><li><a class="toctext" href="#[polygon](@ref)-1"><code>polygon</code></a></li><li><a class="toctext" href="#[rectangle](@ref)-1"><code>rectangle</code></a></li><li><a class="toctext" href="#[slice](@ref)-1"><code>slice</code></a></li><li><a class="toctext" href="#[text](@ref)-1"><code>text</code></a></li></ul></li></ul></li><li><a class="toctext" href="../library.html">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li>Gallery</li><li><a href="forms.html">Forms</a></li></ul><a class="edit-page" href="https://github.com/GiovineItalia/Compose.jl/blob/master/docs/src/gallery/forms.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Forms</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Forms-1" href="#Forms-1">Forms</a></h1><h2><a class="nav-anchor" id="[arc](@ref)-1" href="#[arc](@ref)-1"><a href="../library.html#Compose.arc"><code>arc</code></a></a></h2><div><pre><code class="language-julia">using Compose
+set_default_graphic_size(8cm,4cm)
+colv = [&quot;red&quot;,&quot;orange&quot;,&quot;green&quot;,&quot;blue&quot;, &quot;purple&quot;]
+a = range(-π/4, stop=7π/4, length=6)+ 0.2*randn(6)
+a[6] = a[1]
+
+img1 = compose(context(),
+    (context(), arc([0.5], [0.5], [0.3], [4.5π/4,π/4] , [7.5π/4,3π/4], [true,false]),
+        stroke(&quot;black&quot;), fill([&quot;red&quot;,&quot;white&quot;])) )
+img2 = compose(context(),
+    (context(), arc([0.5], [0.5], [0.3], a[1:5], a[2:6]),
+        stroke(colv), fill(&quot;transparent&quot;), linewidth(2mm)) )
+hstack(img1, img2)</code></pre><?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     version="1.2"
+     width="80mm" height="40mm" viewBox="0 0 80 40"
+     stroke="none"
+     fill="#000000"
+     stroke-width="0.3"
+     font-size="3.88"
+>
+<g stroke-width="2" fill="#000000" fill-opacity="0.000" id="img-9523561d-1">
+  <g transform="translate(60,20)" stroke="#FF0000">
+    <path d="M7.25,-9.57 A12,12 0 0 1 12,-0.31" class="primitive"/>
+  </g>
+  <g transform="translate(60,20)" stroke="#FFA500">
+    <path d="M12,-0.31 A12,12 0 0 1 -1.29,11.93" class="primitive"/>
+  </g>
+  <g transform="translate(60,20)" stroke="#008000">
+    <path d="M-1.29,11.93 A12,12 0 0 1 -11.99,0.35" class="primitive"/>
+  </g>
+  <g transform="translate(60,20)" stroke="#0000FF">
+    <path d="M-11.99,0.35 A12,12 0 0 1 -4.44,-11.15" class="primitive"/>
+  </g>
+  <g transform="translate(60,20)" stroke="#800080">
+    <path d="M-4.44,-11.15 A12,12 0 0 1 7.25,-9.57" class="primitive"/>
+  </g>
+</g>
+<g stroke="#000000" id="img-9523561d-2">
+  <g transform="translate(20,20)" fill="#FF0000">
+    <path d="M0,0 L-11.09,-4.59 A12,12 0 0 1 11.09,-4.59L0,0" class="primitive"/>
+  </g>
+  <g transform="translate(20,20)" fill="#FFFFFF">
+    <path d="M8.49,8.49 A12,12 0 0 1 -8.49,8.49" class="primitive"/>
+  </g>
+</g>
+</svg>
+</div><h2><a class="nav-anchor" id="bitmap-1" href="#bitmap-1"><code>bitmap</code></a></h2><h2><a class="nav-anchor" id="[circle](@ref)-1" href="#[circle](@ref)-1"><a href="../library.html#Compose.circle"><code>circle</code></a></a></h2><h2><a class="nav-anchor" id="curve-1" href="#curve-1"><code>curve</code></a></h2><h2><a class="nav-anchor" id="ellipse-1" href="#ellipse-1"><code>ellipse</code></a></h2><h2><a class="nav-anchor" id="line-1" href="#line-1"><code>line</code></a></h2><h2><a class="nav-anchor" id="[polygon](@ref)-1" href="#[polygon](@ref)-1"><a href="../library.html#Compose.polygon-Union{Tuple{AbstractArray{T,N} where N}, Tuple{T}, Tuple{AbstractArray{T,N} where N,Any}} where T&lt;:Union{Tuple{Union{Number, Measure},Union{Number, Measure}}, Tuple{Vararg{Measure,N}} where N}"><code>polygon</code></a></a></h2><h2><a class="nav-anchor" id="[rectangle](@ref)-1" href="#[rectangle](@ref)-1"><a href="../library.html#Compose.rectangle"><code>rectangle</code></a></a></h2><h2><a class="nav-anchor" id="[slice](@ref)-1" href="#[slice](@ref)-1"><a href="../library.html#Compose.slice-NTuple{5,AbstractArray{T,1} where T}"><code>slice</code></a></a></h2><div><pre><code class="language-julia">using Compose
+set_default_graphic_size(14cm, 4cm)
+colv = [&quot;red&quot;,&quot;orange&quot;,&quot;green&quot;,&quot;blue&quot;, &quot;purple&quot;]
+a = range(-π/4, stop=7π/4, length=6)+ 0.2*randn(6)
+a[6] = a[1]
+
+sliceobj = slice([0.5], [0.5], [0.3], a[1:5], a[2:6])
+img1 = compose(context(),
+    (context(), sliceobj, fill(colv)) )
+img2 = compose(context(),
+    (context(), sliceobj, stroke(&quot;white&quot;), fill(colv), linewidth(1.4mm)) )
+img3 = compose(context(),
+    (context(), sliceobj, stroke(colv), fill(&quot;transparent&quot;), linewidth(1.4mm)) )
+hstack(img1, img2, img3)</code></pre><?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     version="1.2"
+     width="140mm" height="40mm" viewBox="0 0 140 40"
+     stroke="none"
+     fill="#000000"
+     stroke-width="0.3"
+     font-size="3.88"
+>
+<g stroke-width="1.4" fill="#000000" fill-opacity="0.000" id="img-edc08bf7-1">
+  <g transform="translate(116.67,20)" stroke="#FF0000">
+    <path d="M0,0 L8.81,-10.88 A14,14 0 0 1 11.42,8.09L0,0" class="primitive"/>
+  </g>
+  <g transform="translate(116.67,20)" stroke="#FFA500">
+    <path d="M0,0 L11.42,8.09 A14,14 0 0 1 -0.99,13.97L0,0" class="primitive"/>
+  </g>
+  <g transform="translate(116.67,20)" stroke="#008000">
+    <path d="M0,0 L-0.99,13.97 A14,14 0 0 1 -13.38,4.12L0,0" class="primitive"/>
+  </g>
+  <g transform="translate(116.67,20)" stroke="#0000FF">
+    <path d="M0,0 L-13.38,4.12 A14,14 0 0 1 -2.66,-13.74L0,0" class="primitive"/>
+  </g>
+  <g transform="translate(116.67,20)" stroke="#800080">
+    <path d="M0,0 L-2.66,-13.74 A14,14 0 0 1 8.81,-10.88L0,0" class="primitive"/>
+  </g>
+</g>
+<g stroke-width="1.4" stroke="#FFFFFF" id="img-edc08bf7-2">
+  <g transform="translate(70,20)" fill="#FF0000">
+    <path d="M0,0 L8.81,-10.88 A14,14 0 0 1 11.42,8.09L0,0" class="primitive"/>
+  </g>
+  <g transform="translate(70,20)" fill="#FFA500">
+    <path d="M0,0 L11.42,8.09 A14,14 0 0 1 -0.99,13.97L0,0" class="primitive"/>
+  </g>
+  <g transform="translate(70,20)" fill="#008000">
+    <path d="M0,0 L-0.99,13.97 A14,14 0 0 1 -13.38,4.12L0,0" class="primitive"/>
+  </g>
+  <g transform="translate(70,20)" fill="#0000FF">
+    <path d="M0,0 L-13.38,4.12 A14,14 0 0 1 -2.66,-13.74L0,0" class="primitive"/>
+  </g>
+  <g transform="translate(70,20)" fill="#800080">
+    <path d="M0,0 L-2.66,-13.74 A14,14 0 0 1 8.81,-10.88L0,0" class="primitive"/>
+  </g>
+</g>
+<g transform="translate(23.33,20)" fill="#FF0000">
+  <path d="M0,0 L8.81,-10.88 A14,14 0 0 1 11.42,8.09L0,0" class="primitive"/>
+</g>
+<g transform="translate(23.33,20)" fill="#FFA500">
+  <path d="M0,0 L11.42,8.09 A14,14 0 0 1 -0.99,13.97L0,0" class="primitive"/>
+</g>
+<g transform="translate(23.33,20)" fill="#008000">
+  <path d="M0,0 L-0.99,13.97 A14,14 0 0 1 -13.38,4.12L0,0" class="primitive"/>
+</g>
+<g transform="translate(23.33,20)" fill="#0000FF">
+  <path d="M0,0 L-13.38,4.12 A14,14 0 0 1 -2.66,-13.74L0,0" class="primitive"/>
+</g>
+<g transform="translate(23.33,20)" fill="#800080">
+  <path d="M0,0 L-2.66,-13.74 A14,14 0 0 1 8.81,-10.88L0,0" class="primitive"/>
+</g>
+</svg>
+</div><h2><a class="nav-anchor" id="[text](@ref)-1" href="#[text](@ref)-1"><a href="../library.html#Compose.text"><code>text</code></a></a></h2><footer><hr/><a class="previous" href="../tutorial.html"><span class="direction">Previous</span><span class="title">Tutorial</span></a><a class="next" href="../library.html"><span class="direction">Next</span><span class="title">Library</span></a></footer></article></body></html>
