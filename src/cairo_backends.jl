@@ -743,222 +743,7 @@ end
 draw(img::Image, prim::BitmapPrimitive) =
         error("Embedding bitmaps in Cairo backends (i.e. PNG, PDF, PS) is not supported.")
 
-function draw(img::Image, prim::PathPrimitive)
-    for op in prim.ops
-        draw_path_op(img, op)
-    end
-    fillstroke(img)
-end
 
-draw_path_op(img::Image, op::MoveAbsPathOp) = move_to(img, op.to)
-draw_path_op(img::Image, op::MoveRelPathOp) = rel_move_to(img, op.to)
-draw_path_op(img::Image, op::ClosePathOp)   = close_path(img)
-draw_path_op(img::Image, op::LineAbsPathOp) = line_to(img, op.to)
-draw_path_op(img::Image, op::LineRelPathOp) = rel_line_to(img, op.to)
-
-function draw_path_op(img::Image, op::HorLineAbsPathOp)
-    pos = current_point(img)
-    line_to(img, (op.x, pos.y))
-end
-
-draw_path_op(img::Image, op::HorLineRelPathOp) = rel_line_to(img, (op.Δx, 0.0mm))
-
-function draw_path_op(img::Image, op::VertLineAbsPathOp)
-    pos = current_point(img)
-    line_to(img, (pos.x, op.y))
-end
-
-draw_path_op(img::Image, op::VertLineRelPathOp) = rel_line_to(img, (0.0mm, op.Δy))
-
-function draw_path_op(img::Image, op::CubicCurveAbsPathOp)
-    curve_to(img, op.ctrl1, op.ctrl2, op.to)
-    img.last_ctrl2_point = op.ctrl2
-end
-
-function draw_path_op(img::Image, op::CubicCurveRelPathOp)
-    xy = current_point(img)
-    rel_curve_to(img, op.ctrl1, op.ctrl2, op.to)
-    img.last_ctrl2_point = (op.ctrl2[1] + xy[1], op.ctrl2[2] + xy[2])
-end
-
-function draw_path_op(img::Image, op::CubicCurveShortAbsPathOp)
-    xy = current_point(img)
-    ctrl1 = img.last_ctrl2_point
-    if ctrl1 === nothing
-        ctrl1 = xy
-    else
-        ctrl1 = (2*xy[1] - ctrl1[1], 2*xy[2] - ctrl1[2])
-    end
-    curve_to(img, ctrl1, op.ctrl2, op.to)
-    img.last_ctrl2_point = op.ctrl2
-end
-
-function draw_path_op(img::Image, op::CubicCurveShortRelPathOp)
-    xy = current_point(img)
-    x1, y1 = xy[1].value, xy[2].value
-    x2, y2 = op.to[1].value, op.to[2].value
-
-    ctrl1 = img.last_ctrl2_point
-    if ctrl1 === nothing
-        ctrl1 = xy
-    else
-        ctrl1 = (Measure(abs=(2*x1 - ctrl1[1].value) - x1),
-                 Measure(abs=(2*y1 - ctrl1[2].value) - y1))
-    end
-    cx, cy = ctrl1[1].value, ctrl1[2].value
-
-    rel_curve_to(img, ctrl1, op.ctrl2, op.to)
-    img.last_ctrl2_point =
-        (Measure(abs=op.ctrl2[1].value + xy.x.abs),
-         Measure(abs=op.ctrl2[2].value + xy.y.abs))
-end
-
-function draw_path_op(img::Image, op::QuadCurveAbsPathOp)
-    xy = current_point(img)
-    x1, y1 = xy[1].value, xy[2].value
-    x2, y2 = op.to[1].value, op.to[2].value
-    cx, cy = op.ctrl1[1].value, op.ctrl1[2].value
-    curve_to(img,
-             (Measure(abs=(x1 + 2*cx)/3),
-              Measure(abs=(y1 + 2*cy)/3)),
-             (Measure(abs=(x2 + 2*cx)/3),
-              Measure(abs=(y2 + 2*cy)/3)),
-             op.to)
-    img.last_ctrl1_point = op.ctrl1
-end
-
-function draw_path_op(img::Image, op::QuadCurveRelPathOp)
-    xy = current_point(img)
-    x1, y1 = xy[1].value, xy[2].value
-    x2, y2 = op.to[1].value, op.to[2].value
-    cx, cy = op.ctrl1[1].value, op.ctrl1[2].value
-    rel_curve_to(img,
-                 (Measure(abs=(x1 + 2*cx)/3),
-                  Measure(abs=(y1 + 2*cy)/3)),
-                 (Measure(abs=(x2 + 2*cx)/3),
-                  Measure(abs=(y2 + 2*cy)/3)),
-             op.to)
-    img.last_ctrl1_point =
-        (Measure(abs=op.ctrl1[1].value + xy.x.abs),
-         Measure(abs=op.ctrl1[2].value + xy.y.abs))
-end
-
-function draw_path_op(img::Image, op::QuadCurveShortAbsPathOp)
-    xy = current_point(img)
-    x1, y1 = xy[1].value, xy[2].value
-    x2, y2 = op.to[1].value, op.to[2].value
-
-    ctrl1 = img.last_ctrl1_point
-    if img.last_ctrl1_point === nothing
-        ctrl1 = xy
-    else
-        ctrl1 = (Measure(abs=2*x1 - ctrl1[1].value),
-                 Measure(abs=2*y1 - ctrl1[2].value))
-    end
-    cx, cy = ctrl1[1].value, ctrl1[2].value
-
-    curve_to(img,
-             (Measure(abs=(x1 + 2*cx)/3),
-              Measure(abs=(y1 + 2*cy)/3)),
-             (Measure(abs=(x2 + 2*cx)/3),
-              Measure(abs=(y2 + 2*cy)/3)),
-             (Measure(abs=x2), Measure(abs=y2)))
-    img.last_ctrl1_point = ctrl1
-end
-
-function draw_path_op(img::Image, op::QuadCurveShortRelPathOp)
-    xy = current_point(img)
-    x1, y1 = xy[1].value, xy[2].value
-    x2, y2 = x1 + op.to[1].value, y1 + op.to[2].value
-
-    ctrl1 = img.last_ctrl1_point
-    if ctrl1 === nothing
-        ctrl1 = xy
-    else
-        ctrl1 = (Measure(abs=(2*x1 - ctrl1[1].value) - x1),
-                 Measure(abs=(2*y1 - ctrl1[2].value) - y1))
-    end
-    cx, cy = ctrl1[1].value, ctrl1[2].value
-
-    rel_curve_to(img,
-                 (Measure(abs=(x1 + 2*cx)/3),
-                  Measure(abs=(y1 + 2*cy)/3)),
-                 (Measure(abs=(x2 + 2*cx)/3),
-                  Measure(abs=(y2 + 2*cy)/3)),
-                 (Measure(abs=x2), Measure(abs=y2)))
-    img.last_ctrl1_point =
-        (Measure(abs=op.ctrl1[1].value + x1),
-         Measure(abs=op.ctrl1[2].value + y1))
-end
-
-function draw_path_op(img::Image, op::ArcAbsPathOp)
-    xy = current_point(img)
-    x1, y1 = xy[1].value, xy[2].value
-    x2, y2 = op.to[1].value, op.to[2].value
-    rx, ry = op.rx.abs, op.ry.abs
-    φ = deg2rad(op.rotation)
-    draw_endpoint_arc(img, rx, ry, φ, op.largearc, op.sweep, x1, y1, x2, y2)
-end
-
-function draw_path_op(img::Image, op::ArcRelPathOp)
-    xy = current_point(img)
-    x1, y1 = xy[1].value, xy[2].value
-    x2, y2 = x1 + op.to[1].value, y1 + op.to[2].value
-    rx, ry = op.rx.abs, op.ry.abs
-    φ = deg2rad(op.rotation)
-    draw_endpoint_arc(img, rx, ry, φ, op.largearc, op.sweep, x1, y1, x2, y2)
-end
-
-# Draw an SVG style elliptical arc
-function draw_endpoint_arc(img::Image, rx::Float64, ry::Float64, φ::Float64,
-                           largearc::Bool, sweep::Bool,
-                           x1::Float64, y1::Float64,
-                           x2::Float64, y2::Float64)
-    function uvangle(ux, uy, vx, vy)
-        t = (ux * vx + uy * vy) / (sqrt(ux^2 + uy^2) * sqrt(vx^2 + vy^2))
-        t = max(min(t, 1.0), -1.0)
-        return (ux * vy - uy * vx < 0.0 ? -1 : 1.0) * acos(t)
-    end
-
-    # From: http://www.w3.org/TR/SVG/implnote.html#ArcConversionEndpointToCenter
-    xm, ym = (x1 - x2)/2, (y1 - y2)/2
-    x1p =  cos(φ) * xm + sin(φ) * ym
-    y1p = -sin(φ) * xm + cos(φ) * ym
-
-    u = (rx^2 * ry^2 - rx^2 * y1p^2 - ry^2 * x1p^2) / (rx^2 * y1p^2 + ry^2 * x1p^2)
-    u = u >= 0.0 ? sqrt(u) : 0.0
-
-    cxp =  u * (rx * y1p) / ry
-    cyp = -u * (ry * x1p) / rx
-    if sweep == largearc
-        cxp = -cxp
-        cyp = -cyp
-    end
-    cx = (x1 + x2)/2 + cos(φ) * cxp - sin(φ) * cyp
-    cy = (y1 + y2)/2 + sin(φ) * cxp + cos(φ) * cyp
-
-    θ1 = uvangle(1.0, 0.0, (x1p - cxp) / rx, (y1p - cyp) / ry)
-    Δθ = uvangle((x1p - cxp) / rx, (y1p - cyp) / ry,
-                 (-x1p - cxp) / rx, (-y1p - cyp) / ry) % (2.0*π)
-    if Δθ > 0.0 && !sweep
-        Δθ -= 2*π
-    elseif Δθ < 0.0 && sweep
-        Δθ += 2*π
-    end
-
-    Cairo.save(img.ctx)
-    Cairo.translate(img.ctx,
-                    absolute_native_units(img, cx),
-                    absolute_native_units(img, cy))
-    Cairo.rotate(img.ctx, φ)
-    Cairo.scale(img.ctx, rx, ry)
-    if sweep
-        arc(img, 0.0, 0.0, 1.0, θ1, θ1 + Δθ)
-    else
-        arc_negative(img, 0.0, 0.0, 1.0, θ1, θ1 + Δθ)
-    end
-    Cairo.restore(img.ctx)
-end
 
 function draw(img::Image, batch::FormBatch)
     bounds = boundingbox(batch.primitive, img.linewidth, img.font, img.fontsize)
@@ -992,3 +777,16 @@ function draw(img::Image, batch::FormBatch)
     end
     Cairo.set_antialias(img.ctx, Cairo.ANTIALIAS_DEFAULT)
 end
+
+
+function Compose.draw(img::Compose.Image, prim::ArcPrimitive)
+    new_sub_path(img)
+    xc = prim.center[1]
+    yc = prim.center[2]
+    prim.slice && move_to(img, (xc, yc))
+    arc(img, xc.value, yc.value, prim.radius.value, prim.angle1, prim.angle2)
+    prim.slice && line_to(img, (xc, yc))
+    fillstroke(img)
+end
+
+
