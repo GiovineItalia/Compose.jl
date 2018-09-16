@@ -6,12 +6,12 @@ Author = ["Daniel C. Jones", "Gio Borje", "Tamas Nagy"]
 
 Compose is a declarative vector graphics system written in Julia. It's designed
 to simplify the creation of complex graphics and serves as the basis of the
-[Gadfly](https://github.com/dcjones/Gadfly.jl) data visualization package.
+[Gadfly](https://github.com/GiovineItalia/Gadfly.jl) data visualization package.
 
 
 ## Package features
 
-- Renders publication quality graphics to SVG, PNG, Postscript, and PDF
+- Renders publication quality graphics to SVG, PNG, Postscript, PDF and PGF
 - Intuitive and consistent interface
 - Works with [Jupyter](http://jupyter.org/) notebooks via [IJulia](https://github.com/JuliaLang/IJulia.jl) out of the box
 
@@ -28,10 +28,10 @@ simplest of graphics can be rendered to your default internet browser with
 
 ```julia
 julia> using Compose
-julia> 
+julia> compose(context(), circle(), fill("gold"))
 ```
 
-Now that you have it installed, check out the [Tutorial](@ref) for a tour.
+Now that you have it installed, check out the [Tutorial](@ref) and the [Forms](@ref forms_gallery) gallery.
 
 
 ## Influences
