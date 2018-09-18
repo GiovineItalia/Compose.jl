@@ -316,9 +316,9 @@ compose(a, b, ((c, d), (e, f), g))
 Since all we are doing is building trees, this syntax tends to be pretty
 convenient.
 
-## Forms
+## [Forms](@ref forms_gallery)
 
-These are basic constructors for the in-built forms - see `src/form.jl` for more info.
+These are basic constructors for the in-built forms - see the [Forms gallery](@ref forms_gallery) for examples.
 
 * `polygon(points)`
 * `rectangle(x0, y0, width, height)`

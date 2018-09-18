@@ -60,6 +60,11 @@ function polygon(points::AbstractArray{T}, tag=empty_tag) where T <: XYTupleOrVe
                     for point in points])], tag)
 end
 
+"""
+    polygon(point_arrays::AbstractArray)
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
 function polygon(point_arrays::AbstractArray, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(point_arrays)
     VecType = XM == YM == Any ? Vec : Tuple{XM, YM}
@@ -165,7 +170,7 @@ function rectangle(x0, y0, width, height, tag=empty_tag)
 end
 
 """
-    rectangle(x0s, y0s, widths, heights)
+    rectangle(x0s::AbstractArray, y0s::AbstractArray, widths::AbstractArray, heights::AbstractArray)
 
 Arguments can be passed in arrays in order to perform multiple drawing operations at once.
 """
@@ -243,7 +248,7 @@ function circle(x, y, r, tag=empty_tag)
 end
 
 """
-    circle(xs, ys, rs)
+    circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)
 
 Arguments can be passed in arrays in order to perform multiple drawing operations.
 """
@@ -281,6 +286,11 @@ end
 
 const Ellipse{P<:EllipsePrimitive} = Form{P}
 
+"""
+    ellipse()
+
+Define an ellipse in the center of the current context with `x_radius=0.5w` and `y_radius=0.5h`.
+"""
 function ellipse()
     prim = EllipsePrimitive((0.5w, 0.5h),
                             (1.0w, 0.5h),
@@ -288,6 +298,11 @@ function ellipse()
     return Ellipse{typeof(prim)}([prim])
 end
 
+"""
+    ellipse(x, y, x_radius, y_radius)
+
+Define an ellipse with its center at (`x`,`y`) with radii `x_radius` and `y_radius`.
+"""
 function ellipse(x, y, x_radius, y_radius, tag=empty_tag)
     xm = x_measure(x)
     ym = y_measure(y)
@@ -297,6 +312,11 @@ function ellipse(x, y, x_radius, y_radius, tag=empty_tag)
     return Ellipse{typeof(prim)}([prim], tag)
 end
 
+"""
+    ellipse(xs::AbstractArray, ys::AbstractArray, x_radiuses::AbstractArray, y_radiuses::AbstractArray)
+
+Arguments can be passed in arrays in order to perform multiple drawing operations.
+"""
 function ellipse(xs::AbstractArray, ys::AbstractArray,
                  x_radiuses::AbstractArray, y_radiuses::AbstractArray, tag=empty_tag)
         return @makeform (x in xs, y in ys, x_radius in x_radiuses, y_radius in y_radiuses),
@@ -391,7 +411,7 @@ function text(x, y, value,
 end
 
 """
-    text(xs, ys, values [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])
+    text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])
 
 Arguments can be passed in arrays in order to perform multiple drawing operations at once.
 """
@@ -459,6 +479,11 @@ function line()
     return Line{typeof(prim)}([prim])
 end
 
+"""
+    line(points)
+    
+Define a line. `points` is an array of `(x,y)` tuples.
+"""
 function line(points::AbstractArray{T}, tag=empty_tag) where T <: XYTupleOrVec
     XM, YM = narrow_polygon_point_types(Vector[points])
     VecType = XM == YM == Any ? Vec2 : Tuple{XM, YM}
@@ -466,6 +491,11 @@ function line(points::AbstractArray{T}, tag=empty_tag) where T <: XYTupleOrVec
     return Line{typeof(prim)}([prim], tag)
 end
 
+"""
+    line(point_arrays::AbstractArray)
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
 function line(point_arrays::AbstractArray, tag=empty_tag)
     XM, YM = narrow_polygon_point_types(point_arrays)
     VecType = XM == YM == Any ? Vec2 : Tuple{XM, YM}
@@ -510,6 +540,12 @@ end
 
 const Curve{P<:CurvePrimitive} = Form{P}
 
+
+"""
+    curve(anchor0, ctrl0, ctrl1, anchor1)
+
+Define a bezier curve between `anchor0` and `anchor1` with control points `ctrl0` and `ctrl1`.
+"""
 function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
                ctrl1::XYTupleOrVec, anchor1::XYTupleOrVec, tag=empty_tag)
     prim = CurvePrimitive((x_measure(anchor0[1]), y_measure(anchor0[2])),
@@ -519,6 +555,11 @@ function curve(anchor0::XYTupleOrVec, ctrl0::XYTupleOrVec,
     return Curve{typeof(prim)}([prim], tag)
 end
 
+"""
+    curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)
+
+Arguments can be passed in arrays in order to perform multiple drawing operations.
+"""
 curve(anchor0s::AbstractArray, ctrl0s::AbstractArray,
                ctrl1s::AbstractArray, anchor1s::AbstractArray, tag=empty_tag) =
         @makeform (anchor0 in anchor0s, ctrl0 in ctrl0s, ctrl1 in ctrl1s, anchor1 in anchor1s),
@@ -549,6 +590,11 @@ end
 
 const Bitmap{P<:BitmapPrimitive} = Form{P}
 
+"""
+    bitmap(mime, data, x0, y0, width, height)
+
+Define a bitmap of size `width`x`height` with its top left corner at the point (`x`, `y`).
+"""
 function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height, tag=empty_tag)
     corner = (x_measure(x0), y_measure(y0))
     width = x_measure(width)
@@ -557,11 +603,16 @@ function bitmap(mime::AbstractString, data::Vector{UInt8}, x0, y0, width, height
     return Bitmap{typeof(prim)}([prim], tag)
 end
 
+"""
+    bitmap(mimes::AbstractArray, datas::AbstractArray, x0s::AbstractArray, y0s::AbstractArray, widths::AbstractArray, heights::AbstractArray)
+
+Arguments can be passed in arrays in order to perform multiple drawing operations.
+"""
 bitmap(mimes::AbstractArray, datas::AbstractArray,
                 x0s::AbstractArray, y0s::AbstractArray,
                 widths::AbstractArray, heights::AbstractArray, tag=empty_tag) =
-        @makeform (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heigths),
-            BitmapPrimitive(mime, data, x0, y0, x_measure(width), y_measure(height)) tag
+        @makeform (mime in mimes, data in datas, x0 in x0s, y0 in y0s, width in widths, height in heights),
+            BitmapPrimitive(mime, data, (x_measure(x0), y_measure(y0)), x_measure(width), y_measure(height)) tag
 
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::BitmapPrimitive) =
         BitmapPrimitive{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
@@ -597,9 +648,9 @@ ArcPrimitive(x, y, r, θ1, θ2, slice) = ArcPrimitive((x_measure(x), y_measure(y
 """
     arc(x, y, r, θ1, θ2, slice)
 
-Define an arc with its center at (`x`,`y`), radius of `r`, between `θ1` and `θ2`  
-`slice` (optional) is true or false, true for a pie slice, false for an arc
-Arcs are drawn clockwise from θ1 to θ2    
+Define an arc with its center at (`x`,`y`), radius of `r`, between `θ1` and `θ2`.  
+`slice` (optional) is true or false, true for a pie slice, false for an arc.
+Arcs are drawn clockwise from θ1 to θ2.    
 """
 function arc(x, y, r, θ1, θ2, slice=false, tag=empty_tag)
     prim = ArcPrimitive(x, y, r, θ1, θ2, slice)
@@ -609,7 +660,7 @@ end
 """
     slice(x, y, r, θ1, θ2)
 
-Define a pie slice with its center at (`x`,`y`), radius of `r`, between `θ1` and `θ2`  
+Define a pie slice with its center at (`x`,`y`), radius of `r`, between `θ1` and `θ2`.  
 """
 slice(x, y, r, θ1, θ2) = arc(x,y,r,θ1,θ2,true)
 
