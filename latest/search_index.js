@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Package features",
     "category": "section",
-    "text": "Renders publication quality graphics to SVG, PNG, Postscript, and PDF\nIntuitive and consistent interface\nWorks with Jupyter notebooks via IJulia out of the box"
+    "text": "Renders publication quality graphics to SVG, PNG, Postscript, PDF and PGF\nIntuitive and consistent interface\nWorks with Jupyter notebooks via IJulia out of the box"
 },
 
 {
@@ -29,7 +29,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Installation",
     "category": "section",
-    "text": "The latest release of Compose can be installed from the Julia REPL prompt withjulia> Pkg.add(\"Compose\")This installs the package and any missing dependencies.  From there, the simplest of graphics can be rendered to your default internet browser withjulia> using Compose\njulia> Now that you have it installed, check out the Tutorial for a tour."
+    "text": "The latest release of Compose can be installed from the Julia REPL prompt withjulia> Pkg.add(\"Compose\")This installs the package and any missing dependencies.  From there, the simplest of graphics can be rendered to your default internet browser withjulia> using Compose\njulia> compose(context(), circle(), fill(\"gold\"))Now that you have it installed, check out the Tutorial and the Forms gallery."
 },
 
 {
@@ -129,11 +129,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "tutorial.html#Forms-1",
+    "location": "tutorial.html#[Forms](@ref-forms_gallery)-1",
     "page": "Tutorial",
     "title": "Forms",
     "category": "section",
-    "text": "These are basic constructors for the in-built forms - see src/form.jl for more info.polygon(points)\nrectangle(x0, y0, width, height)\ncircle(x, y, r)\nellipse(x, y, x_radius, y_radius)\ntext(x, y, value)\nline(points)\ncurve(anchor0, ctrl0, ctrl1, anchor1)\nbitmap(mime, data, x0, y0, width, height)\narc(x, y, r, angle1, angle2, slice)\nslice(x, y, r, angle1, angle2)"
+    "text": "These are basic constructors for the in-built forms - see the Forms gallery for examples.polygon(points)\nrectangle(x0, y0, width, height)\ncircle(x, y, r)\nellipse(x, y, x_radius, y_radius)\ntext(x, y, value)\nline(points)\ncurve(anchor0, ctrl0, ctrl1, anchor1)\nbitmap(mime, data, x0, y0, width, height)\narc(x, y, r, angle1, angle2, slice)\nslice(x, y, r, angle1, angle2)"
 },
 
 {
@@ -157,11 +157,11 @@ var documenterSearchIndex = {"docs": [
     "page": "Forms",
     "title": "Forms",
     "category": "page",
-    "text": ""
+    "text": "Author = [\"Mattriks\"]"
 },
 
 {
-    "location": "gallery/forms.html#Forms-1",
+    "location": "gallery/forms.html#forms_gallery-1",
     "page": "Forms",
     "title": "Forms",
     "category": "section",
@@ -177,11 +177,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "gallery/forms.html#bitmap-1",
+    "location": "gallery/forms.html#[bitmap](@ref)-1",
     "page": "Forms",
     "title": "bitmap",
     "category": "section",
-    "text": ""
+    "text": "using Compose\nset_default_graphic_size(14cm,4cm)\nrawimg = read(joinpath(@__DIR__,\"..\",\"assets/smiley.png\"));\nX = 0.9*rand(10,2)\n\nimg = compose(context(), \n    (context(), rectangle(), fill(\"transparent\"), stroke(\"orange\")),\n    (context(), bitmap([\"image/png\"], [rawimg], X[:,1], X[:,2], [0.1], [0.1]))\n)"
 },
 
 {
@@ -189,31 +189,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Forms",
     "title": "circle",
     "category": "section",
-    "text": ""
+    "text": "using Colors, Compose\nset_default_graphic_size(14cm,4cm)\ncolv = HSVA.([0:30:179;], 1, 1, 0.5)\nimg = compose(context(units=UnitBox(0,0,40,8)),\n    (context(), circle([5.0:6:35;], [4], [4]), fill(colv), stroke(\"black\"))\n)"
 },
 
 {
-    "location": "gallery/forms.html#curve-1",
+    "location": "gallery/forms.html#[curve](@ref)-1",
     "page": "Forms",
     "title": "curve",
     "category": "section",
-    "text": ""
+    "text": "using Colors, Compose\nset_default_graphic_size(14cm, 4cm)\nepoint(x) = [(x,y) for y in rand(10)]\ncpoint(t=0) = [(t+x,y) for (x,y) in zip(rand(10), 0.5*rand(10))]\ncolv = range(colorant\"blue\",stop=colorant\"orange\", length=10)\n\nimg = compose(context(units=UnitBox(0,0,2,1)),\n    (context(), curve([(0.5,1.0)], cpoint(), cpoint(), epoint(0.5)), stroke(colv)),\n    (context(), curve([(1.5,1.0)], cpoint(1), cpoint(1), epoint(1.5)), stroke(colv)) \n)"
 },
 
 {
-    "location": "gallery/forms.html#ellipse-1",
+    "location": "gallery/forms.html#[ellipse](@ref)-1",
     "page": "Forms",
     "title": "ellipse",
     "category": "section",
-    "text": ""
+    "text": "using Colors, Compose\nset_default_graphic_size(14cm, 4cm)\ncolv1 = HSVA.([0:30:179;], 1, 1, 0.5)\nr = 2*[1:6;]/24\n\ncolv2 = HSVA.([0:15:179;], 1, 1, 0.3)\nθ = collect(range(0, stop=1.9π, length=10))\nrl = 0.5*rand(10)\nrw = 0.3*rand(10)\nrot = Rotation.(θ, 1.5, 0.5)\nellipsef(i::Int) = ellipse(1.5, 0.5, rl[i], rw[i])\n\nimg = compose(context(units=UnitBox(0,0,2,1)),\n        (context(), ellipse(r,[0.5],r,reverse(r)), stroke(\"black\"), fill(colv1)),\n[(context(rotation=rot[i]), ellipsef(i), fill(colv2[i]), stroke(\"black\")) for i in 1:10]...\n)"
 },
 
 {
-    "location": "gallery/forms.html#line-1",
+    "location": "gallery/forms.html#[line](@ref)-1",
     "page": "Forms",
     "title": "line",
     "category": "section",
-    "text": ""
+    "text": "using Compose\nset_default_graphic_size(10cm, 10cm)\nθ = collect(range(0, stop=2π, length=60))\npoint_array = [[(0,0.75), (x,y)] for (x,y) in zip(cos.(θ), sin.(θ))]\n\nimg = compose(context(), \n    (context(), rectangle(), fill(\"salmon\"), fillopacity(0.3)),\n    (context(0.12, 0.12, 0.76, 0.76, units=UnitBox(-1,-1,2,2)),  \n        line(point_array), stroke(\"gold\"), linewidth(1mm))\n)"
 },
 
 {
@@ -221,7 +221,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Forms",
     "title": "polygon",
     "category": "section",
-    "text": ""
+    "text": "using Statistics, Compose\nset_default_graphic_size(10cm,10cm)\nX = randn(50,2)\nX = 0.3*(X .- mean(X,dims=1))./std(X,dims=1)\nhp = hypot.(X[:,1],X[:,2])\ni = hp .> Statistics.quantile(hp, 0.82)\nZ = X[i,:]\nθ = atan.(Z[:,1], Z[:,2])\nord = sortperm(θ)\npolypoints = [(x,y) for (x,y) in zip(Z[ord,1],Z[ord,2])]  \n\nimg = compose(context(units=UnitBox(-1,-1, 2,2)),\n  (context(), line([(-1,-1), (-1,1), (1,1)]), stroke(\"black\")),\n  (context(), circle(0,0,0.02), fill(\"red\")),\n  (context(), circle(X[:,1],X[:,2],[0.02]), fill(\"transparent\"),stroke(\"deepskyblue\")),\n  (context(), polygon(polypoints), fill(\"red\"), fillopacity(0.1))\n)"
 },
 
 {
@@ -229,7 +229,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Forms",
     "title": "rectangle",
     "category": "section",
-    "text": ""
+    "text": "using Colors, Compose\nset_default_graphic_size(14cm,4cm)\ncolv = HSVA.([0:15:179;], 1, 1, 0.3)\nX = 0.9*rand(10,2)\nrl = 0.3*rand(10).+0.03\nrw = 0.3*rand(10).+0.03\n\nimg = compose(context(), \n    (context(), rectangle(), fill(\"transparent\"), stroke(\"orange\")),\n     (context(), rectangle(X[:,1], X[:,2], rl, rw), fill(colv), stroke(\"black\")) \n)"
 },
 
 {
@@ -245,7 +245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Forms",
     "title": "text",
     "category": "section",
-    "text": ""
+    "text": "using Colors, Compose\nset_default_graphic_size(10cm,10cm)\nlabels=rand(string.(names(Base)[280:end]), 30)\nθ = collect(range(0, stop=58π/30, length=30))\nX = 1 .+ 0.7*[cos.(θ) sin.(θ)]\ncolv = range(colorant\"blue\",stop=colorant\"orange\", length=30)\nrot = Rotation.(θ, X[:,1], X[:,2])\n\nimg = compose(context(units=UnitBox(0,0,2,2)),\n  (context(), text(1, 1, \"Julia\", hcenter, vcenter), stroke(\"red\"), fontsize(30pt)),\n  (context(), text(X[:,1], X[:,2], labels, [hcenter], [vcenter], rot), stroke(colv))\n)"
 },
 
 {
@@ -253,7 +253,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.arc",
     "category": "function",
-    "text": "arc(x, y, r, θ1, θ2, slice)\n\nDefine an arc with its center at (x,y), radius of r, between θ1 and θ2   slice (optional) is true or false, true for a pie slice, false for an arc Arcs are drawn clockwise from θ1 to θ2    \n\n\n\n\n\n"
+    "text": "arc(x, y, r, θ1, θ2, slice)\n\nDefine an arc with its center at (x,y), radius of r, between θ1 and θ2.   slice (optional) is true or false, true for a pie slice, false for an arc. Arcs are drawn clockwise from θ1 to θ2.    \n\n\n\n\n\n"
 },
 
 {
@@ -265,11 +265,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#Compose.bitmap",
+    "page": "Library",
+    "title": "Compose.bitmap",
+    "category": "function",
+    "text": "bitmap(mimes::AbstractArray, datas::AbstractArray, x0s::AbstractArray, y0s::AbstractArray, widths::AbstractArray, heights::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.bitmap",
+    "page": "Library",
+    "title": "Compose.bitmap",
+    "category": "function",
+    "text": "bitmap(mime, data, x0, y0, width, height)\n\nDefine a bitmap of size widthxheight with its top left corner at the point (x, y).\n\n\n\n\n\n"
+},
+
+{
     "location": "library.html#Compose.circle",
     "page": "Library",
     "title": "Compose.circle",
     "category": "function",
-    "text": "circle(xs, ys, rs)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+    "text": "circle(xs::AbstractArray, ys::AbstractArray, rs::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
 },
 
 {
@@ -289,6 +305,70 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#Compose.curve",
+    "page": "Library",
+    "title": "Compose.curve",
+    "category": "function",
+    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.curve",
+    "page": "Library",
+    "title": "Compose.curve",
+    "category": "function",
+    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.ellipse",
+    "page": "Library",
+    "title": "Compose.ellipse",
+    "category": "function",
+    "text": "ellipse(xs::AbstractArray, ys::AbstractArray, x_radiuses::AbstractArray, y_radiuses::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.ellipse",
+    "page": "Library",
+    "title": "Compose.ellipse",
+    "category": "function",
+    "text": "ellipse(x, y, x_radius, y_radius)\n\nDefine an ellipse with its center at (x,y) with radii x_radius and y_radius.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.ellipse-Tuple{}",
+    "page": "Library",
+    "title": "Compose.ellipse",
+    "category": "method",
+    "text": "ellipse()\n\nDefine an ellipse in the center of the current context with x_radius=0.5w and y_radius=0.5h.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.line",
+    "page": "Library",
+    "title": "Compose.line",
+    "category": "function",
+    "text": "line(point_arrays::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.line-Union{Tuple{AbstractArray{T,N} where N}, Tuple{T}, Tuple{AbstractArray{T,N} where N,Any}} where T<:Union{Tuple{Union{Number, Measure},Union{Number, Measure}}, Tuple{Vararg{Measure,N}} where N}",
+    "page": "Library",
+    "title": "Compose.line",
+    "category": "method",
+    "text": "line(points)\n\nDefine a line. points is an array of (x,y) tuples.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.polygon",
+    "page": "Library",
+    "title": "Compose.polygon",
+    "category": "function",
+    "text": "polygon(point_arrays::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+},
+
+{
     "location": "library.html#Compose.polygon-Union{Tuple{AbstractArray{T,N} where N}, Tuple{T}, Tuple{AbstractArray{T,N} where N,Any}} where T<:Union{Tuple{Union{Number, Measure},Union{Number, Measure}}, Tuple{Vararg{Measure,N}} where N}",
     "page": "Library",
     "title": "Compose.polygon",
@@ -301,7 +381,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.rectangle",
     "category": "function",
-    "text": "rectangle(x0s, y0s, widths, heights)\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+    "text": "rectangle(x0s::AbstractArray, y0s::AbstractArray, widths::AbstractArray, heights::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
 },
 
 {
@@ -333,15 +413,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.slice",
     "category": "method",
-    "text": "slice(x, y, r, θ1, θ2)\n\nDefine a pie slice with its center at (x,y), radius of r, between θ1 and θ2  \n\n\n\n\n\n"
-},
-
-{
-    "location": "library.html#Compose.text",
-    "page": "Library",
-    "title": "Compose.text",
-    "category": "function",
-    "text": "text(xs, ys, values [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+    "text": "slice(x, y, r, θ1, θ2)\n\nDefine a pie slice with its center at (x,y), radius of r, between θ1 and θ2.  \n\n\n\n\n\n"
 },
 
 {
@@ -350,6 +422,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Compose.text",
     "category": "function",
     "text": "text(x, y, value [,halign::HAlignment [,valign::VAlignment [,rot::Rotation]]])\n\nDraw the text value at the position (x,y) relative to the current context.\n\nThe default alignment of the text is hleft vbottom. The vertical and horizontal alignment is specified by passing hleft, hcenter or hright and vtop, vcenter or vbottom as values for halgin and valgin respectively.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.text",
+    "page": "Library",
+    "title": "Compose.text",
+    "category": "function",
+    "text": "text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
 },
 
 {
