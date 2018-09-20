@@ -182,14 +182,9 @@ Image{B}(width::MeasureOrNumber=default_graphic_width,
             dpi = (B==PNGBackend ? 96 : 72)) where {B<:ImageBackend} =
         Image{B}(IOBuffer(), width, height, emit_on_finish, dpi=dpi)
 
-PNG(x::Union{CairoSurface,IO,AbstractString,MeasureOrNumber}, args...) =
-    Image{PNGBackend}(x, args...)
-
-PDF(x::Union{CairoSurface,IO,AbstractString,MeasureOrNumber}, args...) =
-    Image{PDFBackend}(x, args...)
-
-PS(x::Union{CairoSurface,IO,AbstractString,MeasureOrNumber}, args...) =
-    Image{PSBackend}(x, args...)
+PNG(args...; kwargs...) = Image{PNGBackend}(args...; kwargs...)
+PDF(args...; kwargs...) = Image{PDFBackend}(args...; kwargs...)
+PS(args...; kwargs...) = Image{PSBackend}(args...; kwargs...)
 
 const CAIROSURFACE = Image{CairoBackend}
 
