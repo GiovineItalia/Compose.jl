@@ -527,7 +527,7 @@ end
 # FIX ME!
 function pango_to_pgf(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
-    input = Array{UInt8}(escape_tex_chars(text))
+    input = codeunits(escape_tex_chars(text))
     output = IOBuffer()
     lastpos = 1
     for mat in eachmatch(pat, text)
