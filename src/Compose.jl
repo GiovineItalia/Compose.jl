@@ -132,9 +132,9 @@ macro missing_cairo_error(backend)
 end
 
 #global PDF
-PNG(::Any, args...) = error(@missing_cairo_error "PNG")
-PS(::Any, args...) = error(@missing_cairo_error "PS")
-PDF(::Any, args...) = error(@missing_cairo_error "PDF")
+PNG(args...; kwargs...) = error(@missing_cairo_error "PNG")
+PS(args...; kwargs...) = error(@missing_cairo_error "PS")
+PDF(args...; kwargs...) = error(@missing_cairo_error "PDF")
 
 include("svg.jl")
 include("pgf_backend.jl")

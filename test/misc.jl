@@ -1,5 +1,6 @@
 using Test, Random
 using Colors
+import Cairo
 
 # showcompact
 @testset "printing" begin
@@ -136,4 +137,8 @@ end
         @test y_solution ≈ [5.275, 80.025]
         @test h_solution == [74.75, 4.7]
     end
+end
+
+@testset "Image keyword args" begin
+    @test typeof(PNG("foo.png", 4inch, 3inch, dpi=172)) <: Compose.Image
 end
