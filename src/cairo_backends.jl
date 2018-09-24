@@ -778,9 +778,9 @@ function Compose.draw(img::Compose.Image, prim::ArcPrimitive)
     new_sub_path(img)
     xc = prim.center[1]
     yc = prim.center[2]
-    prim.slice && move_to(img, (xc, yc))
+    prim.sector && move_to(img, (xc, yc))
     arc(img, xc.value, yc.value, prim.radius.value, prim.angle1, prim.angle2)
-    prim.slice && line_to(img, (xc, yc))
+    prim.sector && line_to(img, (xc, yc))
     fillstroke(img)
 end
 

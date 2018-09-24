@@ -131,7 +131,7 @@ img = compose(context(),
 ```
 
 
-## [`slice`](@ref)
+## [`sector`](@ref)
 ```@example
 using Compose
 set_default_graphic_size(14cm, 4cm)
@@ -139,13 +139,13 @@ colv = ["red","orange","green","blue", "purple"]
 a = range(-π/4, stop=7π/4, length=6)+ 0.2*randn(6)
 a[6] = a[1]
 
-sliceobj = slice([0.5], [0.5], [0.3], a[1:5], a[2:6])
+sectorobj = sector([0.5], [0.5], [0.3], a[1:5], a[2:6])
 img1 = compose(context(),
-    (context(), sliceobj, fill(colv)) )
+    (context(), sectorobj, fill(colv)) )
 img2 = compose(context(),
-    (context(), sliceobj, stroke("white"), fill(colv), linewidth(1.4mm)) )
+    (context(), sectorobj, stroke("white"), fill(colv), linewidth(1.4mm)) )
 img3 = compose(context(),
-    (context(), sliceobj, stroke(colv), fill("transparent"), linewidth(1.4mm)) )
+    (context(), sectorobj, stroke(colv), fill("transparent"), linewidth(1.4mm)) )
 hstack(img1, img2, img3)
 ```
 

@@ -597,7 +597,7 @@ function draw(img::PGF, prim::ArcPrimitive, idx::Int)
         join(props, ","), 
         svg_fmt_float(prim.center[1].value),
         svg_fmt_float(prim.center[2].value) )
-    prim.slice && write(img.buf, "-- ")
+    prim.sector && write(img.buf, "-- ")
     @printf(img.buf, "+(%s:%s) ",
         svg_fmt_float(rad2deg(prim.angle1)),
         svg_fmt_float(prim.radius.value) )
@@ -605,7 +605,7 @@ function draw(img::PGF, prim::ArcPrimitive, idx::Int)
         svg_fmt_float(prim.radius.value),
         svg_fmt_float(rad2deg(prim.angle1)),
         svg_fmt_float(rad2deg(angle2)) )
-    prim.slice && write(img.buf, " -- cycle")
+    prim.sector && write(img.buf, " -- cycle")
     write(img.buf, ";\n")
 end
 

@@ -636,57 +636,57 @@ struct ArcPrimitive{P<:Vec, M<:Measure} <: Compose.FormPrimitive
     radius::M
     angle1::Float64
     angle2::Float64
-    slice::Bool
+    sector::Bool
 end
 
-ArcPrimitive(center::P, radius::M, angle1, angle2, slice) where {P, M} = ArcPrimitive{P, M}(center, radius, angle1, angle2, slice)
-ArcPrimitive(x, y, r, θ1, θ2, slice) = ArcPrimitive((x_measure(x), y_measure(y)), x_measure(r), θ1, θ2, slice)
+ArcPrimitive(center::P, radius::M, angle1, angle2, sector) where {P, M} = ArcPrimitive{P, M}(center, radius, angle1, angle2, sector)
+ArcPrimitive(x, y, r, θ1, θ2, sector) = ArcPrimitive((x_measure(x), y_measure(y)), x_measure(r), θ1, θ2, sector)
 
  Arc{P<:ArcPrimitive} = Compose.Form{P}
 
 
 """
-    arc(x, y, r, θ1, θ2, slice)
+    arc(x, y, r, θ1, θ2, sector)
 
 Define an arc with its center at (`x`,`y`), radius of `r`, between `θ1` and `θ2`.  
-`slice` (optional) is true or false, true for a pie slice, false for an arc.
+`sector` (optional) is true or false, true for a pie sector, false for an arc.
 Arcs are drawn clockwise from θ1 to θ2.    
 """
-function arc(x, y, r, θ1, θ2, slice=false, tag=empty_tag)
-    prim = ArcPrimitive(x, y, r, θ1, θ2, slice)
+function arc(x, y, r, θ1, θ2, sector=false, tag=empty_tag)
+    prim = ArcPrimitive(x, y, r, θ1, θ2, sector)
     return Arc{typeof(prim)}([prim], tag)
 end
 
 """
-    slice(x, y, r, θ1, θ2)
+    sector(x, y, r, θ1, θ2)
 
-Define a pie slice with its center at (`x`,`y`), radius of `r`, between `θ1` and `θ2`.  
+Define a pie sector with its center at (`x`,`y`), radius of `r`, between `θ1` and `θ2`.  
 """
-slice(x, y, r, θ1, θ2) = arc(x,y,r,θ1,θ2,true)
+sector(x, y, r, θ1, θ2) = arc(x,y,r,θ1,θ2,true)
 
 """
-    arc(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector, slices::AbstractVector)
+    arc(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector, sectors::AbstractVector)
 
 Arguments can be passed in arrays in order to perform multiple drawing operations.
 """
-function arc(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector, slices::AbstractVector=[false], tag=empty_tag)
-        return @makeform (x in xs, y in ys, r in rs, θ1 in θ1s, θ2 in θ2s, slice in slices), 
-            ArcPrimitive((x_measure(x), y_measure(y)), x_measure(r), θ1, θ2, slice) tag
+function arc(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector, sectors::AbstractVector=[false], tag=empty_tag)
+        return @makeform (x in xs, y in ys, r in rs, θ1 in θ1s, θ2 in θ2s, sector in sectors), 
+            ArcPrimitive((x_measure(x), y_measure(y)), x_measure(r), θ1, θ2, sector) tag
 end
 
 """
-    slice(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector)
+    sector(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector)
 
 Arguments can be passed in arrays in order to perform multiple drawing operations.
 """
-slice(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector) = 
+sector(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector) = 
     arc(xs, ys, rs, θ1s, θ2s, [true])
 
 
 resolve(box::AbsoluteBox, units::UnitBox, t::Compose.Transform, p::ArcPrimitive) =
         ArcPrimitive{AbsoluteVec2, AbsoluteLength}(
             resolve(box, units, t, p.center),
-            resolve(box, units, t, p.radius), p.angle1, p.angle2, p.slice)
+            resolve(box, units, t, p.radius), p.angle1, p.angle2, p.sector)
 
 boundingbox(form::ArcPrimitive, linewidth::Measure, font::AbstractString, fontsize::Measure) =
         BoundingBox(form.center[1] - form.radius - linewidth,
@@ -696,7 +696,7 @@ boundingbox(form::ArcPrimitive, linewidth::Measure, font::AbstractString, fontsi
 
 form_string(::Arc) = "A"
 
-
+@deprecate slice(x,y,r,θ1,θ2) sector(x,y,r,θ1,θ2)
 
 
 
