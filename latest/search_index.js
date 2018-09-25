@@ -133,7 +133,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tutorial",
     "title": "Forms",
     "category": "section",
-    "text": "These are basic constructors for the in-built forms - see the Forms gallery for examples.polygon(points)\nrectangle(x0, y0, width, height)\ncircle(x, y, r)\nellipse(x, y, x_radius, y_radius)\ntext(x, y, value)\nline(points)\ncurve(anchor0, ctrl0, ctrl1, anchor1)\nbitmap(mime, data, x0, y0, width, height)\narc(x, y, r, angle1, angle2, slice)\nslice(x, y, r, angle1, angle2)"
+    "text": "These are basic constructors for the in-built forms - see the Forms gallery for examples.polygon(points)\nrectangle(x0, y0, width, height)\ncircle(x, y, r)\nellipse(x, y, x_radius, y_radius)\ntext(x, y, value)\nline(points)\ncurve(anchor0, ctrl0, ctrl1, anchor1)\nbitmap(mime, data, x0, y0, width, height)\narc(x, y, r, angle1, angle2, sector)\nsector(x, y, r, angle1, angle2)"
 },
 
 {
@@ -233,11 +233,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "gallery/forms.html#[slice](@ref)-1",
+    "location": "gallery/forms.html#[sector](@ref)-1",
     "page": "Forms",
-    "title": "slice",
+    "title": "sector",
     "category": "section",
-    "text": "using Compose\nset_default_graphic_size(14cm, 4cm)\ncolv = [\"red\",\"orange\",\"green\",\"blue\", \"purple\"]\na = range(-π/4, stop=7π/4, length=6)+ 0.2*randn(6)\na[6] = a[1]\n\nsliceobj = slice([0.5], [0.5], [0.3], a[1:5], a[2:6])\nimg1 = compose(context(),\n    (context(), sliceobj, fill(colv)) )\nimg2 = compose(context(),\n    (context(), sliceobj, stroke(\"white\"), fill(colv), linewidth(1.4mm)) )\nimg3 = compose(context(),\n    (context(), sliceobj, stroke(colv), fill(\"transparent\"), linewidth(1.4mm)) )\nhstack(img1, img2, img3)"
+    "text": "using Compose\nset_default_graphic_size(14cm, 4cm)\ncolv = [\"red\",\"orange\",\"green\",\"blue\", \"purple\"]\na = range(-π/4, stop=7π/4, length=6)+ 0.2*randn(6)\na[6] = a[1]\n\nsectorobj = sector([0.5], [0.5], [0.3], a[1:5], a[2:6])\nimg1 = compose(context(),\n    (context(), sectorobj, fill(colv)) )\nimg2 = compose(context(),\n    (context(), sectorobj, stroke(\"white\"), fill(colv), linewidth(1.4mm)) )\nimg3 = compose(context(),\n    (context(), sectorobj, stroke(colv), fill(\"transparent\"), linewidth(1.4mm)) )\nhstack(img1, img2, img3)"
 },
 
 {
@@ -253,7 +253,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.arc",
     "category": "function",
-    "text": "arc(x, y, r, θ1, θ2, slice)\n\nDefine an arc with its center at (x,y), radius of r, between θ1 and θ2.   slice (optional) is true or false, true for a pie slice, false for an arc. Arcs are drawn clockwise from θ1 to θ2.    \n\n\n\n\n\n"
+    "text": "arc(x, y, r, θ1, θ2, sector)\n\nDefine an arc with its center at (x,y), radius of r, between θ1 and θ2.   sector (optional) is true or false, true for a pie sector, false for an arc. Arcs are drawn clockwise from θ1 to θ2.    \n\n\n\n\n\n"
 },
 
 {
@@ -261,7 +261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.arc",
     "category": "function",
-    "text": "arc(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector, slices::AbstractVector)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+    "text": "arc(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector, sectors::AbstractVector)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
 },
 
 {
@@ -309,7 +309,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
 },
 
 {
@@ -317,7 +317,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
+    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
 },
 
 {
@@ -401,19 +401,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#Compose.slice-NTuple{5,AbstractArray{T,1} where T}",
+    "location": "library.html#Compose.sector-NTuple{5,AbstractArray{T,1} where T}",
     "page": "Library",
-    "title": "Compose.slice",
+    "title": "Compose.sector",
     "category": "method",
-    "text": "slice(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+    "text": "sector(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
 },
 
 {
-    "location": "library.html#Compose.slice-NTuple{5,Any}",
+    "location": "library.html#Compose.sector-NTuple{5,Any}",
     "page": "Library",
-    "title": "Compose.slice",
+    "title": "Compose.sector",
     "category": "method",
-    "text": "slice(x, y, r, θ1, θ2)\n\nDefine a pie slice with its center at (x,y), radius of r, between θ1 and θ2.  \n\n\n\n\n\n"
+    "text": "sector(x, y, r, θ1, θ2)\n\nDefine a pie sector with its center at (x,y), radius of r, between θ1 and θ2.  \n\n\n\n\n\n"
 },
 
 {
