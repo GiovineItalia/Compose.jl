@@ -2,15 +2,15 @@
 <svg xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
      version="1.2"
-     width="40mm" height="40mm" viewBox="0 0 40 40"
+     width="50mm" height="10mm" viewBox="0 0 50 10"
      stroke="none"
      fill="#000000"
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="#FF6347" id="img-8acdd500-1">
-  <g transform="translate(20,20)">
-    <path d="M-20,-20 L 20 -20 20 20 -20 20 z" class="primitive"/>
+<g transform="translate(25,5)">
+  <g class="primitive">
+    <text>100&#162; in a &#36;</text>
   </g>
 </g>
 </svg>
