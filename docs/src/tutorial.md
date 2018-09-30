@@ -58,6 +58,15 @@ composition2 |> SVG("celery.svg")
 composition3 |> SVG("rutabaga.svg")  # etc...
 ```
 
+To render to PDF, PNG, and postscript, first install, if necessary,
+and load Cairo before instantiating a backend:
+
+```
+Pkg.add("Cairo")
+import Cairo
+composition |> PDF("tomato.pdf")
+```
+
 
 ## The compose function accepts S-expressions
 
