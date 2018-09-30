@@ -123,9 +123,9 @@ default_fill_color = colorant"black"
 # Use cairo for the PNG, PS, PDF if it's installed.
 macro missing_cairo_error(backend)
     msg1 = """
-    The Cairo and Fontconfig packages are necessary for the $(backend) backend.
-    Add them with the package manager if necessary, then run:
-      import Cairo, Fontconfig
+    The Cairo package is necessary for the $(backend) backend.
+    Add it with the package manager if necessary, then run:
+      import Cairo
     before invoking $(backend).
     """
     string(msg1)
@@ -139,13 +139,18 @@ PDF(args...; kwargs...) = error(@missing_cairo_error "PDF")
 include("svg.jl")
 include("pgf_backend.jl")
 
-# If available, pango and fontconfig are used to compute text extents and match
+# If imported, pango and/or fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 
 include("fontfallback.jl")
 
 function link_fontconfig()
     @info "Loading Fontconfig backend into Compose.jl"
+    include("fontconfig.jl")
+end
+
+function link_pango()
+    @info "Loading Pango backend into Compose.jl"
     pango_cairo_ctx = C_NULL
     include("pango.jl")
 

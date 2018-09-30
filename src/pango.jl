@@ -16,40 +16,6 @@ const PANGO_SCALE = 1024.0
 
 pango_fmt_float(x::Float64) = @sprintf("%0.4f", x)
 
-# Use the freetype/fontconfig backend to find the best match to a font
-# description.
-#
-# Args:
-#   desc: A string giving the font description. This can
-#         also provide a comma-separated list of families. E.g.,
-#         "Helvetica, Arial 10"
-#
-# Returns:
-#   A pointer to a PangoFontDescription with the closest match.
-#
-let available_font_families = Set{AbstractString}()
-    for font_pattern in Fontconfig.list()
-        push!(available_font_families, lowercase(Fontconfig.format(font_pattern, "%{family}")))
-    end
-
-    meta_families = Set(["serif", "sans", "sans-serif", "monospace", "cursive", "fantasy"])
-
-    global match_font
-    function match_font(families::AbstractString, size::Float64)
-        matched_family = "sans-serif"
-        for family in [lowercase(strip(family, [' ', '"', '\''])) for family in split(families, ',')]
-            if family in available_font_families || family in meta_families
-                matched_family = family
-                break
-            end
-        end
-        family = Fontconfig.format(match(Fontconfig.Pattern(family=family)), "%{family}")
-        desc = @sprintf("%s %fpx", family, size)
-        fd = ccall((:pango_font_description_from_string, libpango), Ptr{Cvoid}, (Ptr{UInt8},), desc)
-        return fd
-    end
-end
-
 # Thin wrapper for a pango_layout object.
 mutable struct PangoLayout
     layout::Ptr{Cvoid}
@@ -65,7 +31,11 @@ end
 
 # Set the layout's font.
 function pango_set_font(pangolayout::PangoLayout, family::AbstractString, pts::Number)
-    fd = match_font(family, pts)
+    family = match_font(family, pts)
+
+    desc = @sprintf("%s %fpx", family, size)
+    fd = ccall((:pango_font_description_from_string, libpango), Ptr{Cvoid}, (Ptr{UInt8},), desc)
+
     ccall((:pango_layout_set_font_description, libpango),
           Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), pangolayout.layout, fd)
 end
