@@ -1,5 +1,6 @@
 using Base64
 using UUIDs
+using Random
 
 const snapsvgjs = joinpath(dirname(@__FILE__), "..", "data", "snap.svg-min.js")
 
@@ -138,6 +139,8 @@ end
 
 SVGPropertyFrame() = SVGPropertyFrame(Dict{Type, Property}(), false, false, false, false)
 
+const LOCAL_RNG = MersenneTwister()
+
 mutable struct SVG <: Backend
     # Image size in millimeters.
     width::AbsoluteLength
@@ -224,7 +227,7 @@ function SVG(out::IO,
              jsmode::Symbol=:none;
 
              cached_out = nothing,
-             id = string("img-", string(uuid4())[1:8]),
+             id = string("img-", string(uuid4(LOCAL_RNG))[1:8]),
              indentation = 0,
              property_stack = Array{SVGPropertyFrame}(undef, 0),
              vector_properties = Dict{Type, Union{Property, Nothing}}(),
