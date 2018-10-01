@@ -8,12 +8,12 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="#FF6347" id="img-ab78f726-1">
+<g fill="#FF6347" id="img-6ebf9349-1">
   <g transform="translate(20,20)">
     <path d="M-20,-20 L 20 -20 20 20 -20 20 z" class="primitive"/>
   </g>
 </g>
-<g fill="#FFE4C4" id="img-ab78f726-2">
+<g fill="#FFE4C4" id="img-6ebf9349-2">
   <g transform="translate(20,20)">
     <circle cx="0" cy="0" r="20" class="primitive"/>
   </g>
