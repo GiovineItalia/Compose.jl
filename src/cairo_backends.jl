@@ -1,8 +1,5 @@
-for name in (:CairoContext, :CairoSurface, :CairoARGBSurface, :CairoEPSSurface,
-             :CairoPDFSurface, :CairoSVGSurface, :CairoImageSurface)
-    val = getfield(Cairo,name)
-    @eval const $name = $val
-end
+import Cairo: CairoContext, CairoSurface, CairoARGBSurface, CairoEPSSurface,
+CairoPDFSurface, CairoSVGSurface, CairoImageSurface
 
 abstract type ImageBackend end
 abstract type PNGBackend <: ImageBackend end
