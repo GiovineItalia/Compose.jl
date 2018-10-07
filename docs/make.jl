@@ -10,6 +10,7 @@ makedocs(
         "Tutorial" => "tutorial.md",
         "Gallery" => Any[
             "Forms" => "gallery/forms.md",
+            "Properties"=> "gallery/properties.md",
             ],
         "Library" => "library.md"
     ]

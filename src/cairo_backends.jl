@@ -284,26 +284,30 @@ function push_property_frame(img::Image, properties::Vector{Property})
     isempty(properties) && return
 
     frame = ImagePropertyFrame()
-    applied_properties = Set{Type}()
-    scalar_properties = Array{Property}(undef, 0)
-    for property in properties
-        if isscalar(property) && !(typeof(property) in applied_properties)
-            push!(scalar_properties, property)
-            push!(applied_properties, typeof(property))
-            frame.has_scalar_properties = true
-        elseif !isscalar(property)
-            frame.vector_properties[typeof(property)] = property
-            img.vector_properties[typeof(property)] = property
-        end
+    isp = isscalar.(properties)
+    scalar_properties = Dict{Type, Property}(typeof(x)=>x for x in properties[isp])
+    vector_properties = Dict{Type, Property}(typeof(x)=>x for x in properties[.!isp])
+    
+    kt = [Property{FillOpacityPrimitive}, Property{FillPrimitive}]
+    if haskey(scalar_properties, kt[1]) && haskey(vector_properties, kt[2])
+        alpha = scalar_properties[kt[1]].primitives[1].value
+        vector_properties[kt[1]] = fillopacity(fill(alpha, length(vector_properties[kt[2]].primitives))) 
+        pop!(scalar_properties, kt[1])
     end
+
+    frame.has_scalar_properties = !isempty(scalar_properties)
+    img.vector_properties = vector_properties
+    frame.vector_properties = vector_properties
     push!(img.property_stack, frame)
     isempty(scalar_properties) && return
-
+    
     save_property_state(img)
-    for property in scalar_properties
+    for (_, property) in scalar_properties
         apply_property(img, property.primitives[1])
     end
+    haskey(scalar_properties, kt[1]) && apply_property(img, scalar_properties[kt[1]].primitives[1])
 end
+
 
 function pop_property_frame(img::Image)
     @assert !isempty(img.property_stack)
@@ -601,6 +605,8 @@ function draw(img::Image, form::Form)
                         error("Vector form and vector property differ in length. Can't distribute.")
                 apply_property(img, primitives[idx])
             end
+            kt = [Property{FillOpacityPrimitive}]
+            haskey(img.vector_properties, kt[1]) && apply_property(img, img.vector_properties[kt[1]].primitives[idx])
             draw(img, primitive)
         end
     end

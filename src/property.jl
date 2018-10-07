@@ -69,7 +69,19 @@ end
 const Fill = Property{FillPrimitive}
 
 fill(c::Nothing) = Fill([FillPrimitive(RGBA{Float64}(0.0, 0.0, 0.0, 0.0))])
+
+"""
+    fill(c)
+
+Define a fill color, where `c` can be a `Colorant` or `String`.
+"""
 fill(c::Union{Colorant, AbstractString}) = Fill([FillPrimitive(parse_colorant(c))])
+
+"""
+    fill(cs::AbstractArray)
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
 fill(cs::AbstractArray) = Fill([FillPrimitive(c == nothing ?
         RGBA{Float64}(0.0, 0.0, 0.0, 0.0) : parse_colorant(c)) for c in cs])
 
@@ -196,7 +208,18 @@ end
 
 const FillOpacity = Property{FillOpacityPrimitive}
 
+"""
+    fillopacity(value)
+
+Define a fill opacity, where 0≤value≤1.
+"""
 fillopacity(value::Float64) = FillOpacity([FillOpacityPrimitive(value)])
+
+"""
+    fillopacity(values::AbstractArray)
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
 fillopacity(values::AbstractArray) =
         FillOpacity([FillOpacityPrimitive(value) for value in values])
 
