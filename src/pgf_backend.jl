@@ -466,6 +466,7 @@ function push_property_frame(img::PGF, properties::Vector{Property})
             push!(scalar_properties, property)
             push!(applied_properties, typeof(property))
             frame.has_scalar_properties = true
+            img.vector_properties[typeof(property)] = nothing
         else
             frame.vector_properties[typeof(property)] = property
             img.vector_properties[typeof(property)] = property

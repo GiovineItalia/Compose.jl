@@ -244,7 +244,7 @@ function SVG(out::IO,
              has_current_id = false,
              id_count = 0,
              jsheader = Set{AbstractString}(),
-             jsmodules = Set{Tuple{AbstractString, AbstractString}}((("Snap.svg", "Snap"),)), 
+             jsmodules = Set{Tuple{AbstractString, AbstractString}}((("Snap.svg", "Snap"),)),
              scripts = AbstractString[],
              withjs = jsmode != :none,
              panelcoords = ())
@@ -684,7 +684,7 @@ function print_property(img::SVG, property::JSCallPrimitive)
 end
 
 # Print the property at the given index in each vector property
-function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
+function print_vector_properties(img::SVG, idx::Int, suppress_fill::Bool=false)
     if haskey(img.vector_properties, JSCall)
         if haskey(img.vector_properties, SVGID)
             img.current_id = img.vector_properties[SVGID].primitives[idx].value
@@ -699,7 +699,7 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
 
     for (propertytype, property) in img.vector_properties
         if property === nothing ||
-           (propertytype == Fill && supress_fill)
+           (propertytype == Fill && suppress_fill)
             continue
         end
 
@@ -1110,6 +1110,7 @@ function push_property_frame(img::SVG, properties::Vector{Property})
             push!(scalar_properties, property)
             push!(applied_properties, typeof(property))
             frame.has_scalar_properties = true
+            img.vector_properties[typeof(property)] = nothing
         else
             frame.vector_properties[typeof(property)] = property
             img.vector_properties[typeof(property)] = property
@@ -1200,7 +1201,7 @@ function Compose.draw(img::SVG, prim::ArcPrimitive, idx::Int)
     y2 =  ry*sin(prim.angle2)
     dθ = prim.angle2 - prim.angle1
     dθ += 2π*(dθ<0)
-    
+
     indent(img)
     img.indentation += 1
     print(img.out, "<g transform=\"translate(")
@@ -1213,7 +1214,7 @@ function Compose.draw(img::SVG, prim::ArcPrimitive, idx::Int)
     indent(img)
 
     print(img.out, "<path d=\"M")
-    prim.sector && print(img.out,"0,0 L") 
+    prim.sector && print(img.out,"0,0 L")
     svg_print_float(img.out, x1)
     print(img.out, ",")
     svg_print_float(img.out, y1)
