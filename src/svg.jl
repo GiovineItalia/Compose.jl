@@ -636,7 +636,7 @@ function print_property(img::SVG, property::LineWidthPrimitive)
 end
 
 function print_property(img::SVG, property::FillOpacityPrimitive)
-    print(img.out, " opacity=\"")
+    print(img.out, " fill-opacity=\"")
     svg_print_float(img.out, property.value)
     print(img.out, '"')
 end
@@ -711,9 +711,9 @@ function print_vector_properties(img::SVG, idx::Int, supress_fill::Bool=false)
 
         # let the opacity primitives clobber the alpha value in fill and stroke
         if propertytype == Fill && has_fill_opacity
-           print_property(img, FillPrimitive(RGBA{Float64}(property.primitives[idx].color, 1.0)))
+           print_property(img, FillPrimitive(RGBA{Float64}(color(property.primitives[idx].color), 1.0)))
         elseif propertytype == Stroke && has_stroke_opacity
-           print_property(img, StrokePrimitive(RGBA{Float64}(property.primitives[idx].color, 1.0)))
+           print_property(img, StrokePrimitive(RGBA{Float64}(color(property.primitives[idx].color), 1.0)))
         else
             print_property(img, property.primitives[idx])
         end

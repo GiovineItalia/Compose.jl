@@ -151,3 +151,11 @@ end
     withcompose = rand()
     @test withoutcompose == withcompose
 end
+
+@testset "Image fillopacity" begin
+    properties = [fill(["red","blue"]), fillopacity(0.3), stroke("black")]
+    img1 = PNG(); Compose.push_property_frame(img1, properties)
+    img2 = SVG(); Compose.push_property_frame(img2, properties)
+    @test getfield.(img1.vector_properties[Compose.Property{Compose.FillOpacityPrimitive}].primitives, :value) == [0.3, 0.3]
+    @test occursin("fill-opacity=\"0.3\"", String(img2.out.data))
+end    
