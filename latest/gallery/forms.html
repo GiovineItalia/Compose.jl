@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Forms · Compose.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="Compose.jl logo"/></a><h1>Compose.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><a class="toctext" href="../tutorial.html">Tutorial</a></li><li><span class="toctext">Gallery</span><ul><li class="current"><a class="toctext" href="forms.html">Forms</a><ul class="internal"><li><a class="toctext" href="#[arc](@ref)-1"><code>arc</code></a></li><li><a class="toctext" href="#[bitmap](@ref)-1"><code>bitmap</code></a></li><li><a class="toctext" href="#[circle](@ref)-1"><code>circle</code></a></li><li><a class="toctext" href="#[curve](@ref)-1"><code>curve</code></a></li><li><a class="toctext" href="#[ellipse](@ref)-1"><code>ellipse</code></a></li><li><a class="toctext" href="#[line](@ref)-1"><code>line</code></a></li><li><a class="toctext" href="#[polygon](@ref)-1"><code>polygon</code></a></li><li><a class="toctext" href="#[rectangle](@ref)-1"><code>rectangle</code></a></li><li><a class="toctext" href="#[sector](@ref)-1"><code>sector</code></a></li><li><a class="toctext" href="#[text](@ref)-1"><code>text</code></a></li></ul></li></ul></li><li><a class="toctext" href="../library.html">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li>Gallery</li><li><a href="forms.html">Forms</a></li></ul><a class="edit-page" href="https://github.com/GiovineItalia/Compose.jl/blob/master/docs/src/gallery/forms.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Forms</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="forms_gallery-1" href="#forms_gallery-1">Forms</a></h1><h2><a class="nav-anchor" id="[arc](@ref)-1" href="#[arc](@ref)-1"><a href="../library.html#Compose.arc"><code>arc</code></a></a></h2><div><pre><code class="language-julia">using Compose
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Forms · Compose.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="Compose.jl logo"/></a><h1>Compose.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><a class="toctext" href="../tutorial.html">Tutorial</a></li><li><span class="toctext">Gallery</span><ul><li class="current"><a class="toctext" href="forms.html">Forms</a><ul class="internal"><li><a class="toctext" href="#[arc](@ref)-1"><code>arc</code></a></li><li><a class="toctext" href="#[bitmap](@ref)-1"><code>bitmap</code></a></li><li><a class="toctext" href="#[circle](@ref)-1"><code>circle</code></a></li><li><a class="toctext" href="#[curve](@ref)-1"><code>curve</code></a></li><li><a class="toctext" href="#[ellipse](@ref)-1"><code>ellipse</code></a></li><li><a class="toctext" href="#[line](@ref)-1"><code>line</code></a></li><li><a class="toctext" href="#[polygon](@ref)-1"><code>polygon</code></a></li><li><a class="toctext" href="#[rectangle](@ref)-1"><code>rectangle</code></a></li><li><a class="toctext" href="#[sector](@ref)-1"><code>sector</code></a></li><li><a class="toctext" href="#[text](@ref)-1"><code>text</code></a></li></ul></li><li><a class="toctext" href="properties.html">Properties</a></li></ul></li><li><a class="toctext" href="../library.html">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li>Gallery</li><li><a href="forms.html">Forms</a></li></ul><a class="edit-page" href="https://github.com/GiovineItalia/Compose.jl/blob/master/docs/src/gallery/forms.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Forms</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="forms_gallery-1" href="#forms_gallery-1">Forms</a></h1><h2><a class="nav-anchor" id="[arc](@ref)-1" href="#[arc](@ref)-1"><a href="../library.html#Compose.arc"><code>arc</code></a></a></h2><div><pre><code class="language-julia">using Compose
 set_default_graphic_size(8cm,4cm)
 colv = [&quot;red&quot;,&quot;orange&quot;,&quot;green&quot;,&quot;blue&quot;, &quot;purple&quot;]
 a = range(-π/4, stop=7π/4, length=6)+ 0.2*randn(6)
@@ -21,24 +21,24 @@ hstack(img1, img2)</code></pre><?xml version="1.0" encoding="UTF-8"?>
      stroke-width="0.3"
      font-size="3.88"
 >
-<g stroke-width="2" fill="#000000" fill-opacity="0.000" id="img-d1a83615-1">
+<g stroke-width="2" fill="#000000" fill-opacity="0.000" id="img-05999340-1">
   <g transform="translate(60,20)" stroke="#FF0000">
-    <path d="M6.15,-10.3 A12,12 0 0 1 11.81,2.12" class="primitive"/>
+    <path d="M10.63,-5.58 A12,12 0 0 1 9.55,7.27" class="primitive"/>
   </g>
   <g transform="translate(60,20)" stroke="#FFA500">
-    <path d="M11.81,2.12 A12,12 0 0 1 -2.08,11.82" class="primitive"/>
+    <path d="M9.55,7.27 A12,12 0 0 1 1.01,11.96" class="primitive"/>
   </g>
   <g transform="translate(60,20)" stroke="#008000">
-    <path d="M-2.08,11.82 A12,12 0 0 1 -11.17,4.38" class="primitive"/>
+    <path d="M1.01,11.96 A12,12 0 0 1 -11.77,2.33" class="primitive"/>
   </g>
   <g transform="translate(60,20)" stroke="#0000FF">
-    <path d="M-11.17,4.38 A12,12 0 0 1 -8.57,-8.4" class="primitive"/>
+    <path d="M-11.77,2.33 A12,12 0 0 1 -4.32,-11.2" class="primitive"/>
   </g>
   <g transform="translate(60,20)" stroke="#800080">
-    <path d="M-8.57,-8.4 A12,12 0 0 1 6.15,-10.3" class="primitive"/>
+    <path d="M-4.32,-11.2 A12,12 0 0 1 10.63,-5.58" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" id="img-d1a83615-2">
+<g stroke="#000000" id="img-05999340-2">
   <g transform="translate(20,20)" fill="#FF0000">
     <path d="M0,0 L-11.09,-4.59 A12,12 0 0 1 11.09,-4.59L0,0" class="primitive"/>
   </g>
@@ -65,37 +65,37 @@ img = compose(context(),
      stroke-width="0.3"
      font-size="3.88"
 >
-<g transform="translate(116.12,0.57)">
+<g transform="translate(124.09,14.54)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAEHWlDQ1BQaG90b3Nob3AgSUNDIHByb2ZpbGUAAHjajZVdbBRVGIaf3TkzawLOVQUtSZmgAiGlWcAoDQHd7S7bwlo22xZpY6Lb6dndsdPZ8cxs+QlXxETjDah3hsT4d0diYqIBfyJ4ITcYTAgK2JhouID4ExISbhTqxWx3B2jFc/XNe77vfb/vPWdmIHWp4vtu0oIZL1TlQtbaNz5hpS6T5DGW0c2yih34mVKpCFDxfZf71q0fSQBc2Lj4/n+uZVMysCHxENCYCuwZSBwA/bjtqxBSXcDW/aEfQqoIdKl94xOQehnoqkVxCHRNRvEbQJcaLQ9A6jhg2vXKFKROAL2TMbwWi6MeAOgqSE8qx7bKhaxVUo2q48pYuw/Y/p9rxm0u6K0GlgfTI7uB9ZB4baqS2w30QeKEXcmPAE9A4sqss3e4Fd/xw2wZWAvJNc3psQywAZKDVbVzLOJJqnpzcCF+91B99AVgBSS/9SaH97RqL9nBwASwBpJ36nKoCPSAZjnh0GhUq+1QjfKeSFerTslcHugF7c3pxu5yxKl9HsyO5Bc4D9UHhlv4uVcqu0pAN2i/SbdQjrS0f/yw1OpB9HjucDHSEjkZ5EcW8LA+OhjpCjdUo61acazq7Bxq5X9aV4PlVnzFd0vFqDc9qZrlsShf76uofCHi1EvSG2vx67PsTVSQNJhEYuNxG4syBbJY+CgaVHFwKSDxkCgkbjtnI5NIAqZROMwicQmQlJCoVmWHr4bE4xoKB5uBno9pYlHnDzzqsbwB6jTxqC3BE/VyvcXTECtFWmwRabFNFMV2sVX0Y4lnxXNih8iJtOgX29q1pdhEFjWut3lepYnEosxespzBJaSCy694NAgWd+VYd3N9Z+eIesmxzx+9EfPKIWA65lbc0T0P8ly/ql/TL+pX9cv6XCdD/1mf0+f0y3fN0rjPZbngzj0zL56VwcWlhmQGiYOHjM28Mc5x9vBXj3Z4LoqTL15YfvZw1TvW3UHt80dvyNeHbw1zpLeDpn9K/5m+mH4//VH6d+0d7TPta+2U9oV2Dks7rZ3RvtG+0z7Rvoyd1dJ3qH32ZGJ9S7xFvZa4ZtZcZT5u5szV5pNmscNnrjQ3mYPmOjNnrmqfW1wv7p7DOG7bn8W1orzYDUg8zDTOEm/VGB4O+5EoAiq4eBy8J6dVKXrEJjF0z+3eKraJ9jRG3sgZGSxjg9FvbDJ2GZmOqrHOyBn9xjojf9fttJeYVIbyQAgw0PAPKqdWD63N6fQzVsb3XWkNeXZfr1VxXUs5tXoYWEoGUs3KqT72jU9Y0Sf9ZpkEkFhxvoOFz8P2v0D7oYNNNOFEACuf6mDru+GR9+Dk03ZTzbb+EYnE9xBUt2yOnpZnQf9lfv7mWki9Dbffmp//+4P5+dsfgjYHp91/AaCffFXBcLKBAAAAIGNIUk0AAG2YAABzjgAA8nsAAITaAABulAAA5RoAADMnAAAZF5lJHH8AAAIESURBVHja7JvbjsUgCEUr8f9/mXmapDmxVTcbSqt9PBeEBXihWFRVj4UfORZ/avSApZTb76MDsj5t8MjvPaHUaKN7xrT+e/6MDaMwJ0Ev73lGBQXAr4KeIcseywzAMzwjxoUBPGU4WwcIQAbjWfoIOpiqHlk2kWc9ZpddQY3P9qAQ5AvGWyDIV4xHIVQP45lrNSJLVbkRYN21zU5MDFn/oHq/F6b37wZDIVhkjUCQrHnPBPbJgggrCsRr4rMoHeX9V0cAsjS2wMqb1/wdAYQoWL4qLKzwH92hsWQtnwIWJ53TYKdAlFdmPcaUFZoCLeVQhZmyusdh5vrPVNJ7QtxzwAawAWwAG8AGcIwXEaMLFqNPKQXSC341lhFCeApkgWDRYxpAtkrRjPGt3S4UAZa3sdmOyNI7L2eGwOhTkAx5GDHe1WFPrjw7GwWREJgvX4Wdd94Q2F1ilBRoQfAAgRp/V+uQO4NmjGgJ93wjHNIoiVaJmJ2dVlk9G1x6hVsdGjMetPQazzqw2ydorRWy0gAZnwKAAcECwgq+9/86K5RV4r4CwuwuH5E13CqbrT2WFa2CeDBrLQBJVUHDOBsEeMm2tss/nQ7W1IS3wufd4puPw9QbI1ERwZyQaZemvEG4XchiX51lru+eewU3AF6rhFdqud0cZSyZEfNJyN3hzDvH5d8N/g0AntCJaQwIWzsAAAAASUVORK5CYII=" class="primitive"/>
 </g>
-<g transform="translate(16.2,7.41)">
+<g transform="translate(103.93,18.53)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,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" class="primitive"/>
 </g>
-<g transform="translate(81.64,0.61)">
+<g transform="translate(92.89,6.78)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,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" class="primitive"/>
 </g>
-<g transform="translate(13.79,22.39)">
+<g transform="translate(60.05,35.26)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,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" class="primitive"/>
 </g>
-<g transform="translate(85.89,6.94)">
+<g transform="translate(94.96,26.61)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,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" class="primitive"/>
 </g>
-<g transform="translate(93.15,5.41)">
+<g transform="translate(83.28,3.26)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,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" class="primitive"/>
 </g>
-<g transform="translate(39.04,13.11)">
+<g transform="translate(56.98,15.37)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,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" class="primitive"/>
 </g>
-<g transform="translate(87.72,14.98)">
+<g transform="translate(33.82,18.87)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,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" class="primitive"/>
 </g>
-<g transform="translate(39.58,31.92)">
+<g transform="translate(2.45,16.68)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,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" class="primitive"/>
 </g>
-<g transform="translate(35.79,20.26)">
+<g transform="translate(8.54,24.69)">
   <image x="0" y="0" width="14" height="4" xlink:href="data:image/png;base64,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" class="primitive"/>
 </g>
-<g stroke="#FFA500" fill="#000000" fill-opacity="0.000" id="img-e98428b1-1">
+<g stroke="#FFA500" fill="#000000" fill-opacity="0.000" id="img-d9516892-1">
   <g transform="translate(70,20)">
     <path d="M-70,-20 L 70 -20 70 20 -70 20 z" class="primitive"/>
   </g>
@@ -116,7 +116,7 @@ img = compose(context(units=UnitBox(0,0,40,8)),
      stroke-width="0.3"
      font-size="3.88"
 >
-<g stroke="#000000" id="img-cd9a1f8e-1">
+<g stroke="#000000" id="img-24362a37-1">
   <g transform="translate(17.5,20)" fill="#FF0000" fill-opacity="0.500">
     <circle cx="0" cy="0" r="14" class="primitive"/>
   </g>
@@ -156,65 +156,65 @@ img = compose(context(units=UnitBox(0,0,2,1)),
      stroke-width="0.3"
      font-size="3.88"
 >
-<g transform="translate(117.37,17.44)" stroke="#0000FF">
-  <path fill="none" d="M-12.37,22.56 C10.75,0.94 13.98,-10.42 -12.37,-13.09" class="primitive"/>
+<g transform="translate(116.75,23.08)" stroke="#0000FF">
+  <path fill="none" d="M-11.75,16.92 C16.15,-20.91 7.36,-8.21 -11.75,12.2" class="primitive"/>
 </g>
-<g transform="translate(104.65,21.44)" stroke="#1C12E3">
-  <path fill="none" d="M0.35,18.56 C-7.19,-5.34 6.5,-3.23 0.35,-9.99" class="primitive"/>
+<g transform="translate(120.19,15.32)" stroke="#1C12E3">
+  <path fill="none" d="M-15.19,24.68 C12.45,-7.97 17.94,-6.43 -15.19,-10.28" class="primitive"/>
 </g>
-<g transform="translate(108,13.75)" stroke="#3925C6">
-  <path fill="none" d="M-3,26.25 C25.66,-7.57 -19.67,-5.89 -3,-12.79" class="primitive"/>
+<g transform="translate(112.47,19.17)" stroke="#3925C6">
+  <path fill="none" d="M-7.47,20.83 C8.23,-3.29 6.71,-0.06 -7.47,-17.48" class="primitive"/>
 </g>
-<g transform="translate(107.07,20.57)" stroke="#5537AA">
-  <path fill="none" d="M-2.07,19.43 C4.49,-18.52 -0.35,-12.52 -2.07,11.61" class="primitive"/>
+<g transform="translate(89.09,23.08)" stroke="#5537AA">
+  <path fill="none" d="M15.91,16.92 C-16.79,-13.98 -15.03,-10.24 15.91,7.31" class="primitive"/>
 </g>
-<g transform="translate(120.45,15.66)" stroke="#71498E">
-  <path fill="none" d="M-15.45,24.34 C14.49,-14.18 16.42,-6.68 -15.45,-3.47" class="primitive"/>
+<g transform="translate(109.88,19.14)" stroke="#71498E">
+  <path fill="none" d="M-4.88,20.86 C-14.61,-4.35 24.38,-8.92 -4.88,-7.59" class="primitive"/>
 </g>
-<g transform="translate(103.5,21.07)" stroke="#8E5C71">
-  <path fill="none" d="M1.5,18.93 C-18.11,-13.52 15.11,-5.24 1.5,-0.17" class="primitive"/>
+<g transform="translate(91.95,21.26)" stroke="#8E5C71">
+  <path fill="none" d="M13.05,18.74 C-16.59,-19.04 -9.52,-2.42 13.05,2.72" class="primitive"/>
 </g>
-<g transform="translate(104.58,18.48)" stroke="#AA6E55">
-  <path fill="none" d="M0.42,21.52 C-22.41,-5.43 21.58,-1.8 0.42,-14.29" class="primitive"/>
+<g transform="translate(102.67,19.16)" stroke="#AA6E55">
+  <path fill="none" d="M2.33,20.84 C-3.67,-12.27 -0.98,-10.29 2.33,1.71" class="primitive"/>
 </g>
-<g transform="translate(101,18.44)" stroke="#C68039">
-  <path fill="none" d="M4,21.56 C-28.03,-2.39 20.03,-4.69 4,-14.48" class="primitive"/>
+<g transform="translate(115.35,27.7)" stroke="#C68039">
+  <path fill="none" d="M-10.35,12.3 C13.53,-9.06 7.18,-14.19 -10.35,10.95" class="primitive"/>
 </g>
-<g transform="translate(97.69,19.08)" stroke="#E3931C">
-  <path fill="none" d="M7.31,20.92 C7.04,-13 -21.67,-14.87 7.31,6.95" class="primitive"/>
+<g transform="translate(104.34,24.04)" stroke="#E3931C">
+  <path fill="none" d="M0.66,15.96 C30.59,-7.42 -31.91,-5.88 0.66,-2.67" class="primitive"/>
 </g>
-<g transform="translate(101.61,17.34)" stroke="#FFA500">
-  <path fill="none" d="M3.39,22.66 C-8.19,-0.32 1.41,-9.42 3.39,-12.92" class="primitive"/>
+<g transform="translate(105.56,21.51)" stroke="#FFA500">
+  <path fill="none" d="M-0.56,18.49 C32.96,-18.38 -31.85,-5.77 -0.56,5.66" class="primitive"/>
 </g>
-<g transform="translate(41.26,18.11)" stroke="#0000FF">
-  <path fill="none" d="M-6.26,21.89 C19.13,-9.37 -6.61,-13.64 -6.26,1.12" class="primitive"/>
+<g transform="translate(21.19,15.26)" stroke="#0000FF">
+  <path fill="none" d="M13.81,24.74 C-14.06,-2.15 -13.57,-8.39 13.81,-14.2" class="primitive"/>
 </g>
-<g transform="translate(34.82,16.46)" stroke="#1C12E3">
-  <path fill="none" d="M0.18,23.54 C19.86,-7.07 -20.22,-13.61 0.18,-2.86" class="primitive"/>
+<g transform="translate(37.42,20.75)" stroke="#1C12E3">
+  <path fill="none" d="M-2.42,19.25 C24.32,-20.33 -19.47,-9.55 -2.42,10.63" class="primitive"/>
 </g>
-<g transform="translate(27.45,15.28)" stroke="#3925C6">
-  <path fill="none" d="M7.55,24.72 C-9.32,-4.25 -5.77,-6.56 7.55,-13.91" class="primitive"/>
+<g transform="translate(47.65,23.34)" stroke="#3925C6">
+  <path fill="none" d="M-12.65,16.66 C12.56,-12.81 12.75,-4.72 -12.65,0.87" class="primitive"/>
 </g>
-<g transform="translate(33.99,15.98)" stroke="#5537AA">
-  <path fill="none" d="M1.01,24.02 C11.01,-14.82 -13.03,-9.98 1.01,0.77" class="primitive"/>
+<g transform="translate(27.92,16.75)" stroke="#5537AA">
+  <path fill="none" d="M7.08,23.25 C-25.06,-3.46 10.89,-5.31 7.08,-14.48" class="primitive"/>
 </g>
-<g transform="translate(28.08,23.67)" stroke="#71498E">
-  <path fill="none" d="M6.92,16.33 C0.11,-16.47 -13.95,-16 6.92,16.14" class="primitive"/>
+<g transform="translate(30.17,25.42)" stroke="#71498E">
+  <path fill="none" d="M4.83,14.58 C5.72,-12.95 -15.39,-13.83 4.83,12.2" class="primitive"/>
 </g>
-<g transform="translate(45.08,16.2)" stroke="#8E5C71">
-  <path fill="none" d="M-10.08,23.8 C-2.93,-15.88 23.08,-5.16 -10.08,-2.76" class="primitive"/>
+<g transform="translate(38.25,15.57)" stroke="#8E5C71">
+  <path fill="none" d="M-3.25,24.43 C9.27,4.42 -2.76,-13.93 -3.25,-14.93" class="primitive"/>
 </g>
-<g transform="translate(36.19,20.88)" stroke="#AA6E55">
-  <path fill="none" d="M-1.19,19.12 C27.85,-10.6 -25.47,-5.57 -1.19,-2.94" class="primitive"/>
+<g transform="translate(35.33,18.2)" stroke="#AA6E55">
+  <path fill="none" d="M-0.33,21.8 C1.37,0.06 -0.72,-4.48 -0.33,-17.38" class="primitive"/>
 </g>
-<g transform="translate(35.27,21.36)" stroke="#C68039">
-  <path fill="none" d="M-0.27,18.64 C33.46,-17.33 -32.93,-8.01 -0.27,6.7" class="primitive"/>
+<g transform="translate(20.84,14.5)" stroke="#C68039">
+  <path fill="none" d="M14.16,25.5 C-12.42,-10.07 -15.9,-13.57 14.16,-1.86" class="primitive"/>
 </g>
-<g transform="translate(36.26,14.78)" stroke="#E3931C">
-  <path fill="none" d="M-1.26,25.22 C14.7,1.21 -12.18,-11.89 -1.26,-14.54" class="primitive"/>
+<g transform="translate(28.63,25.46)" stroke="#E3931C">
+  <path fill="none" d="M6.37,14.54 C-20.3,-9.1 7.57,-18.39 6.37,12.95" class="primitive"/>
 </g>
-<g transform="translate(34.49,21.18)" stroke="#FFA500">
-  <path fill="none" d="M0.51,18.82 C22.79,-17.46 -23.81,-3.51 0.51,2.15" class="primitive"/>
+<g transform="translate(36.13,18.88)" stroke="#FFA500">
+  <path fill="none" d="M-1.13,21.12 C3.57,-5.76 -1.31,-14.17 -1.13,-1.19" class="primitive"/>
 </g>
 </svg>
 </div><h2><a class="nav-anchor" id="[ellipse](@ref)-1" href="#[ellipse](@ref)-1"><a href="../library.html#Compose.ellipse"><code>ellipse</code></a></a></h2><div><pre><code class="language-julia">using Colors, Compose
@@ -242,57 +242,57 @@ img = compose(context(units=UnitBox(0,0,2,1)),
      stroke-width="0.3"
      font-size="3.88"
 >
-<g stroke="#000000" fill="#00FF40" fill-opacity="0.300" id="img-760c005d-1">
+<g stroke="#000000" fill="#00FF40" fill-opacity="0.300" id="img-6ef1c0b3-1">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="12.76" ry="5.75" transform="rotate(-18)" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="25.54" ry="9.36" transform="rotate(-18)" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" fill="#00FF00" fill-opacity="0.300" id="img-760c005d-2">
+<g stroke="#000000" fill="#00FF00" fill-opacity="0.300" id="img-6ef1c0b3-2">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="34.73" ry="5.12" transform="rotate(-56)" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="22.61" ry="0.03" transform="rotate(-56)" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" fill="#40FF00" fill-opacity="0.300" id="img-760c005d-3">
+<g stroke="#000000" fill="#40FF00" fill-opacity="0.300" id="img-6ef1c0b3-3">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="1.2" ry="8.06" transform="rotate(-94)" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="11.84" ry="0.53" transform="rotate(-94)" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" fill="#80FF00" fill-opacity="0.300" id="img-760c005d-4">
+<g stroke="#000000" fill="#80FF00" fill-opacity="0.300" id="img-6ef1c0b3-4">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="18.62" ry="5.53" transform="rotate(-132)" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="12.13" ry="1.66" transform="rotate(-132)" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" fill="#BFFF00" fill-opacity="0.300" id="img-760c005d-5">
+<g stroke="#000000" fill="#BFFF00" fill-opacity="0.300" id="img-6ef1c0b3-5">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="24.46" ry="11.5" transform="rotate(-170)" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="28.71" ry="10.18" transform="rotate(-170)" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" fill="#FFFF00" fill-opacity="0.300" id="img-760c005d-6">
+<g stroke="#000000" fill="#FFFF00" fill-opacity="0.300" id="img-6ef1c0b3-6">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="13.29" ry="10.88" transform="rotate(152)" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="22.6" ry="9.18" transform="rotate(152)" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" fill="#FFBF00" fill-opacity="0.300" id="img-760c005d-7">
+<g stroke="#000000" fill="#FFBF00" fill-opacity="0.300" id="img-6ef1c0b3-7">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="24.79" ry="5.98" transform="rotate(114)" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="8.12" ry="6.93" transform="rotate(114)" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" fill="#FF8000" fill-opacity="0.300" id="img-760c005d-8">
+<g stroke="#000000" fill="#FF8000" fill-opacity="0.300" id="img-6ef1c0b3-8">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="6.56" ry="2.33" transform="rotate(76)" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="34.53" ry="4.49" transform="rotate(76)" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" fill="#FF4000" fill-opacity="0.300" id="img-760c005d-9">
+<g stroke="#000000" fill="#FF4000" fill-opacity="0.300" id="img-6ef1c0b3-9">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="6.37" ry="10.93" transform="rotate(38)" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="3.19" ry="4.38" transform="rotate(38)" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" fill="#FF0000" fill-opacity="0.300" id="img-760c005d-10">
+<g stroke="#000000" fill="#FF0000" fill-opacity="0.300" id="img-6ef1c0b3-10">
   <g transform="translate(105,20)">
-    <ellipse cx="0" cy="0" rx="4.36" ry="4.38" class="primitive"/>
+    <ellipse cx="0" cy="0" rx="5.88" ry="0.93" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" id="img-760c005d-11">
+<g stroke="#000000" id="img-6ef1c0b3-11">
   <g transform="translate(5.83,20)" fill="#FF0000" fill-opacity="0.500">
     <ellipse cx="0" cy="0" rx="5.83" ry="20" class="primitive"/>
   </g>
@@ -332,7 +332,7 @@ img = compose(context(),
      stroke-width="0.3"
      font-size="3.88"
 >
-<g stroke-width="1" stroke="#FFD700" id="img-f930ee05-1">
+<g stroke-width="1" stroke="#FFD700" id="img-d62daa90-1">
   <g transform="translate(69,64.25)">
     <path fill="none" d="M-19,14.25 L 19 -14.25" class="primitive"/>
   </g>
@@ -514,7 +514,7 @@ img = compose(context(),
     <path fill="none" d="M-19,14.25 L 19 -14.25" class="primitive"/>
   </g>
 </g>
-<g opacity="0.3" fill="#FA8072" id="img-f930ee05-2">
+<g fill-opacity="0.3" fill="#FA8072" id="img-d62daa90-2">
   <g transform="translate(50,50)">
     <path d="M-50,-50 L 50 -50 50 50 -50 50 z" class="primitive"/>
   </g>
@@ -546,169 +546,169 @@ img = compose(context(units=UnitBox(-1,-1, 2,2)),
      stroke-width="0.3"
      font-size="3.88"
 >
-<g opacity="0.1" fill="#FF0000" id="img-c84dafe0-1">
-  <g transform="translate(66.21,55.37)">
-    <path d="M-18.7,-35.42 L -42.71 0.95 3.83 39.69 11.64 18.57 5.6 9.78 9.26 8.69 17.26 -2.64 10.96 -11.9 2.86 -27.71 z" class="primitive"/>
+<g fill-opacity="0.1" fill="#FF0000" id="img-0aae7e46-1">
+  <g transform="translate(47.54,49.16)">
+    <path d="M1.22,-31.58 L -16.19 -32.24 -19.63 -30.48 -33.88 -14.98 -30.68 19.72 2.07 31.04 32.53 23.6 34.26 21.88 30.29 13.05 z" class="primitive"/>
   </g>
 </g>
-<g stroke="#00BFFF" fill="#000000" fill-opacity="0.000" id="img-c84dafe0-2">
-  <g transform="translate(32.02,31.57)">
+<g stroke="#00BFFF" fill="#000000" fill-opacity="0.000" id="img-0aae7e46-2">
+  <g transform="translate(27.92,18.68)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(58.74,50.04)">
+  <g transform="translate(52.78,51.03)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(31.91,37.01)">
+  <g transform="translate(31.35,16.92)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(55.52,60.01)">
+  <g transform="translate(62.87,55.83)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(29.57,35.41)">
+  <g transform="translate(64.7,69.94)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(66.37,56.1)">
+  <g transform="translate(37.49,40.76)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(37.92,59.76)">
+  <g transform="translate(63.32,42.83)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(54.37,48.49)">
+  <g transform="translate(30.12,57.94)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(49.83,65.48)">
+  <g transform="translate(61.28,37.79)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(47.24,63.02)">
+  <g transform="translate(53.37,48.2)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(83.47,52.73)">
+  <g transform="translate(80.07,72.76)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(42.29,59.92)">
+  <g transform="translate(67.77,50.22)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(34.74,31.46)">
+  <g transform="translate(28.82,44.18)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(49.08,72.99)">
+  <g transform="translate(44.93,48.69)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(44.23,52.29)">
+  <g transform="translate(56.3,55.36)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(47.51,19.95)">
+  <g transform="translate(77.84,62.21)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(31.71,42.57)">
+  <g transform="translate(63.9,57.66)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(48.85,30.24)">
+  <g transform="translate(65.25,73.37)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(70.04,95.07)">
+  <g transform="translate(37.69,64.12)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(59.04,60.81)">
+  <g transform="translate(52.94,35.22)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(47.23,26.44)">
+  <g transform="translate(70.61,53.1)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(54.13,40.83)">
+  <g transform="translate(37.27,35.24)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(75.47,64.07)">
+  <g transform="translate(42.87,26.68)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(26.76,46.07)">
+  <g transform="translate(49.44,42.82)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(43.76,51.28)">
+  <g transform="translate(49.62,80.2)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(47.38,72.57)">
+  <g transform="translate(65.16,60.86)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(23.5,56.32)">
+  <g transform="translate(50.01,73.02)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(29.86,39.24)">
+  <g transform="translate(38.58,49.08)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(39.76,68.86)">
+  <g transform="translate(54.05,58.83)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(71.81,65.15)">
+  <g transform="translate(16.87,68.88)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(45.95,24.33)">
+  <g transform="translate(31.91,61.2)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(77.17,43.47)">
+  <g transform="translate(41.01,51.71)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(33.93,48.97)">
+  <g transform="translate(48.76,17.58)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(69.07,27.67)">
+  <g transform="translate(50.29,57.96)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(69.27,44.03)">
+  <g transform="translate(43.75,35.37)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(58.06,51.16)">
+  <g transform="translate(36.12,50.41)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(33.89,42.21)">
+  <g transform="translate(57.52,45.37)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(60.6,52.63)">
+  <g transform="translate(48.78,43.91)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(59.56,41.9)">
+  <g transform="translate(45.54,42.25)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(57.8,26.87)">
+  <g transform="translate(81.81,71.04)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(50.47,60.54)">
+  <g transform="translate(54.22,69.51)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(48.26,37.06)">
+  <g transform="translate(49.09,41.21)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(67.83,52.34)">
+  <g transform="translate(68.7,49.04)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(77.84,73.94)">
+  <g transform="translate(50.28,44.56)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(38.68,61.06)">
+  <g transform="translate(51.05,50.25)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(51.47,56.9)">
+  <g transform="translate(41.28,45.3)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(29.64,41.41)">
+  <g transform="translate(47.74,61.52)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(35.63,58.21)">
+  <g transform="translate(41.23,51.27)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(48.69,49.4)">
+  <g transform="translate(62.09,23.94)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
-  <g transform="translate(52.09,50.17)">
+  <g transform="translate(13.67,34.18)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
 </g>
-<g fill="#FF0000" id="img-c84dafe0-3">
+<g fill="#FF0000" id="img-0aae7e46-3">
   <g transform="translate(50,50)">
     <circle cx="0" cy="0" r="1" class="primitive"/>
   </g>
 </g>
-<g stroke="#000000" id="img-c84dafe0-4">
+<g stroke="#000000" id="img-0aae7e46-4">
   <g transform="translate(33.33,66.67)">
     <path fill="none" d="M-33.33,-66.67 L -33.33 33.33 66.67 33.33" class="primitive"/>
   </g>
@@ -734,39 +734,39 @@ img = compose(context(),
      stroke-width="0.3"
      font-size="3.88"
 >
-<g stroke="#000000" id="img-fbe4d9e2-1">
-  <g transform="translate(50.07,14.61)" fill="#FF0000" fill-opacity="0.300">
-    <path d="M-11.2,-2.18 L 11.2 -2.18 11.2 2.18 -11.2 2.18 z" class="primitive"/>
+<g stroke="#000000" id="img-017ac054-1">
+  <g transform="translate(85.44,25.59)" fill="#FF0000" fill-opacity="0.300">
+    <path d="M-6.2,-5.76 L 6.2 -5.76 6.2 5.76 -6.2 5.76 z" class="primitive"/>
   </g>
-  <g transform="translate(86.26,36.4)" fill="#FF4000" fill-opacity="0.300">
-    <path d="M-7.24,-0.69 L 7.24 -0.69 7.24 0.69 -7.24 0.69 z" class="primitive"/>
+  <g transform="translate(93.27,6.18)" fill="#FF4000" fill-opacity="0.300">
+    <path d="M-7.03,-5.7 L 7.03 -5.7 7.03 5.7 -7.03 5.7 z" class="primitive"/>
   </g>
-  <g transform="translate(143.55,34.48)" fill="#FF8000" fill-opacity="0.300">
-    <path d="M-19.74,-1.42 L 19.74 -1.42 19.74 1.42 -19.74 1.42 z" class="primitive"/>
+  <g transform="translate(131.96,5.11)" fill="#FF8000" fill-opacity="0.300">
+    <path d="M-12.59,-2.69 L 12.59 -2.69 12.59 2.69 -12.59 2.69 z" class="primitive"/>
   </g>
-  <g transform="translate(104.31,9.15)" fill="#FFBF00" fill-opacity="0.300">
-    <path d="M-2.49,-5.49 L 2.49 -5.49 2.49 5.49 -2.49 5.49 z" class="primitive"/>
+  <g transform="translate(102.32,16.71)" fill="#FFBF00" fill-opacity="0.300">
+    <path d="M-16.22,-4.87 L 16.22 -4.87 16.22 4.87 -16.22 4.87 z" class="primitive"/>
   </g>
-  <g transform="translate(21.11,35.86)" fill="#FFFF00" fill-opacity="0.300">
-    <path d="M-13.66,-0.72 L 13.66 -0.72 13.66 0.72 -13.66 0.72 z" class="primitive"/>
+  <g transform="translate(69.99,9.29)" fill="#FFFF00" fill-opacity="0.300">
+    <path d="M-7.43,-1.94 L 7.43 -1.94 7.43 1.94 -7.43 1.94 z" class="primitive"/>
   </g>
-  <g transform="translate(126.45,13.25)" fill="#BFFF00" fill-opacity="0.300">
-    <path d="M-11.26,-1.32 L 11.26 -1.32 11.26 1.32 -11.26 1.32 z" class="primitive"/>
+  <g transform="translate(49.69,19.61)" fill="#BFFF00" fill-opacity="0.300">
+    <path d="M-9.77,-1.21 L 9.77 -1.21 9.77 1.21 -9.77 1.21 z" class="primitive"/>
   </g>
-  <g transform="translate(59.87,37.86)" fill="#80FF00" fill-opacity="0.300">
-    <path d="M-14.07,-1.93 L 14.07 -1.93 14.07 1.93 -14.07 1.93 z" class="primitive"/>
+  <g transform="translate(89.44,10.62)" fill="#80FF00" fill-opacity="0.300">
+    <path d="M-12.11,-1.85 L 12.11 -1.85 12.11 1.85 -12.11 1.85 z" class="primitive"/>
   </g>
-  <g transform="translate(101.94,22.28)" fill="#40FF00" fill-opacity="0.300">
-    <path d="M-11.7,-5.38 L 11.7 -5.38 11.7 5.38 -11.7 5.38 z" class="primitive"/>
+  <g transform="translate(129.48,10.56)" fill="#40FF00" fill-opacity="0.300">
+    <path d="M-17.52,-1.67 L 17.52 -1.67 17.52 1.67 -17.52 1.67 z" class="primitive"/>
   </g>
-  <g transform="translate(122.58,37.51)" fill="#00FF00" fill-opacity="0.300">
-    <path d="M-20.39,-5.39 L 20.39 -5.39 20.39 5.39 -20.39 5.39 z" class="primitive"/>
+  <g transform="translate(24.63,3.15)" fill="#00FF00" fill-opacity="0.300">
+    <path d="M-13.03,-1.08 L 13.03 -1.08 13.03 1.08 -13.03 1.08 z" class="primitive"/>
   </g>
-  <g transform="translate(52.85,20.78)" fill="#00FF40" fill-opacity="0.300">
-    <path d="M-21.6,-2.75 L 21.6 -2.75 21.6 2.75 -21.6 2.75 z" class="primitive"/>
+  <g transform="translate(31.61,33.24)" fill="#00FF40" fill-opacity="0.300">
+    <path d="M-17.83,-4.53 L 17.83 -4.53 17.83 4.53 -17.83 4.53 z" class="primitive"/>
   </g>
 </g>
-<g stroke="#FFA500" fill="#000000" fill-opacity="0.000" id="img-fbe4d9e2-2">
+<g stroke="#FFA500" fill="#000000" fill-opacity="0.000" id="img-017ac054-2">
   <g transform="translate(70,20)">
     <path d="M-70,-20 L 70 -20 70 20 -70 20 z" class="primitive"/>
   </g>
@@ -795,54 +795,54 @@ hstack(img1, img2, img3)</code></pre><?xml version="1.0" encoding="UTF-8"?>
      stroke-width="0.3"
      font-size="3.88"
 >
-<g stroke-width="1.4" fill="#000000" fill-opacity="0.000" id="img-ade01ae5-1">
+<g stroke-width="1.4" fill="#000000" fill-opacity="0.000" id="img-0230340a-1">
   <g transform="translate(116.67,20)" stroke="#FF0000">
-    <path d="M0,0 L11.66,-7.74 A14,14 0 0 1 11.42,8.1L0,0" class="primitive"/>
+    <path d="M0,0 L8.26,-11.3 A14,14 0 0 1 12.23,6.82L0,0" class="primitive"/>
   </g>
   <g transform="translate(116.67,20)" stroke="#FFA500">
-    <path d="M0,0 L11.42,8.1 A14,14 0 0 1 -4.55,13.24L0,0" class="primitive"/>
+    <path d="M0,0 L12.23,6.82 A14,14 0 0 1 -2.26,13.82L0,0" class="primitive"/>
   </g>
   <g transform="translate(116.67,20)" stroke="#008000">
-    <path d="M0,0 L-4.55,13.24 A14,14 0 0 1 -12.78,5.71L0,0" class="primitive"/>
+    <path d="M0,0 L-2.26,13.82 A14,14 0 0 1 -13.81,2.3L0,0" class="primitive"/>
   </g>
   <g transform="translate(116.67,20)" stroke="#0000FF">
-    <path d="M0,0 L-12.78,5.71 A14,14 0 0 1 -7.65,-11.73L0,0" class="primitive"/>
+    <path d="M0,0 L-13.81,2.3 A14,14 0 0 1 -4.27,-13.33L0,0" class="primitive"/>
   </g>
   <g transform="translate(116.67,20)" stroke="#800080">
-    <path d="M0,0 L-7.65,-11.73 A14,14 0 0 1 11.66,-7.74L0,0" class="primitive"/>
+    <path d="M0,0 L-4.27,-13.33 A14,14 0 0 1 8.26,-11.3L0,0" class="primitive"/>
   </g>
 </g>
-<g stroke-width="1.4" stroke="#FFFFFF" id="img-ade01ae5-2">
+<g stroke-width="1.4" stroke="#FFFFFF" id="img-0230340a-2">
   <g transform="translate(70,20)" fill="#FF0000">
-    <path d="M0,0 L11.66,-7.74 A14,14 0 0 1 11.42,8.1L0,0" class="primitive"/>
+    <path d="M0,0 L8.26,-11.3 A14,14 0 0 1 12.23,6.82L0,0" class="primitive"/>
   </g>
   <g transform="translate(70,20)" fill="#FFA500">
-    <path d="M0,0 L11.42,8.1 A14,14 0 0 1 -4.55,13.24L0,0" class="primitive"/>
+    <path d="M0,0 L12.23,6.82 A14,14 0 0 1 -2.26,13.82L0,0" class="primitive"/>
   </g>
   <g transform="translate(70,20)" fill="#008000">
-    <path d="M0,0 L-4.55,13.24 A14,14 0 0 1 -12.78,5.71L0,0" class="primitive"/>
+    <path d="M0,0 L-2.26,13.82 A14,14 0 0 1 -13.81,2.3L0,0" class="primitive"/>
   </g>
   <g transform="translate(70,20)" fill="#0000FF">
-    <path d="M0,0 L-12.78,5.71 A14,14 0 0 1 -7.65,-11.73L0,0" class="primitive"/>
+    <path d="M0,0 L-13.81,2.3 A14,14 0 0 1 -4.27,-13.33L0,0" class="primitive"/>
   </g>
   <g transform="translate(70,20)" fill="#800080">
-    <path d="M0,0 L-7.65,-11.73 A14,14 0 0 1 11.66,-7.74L0,0" class="primitive"/>
+    <path d="M0,0 L-4.27,-13.33 A14,14 0 0 1 8.26,-11.3L0,0" class="primitive"/>
   </g>
 </g>
 <g transform="translate(23.33,20)" fill="#FF0000">
-  <path d="M0,0 L11.66,-7.74 A14,14 0 0 1 11.42,8.1L0,0" class="primitive"/>
+  <path d="M0,0 L8.26,-11.3 A14,14 0 0 1 12.23,6.82L0,0" class="primitive"/>
 </g>
 <g transform="translate(23.33,20)" fill="#FFA500">
-  <path d="M0,0 L11.42,8.1 A14,14 0 0 1 -4.55,13.24L0,0" class="primitive"/>
+  <path d="M0,0 L12.23,6.82 A14,14 0 0 1 -2.26,13.82L0,0" class="primitive"/>
 </g>
 <g transform="translate(23.33,20)" fill="#008000">
-  <path d="M0,0 L-4.55,13.24 A14,14 0 0 1 -12.78,5.71L0,0" class="primitive"/>
+  <path d="M0,0 L-2.26,13.82 A14,14 0 0 1 -13.81,2.3L0,0" class="primitive"/>
 </g>
 <g transform="translate(23.33,20)" fill="#0000FF">
-  <path d="M0,0 L-12.78,5.71 A14,14 0 0 1 -7.65,-11.73L0,0" class="primitive"/>
+  <path d="M0,0 L-13.81,2.3 A14,14 0 0 1 -4.27,-13.33L0,0" class="primitive"/>
 </g>
 <g transform="translate(23.33,20)" fill="#800080">
-  <path d="M0,0 L-7.65,-11.73 A14,14 0 0 1 11.66,-7.74L0,0" class="primitive"/>
+  <path d="M0,0 L-4.27,-13.33 A14,14 0 0 1 8.26,-11.3L0,0" class="primitive"/>
 </g>
 </svg>
 </div><h2><a class="nav-anchor" id="[text](@ref)-1" href="#[text](@ref)-1"><a href="../library.html#Compose.text"><code>text</code></a></a></h2><div><pre><code class="language-julia">using Colors, Compose
@@ -868,155 +868,155 @@ img = compose(context(units=UnitBox(0,0,2,2)),
 >
 <g transform="translate(85,50)" stroke="#0000FF">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em">numerator</text>
+    <text text-anchor="middle" dy="0.35em">∛</text>
   </g>
 </g>
 <g transform="translate(84.24,57.28)" stroke="#0906F6">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(12,0, 0)">ifelse</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(12,0, 0)">intersect</text>
   </g>
 </g>
 <g transform="translate(81.97,64.24)" stroke="#120CED">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(24,0, 0)">methods</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(24,0, 0)">mtime</text>
   </g>
 </g>
 <g transform="translate(78.32,70.57)" stroke="#1A11E5">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(36,0, 0)">zeros</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(36,0, 0)">splitext</text>
   </g>
 </g>
 <g transform="translate(73.42,76.01)" stroke="#2317DC">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(48,0, 0)">put!</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(48,0, 0)">ischardev</text>
   </g>
 </g>
 <g transform="translate(67.5,80.31)" stroke="#2C1CD3">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(60,0, 0)">getpid</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(60,0, 0)">exit</text>
   </g>
 </g>
 <g transform="translate(60.82,83.29)" stroke="#3522CA">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(72,0, 0)">sinh</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(72,0, 0)">isdispatchtuple</text>
   </g>
 </g>
 <g transform="translate(53.66,84.81)" stroke="#3E28C1">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(84,0, 0)">≡</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(84,0, 0)">copy</text>
   </g>
 </g>
 <g transform="translate(46.34,84.81)" stroke="#462DB9">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(96,0, 0)">rstrip</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(96,0, 0)">catch_backtrace</text>
   </g>
 </g>
 <g transform="translate(39.18,83.29)" stroke="#4F33B0">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(108,0, 0)">isempty</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(108,0, 0)">symdiff!</text>
   </g>
 </g>
 <g transform="translate(32.5,80.31)" stroke="#5839A7">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(120,0, 0)">supertype</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(120,0, 0)">eof</text>
   </g>
 </g>
 <g transform="translate(26.58,76.01)" stroke="#613F9E">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(132,0, 0)">open</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(132,0, 0)">pi</text>
   </g>
 </g>
 <g transform="translate(21.68,70.57)" stroke="#6A4595">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(144,0, 0)">issubset</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(144,0, 0)">sin</text>
   </g>
 </g>
 <g transform="translate(18.03,64.24)" stroke="#724A8D">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(156,0, 0)">isassigned</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(156,0, 0)">typemax</text>
   </g>
 </g>
 <g transform="translate(15.76,57.28)" stroke="#7B5084">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(168,0, 0)">homedir</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(168,0, 0)">ismount</text>
   </g>
 </g>
 <g transform="translate(15,50)" stroke="#84557B">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(180,0, 0)">readbytes!</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(180,0, 0)">print</text>
   </g>
 </g>
 <g transform="translate(15.76,42.72)" stroke="#8D5B72">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(192,0, 0)">lstat</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(192,0, 0)">isinteger</text>
   </g>
 </g>
 <g transform="translate(18.03,35.76)" stroke="#95606A">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(204,0, 0)">exponent</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(204,0, 0)">tryparse</text>
   </g>
 </g>
 <g transform="translate(21.68,29.43)" stroke="#9E6661">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(216,0, 0)">run</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(216,0, 0)">tempdir</text>
   </g>
 </g>
 <g transform="translate(26.58,23.99)" stroke="#A76C58">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(228,0, 0)">promote_type</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(228,0, 0)">≤</text>
   </g>
 </g>
 <g transform="translate(32.5,19.69)" stroke="#B0724F">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(240,0, 0)">rounding</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(240,0, 0)">iswritable</text>
   </g>
 </g>
 <g transform="translate(39.18,16.71)" stroke="#B97846">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(252,0, 0)">conj!</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(252,0, 0)">issetgid</text>
   </g>
 </g>
 <g transform="translate(46.34,15.19)" stroke="#C17D3E">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(264,0, 0)">joinpath</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(264,0, 0)">iswritable</text>
   </g>
 </g>
 <g transform="translate(53.66,15.19)" stroke="#CA8335">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(276,0, 0)">islocked</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(276,0, 0)">isperm</text>
   </g>
 </g>
 <g transform="translate(60.82,16.71)" stroke="#D3892C">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(288,0, 0)">isreadable</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(288,0, 0)">signed</text>
   </g>
 </g>
 <g transform="translate(67.5,19.69)" stroke="#DC8E23">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(300,0, 0)">invperm</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(300,0, 0)">position</text>
   </g>
 </g>
 <g transform="translate(73.42,23.99)" stroke="#E5941A">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(312,0, 0)">write</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(312,0, 0)">getindex</text>
   </g>
 </g>
 <g transform="translate(78.32,29.43)" stroke="#ED9912">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(324,0, 0)">reverse</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(324,0, 0)">ismount</text>
   </g>
 </g>
 <g transform="translate(81.97,35.76)" stroke="#F69F09">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(336,0, 0)">keytype</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(336,0, 0)">partialsortperm</text>
   </g>
 </g>
 <g transform="translate(84.24,42.72)" stroke="#FFA500">
   <g class="primitive">
-    <text text-anchor="middle" dy="0.35em" transform="rotate(348,0, 0)">unsafe_load</text>
+    <text text-anchor="middle" dy="0.35em" transform="rotate(348,0, 0)">rm</text>
   </g>
 </g>
-<g font-size="10.58" stroke="#FF0000" id="img-397c3613-1">
+<g font-size="10.58" stroke="#FF0000" id="img-4a497686-1">
   <g transform="translate(50,50)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">Julia</text>
@@ -1024,4 +1024,4 @@ img = compose(context(units=UnitBox(0,0,2,2)),
   </g>
 </g>
 </svg>
-</div><footer><hr/><a class="previous" href="../tutorial.html"><span class="direction">Previous</span><span class="title">Tutorial</span></a><a class="next" href="../library.html"><span class="direction">Next</span><span class="title">Library</span></a></footer></article></body></html>
+</div><footer><hr/><a class="previous" href="../tutorial.html"><span class="direction">Previous</span><span class="title">Tutorial</span></a><a class="next" href="properties.html"><span class="direction">Next</span><span class="title">Properties</span></a></footer></article></body></html>
