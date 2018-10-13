@@ -591,7 +591,12 @@ function print_property(img::SVG, property::StrokePrimitive)
 end
 
 function print_property(img::SVG, property::FillPrimitive)
-    @printf(img.out, " fill=\"%s\"", svg_fmt_color(color(property.color)))
+    if property.color.alpha != 1.0
+        @printf(img.out, " fill=\"%s\" fill-opacity=\"%0.3f\"",
+                svg_fmt_color(color(property.color)), property.color.alpha)
+    else
+        @printf(img.out, " fill=\"%s\"", svg_fmt_color(color(property.color)))
+    end
 end
 
 function print_property(img::SVG, property::StrokeDashPrimitive)
