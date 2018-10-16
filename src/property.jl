@@ -211,7 +211,7 @@ const FillOpacity = Property{FillOpacityPrimitive}
 """
     fillopacity(value)
 
-Define a fill opacity, where 0≤value≤1.
+Define a fill opacity, where 0≤value≤1. Note for svg alphas multiply: e.g. using `fill(RGBA(r,g,b,a₁))` and `fillopacity(a₂)` together will result in an opacity=a₁*a₂. 
 """
 fillopacity(value::Float64) = FillOpacity([FillOpacityPrimitive(value)])
 
