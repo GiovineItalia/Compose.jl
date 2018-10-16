@@ -159,8 +159,8 @@ end
 
 function link_cairo()
     @info "Loading Cairo backend into Compose.jl"
-    include("cairo_backends.jl")
-    include("immerse_backend.jl")
+    include(joinpath(@__DIR__,"cairo_backends.jl"))
+    include(joinpath(@__DIR__,"immerse_backend.jl"))
 end
 
 function __init__()
