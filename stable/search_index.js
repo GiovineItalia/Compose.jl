@@ -249,6 +249,46 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "gallery/properties.html#",
+    "page": "Properties",
+    "title": "Properties",
+    "category": "page",
+    "text": "Author = [\"Mattriks\"]"
+},
+
+{
+    "location": "gallery/properties.html#properties_gallery-1",
+    "page": "Properties",
+    "title": "Properties",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "gallery/properties.html#[fill](@ref),-[fillopacity](@ref)-1",
+    "page": "Properties",
+    "title": "fill, fillopacity",
+    "category": "section",
+    "text": "using Compose\nset_default_graphic_size(14cm,4cm)\nimg = compose(context(),\n  (context(), circle(0.5, 0.5, 0.08), fillopacity(0.3), fill(\"orange\")),\n  (context(), circle([0.1, 0.26], [0.5], [0.1]), fillopacity(0.3), fill(\"blue\")),\n  (context(), circle([0.42, 0.58], [0.5], [0.1]), fillopacity(0.3), fill([\"yellow\",\"green\"])),\n  (context(), circle([0.74, 0.90], [0.5], [0.1]), fillopacity([0.5,0.3]), fill([\"yellow\",\"red\"]) )     \n)"
+},
+
+{
+    "location": "library.html#Base.fill-Tuple{AbstractArray}",
+    "page": "Library",
+    "title": "Base.fill",
+    "category": "method",
+    "text": "fill(cs::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Base.fill-Tuple{Union{AbstractString, Colorant}}",
+    "page": "Library",
+    "title": "Base.fill",
+    "category": "method",
+    "text": "fill(c)\n\nDefine a fill color, where c can be a Colorant or String.\n\n\n\n\n\n"
+},
+
+{
     "location": "library.html#Compose.arc",
     "page": "Library",
     "title": "Compose.arc",
@@ -342,6 +382,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Compose.ellipse",
     "category": "method",
     "text": "ellipse()\n\nDefine an ellipse in the center of the current context with x_radius=0.5w and y_radius=0.5h.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.fillopacity-Tuple{AbstractArray}",
+    "page": "Library",
+    "title": "Compose.fillopacity",
+    "category": "method",
+    "text": "fillopacity(values::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.fillopacity-Tuple{Float64}",
+    "page": "Library",
+    "title": "Compose.fillopacity",
+    "category": "method",
+    "text": "fillopacity(value)\n\nDefine a fill opacity, where 0≤value≤1. Note for svg alphas multiply: e.g. using fill(RGBA(r,g,b,a₁)) and fillopacity(a₂) together will result in an opacity=a₁*a₂. \n\n\n\n\n\n"
 },
 
 {
