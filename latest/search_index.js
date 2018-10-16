@@ -349,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
 },
 
 {
@@ -357,7 +357,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
+    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
 },
 
 {
@@ -397,7 +397,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.fillopacity",
     "category": "method",
-    "text": "fillopacity(value)\n\nDefine a fill opacity, where 0≤value≤1.\n\n\n\n\n\n"
+    "text": "fillopacity(value)\n\nDefine a fill opacity, where 0≤value≤1. Note for svg alphas multiply: e.g. using fill(RGBA(r,g,b,a₁)) and fillopacity(a₂) together will result in an opacity=a₁*a₂. \n\n\n\n\n\n"
 },
 
 {
