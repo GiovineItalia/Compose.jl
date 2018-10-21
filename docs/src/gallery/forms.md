@@ -94,6 +94,22 @@ img = compose(context(),
 )
 ```
 
+## [`ngon`](@ref), [`star`](@ref), [`xgon`](@ref) 
+```@example
+using Compose
+set_default_graphic_size(14cm, 5cm)
+rainbow = ["orange","green","indigo",
+    "darkviolet","indigo","blue","green","yellow","orange","red"]
+properties = [fillopacity(0.5), fill(rainbow), stroke("black")]
+npoints = [7,5,3,2,3,4,5,6,7,8]
+X = range(0.06, stop=0.94, length=10)
+radii = 0.035*[-ones(3); ones(7)]
+p = compose(context(),
+    (context(), ngon(X, [0.16], radii, npoints),
+        star(X, [0.5], radii, npoints),
+        xgon(X, [0.84], radii, npoints), properties...))
+```
+
 ## [`polygon`](@ref)
 ```@example
 using Statistics, Compose

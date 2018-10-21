@@ -700,6 +700,104 @@ form_string(::Arc) = "A"
 
 
 
+### Polygon primitive forms
+
+"""
+    ngon(x, y, r, n::Int)
+
+Define a `n`-sided polygon with its center at (`x`,`y`), and radius of `r`.  For an upside-down ngon, use `-r`.  
+"""
+function ngon(x, y, r, n::Int, tag=empty_tag)
+    θ = range(-π/2, stop=1.5π, length=n+1)
+    x1 = x_measure(x) .+ x_measure(r).*cos.(θ)
+    y1 = y_measure(y) .+ x_measure(r).*sin.(θ)
+    points = collect(Tuple{Measure, Measure}, zip(x1, y1))
+    return Form([PolygonPrimitive(points)], tag)
+end
+
+
+"""
+    ngon(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::AbstractVector{Int})
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
+function ngon(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::AbstractVector{Int}, tag=empty_tag)
+    VecType = Tuple{Measure, Measure}
+    PrimType = PolygonPrimitive{VecType}
+    polyprims = PrimType[]
+    for (x, y, r, n) in Compose.cyclezip(xs, ys, rs, ns)
+        p = ngon( x, y, r, n)
+        push!(polyprims, PrimType(p.primitives[1].points))
+    end
+    return Form{PrimType}(polyprims, tag)
+end
+
+
+"""
+    star(x, y, r, n::Int, ratio)
+
+Define a `n`-pointed star with its center at (`x`,`y`), outer radius of `r`, and inner radius equal to `r*ratio`. For an upside-down star, use `-r`.
+"""
+function star(x, y, r, n::Int, ratio::Float64=0.3, tag=empty_tag)
+    θ = range(-π/2, stop=1.5π, length=2*n+1)[1:end-1]
+    r1 = repeat([r, r*ratio], outer=n)
+    x1 = x_measure(x) .+ x_measure(r1).*cos.(θ)
+    y1 = y_measure(y) .+ x_measure(r1).*sin.(θ)
+    points = collect(Tuple{Measure, Measure}, zip(x1, y1))
+    return Form([PolygonPrimitive(points)], tag)
+end
+
+
+"""
+    star(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::AbstractVector{Int}, ratios::AbstractVector{Float64})
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
+function star(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::AbstractVector{Int}, ratios::AbstractVector{Float64}=[0.3], tag=empty_tag)
+    VecType = Tuple{Measure, Measure}
+    PrimType = PolygonPrimitive{VecType}
+    polyprims = PrimType[]
+    for (x, y, r, n, ratio) in Compose.cyclezip(xs, ys, rs, ns, ratios)
+        p = star( x, y, r, n, ratio)
+        push!(polyprims, PrimType(p.primitives[1].points))
+    end
+    return Form{PrimType}(polyprims, tag)
+end
+
+
+"""
+    xgon(x, y, r, n::Int, ratio)
+
+Define a cross with `n` arms with its center at (`x`,`y`), outer radius of `r`, and inner radius equal to `r*ratio`. For an upside-down xgon, use `-r`.
+"""
+function xgon(x, y, r, n::Int, ratio::Float64=0.1, tag=empty_tag)
+    θ₁ = range(-0.75π, stop=1.25π, length=n+1)[1:end-1]
+    w = 2*r*ratio*sin(π/n)
+    dₒ = abs(asin(0.5*w/r))
+    dᵢ = abs(asin(0.5*w/(r*ratio)))   
+    r₂ = repeat([r*ratio,r,r], outer=n)
+    θ₂ = vec([θ+x  for x in [-dᵢ, -dₒ, dₒ], θ in θ₁])
+    x1 = x_measure(x) .+ x_measure(r₂).*cos.(θ₂)
+    y1 = y_measure(y) .+ x_measure(r₂).*sin.(θ₂)
+    points = collect(Tuple{Measure, Measure}, zip(x1, y1))
+    return Form([PolygonPrimitive(points)], tag)
+end
+
+"""
+    xgon(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::AbstractVector{Int}, ratios::AbstractVector{Float64})
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
+function xgon(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::AbstractVector{Int}, ratios::AbstractVector{Float64}=[0.3], tag=empty_tag)
+    VecType = Tuple{Measure, Measure}
+    PrimType = PolygonPrimitive{VecType}
+    polyprims = PrimType[]
+    for (x, y, r, n, ratio) in Compose.cyclezip(xs, ys, rs, ns, ratios)
+        p = xgon(x, y, r, n, ratio)
+        push!(polyprims, PrimType(p.primitives[1].points))
+    end
+    return Form{PrimType}(polyprims, tag)
+end
 
 
 
