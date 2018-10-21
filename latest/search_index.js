@@ -217,6 +217,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "gallery/forms.html#[ngon](@ref),-[star](@ref),-[xgon](@ref)-1",
+    "page": "Forms",
+    "title": "ngon, star, xgon",
+    "category": "section",
+    "text": "using Compose\nset_default_graphic_size(14cm, 5cm)\nrainbow = [\"orange\",\"green\",\"indigo\",\n    \"darkviolet\",\"indigo\",\"blue\",\"green\",\"yellow\",\"orange\",\"red\"]\nproperties = [fillopacity(0.5), fill(rainbow), stroke(\"black\")]\nnpoints = [7,5,3,2,3,4,5,6,7,8]\nX = range(0.06, stop=0.94, length=10)\nradii = 0.035*[-ones(3); ones(7)]\np = compose(context(),\n    (context(), ngon(X, [0.16], radii, npoints),\n        star(X, [0.5], radii, npoints),\n        xgon(X, [0.84], radii, npoints), properties...))"
+},
+
+{
     "location": "gallery/forms.html#[polygon](@ref)-1",
     "page": "Forms",
     "title": "polygon",
@@ -417,6 +425,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#Compose.ngon",
+    "page": "Library",
+    "title": "Compose.ngon",
+    "category": "function",
+    "text": "ngon(x, y, r, n::Int)\n\nDefine a n-sided polygon with its center at (x,y), and radius of r.  For an upside-down ngon, use -r.  \n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.ngon",
+    "page": "Library",
+    "title": "Compose.ngon",
+    "category": "function",
+    "text": "ngon(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::AbstractVector{Int})\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+},
+
+{
     "location": "library.html#Compose.polygon",
     "page": "Library",
     "title": "Compose.polygon",
@@ -473,6 +497,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#Compose.star",
+    "page": "Library",
+    "title": "Compose.star",
+    "category": "function",
+    "text": "star(x, y, r, n::Int, ratio)\n\nDefine a n-pointed star with its center at (x,y), outer radius of r, and inner radius equal to r*ratio. For an upside-down star, use -r.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.star",
+    "page": "Library",
+    "title": "Compose.star",
+    "category": "function",
+    "text": "star(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::AbstractVector{Int}, ratios::AbstractVector{Float64})\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+},
+
+{
     "location": "library.html#Compose.text",
     "page": "Library",
     "title": "Compose.text",
@@ -486,6 +526,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Compose.text",
     "category": "function",
     "text": "text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.xgon",
+    "page": "Library",
+    "title": "Compose.xgon",
+    "category": "function",
+    "text": "xgon(x, y, r, n::Int, ratio)\n\nDefine a cross with n arms with its center at (x,y), outer radius of r, and inner radius equal to r*ratio. For an upside-down xgon, use -r.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#Compose.xgon",
+    "page": "Library",
+    "title": "Compose.xgon",
+    "category": "function",
+    "text": "xgon(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::AbstractVector{Int}, ratios::AbstractVector{Float64})\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
 },
 
 {
