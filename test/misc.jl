@@ -147,7 +147,7 @@ end
     Random.seed!(23)
     withoutcompose = rand()
     Random.seed!(23)
-    draw(SVG(), compose(context()))
+    draw(SVG(10cm, 8cm, false), compose(context()))
     withcompose = rand()
     @test withoutcompose == withcompose
 end
@@ -161,4 +161,4 @@ end
     @test getfield.(img1.vector_properties[Compose.Property{Compose.FillOpacityPrimitive}].primitives, :value) == [0.3, 0.3]
     @test occursin("fill-opacity=\"0.3\"", a)
     @test all(occursin.(["fill=\"rgba(255,0,0,1)\"","fill=\"rgba(0,0,255,1)\""], a))
-end    
+end

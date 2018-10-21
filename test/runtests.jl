@@ -1,6 +1,10 @@
 using Compose
+using Test
 
 include("misc.jl")
+@testset "SVG Correctness Tests" begin
+    include("svg.jl")
+end
 include("immerse.jl")
 
 # Run the examples

@@ -284,11 +284,11 @@ function push_property_frame(img::Image, properties::Vector{Property})
     isp = isscalar.(properties)
     scalar_properties = Dict{Type, Property}(typeof(x)=>x for x in properties[isp])
     vector_properties = Dict{Type, Property}(typeof(x)=>x for x in properties[.!isp])
-    
+
     kt = [Property{FillOpacityPrimitive}, Property{FillPrimitive}]
     if haskey(scalar_properties, kt[1]) && haskey(vector_properties, kt[2])
         alpha = scalar_properties[kt[1]].primitives[1].value
-        vector_properties[kt[1]] = fillopacity(fill(alpha, length(vector_properties[kt[2]].primitives))) 
+        vector_properties[kt[1]] = fillopacity(fill(alpha, length(vector_properties[kt[2]].primitives)))
         pop!(scalar_properties, kt[1])
     end
 
@@ -297,7 +297,7 @@ function push_property_frame(img::Image, properties::Vector{Property})
     frame.vector_properties = vector_properties
     push!(img.property_stack, frame)
     isempty(scalar_properties) && return
-    
+
     save_property_state(img)
     for (_, property) in scalar_properties
         apply_property(img, property.primitives[1])
