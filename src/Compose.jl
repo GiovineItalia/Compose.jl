@@ -124,9 +124,9 @@ default_fill_color = colorant"black"
 # Use cairo for the PNG, PS, PDF if it's installed.
 macro missing_cairo_error(backend)
     msg1 = """
-    The Cairo and Fontconfig packages are necessary for the $(backend) backend.
-    Add them with the package manager if necessary, then run:
-      import Cairo, Fontconfig
+    The Cairo package is necessary for the $(backend) backend.
+    Add it with the package manager if necessary, then run:
+      import Cairo
     before invoking $(backend).
     """
     string(msg1)
@@ -140,22 +140,25 @@ PDF(args...; kwargs...) = error(@missing_cairo_error "PDF")
 include("svg.jl")
 include("pgf_backend.jl")
 
-# If available, pango and fontconfig are used to compute text extents and match
+# If imported, pango and/or fontconfig are used to compute text extents and match
 # fonts. Otherwise a simplistic pure-julia fallback is used.
 
 include("fontfallback.jl")
 
 function link_fontconfig()
     @info "Loading Fontconfig backend into Compose.jl"
-    pango_cairo_ctx = C_NULL
+    include("fontconfig.jl")
+end
+
+function link_pango()
+    @info "Loading Pango backend into Compose.jl"
+    global pango_cairo_ctx = C_NULL
     include("pango.jl")
 
-    ccall((:g_type_init, libgobject), Cvoid, ())
-    pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
-                             Ptr{Cvoid}, ())
-    pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
-                             Ptr{Cvoid}, (Ptr{Cvoid},), pango_cairo_fm)
-    pangolayout = PangoLayout()
+    #Pango.g_type_init()
+    pango_cairo_fm  = Pango.pango_cairo_font_map_new()
+    pango_cairo_ctx = Pango.pango_font_map_create_context(pango_cairo_fm)
+    pangolayout = Base.invokelatest(PangoLayout)
 end
 
 function link_cairo()
@@ -167,6 +170,7 @@ end
 function __init__()
     @require Cairo="159f3aea-2a34-519c-b102-8c37f9878175" link_cairo()
     @require Fontconfig="186bb1d3-e1f7-5a2c-a377-96d770f13627" link_fontconfig()
+    @require Pango="4071c42e-c4ca-11e8-2c78-e3c1daf35efa" link_pango()
 end
 
 show(io::IO, m::MIME"text/html", ctx::Context) =

@@ -11,8 +11,8 @@ to simplify the creation of complex graphics and serves as the basis of the
 
 ## Package features
 
-- Renders publication quality graphics to SVG, PNG, Postscript, PDF and PGF
-- Intuitive and consistent interface
+- Renders publication quality graphics to PGF and interactive SVG using pure Julia; relies on [cairo](https://cairographics.org/) for PNG, Postscript, PDF and PGF
+- Can handle most text formatting natively; calls out to [pango](https://www.pango.org/) for more advanced notation and [fontconfig](https://www.fontconfig.org/) for a wider choice of fonts
 - Works with [Jupyter](http://jupyter.org/) notebooks via [IJulia](https://github.com/JuliaLang/IJulia.jl) out of the box
 
 ## Installation

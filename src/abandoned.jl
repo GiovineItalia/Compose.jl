@@ -812,5 +812,11 @@ function draw(img::SVG, prim::PathPrimitive, idx::Int)
     print(img.out, "/>\n")
 end
 
-
+function current_point(img::Image)
+    x = Array{Float64}(undef, 1)
+    y = Array{Float64}(undef, 1)
+    ccall((:cairo_get_current_point, Cairo._jl_libcairo), Cvoid,
+          (Ptr{Cvoid}, Ptr{Float64}, Ptr{Float64}), img.ctx.ptr, x, y)
+    return ((x[1] / img.ppmm)*mm, (x[2] / img.ppmm)*mm)
+end
 
