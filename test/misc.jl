@@ -156,9 +156,12 @@ end
     properties = [fill(["red","blue"]), fillopacity(0.3), stroke("black")]
     img1 = PNG(); Compose.push_property_frame(img1, properties)
     img2 = SVG(); Compose.push_property_frame(img2, properties)
-    Compose.print_vector_properties.([img2], [1,2])
-    a = String(img2.out.data)
     @test getfield.(img1.vector_properties[Compose.Property{Compose.FillOpacityPrimitive}].primitives, :value) == [0.3, 0.3]
+<<<<<<< HEAD
     @test occursin("fill-opacity=\"0.3\"", a)
     @test all(occursin.(["fill=\"rgba(255,0,0,1)\"","fill=\"rgba(0,0,255,1)\""], a))
 end
+=======
+    @test occursin("fill-opacity=\"0.3\"", String(img2.out.data))
+end    
+>>>>>>> parent of c414a3f... fill_rgba_spec_for_svg
