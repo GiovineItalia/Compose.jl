@@ -15,5 +15,5 @@ using Measures
     # and blue colors)
     @test length(fillcolors) == 1
     # make sure it's green
-    @test fillcolors[1] == "rgba(0,128,0,1)"
+    @test fillcolors[1] == "#008000"
 end
