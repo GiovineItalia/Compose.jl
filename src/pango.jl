@@ -63,6 +63,8 @@ function PangoLayout()
     PangoLayout(layout)
 end
 
+const pangolayout = PangoLayout()
+
 # Set the layout's font.
 function pango_set_font(pangolayout::PangoLayout, family::AbstractString, pts::Number)
     fd = match_font(family, pts)
