@@ -43,7 +43,7 @@ let available_font_families = Set{AbstractString}()
                 break
             end
         end
-        family = Fontconfig.format(match(Fontconfig.Pattern(family=family)), "%{family}")
+        family = Fontconfig.format(match(Fontconfig.Pattern(family=matched_family)), "%{family}")
         desc = @sprintf("%s %fpx", family, size)
         fd = ccall((:pango_font_description_from_string, libpango), Ptr{Cvoid}, (Ptr{UInt8},), desc)
         return fd
@@ -80,7 +80,7 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function pango_text_extents(pangolayout::PangoLayout, text::AbstractString)
-    textarray = convert(Vector{UInt8}, convert(String, text))
+    textarray = convert(String, text)
     ccall((:pango_layout_set_markup, libpango),
           Cvoid, (Ptr{Cvoid}, Ptr{UInt8}, Int32),
           pangolayout.layout, textarray, length(textarray))
