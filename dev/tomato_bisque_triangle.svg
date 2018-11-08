@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     version="1.2"
+     width="40mm" height="40mm" viewBox="0 0 40 40"
+     stroke="none"
+     fill="#000000"
+     stroke-width="0.3"
+     font-size="3.88"
+>
+<g fill="rgba(255,227,195,1)" id="img-272c01cc-1">
+  <g transform="translate(26.67,26.67)">
+    <path d="M13.33,13.33 L -6.67 13.33 -6.67 -26.67 z" class="primitive"/>
+  </g>
+</g>
+<g fill="rgba(255,99,71,1)" id="img-272c01cc-2">
+  <g transform="translate(13.33,26.67)">
+    <path d="M-13.33,13.33 L 6.67 13.33 6.67 -26.67 z" class="primitive"/>
+  </g>
+</g>
+</svg>
