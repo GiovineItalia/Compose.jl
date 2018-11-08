@@ -63,6 +63,10 @@ function PangoLayout()
     PangoLayout(layout)
 end
 
+# TODO temporary fix for plotting in Julia 0.7 (5 Nov 2018)
+@warn "[TEMPORARY WORKAROUND, pangolayout] for plotting with Gadfly.jl, see https://github.com/GiovineItalia/Gadfly.jl/issues/1206"
+const pangolayout = PangoLayout()
+
 # Set the layout's font.
 function pango_set_font(pangolayout::PangoLayout, family::AbstractString, pts::Number)
     fd = match_font(family, pts)
