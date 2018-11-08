@@ -18,9 +18,5 @@ makedocs(
 
 deploydocs(
     repo   = "github.com/GiovineItalia/Compose.jl.git",
-    julia  = "1.0",
-    osname = "linux",
-    deps = nothing,
-    make = nothing,
     target = "build"
 )
