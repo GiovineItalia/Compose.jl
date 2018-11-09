@@ -1,4 +1,4 @@
-import Cairo: CairoContext, CairoSurface, CairoARGBSurface, CairoEPSSurface,
+import .Cairo: CairoContext, CairoSurface, CairoARGBSurface, CairoEPSSurface,
 CairoPDFSurface, CairoSVGSurface, CairoImageSurface
 
 abstract type ImageBackend end
