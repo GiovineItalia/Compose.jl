@@ -315,6 +315,13 @@ push_property!(props_str, img::PGF, property::SVGAttributePrimitive) = nothing
 iswithjs(img::PGF) = false
 iswithousjs(img::PGF) = true
 
+push_property!(props_str, img::PGF, property::ArrowPrimitive) =
+        push!(props_str, "arrows=->")
+
+
+# Form Drawing
+# ------------
+
 function draw(img::PGF, form::Form)
     for (idx, primitive) in enumerate(form.primitives)
         draw(img, primitive, idx)

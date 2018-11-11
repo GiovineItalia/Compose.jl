@@ -5,6 +5,22 @@ Author = ["Mattriks"]
 
 # [Properties](@id properties_gallery)
 
+
+## [`arrow`](@ref)
+ 
+```@example
+using Compose
+set_default_graphic_size(14cm,5cm)
+θ, r = 2π*rand(3),  0.1.+0.08*rand(3)
+c, s = r.*cos.(θ), r.*sin.(θ)
+point_array = [[(0.5,0.5), 0.5.+(x,y)] for (x,y) in zip(c,s) ]
+img = compose(context(), arrow(), stroke("black"), fill(nothing),
+        (context(), arc(0.18, 0.5, 0.08, -π/4, 1π)),
+        (context(), line(point_array), stroke(["red","green","deepskyblue"])),
+        (context(), curve((0.7,0.5), (0.8,-0.5), (0.8,1.5), (0.9,0.5)))
+)
+```
+
 ## [`fill`](@ref), [`fillopacity`](@ref)
  
 ```@example

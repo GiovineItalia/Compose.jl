@@ -336,7 +336,16 @@ function writeheader(img::SVG)
           """)
     img.withjs && write(img.out, "\n     id=\"$(img.id)\"")
     write(img.out, ">\n")
-    return img
+    write(img.out,
+          """
+          <defs>
+            <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
+            </marker>
+          </defs>
+          """)
+#    write(img.out, "\n")
+          return img
 end
 
 function register_coords(backend::SVG, box, units, transform, property::SVGClass)
@@ -715,6 +724,11 @@ function print_vector_properties(img::SVG, idx::Int, suppress_fill::Bool=false)
     end
 
     img.has_current_id = false
+end
+
+
+function print_property(img::SVG, property::ArrowPrimitive)
+    print(img.out, " marker-end=\"url(#arrow)\"")
 end
 
 

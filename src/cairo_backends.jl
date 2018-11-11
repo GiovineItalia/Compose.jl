@@ -21,6 +21,7 @@ mutable struct ImagePropertyState
     fontsize::AbsoluteLength
     font::AbstractString
     clip::Union{ClipPrimitive, Nothing}
+    arrow::Bool
 end
 
 mutable struct ImagePropertyFrame
@@ -52,6 +53,7 @@ mutable struct Image{B<:ImageBackend} <: Backend
     fontsize::AbsoluteLength
     font::AbstractString
     clip::Union{ClipPrimitive, Nothing}
+    arrow::Bool
 
     # Keep track of property
     state_stack::Vector{ImagePropertyState}
@@ -99,6 +101,7 @@ function Image{B}(surface::CairoSurface,
                fontsize = default_font_size,
                font = default_font_family,
                clip = nothing,
+               arrow = false,
                state_stack = Array{ImagePropertyState}(undef, 0),
                property_stack = Array{ImagePropertyFrame}(undef, 0),
                vector_properties = Dict{Type, Union{Property, Nothing}}(),
@@ -126,6 +129,7 @@ function Image{B}(surface::CairoSurface,
           fontsize,
           font,
           clip,
+          arrow,
           state_stack,
           property_stack,
           vector_properties,
@@ -335,7 +339,8 @@ function save_property_state(img::Image)
             img.linewidth,
             img.fontsize,
             img.font,
-            img.clip))
+            img.clip,
+            img.arrow))
     Cairo.save(img.ctx)
 end
 
@@ -351,6 +356,7 @@ function restore_property_state(img::Image)
     img.fontsize = state.fontsize
     img.font = state.font
     img.clip = state.clip
+    img.arrow = state.arrow
     Cairo.restore(img.ctx)
 end
 
@@ -687,6 +693,7 @@ function draw(img::Image, prim::LinePrimitive)
         end
         prev_ok = ok
     end
+    img.arrow && arrow(img, prim.points)
     fillstroke(img, true)
 end
 
@@ -777,14 +784,49 @@ function draw(img::Image, batch::FormBatch)
 end
 
 
-function Compose.draw(img::Compose.Image, prim::ArcPrimitive)
+function draw(img::Compose.Image, prim::ArcPrimitive)
     new_sub_path(img)
     xc = prim.center[1]
     yc = prim.center[2]
     prim.sector && move_to(img, (xc, yc))
     arc(img, xc.value, yc.value, prim.radius.value, prim.angle1, prim.angle2)
     prim.sector && line_to(img, (xc, yc))
+    img.arrow && arrow(img, prim)
     fillstroke(img)
 end
+
+
+# Arrows
+
+apply_property(img::Image, p::ArrowPrimitive) = 
+        img.arrow = p.value
+
+
+function arrow(img::Image, points::Vector{<:Vec})
+    xmax, ymax = points[end]
+    dxy = points[end] .- points[end-1]
+    dx, dy = dxy[1].value,  dxy[2].value 
+    vl, θ = 0.225*hypot(dy,dx), atan(dy, dx) 
+    arrowhead(img, (xmax,ymax), vl, θ)
+end
+
+function arrow(img::Image, prim::ArcPrimitive)
+    xy = prim.center .+ prim.radius.*(cos(prim.angle2), sin(prim.angle2))
+    θ = prim.angle2 + 0.45π
+   arrowhead(img, xy, 0.5*prim.radius.value, θ)
+end
+
+
+function arrowhead(img::Image, point::Vec, vl::Float64, θ::Float64)
+    xmax, ymax = point
+    ϕ  =  pi/15
+    xr = -vl*[cos(θ+ϕ), cos(θ-ϕ)].*1mm
+    yr = -vl*[sin(θ+ϕ), sin(θ-ϕ)].*1mm
+    move_to(img, (xmax+xr[1], ymax+yr[1]))
+    line_to(img, (xmax, ymax))
+    line_to(img, (xmax+xr[2], ymax+yr[2]))
+end
+
+
 
 
