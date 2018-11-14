@@ -8,12 +8,17 @@
      stroke-width="0.3"
      font-size="3.88"
 >
-<g fill="rgba(255,99,71,1)" id="img-0fa1c5aa-1">
+<defs>
+  <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
+  </marker>
+</defs>
+<g fill="rgba(255,99,71,1)" id="img-4241424b-1">
   <g transform="translate(20,20)">
     <path d="M-20,-20 L 20 -20 20 20 -20 20 z" class="primitive"/>
   </g>
 </g>
-<g fill="rgba(255,227,195,1)" id="img-0fa1c5aa-2">
+<g fill="rgba(255,227,195,1)" id="img-4241424b-2">
   <g transform="translate(20,20)">
     <circle cx="0" cy="0" r="20" class="primitive"/>
   </g>

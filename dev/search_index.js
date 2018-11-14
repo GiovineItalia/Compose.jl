@@ -273,6 +273,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "gallery/properties/#[arrow](@ref)-1",
+    "page": "Properties",
+    "title": "arrow",
+    "category": "section",
+    "text": "using Compose\nset_default_graphic_size(14cm,5cm)\nθ, r = 2π*rand(3),  0.1.+0.08*rand(3)\nc, s = r.*cos.(θ), r.*sin.(θ)\npoint_array = [[(0.5,0.5), 0.5.+(x,y)] for (x,y) in zip(c,s) ]\nimg = compose(context(), arrow(), stroke(\"black\"), fill(nothing),\n        (context(), arc(0.18, 0.5, 0.08, -π/4, 1π)),\n        (context(), line(point_array), stroke([\"red\",\"green\",\"deepskyblue\"])),\n        (context(), curve((0.7,0.5), (0.8,-0.5), (0.8,1.5), (0.9,0.5)))\n)"
+},
+
+{
     "location": "gallery/properties/#[fill](@ref),-[fillopacity](@ref)-1",
     "page": "Properties",
     "title": "fill, fillopacity",
@@ -310,6 +318,30 @@ var documenterSearchIndex = {"docs": [
     "title": "Compose.arc",
     "category": "function",
     "text": "arc(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, θ1s::AbstractVector, θ2s::AbstractVector, sectors::AbstractVector)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library/#Compose.arrow-Tuple{AbstractArray}",
+    "page": "Library",
+    "title": "Compose.arrow",
+    "category": "method",
+    "text": "arrow(values::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library/#Compose.arrow-Tuple{Bool}",
+    "page": "Library",
+    "title": "Compose.arrow",
+    "category": "method",
+    "text": "arrow(value::Bool)\n\n`arrow()` is a property of arcs, lines and curves. The color of the arrowhead is the same as `stroke()`, but for svg the results will be browser-dependent.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library/#Compose.arrow-Tuple{}",
+    "page": "Library",
+    "title": "Compose.arrow",
+    "category": "method",
+    "text": "arrow()\n\n`arrow() = arrow(true)`\n\n\n\n\n\n"
 },
 
 {
