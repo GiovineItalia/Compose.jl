@@ -498,3 +498,43 @@ Base.isless(a::FillPrimitive, b::FillPrimitive) = color_isless(a.color, b.color)
 Base.isless(a::StrokePrimitive, b::StrokePrimitive) = color_isless(a.color, b.color)
 
 prop_string(::JSCall) = "jsc"
+
+
+
+# Arrow Property
+# -------
+
+struct ArrowPrimitive <: PropertyPrimitive
+    value::Bool
+end
+
+const Arrow = Property{ArrowPrimitive}
+
+
+"""
+    arrow()
+
+    `arrow() = arrow(true)`
+"""
+arrow() = Arrow([ArrowPrimitive(true)])
+
+
+"""
+    arrow(value::Bool)
+
+    `arrow()` is a property of arcs, lines and curves. The color of the arrowhead is the same as `stroke()`, but for svg the results will be browser-dependent. 
+"""
+arrow(value::Bool) = Arrow([ArrowPrimitive(value)])
+
+"""
+    arrow(values::AbstractArray)
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
+arrow(values::AbstractArray) = Arrow([ArrowPrimitive(value) for value in values])
+
+prop_string(::Arrow) = "arrow"
+
+
+
+
