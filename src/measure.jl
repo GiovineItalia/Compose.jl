@@ -189,8 +189,20 @@ end
 
 Rotation(theta::Number, offset::XYTupleOrVec) =
         Rotation(convert(Float64, theta), (x_measure(offset[1]), y_measure(offset[2])))
+
+"""
+    Rotation(θ, x, y)
+
+Rotate all forms in context around point `(x,y)` by angle `θ` in radians.  
+"""
 Rotation(theta::Number, offset_x, offset_y) =
         Rotation(convert(Float64, theta), (x_measure(offset_x), y_measure(offset_y)))
+
+"""
+    Rotation(θ)
+    
+`Rotation(θ)=Rotation(θ, 0.5w, 0.5h)`
+"""        
 Rotation(theta::Number) = Rotation{Vec2}(convert(Float64, theta), (0.5w, 0.5h))
 Rotation() = Rotation(0.0, (0.5w, 0.5h))
 
@@ -267,7 +279,7 @@ function resolve(box::AbsoluteBox, units::UnitBox, t::MatrixTransform, p::Vec2)
 end
 
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::BoundingBox) =
-        BoundingBox(resolve(box, units, t, a.x0),
+        BoundingBox(resolve(box, units, IdentityTransform(), a.x0),
             (resolve(box, units, t, a.a[1]), resolve(box, units, t, a.a[2])))
 
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Rotation) =

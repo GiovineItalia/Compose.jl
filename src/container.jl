@@ -368,6 +368,10 @@ function drawpart(backend::Backend, container::Container,
     box = resolve(parent_box, units, parent_transform, ctx.box)
 
     transform = parent_transform
+    if ctx.units !== nothing
+        units = resolve(box, units, transform, ctx.units)
+    end
+
     if ctx.rot !== nothing
         rot = resolve(box, units, parent_transform, ctx.rot)
         transform = combine(convert(Transform, rot), transform)
@@ -393,9 +397,6 @@ function drawpart(backend::Backend, container::Container,
         return
     end
 
-    if ctx.units !== nothing
-        units = resolve(box, units, transform, ctx.units)
-    end
 
     has_properties = false
     if !isa(ctx.property_children, ListNull) || ctx.clip
