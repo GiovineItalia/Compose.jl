@@ -11,6 +11,7 @@ makedocs(
         "Gallery" => Any[
             "Forms" => "gallery/forms.md",
             "Properties"=> "gallery/properties.md",
+            "Transformations"=> "gallery/transforms.md",
             ],
         "Library" => "library.md"
     ]
