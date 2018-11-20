@@ -289,6 +289,46 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "gallery/transforms/#",
+    "page": "Transformations",
+    "title": "Transformations",
+    "category": "page",
+    "text": "Author = [\"Mattriks\"]"
+},
+
+{
+    "location": "gallery/transforms/#transforms_gallery-1",
+    "page": "Transformations",
+    "title": "Transformations",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "gallery/transforms/#[Rotation](@ref)-1",
+    "page": "Transformations",
+    "title": "Rotation",
+    "category": "section",
+    "text": "using Compose\nset_default_graphic_size(15cm,5cm)\n\n# This example also illustrates nested contexts\nf_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4),\n    (.6, .4), (.6, .5), (.2, .5), (.2, .9), (.1, .9), (.1, .1)]\nrect(c::String) = (context(), rectangle(), stroke(c))\ncirc(c::String, s::Float64=0.4) =  (context(), circle([x],[y],[0.03,s]), stroke(c))\nfpoly(c::String) = (context(), polygon(f_points), fill(c))\ncontextC(θ::Float64) = (context(0.5,0.5,1.5,1.5, units=UnitBox(0,0,1,1),\n        rotation=Rotation(θ,x,y)), fpoly(\"steelblue\"), circ(\"orange\"))\nimgf(θ::Float64) =  compose(context(), fill(nothing), rect(\"black\"),\n        (context(0.15, 0.15, 0.7, 0.7, units=UnitBox(0,0,2,2)), rect(\"red\"), \n        contextC(θ)) # context C in context B in context A\n    ) \n\nx, y, θ = 0.5, 0.25, π/3\nhstack(imgf(-θ), imgf(0.), imgf(θ))"
+},
+
+{
+    "location": "library/#Compose.Rotation-Tuple{Number,Any,Any}",
+    "page": "Library",
+    "title": "Compose.Rotation",
+    "category": "method",
+    "text": "Rotation(θ, x, y)\n\nRotate all forms in context around point (x,y) by angle θ in radians.  \n\n\n\n\n\n"
+},
+
+{
+    "location": "library/#Compose.Rotation-Tuple{Number}",
+    "page": "Library",
+    "title": "Compose.Rotation",
+    "category": "method",
+    "text": "Rotation(θ)\n\nRotation(θ)=Rotation(θ, 0.5w, 0.5h)\n\n\n\n\n\n"
+},
+
+{
     "location": "library/#Base.fill-Tuple{AbstractArray}",
     "page": "Library",
     "title": "Base.fill",
@@ -389,7 +429,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
 },
 
 {
@@ -397,7 +437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
+    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
 },
 
 {

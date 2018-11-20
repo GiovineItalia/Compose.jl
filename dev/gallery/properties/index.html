@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Properties · Compose.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../index.html"><img class="logo" src="../../assets/logo.png" alt="Compose.jl logo"/></a><h1>Compose.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Home</a></li><li><a class="toctext" href="../../tutorial/">Tutorial</a></li><li><span class="toctext">Gallery</span><ul><li><a class="toctext" href="../forms/">Forms</a></li><li class="current"><a class="toctext" href>Properties</a><ul class="internal"><li><a class="toctext" href="#[arrow](@ref)-1"><code>arrow</code></a></li><li><a class="toctext" href="#[fill](@ref),-[fillopacity](@ref)-1"><code>fill</code>, <code>fillopacity</code></a></li></ul></li></ul></li><li><a class="toctext" href="../../library/">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li>Gallery</li><li><a href>Properties</a></li></ul><a class="edit-page" href="https://github.com/GiovineItalia/Compose.jl/blob/master/docs/src/gallery/properties.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Properties</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="properties_gallery-1" href="#properties_gallery-1">Properties</a></h1><h2><a class="nav-anchor" id="[arrow](@ref)-1" href="#[arrow](@ref)-1"><a href="../../library/#Compose.arrow-Tuple{AbstractArray}"><code>arrow</code></a></a></h2><div><pre><code class="language-julia">using Compose
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Properties · Compose.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../index.html"><img class="logo" src="../../assets/logo.png" alt="Compose.jl logo"/></a><h1>Compose.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Home</a></li><li><a class="toctext" href="../../tutorial/">Tutorial</a></li><li><span class="toctext">Gallery</span><ul><li><a class="toctext" href="../forms/">Forms</a></li><li class="current"><a class="toctext" href>Properties</a><ul class="internal"><li><a class="toctext" href="#[arrow](@ref)-1"><code>arrow</code></a></li><li><a class="toctext" href="#[fill](@ref),-[fillopacity](@ref)-1"><code>fill</code>, <code>fillopacity</code></a></li></ul></li><li><a class="toctext" href="../transforms/">Transformations</a></li></ul></li><li><a class="toctext" href="../../library/">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li>Gallery</li><li><a href>Properties</a></li></ul><a class="edit-page" href="https://github.com/GiovineItalia/Compose.jl/blob/master/docs/src/gallery/properties.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Properties</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="properties_gallery-1" href="#properties_gallery-1">Properties</a></h1><h2><a class="nav-anchor" id="[arrow](@ref)-1" href="#[arrow](@ref)-1"><a href="../../library/#Compose.arrow-Tuple{AbstractArray}"><code>arrow</code></a></a></h2><div><pre><code class="language-julia">using Compose
 set_default_graphic_size(14cm,5cm)
 θ, r = 2π*rand(3),  0.1.+0.08*rand(3)
 c, s = r.*cos.(θ), r.*sin.(θ)
@@ -18,24 +18,24 @@ img = compose(context(), arrow(), stroke(&quot;black&quot;), fill(nothing),
      stroke-width="0.3"
      font-size="3.88"
 
-     id="img-5cdf202c">
+     id="img-3878ede6">
 <defs>
   <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
     <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
   </marker>
 </defs>
-<g fill="rgba(0,0,0,0)" stroke="#000000" marker-end="url(#arrow)" id="img-5cdf202c-1">
+<g fill="rgba(0,0,0,0)" stroke="#000000" marker-end="url(#arrow)" id="img-3878ede6-1">
   <g transform="translate(112,25)">
     <path fill="none" d="M-14,0 C0,-50 0,50 14,0" class="primitive"/>
   </g>
-  <g transform="translate(62.71,25.76)" stroke="#FF0000">
-    <path fill="none" d="M7.29,-0.76 L -7.29 0.76" class="primitive"/>
+  <g transform="translate(79.96,23.33)" stroke="#FF0000">
+    <path fill="none" d="M-9.96,1.67 L 9.96 -1.67" class="primitive"/>
   </g>
-  <g transform="translate(67.39,28)" stroke="#008000">
-    <path fill="none" d="M2.61,-3 L -2.61 3" class="primitive"/>
+  <g transform="translate(74.73,27)" stroke="#008000">
+    <path fill="none" d="M-4.73,-2 L 4.73 2" class="primitive"/>
   </g>
-  <g transform="translate(71.37,20.79)" stroke="#00BFFF">
-    <path fill="none" d="M-1.37,4.21 L 1.37 -4.21" class="primitive"/>
+  <g transform="translate(75.45,27.3)" stroke="#00BFFF">
+    <path fill="none" d="M-5.45,-2.3 L 5.45 2.3" class="primitive"/>
   </g>
   <g transform="translate(25.2,25)">
     <path d="M7.92,-7.92 A11.2,11.2 0 1 1 -11.2,0" class="primitive"/>
@@ -205,19 +205,19 @@ img = compose(context(),
      stroke-width="0.3"
      font-size="3.88"
 
-     id="img-f155548d">
+     id="img-91f773fb">
 <defs>
   <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
     <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
   </marker>
 </defs>
-<g transform="translate(103.6,20)" fill-opacity="0.5" fill="rgba(255,255,0,1)">
+<g transform="translate(103.6,20)" fill="rgba(255,255,0,1)" fill-opacity="0.5">
   <circle cx="0" cy="0" r="14" class="primitive"/>
 </g>
-<g transform="translate(126,20)" fill-opacity="0.3" fill="rgba(255,0,0,1)">
+<g transform="translate(126,20)" fill="rgba(255,0,0,1)" fill-opacity="0.3">
   <circle cx="0" cy="0" r="14" class="primitive"/>
 </g>
-<g fill-opacity="0.3" id="img-f155548d-1">
+<g fill-opacity="0.3" id="img-91f773fb-1">
   <g transform="translate(58.8,20)" fill="rgba(255,255,0,1)">
     <circle cx="0" cy="0" r="14" class="primitive"/>
   </g>
@@ -225,7 +225,7 @@ img = compose(context(),
     <circle cx="0" cy="0" r="14" class="primitive"/>
   </g>
 </g>
-<g fill="rgba(0,0,255,1)" fill-opacity="0.3" id="img-f155548d-2">
+<g fill="rgba(0,0,255,1)" fill-opacity="0.3" id="img-91f773fb-2">
   <g transform="translate(14,20)">
     <circle cx="0" cy="0" r="14" class="primitive"/>
   </g>
@@ -233,7 +233,7 @@ img = compose(context(),
     <circle cx="0" cy="0" r="14" class="primitive"/>
   </g>
 </g>
-<g fill="rgba(255,165,0,1)" fill-opacity="0.3" id="img-f155548d-3">
+<g fill="rgba(255,165,0,1)" fill-opacity="0.3" id="img-91f773fb-3">
   <g transform="translate(70,20)">
     <circle cx="0" cy="0" r="11.2" class="primitive"/>
   </g>
@@ -385,4 +385,4 @@ amount2:1-d})};a.filter.invert.toString=function(){return this()};a.filter.brigh
 
 ]]> </script>
 </svg>
-</div><footer><hr/><a class="previous" href="../forms/"><span class="direction">Previous</span><span class="title">Forms</span></a><a class="next" href="../../library/"><span class="direction">Next</span><span class="title">Library</span></a></footer></article></body></html>
+</div><footer><hr/><a class="previous" href="../forms/"><span class="direction">Previous</span><span class="title">Forms</span></a><a class="next" href="../transforms/"><span class="direction">Next</span><span class="title">Transformations</span></a></footer></article></body></html>
