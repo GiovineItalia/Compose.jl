@@ -5,6 +5,27 @@ Author = ["Mattriks"]
 
 # [Transformations](@id transforms_gallery)
 
+## [`Mirror`](@ref)
+
+```@example
+using Compose
+set_default_graphic_size(15cm,5cm)
+
+set_default_graphic_size(15cm,5cm)
+f_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4), (.6, .4), (.6, .5),
+    (.2, .5), (.2, .9), (.1, .9), (.1, .1)]
+f_points = (x->0.4.*x.+0.1).(f_points)
+fpoly(ϕ::Float64) = (context(rotation=Rotation(ϕ,0.3,0.46)), polygon(f_points))
+
+imgf(θ, ϕ=0.0, x=0.5,y=0.5) = compose(context(), fill("salmon"), fpoly(ϕ),
+  (context(rotation=Rotation(θ,x,y)), line([(x-0.5,y),(x+0.5,y)]), circle(x,y, 0.02)),
+  (context(mirror=Mirror(θ, x, y)), fpoly(ϕ))
+)
+
+F = hstack(imgf(-π/4), imgf(-π/2.2), imgf(π/4, 1π))
+img = compose(context(), rectangle(), fill(nothing), stroke("black"), F)
+```
+
 ## [`Rotation`](@ref)
  
 ```@example

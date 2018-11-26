@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     version="1.2"
+     width="70mm" height="70mm" viewBox="0 0 70 70"
+     stroke="none"
+     fill="#000000"
+     stroke-width="0.3"
+     font-size="3.88"
+>
+<defs>
+  <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
+  </marker>
+</defs>
+<g transform="translate(7,7)">
+  <path d="M-1.01,0.27 L -3.03 -1.75 -1.75 -3.03 0.27 -1.01 3.03 -1.75 3.5 0 0.74 0.74 0 3.5 -1.75 3.03 z" class="primitive"/>
+</g>
+<g transform="translate(21,21)">
+  <path d="M-0.27,1.01 L 1.75 3.03 3.03 1.75 1.01 -0.27 1.75 -3.03 -0 -3.5 -0.74 -0.74 -3.5 -0 -3.03 1.75 z" class="primitive"/>
+</g>
+</svg>

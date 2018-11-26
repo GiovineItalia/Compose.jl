@@ -1,4 +1,5 @@
 using Measures: Add, Min, Max, Div, Mul, Neg
+using LinearAlgebra
 
 # Measure Constants
 # -----------------
@@ -228,9 +229,20 @@ mutable struct Mirror
     point::Vec
 end
 
+"""
+    Mirror(θ, x, y)
+
+Mirror line passing through point `(x,y)` at angle `θ` (in radians).
+"""
 Mirror(theta::Number, offset_x, offset_y) = Mirror(convert(Float64, theta), (offset_x, offset_y))
 Mirror(theta::Number, offset::XYTupleOrVec) =
         Mirror(convert(Float64, theta), (x_measure(offset[1]), y_measure(offset[2])))
+
+"""
+    Mirror(θ)
+        
+`Mirror(θ)=Mirror(θ, 0.5w, 0.5h)`
+"""        
 Mirror(theta::Number) = Mirror(convert(Float64, theta), 0.5w, 0.5h)
 Mirror() = Mirror(0.0, (0.5w, 0.5h))
 
@@ -242,11 +254,11 @@ function convert(::Type{Transform}, mir::Mirror)
     x0 = mir.point[1]
     y0 = mir.point[2]
 
-    offset = (2I - 2n*n') * [x0.abs, y0.abs]
+    offset = (2I - 2n*n') * [x0.value, y0.value]
     scale  = (2n*n' - I)
     M = vcat(hcat(scale, offset), [0 0 1])
 
-    MatrixTransform(M)
+    return MatrixTransform(M)
 end
 
 copy(mir::Mirror) = Mirror(mir)
@@ -284,6 +296,9 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::BoundingBox) =
 
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Rotation) =
         Rotation(a.theta, resolve(box, units, t, a.offset))
+
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Mirror) =
+        Mirror(a.theta, resolve(box, units, t, a.point))
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, u::UnitBox)
     if !ispadded(u)
