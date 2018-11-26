@@ -305,11 +305,35 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "gallery/transforms/#[Mirror](@ref)-1",
+    "page": "Transformations",
+    "title": "Mirror",
+    "category": "section",
+    "text": "using Compose\nset_default_graphic_size(15cm,5cm)\n\nset_default_graphic_size(15cm,5cm)\nf_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4), (.6, .4), (.6, .5),\n    (.2, .5), (.2, .9), (.1, .9), (.1, .1)]\nf_points = (x->0.4.*x.+0.1).(f_points)\nfpoly(ϕ::Float64) = (context(rotation=Rotation(ϕ,0.3,0.46)), polygon(f_points))\n\nimgf(θ, ϕ=0.0, x=0.5,y=0.5) = compose(context(), fill(\"salmon\"), fpoly(ϕ),\n  (context(rotation=Rotation(θ,x,y)), line([(x-0.5,y),(x+0.5,y)]), circle(x,y, 0.02)),\n  (context(mirror=Mirror(θ, x, y)), fpoly(ϕ))\n)\n\nF = hstack(imgf(-π/4), imgf(-π/2.2), imgf(π/4, 1π))\nimg = compose(context(), rectangle(), fill(nothing), stroke(\"black\"), F)"
+},
+
+{
     "location": "gallery/transforms/#[Rotation](@ref)-1",
     "page": "Transformations",
     "title": "Rotation",
     "category": "section",
     "text": "using Compose\nset_default_graphic_size(15cm,5cm)\n\n# This example also illustrates nested contexts\nf_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4),\n    (.6, .4), (.6, .5), (.2, .5), (.2, .9), (.1, .9), (.1, .1)]\nrect(c::String) = (context(), rectangle(), stroke(c))\ncirc(c::String, s::Float64=0.4) =  (context(), circle([x],[y],[0.03,s]), stroke(c))\nfpoly(c::String) = (context(), polygon(f_points), fill(c))\ncontextC(θ::Float64) = (context(0.5,0.5,1.5,1.5, units=UnitBox(0,0,1,1),\n        rotation=Rotation(θ,x,y)), fpoly(\"steelblue\"), circ(\"orange\"))\nimgf(θ::Float64) =  compose(context(), fill(nothing), rect(\"black\"),\n        (context(0.15, 0.15, 0.7, 0.7, units=UnitBox(0,0,2,2)), rect(\"red\"), \n        contextC(θ)) # context C in context B in context A\n    ) \n\nx, y, θ = 0.5, 0.25, π/3\nhstack(imgf(-θ), imgf(0.), imgf(θ))"
+},
+
+{
+    "location": "library/#Compose.Mirror-Tuple{Number,Any,Any}",
+    "page": "Library",
+    "title": "Compose.Mirror",
+    "category": "method",
+    "text": "Mirror(θ, x, y)\n\nMirror line passing through point (x,y) at angle θ (in radians).\n\n\n\n\n\n"
+},
+
+{
+    "location": "library/#Compose.Mirror-Tuple{Number}",
+    "page": "Library",
+    "title": "Compose.Mirror",
+    "category": "method",
+    "text": "Mirror(θ)\n\nMirror(θ)=Mirror(θ, 0.5w, 0.5h)\n\n\n\n\n\n"
 },
 
 {
@@ -589,7 +613,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.text",
     "category": "function",
-    "text": "text(x, y, value [,halign::HAlignment [,valign::VAlignment [,rot::Rotation]]])\n\nDraw the text value at the position (x,y) relative to the current context.\n\nThe default alignment of the text is hleft vbottom. The vertical and horizontal alignment is specified by passing hleft, hcenter or hright and vtop, vcenter or vbottom as values for halgin and valgin respectively.\n\n\n\n\n\n"
+    "text": "text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
 },
 
 {
@@ -597,7 +621,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.text",
     "category": "function",
-    "text": "text(xs::AbstractArray, ys::AbstractArray, values::AbstractArray [,haligns::HAlignment [,valigns::VAlignment [,rots::Rotation]]])\n\nArguments can be passed in arrays in order to perform multiple drawing operations at once.\n\n\n\n\n\n"
+    "text": "text(x, y, value [,halign::HAlignment [,valign::VAlignment [,rot::Rotation]]])\n\nDraw the text value at the position (x,y) relative to the current context.\n\nThe default alignment of the text is hleft vbottom. The vertical and horizontal alignment is specified by passing hleft, hcenter or hright and vtop, vcenter or vbottom as values for halgin and valgin respectively.\n\n\n\n\n\n"
 },
 
 {
