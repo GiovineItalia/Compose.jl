@@ -13,13 +13,13 @@
     <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
   </marker>
 </defs>
-<g transform="translate(10,10)" fill="rgba(244,229,213,1)">
+<g transform="translate(10,10)" fill="#F4E6D6">
   <circle cx="0" cy="0" r="4" class="primitive"/>
 </g>
-<g transform="translate(20,20)" fill="rgba(0,196,191,1)">
+<g transform="translate(20,20)" fill="#00C5C0">
   <circle cx="0" cy="0" r="4" class="primitive"/>
 </g>
-<g transform="translate(30,30)" fill="rgba(255,123,122,1)">
+<g transform="translate(30,30)" fill="#FF7C7A">
   <circle cx="0" cy="0" r="4" class="primitive"/>
 </g>
 </svg>
