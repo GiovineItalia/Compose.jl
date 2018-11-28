@@ -85,9 +85,6 @@ end
 # Format a color for SVG.
 svg_fmt_color(c::Color) = string("#", hex(c))
 svg_fmt_color(c::Nothing) = "none"
-svg_fmt_color(c::CT) where CT<:TransparentColor =
-    string("rgba(", join(floor.(Int,[c.r,c.g,c.b].*255),","), ",", svg_fmt_float(c.alpha),")")
-
 
 # Replace newlines in a string with the appropriate SVG tspan tags.
 function svg_newlines(input::AbstractString, x::Float64)
@@ -603,7 +600,12 @@ function print_property(img::SVG, property::StrokePrimitive)
 end
 
 function print_property(img::SVG, property::FillPrimitive)
-        @printf(img.out, " fill=\"%s\"", svg_fmt_color(property.color))
+    if property.color.alpha != 1.0
+        @printf(img.out, " fill=\"%s\" fill-opacity=\"%0.3f\"",
+                svg_fmt_color(color(property.color)), property.color.alpha)
+    else
+        @printf(img.out, " fill=\"%s\"", svg_fmt_color(color(property.color)))
+    end
 end
 
 function print_property(img::SVG, property::StrokeDashPrimitive)
@@ -705,6 +707,7 @@ function print_vector_properties(img::SVG, idx::Int, suppress_fill::Bool=false)
     end
 
     has_stroke_opacity = haskey(img.vector_properties, StrokeOpacity)
+    has_fill_opacity = haskey(img.vector_properties, FillOpacity)
 
     for (propertytype, property) in img.vector_properties
         if property === nothing ||
@@ -715,8 +718,10 @@ function print_vector_properties(img::SVG, idx::Int, suppress_fill::Bool=false)
         idx > length(property.primitives) &&
                 error("Vector form and vector property differ in length. Can't distribute.")
 
-        # let the opacity primitive clobber the alpha value in stroke
-        if propertytype == Stroke && has_stroke_opacity
+        # let the opacity primitives clobber the alpha value in fill and stroke
+        if propertytype == Fill && has_fill_opacity
+           print_property(img, FillPrimitive(RGBA{Float64}(color(property.primitives[idx].color), 1.0)))
+        elseif propertytype == Stroke && has_stroke_opacity
            print_property(img, StrokePrimitive(RGBA{Float64}(color(property.primitives[idx].color), 1.0)))
         else
             print_property(img, property.primitives[idx])
