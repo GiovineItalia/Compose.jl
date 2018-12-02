@@ -1108,6 +1108,7 @@ clippathurl(img::SVG, property::ClipPrimitive) = get!(() -> genid(img), img.clip
 
 function push_property_frame(img::SVG, properties::Vector{Property})
     isempty(properties) && return
+    svgalphatest(properties)
 
     frame = SVGPropertyFrame()
     applied_properties = Set{Type}()
@@ -1257,8 +1258,17 @@ end
 
 
 
+# Currently for svg, you can't use a transparent fill(color) and fillopacity() together,
+# so throw a warning if a user tries to do that. 
 
-
-
+function svgalphatest(properties::Vector{Property})
+    has_fill_opacity = any(isa.(properties, Property{FillOpacityPrimitive}))
+    !has_fill_opacity && return
+    is_fill = isa.(properties, Property{FillPrimitive})
+    !any(is_fill) && return
+    fillproperties = properties[is_fill][1]
+    has_alpha = any([alpha(x.color) for x in fillproperties.primitives].<1.0) 
+    has_alpha && @warn "For svg transparent colors, use either e.g. fill(RGBA(r,g,b,a)) or fillopacity(a), but not both."
+end
 
 
