@@ -309,7 +309,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Transformations",
     "title": "Mirror",
     "category": "section",
-    "text": "using Compose\nset_default_graphic_size(15cm,5cm)\n\nset_default_graphic_size(15cm,5cm)\nf_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4), (.6, .4), (.6, .5),\n    (.2, .5), (.2, .9), (.1, .9), (.1, .1)]\nf_points = (x->0.4.*x.+0.1).(f_points)\nfpoly(ϕ::Float64) = (context(rotation=Rotation(ϕ,0.3,0.46)), polygon(f_points))\n\nimgf(θ, ϕ=0.0, x=0.5,y=0.5) = compose(context(), fill(\"salmon\"), fpoly(ϕ),\n  (context(rotation=Rotation(θ,x,y)), line([(x-0.5,y),(x+0.5,y)]), circle(x,y, 0.02)),\n  (context(mirror=Mirror(θ, x, y)), fpoly(ϕ))\n)\n\nF = hstack(imgf(-π/4), imgf(-π/2.2), imgf(π/4, 1π))\nimg = compose(context(), rectangle(), fill(nothing), stroke(\"black\"), F)"
+    "text": "using Compose\nset_default_graphic_size(15cm,5cm)\n\nf_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4), (.6, .4), (.6, .5),\n    (.2, .5), (.2, .9), (.1, .9), (.1, .1)]\nf_points = (x->0.4.*x.+0.1).(f_points)\nfpoly(ϕ::Float64) = (context(rotation=Rotation(ϕ,0.3,0.46)), polygon(f_points))\n\nimgfa(θ, ϕ=0.0, x=0.5,y=0.5) = compose(context(), \n  fill(\"salmon\"), fillopacity(1.0), fpoly(ϕ),\n  (context(rotation=Rotation(θ,x,y)), line([(x-0.5,y),(x+0.5,y)]), circle(x,y, 0.02)),\n  (context(mirror=Mirror(θ, x, y)), fpoly(ϕ))\n)\n\nFmir = hstack(imgfa(-π/4), imgfa(-π/2.2), imgfa(π/4, 1π))\nimg = compose(context(), rectangle(), fill(nothing), stroke(\"black\"), Fmir)"
 },
 
 {
@@ -317,7 +317,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Transformations",
     "title": "Rotation",
     "category": "section",
-    "text": "using Compose\nset_default_graphic_size(15cm,5cm)\n\n# This example also illustrates nested contexts\nf_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4),\n    (.6, .4), (.6, .5), (.2, .5), (.2, .9), (.1, .9), (.1, .1)]\nrect(c::String) = (context(), rectangle(), stroke(c))\ncirc(c::String, s::Float64=0.4) =  (context(), circle([x],[y],[0.03,s]), stroke(c))\nfpoly(c::String) = (context(), polygon(f_points), fill(c))\ncontextC(θ::Float64) = (context(0.5,0.5,1.5,1.5, units=UnitBox(0,0,1,1),\n        rotation=Rotation(θ,x,y)), fpoly(\"steelblue\"), circ(\"orange\"))\nimgf(θ::Float64) =  compose(context(), fill(nothing), rect(\"black\"),\n        (context(0.15, 0.15, 0.7, 0.7, units=UnitBox(0,0,2,2)), rect(\"red\"), \n        contextC(θ)) # context C in context B in context A\n    ) \n\nx, y, θ = 0.5, 0.25, π/3\nhstack(imgf(-θ), imgf(0.), imgf(θ))"
+    "text": "using Compose\nset_default_graphic_size(15cm,5cm)\n\n# This example also illustrates nested contexts\nf_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4),\n    (.6, .4), (.6, .5), (.2, .5), (.2, .9), (.1, .9), (.1, .1)]\nrect(c::String) = (context(), rectangle(), stroke(c))\ncirc(c::String, s::Float64=0.4) =  (context(), circle([x],[y],[0.03,s]), stroke(c))\nfpoly(c::String) = (context(), polygon(f_points), fill(c), fillopacity(1.0))\ncontextC(θ::Float64) = (context(0.5,0.5,1.5,1.5, units=UnitBox(0,0,1,1),\n        rotation=Rotation(θ,x,y)), fpoly(\"steelblue\"), circ(\"orange\"))\nimgf(θ::Float64) =  compose(context(),\n        (context(0.15, 0.15, 0.7, 0.7, units=UnitBox(0,0,2,2)), rect(\"red\"),\n        contextC(θ)) # context C in context B in context A\n    )\n\nx, y, θ = 0.5, 0.25, π/3\nFrot =  hstack(imgf(-θ), imgf(0.), imgf(θ))\nimg = compose(context(), rectangle(), fill(nothing), stroke(\"black\"), Frot)"
 },
 
 {
@@ -453,7 +453,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
+    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
 },
 
 {
@@ -461,7 +461,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
 },
 
 {
@@ -501,7 +501,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.fillopacity",
     "category": "method",
-    "text": "fillopacity(value)\n\nDefine a fill opacity, where 0≤value≤1.\n\n\n\n\n\n"
+    "text": "fillopacity(value)\n\nDefine a fill opacity, where 0≤value≤1.  For svg, nested contexts  will inherit from parent contexts e.g. (context(), fillopacity(a), (context(), fill(c::String), circle())).\n\n\n\n\n\n"
 },
 
 {

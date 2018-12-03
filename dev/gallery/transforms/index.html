@@ -2,19 +2,19 @@
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Transformations · Compose.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../index.html"><img class="logo" src="../../assets/logo.png" alt="Compose.jl logo"/></a><h1>Compose.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Home</a></li><li><a class="toctext" href="../../tutorial/">Tutorial</a></li><li><span class="toctext">Gallery</span><ul><li><a class="toctext" href="../forms/">Forms</a></li><li><a class="toctext" href="../properties/">Properties</a></li><li class="current"><a class="toctext" href>Transformations</a><ul class="internal"><li><a class="toctext" href="#[Mirror](@ref)-1"><code>Mirror</code></a></li><li><a class="toctext" href="#[Rotation](@ref)-1"><code>Rotation</code></a></li></ul></li></ul></li><li><a class="toctext" href="../../library/">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li>Gallery</li><li><a href>Transformations</a></li></ul><a class="edit-page" href="https://github.com/GiovineItalia/Compose.jl/blob/master/docs/src/gallery/transforms.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Transformations</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="transforms_gallery-1" href="#transforms_gallery-1">Transformations</a></h1><h2><a class="nav-anchor" id="[Mirror](@ref)-1" href="#[Mirror](@ref)-1"><a href="../../library/#Compose.Mirror-Tuple{Number,Any,Any}"><code>Mirror</code></a></a></h2><div><pre><code class="language-julia">using Compose
 set_default_graphic_size(15cm,5cm)
 
-set_default_graphic_size(15cm,5cm)
 f_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4), (.6, .4), (.6, .5),
     (.2, .5), (.2, .9), (.1, .9), (.1, .1)]
 f_points = (x-&gt;0.4.*x.+0.1).(f_points)
 fpoly(ϕ::Float64) = (context(rotation=Rotation(ϕ,0.3,0.46)), polygon(f_points))
 
-imgf(θ, ϕ=0.0, x=0.5,y=0.5) = compose(context(), fill(&quot;salmon&quot;), fpoly(ϕ),
+imgfa(θ, ϕ=0.0, x=0.5,y=0.5) = compose(context(),
+  fill(&quot;salmon&quot;), fillopacity(1.0), fpoly(ϕ),
   (context(rotation=Rotation(θ,x,y)), line([(x-0.5,y),(x+0.5,y)]), circle(x,y, 0.02)),
   (context(mirror=Mirror(θ, x, y)), fpoly(ϕ))
 )
 
-F = hstack(imgf(-π/4), imgf(-π/2.2), imgf(π/4, 1π))
-img = compose(context(), rectangle(), fill(nothing), stroke(&quot;black&quot;), F)</code></pre><?xml version="1.0" encoding="UTF-8"?>
+Fmir = hstack(imgfa(-π/4), imgfa(-π/2.2), imgfa(π/4, 1π))
+img = compose(context(), rectangle(), fill(nothing), stroke(&quot;black&quot;), Fmir)</code></pre><?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
      version="1.2"
@@ -24,17 +24,17 @@ img = compose(context(), rectangle(), fill(nothing), stroke(&quot;black&quot;), 
      stroke-width="0.3"
      font-size="3.88"
 
-     id="img-f207e034">
+     id="img-f7e498d7">
 <defs>
   <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
     <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
   </marker>
 </defs>
-<g stroke="#000000" fill="#000000" fill-opacity="0.000" id="img-f207e034-1">
+<g stroke="#000000" fill="#000000" fill-opacity="0.000" id="img-f7e498d7-1">
   <g transform="translate(75,25)">
     <path d="M-75,-25 L 75 -25 75 25 -75 25 z" class="primitive"/>
   </g>
-  <g fill="#FA8072" id="img-f207e034-2">
+  <g fill-opacity="1" fill="#FA8072" id="img-f7e498d7-2">
     <g transform="translate(133.18,17.55)">
       <path d="M5.82,5.45 L 5.82 -10.55 3.82 -10.55 3.82 3.45 -0.18 3.45 -0.18 -4.55 -2.18 -4.55 -2.18 3.45 -10.18 3.45 -10.18 5.45 5.82 5.45 z" class="primitive"/>
     </g>
@@ -48,7 +48,7 @@ img = compose(context(), rectangle(), fill(nothing), stroke(&quot;black&quot;), 
       <path d="M5.45,5.82 L -10.55 5.82 -10.55 3.82 3.45 3.82 3.45 -0.18 -4.55 -0.18 -4.55 -2.18 3.45 -2.18 3.45 -10.18 5.45 -10.18 5.45 5.82 z" class="primitive"/>
     </g>
   </g>
-  <g fill="#FA8072" id="img-f207e034-3">
+  <g fill-opacity="1" fill="#FA8072" id="img-f7e498d7-3">
     <g transform="translate(90.47,16.85)">
       <path d="M6.87,-4.05 L -8.48 -8.55 -9.04 -6.63 4.39 -2.69 3.26 1.15 -4.41 -1.11 -4.98 0.81 2.7 3.07 0.45 10.74 2.37 11.31 6.87 -4.05 z" class="primitive"/>
     </g>
@@ -62,7 +62,7 @@ img = compose(context(), rectangle(), fill(nothing), stroke(&quot;black&quot;), 
       <path d="M-5.45,-5.82 L 10.55 -5.82 10.55 -3.82 -3.45 -3.82 -3.45 0.18 4.55 0.18 4.55 2.18 -3.45 2.18 -3.45 10.18 -5.45 10.18 -5.45 -5.82 z" class="primitive"/>
     </g>
   </g>
-  <g fill="#FA8072" id="img-f207e034-4">
+  <g fill-opacity="1" fill="#FA8072" id="img-f7e498d7-4">
     <g transform="translate(37.18,37.55)">
       <path d="M5.82,5.45 L 5.82 -10.55 3.82 -10.55 3.82 3.45 -0.18 3.45 -0.18 -4.55 -2.18 -4.55 -2.18 3.45 -10.18 3.45 -10.18 5.45 5.82 5.45 z" class="primitive"/>
     </g>
@@ -232,16 +232,17 @@ f_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4),
     (.6, .4), (.6, .5), (.2, .5), (.2, .9), (.1, .9), (.1, .1)]
 rect(c::String) = (context(), rectangle(), stroke(c))
 circ(c::String, s::Float64=0.4) =  (context(), circle([x],[y],[0.03,s]), stroke(c))
-fpoly(c::String) = (context(), polygon(f_points), fill(c))
+fpoly(c::String) = (context(), polygon(f_points), fill(c), fillopacity(1.0))
 contextC(θ::Float64) = (context(0.5,0.5,1.5,1.5, units=UnitBox(0,0,1,1),
         rotation=Rotation(θ,x,y)), fpoly(&quot;steelblue&quot;), circ(&quot;orange&quot;))
-imgf(θ::Float64) =  compose(context(), fill(nothing), rect(&quot;black&quot;),
+imgf(θ::Float64) =  compose(context(),
         (context(0.15, 0.15, 0.7, 0.7, units=UnitBox(0,0,2,2)), rect(&quot;red&quot;),
         contextC(θ)) # context C in context B in context A
     )
 
 x, y, θ = 0.5, 0.25, π/3
-hstack(imgf(-θ), imgf(0.), imgf(θ))</code></pre><?xml version="1.0" encoding="UTF-8"?>
+Frot =  hstack(imgf(-θ), imgf(0.), imgf(θ))
+img = compose(context(), rectangle(), fill(nothing), stroke(&quot;black&quot;), Frot)</code></pre><?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
      version="1.2"
@@ -251,14 +252,17 @@ hstack(imgf(-θ), imgf(0.), imgf(θ))</code></pre><?xml version="1.0" encoding="
      stroke-width="0.3"
      font-size="3.88"
 
-     id="img-9eb3bb38">
+     id="img-88535ba6">
 <defs>
   <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
     <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
   </marker>
 </defs>
-<g fill="#000000" fill-opacity="0.000" id="img-9eb3bb38-1">
-  <g stroke="#FFA500" id="img-9eb3bb38-2">
+<g stroke="#000000" fill="#000000" fill-opacity="0.000" id="img-88535ba6-1">
+  <g transform="translate(75,25)">
+    <path d="M-75,-25 L 75 -25 75 25 -75 25 z" class="primitive"/>
+  </g>
+  <g stroke="#FFA500" id="img-88535ba6-2">
     <g transform="translate(129.38,22.81)">
       <circle cx="0" cy="0" r="0.79" class="primitive"/>
     </g>
@@ -266,24 +270,17 @@ hstack(imgf(-θ), imgf(0.), imgf(θ))</code></pre><?xml version="1.0" encoding="
       <circle cx="0" cy="0" r="10.5" class="primitive"/>
     </g>
   </g>
-  <g fill="#4682B4" id="img-9eb3bb38-3">
+  <g fill-opacity="1" fill="#4682B4" id="img-88535ba6-3">
     <g transform="translate(124.5,21.77)">
       <path d="M3.03,-10.02 L 13.53 8.17 11.26 9.48 2.07 -6.43 -2.47 -3.81 2.78 5.29 0.5 6.6 -4.75 -2.49 -13.84 2.76 -15.15 0.48 3.03 -10.02 z" class="primitive"/>
     </g>
   </g>
-  <g stroke="#FF0000" id="img-9eb3bb38-4">
+  <g stroke="#FF0000" id="img-88535ba6-4">
     <g transform="translate(125,25)">
       <path d="M-17.5,-17.5 L 17.5 -17.5 17.5 17.5 -17.5 17.5 z" class="primitive"/>
     </g>
   </g>
-  <g stroke="#000000" id="img-9eb3bb38-5">
-    <g transform="translate(125,25)">
-      <path d="M-25,-25 L 25 -25 25 25 -25 25 z" class="primitive"/>
-    </g>
-  </g>
-</g>
-<g fill="#000000" fill-opacity="0.000" id="img-9eb3bb38-6">
-  <g stroke="#FFA500" id="img-9eb3bb38-7">
+  <g stroke="#FFA500" id="img-88535ba6-5">
     <g transform="translate(79.38,22.81)">
       <circle cx="0" cy="0" r="0.79" class="primitive"/>
     </g>
@@ -291,24 +288,17 @@ hstack(imgf(-θ), imgf(0.), imgf(θ))</code></pre><?xml version="1.0" encoding="
       <circle cx="0" cy="0" r="10.5" class="primitive"/>
     </g>
   </g>
-  <g fill="#4682B4" id="img-9eb3bb38-8">
+  <g fill-opacity="1" fill="#4682B4" id="img-88535ba6-6">
     <g transform="translate(76.03,26.51)">
       <path d="M-7.16,-7.64 L 13.84 -7.64 13.84 -5.01 -4.53 -5.01 -4.53 0.24 5.97 0.24 5.97 2.86 -4.53 2.86 -4.53 13.36 -7.16 13.36 -7.16 -7.64 z" class="primitive"/>
     </g>
   </g>
-  <g stroke="#FF0000" id="img-9eb3bb38-9">
+  <g stroke="#FF0000" id="img-88535ba6-7">
     <g transform="translate(75,25)">
       <path d="M-17.5,-17.5 L 17.5 -17.5 17.5 17.5 -17.5 17.5 z" class="primitive"/>
     </g>
   </g>
-  <g stroke="#000000" id="img-9eb3bb38-10">
-    <g transform="translate(75,25)">
-      <path d="M-25,-25 L 25 -25 25 25 -25 25 z" class="primitive"/>
-    </g>
-  </g>
-</g>
-<g fill="#000000" fill-opacity="0.000" id="img-9eb3bb38-11">
-  <g stroke="#FFA500" id="img-9eb3bb38-12">
+  <g stroke="#FFA500" id="img-88535ba6-8">
     <g transform="translate(29.38,22.81)">
       <circle cx="0" cy="0" r="0.79" class="primitive"/>
     </g>
@@ -316,19 +306,14 @@ hstack(imgf(-θ), imgf(0.), imgf(θ))</code></pre><?xml version="1.0" encoding="
       <circle cx="0" cy="0" r="10.5" class="primitive"/>
     </g>
   </g>
-  <g fill="#4682B4" id="img-9eb3bb38-13">
+  <g fill-opacity="1" fill="#4682B4" id="img-88535ba6-9">
     <g transform="translate(30.91,27.56)">
       <path d="M-10.19,2.38 L 0.31 -15.8 2.58 -14.49 -6.61 1.42 -2.06 4.05 3.19 -5.05 5.46 -3.73 0.21 5.36 9.31 10.61 7.99 12.88 -10.19 2.38 z" class="primitive"/>
     </g>
   </g>
-  <g stroke="#FF0000" id="img-9eb3bb38-14">
+  <g stroke="#FF0000" id="img-88535ba6-10">
     <g transform="translate(25,25)">
       <path d="M-17.5,-17.5 L 17.5 -17.5 17.5 17.5 -17.5 17.5 z" class="primitive"/>
-    </g>
-  </g>
-  <g stroke="#000000" id="img-9eb3bb38-15">
-    <g transform="translate(25,25)">
-      <path d="M-25,-25 L 25 -25 25 25 -25 25 z" class="primitive"/>
     </g>
   </g>
 </g>
