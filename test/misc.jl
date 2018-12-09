@@ -141,6 +141,7 @@ end
 
 @testset "Image keyword args" begin
     @test typeof(PNG("foo.png", 4inch, 3inch, dpi=172)) <: Compose.Image
+    rm("foo.png")
 end
 
 @testset "No Global RNG contamination" begin
