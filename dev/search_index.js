@@ -321,6 +321,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "gallery/transforms/#[Shear](@ref)-1",
+    "page": "Transformations",
+    "title": "Shear",
+    "category": "section",
+    "text": "using Compose\nset_default_graphic_size(15cm, 5cm)\n\nf_points = [(.1, .1), (.9, .1), (.9, .2), (.2, .2), (.2, .4), (.6, .4),\n    (.6, .5), (.2, .5), (.2, .9), (.1, .9), (.1, .1)]\nf_points = (x->0.5.*x.+0.3).(f_points)\nctxl(θ, x, y) = (context(rotation=Rotation(θ, x, y)), circle(x,y, 0.01), \n    line([(x-0.5,y),(x+0.5,y)]))\nfpoly(c::String) = (context(),  polygon(f_points), fill(c) )\nctxf(θ, ϕ, s, x, y,c) = (context(rotation=Rotation(-θ, x, y), \n        shear=Shear(s, ϕ, x, y)), fpoly(c))\n\nx, y, θ  = 0.5, 0.5, -π/6\nimg1 = compose(context(), stroke(\"black\"), ctxl(θ,x,y),  ctxf(0,0,0,x,y, \"yellow\"),\n    (context(), arc(x,y,0.3,π+θ,π-0.15), arrow()) )\nimg2 = compose(context(), stroke(\"black\"), ctxl(0,x,y),\n    ctxf(θ,0,1.8,x,y,\"transparent\"), ctxf(θ,0,0,x,y,\"yellow\"),\n    text(0.5, 0.1, \"x\' = x+y*shear\", hcenter, vcenter) )\nimg3 = compose(context(), stroke(\"black\"), \n    ctxl(θ, x, y), ctxf(0,θ,1.8,x,y,\"yellow\") )\n\nhstack(img1, img2, img3)"
+},
+
+{
     "location": "library/#Compose.Mirror-Tuple{Number,Any,Any}",
     "page": "Library",
     "title": "Compose.Mirror",
@@ -350,6 +358,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Compose.Rotation",
     "category": "method",
     "text": "Rotation(θ)\n\nRotation(θ)=Rotation(θ, 0.5w, 0.5h)\n\n\n\n\n\n"
+},
+
+{
+    "location": "library/#Compose.Shear-Tuple{Number,Number,Any,Any}",
+    "page": "Library",
+    "title": "Compose.Shear",
+    "category": "method",
+    "text": "Shear(s, θ, x, y)\n\nShear line passing through point (x,y) at angle θ (in radians), with shear s.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library/#Compose.Shear-Tuple{Number,Number}",
+    "page": "Library",
+    "title": "Compose.Shear",
+    "category": "method",
+    "text": "Shear(s, θ)\n\nShear(s, θ)=Shear(s, θ, 0.5w, 0.5h)\n\n\n\n\n\n"
 },
 
 {
