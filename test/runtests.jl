@@ -27,7 +27,3 @@ for ex in readdir(exampledir)
     expr.head = :toplevel
     eval(expr)
 end
-
-if !haskey(ENV, "TRAVIS")
-    include("compare_examples.jl")
-end
