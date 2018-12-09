@@ -15,7 +15,8 @@ import Base: length, isempty, getindex, setindex!,
     min, max, abs, +, -, *, /, ==
 import Measures: resolve, w, h
 
-export compose, compose!, Context, UnitBox, AbsoluteBoundingBox, Rotation, Mirror,
+export compose, compose!, Context, UnitBox, AbsoluteBoundingBox,
+        Rotation, Mirror, Shear,
        ParentDrawContext, context, ctxpromise, table, set_units!, minwidth, minheight,
        text_extents, max_text_extents, polygon, ngon, star, xgon,
        line, rectangle, circle, arc, sector, ellipse, text, curve, bitmap, 

@@ -342,3 +342,44 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, x::Max) =
 resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a) = resolve(box, units, t, a)
 resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, op::Add) =
         resolve_position(box, units, t, op.a) + resolve_position(box, units, t, op.b)
+
+
+# Shear about a point at a given angle
+struct Shear
+    shear::Float64
+    theta::Float64
+    point::Vec
+end
+
+"""
+    Shear(s, θ, x, y)
+
+Shear line passing through point `(x,y)` at angle `θ` (in radians), with shear `s`.
+"""
+Shear(shear::Number, theta::Number, offset_x, offset_y) = 
+        Shear(float(shear), float(theta), (offset_x, offset_y))
+
+Shear(shear::Number, theta::Number, offset::XYTupleOrVec) = 
+        Shear(float(shear), float(theta), (x_measure(offset[1]), y_measure(offset[2])))
+
+"""
+    Shear(s, θ)
+
+`Shear(s, θ)=Shear(s, θ, 0.5w, 0.5h)`
+"""
+Shear(shear::Number, theta::Number) = Shear(float(shear), float(theta), 0.5w, 0.5h)
+
+
+function convert(::Type{Transform}, shear::Shear)
+    x, y = shear.point[1].value, shear.point[2].value    
+    ct, st = cos(shear.theta), sin(shear.theta)
+    M1 = [1.0 0 x; 0 1 y; 0 0 1 ]
+    M2 = I + shear.shear .* [ct*st -ct*ct 0; st*st -ct*st 0; 0 0 0.0]
+    M3 = [1.0 0 -x; 0 1 -y; 0 0 1 ]
+    M = M1*M2*M3
+    return  MatrixTransform(M)
+end
+
+
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Shear) =
+            Shear(a.shear, a.theta, resolve(box, units, t, a.point))

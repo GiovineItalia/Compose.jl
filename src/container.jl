@@ -17,6 +17,9 @@ mutable struct Context <: Container
     # Maybe mirror about a line, after rotation
     mir::Union{Mirror, Nothing}
 
+    # Shear
+    shear::Union{Shear, Nothing}
+
     # Container children
     container_children::List{Container}
     form_children::List{Form}
@@ -51,7 +54,7 @@ mutable struct Context <: Container
 
     tag::Symbol
 
-    function Context(box, units, rotation, mirror,
+    function Context(box, units, rotation, mirror, shear,
                      container_children, form_children, property_children,
                      order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
         if isa(minwidth, AbsoluteLength)
@@ -62,7 +65,7 @@ mutable struct Context <: Container
             minheight = minheight.value
         end
 
-        return new(box, units, rotation, mirror,
+        return new(box, units, rotation, mirror, shear,
                    container_children, form_children, property_children,
                    order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
     end
@@ -72,6 +75,7 @@ Context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
             units=nothing,
             rotation=nothing,
             mirror=nothing,
+            shear=nothing,
             order=0,
             clip=false,
             withjs=false,
@@ -85,7 +89,7 @@ Context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
             ListNull{ComposeNode}(),
             order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
 
-Context(ctx::Context) = Context(ctx.box, ctx.units, ctx.rot, ctx.mir,
+Context(ctx::Context) = Context(ctx.box, ctx.units, ctx.rot, ctx.mir, ctx.shear,
             ctx.container_children, ctx.form_children, ctx.property_children,
             ctx.order, ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
             ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
@@ -94,6 +98,7 @@ context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
             units=nothing,
             rotation=nothing,
             mirror=nothing,
+            shear=nothing,
             order=0,
             clip=false,
             withjs=false,
@@ -104,7 +109,7 @@ context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
             penalty=0.0,
             tag=empty_tag) =
         Context(BoundingBox(x_measure(x0), y_measure(y0), x_measure(width), y_measure(height)),
-            units, rotation, mirror,
+            units, rotation, mirror, shear,
             ListNull{Container}(), ListNull{Form}(), ListNull{Property}(),
             order, clip, withjs, withoutjs, raster, minwidth, minheight, penalty, tag)
 
@@ -380,6 +385,11 @@ function drawpart(backend::Backend, container::Container,
     if ctx.mir !== nothing
         mir = resolve(box, units, parent_transform, ctx.mir)
         transform = combine(convert(Transform, mir), transform)
+    end
+
+    if ctx.shear !== nothing
+        shear = resolve(box, units, parent_transform, ctx.shear)
+        transform = combine(convert(Transform, shear), transform)
     end
 
     if ctx.raster && @isdefined(Cairo) && isa(backend, SVG)
