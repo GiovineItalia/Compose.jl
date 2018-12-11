@@ -8,10 +8,9 @@ end
 include("immerse.jl")
 
 # Run the examples
-const testdir = dirname(@__FILE__)
-cd(testdir)
+cd(joinpath(@__DIR__, "output"))
 
-exampledir = joinpath(testdir, "..", "examples")
+exampledir = joinpath(@__DIR__, "examples")
 for ex in readdir(exampledir)
     endswith(ex, ".jl") || continue
     file = joinpath(exampledir, ex)
@@ -26,8 +25,4 @@ for ex in readdir(exampledir)
     end
     expr.head = :toplevel
     eval(expr)
-end
-
-if !haskey(ENV, "TRAVIS")
-    include("compare_examples.jl")
 end

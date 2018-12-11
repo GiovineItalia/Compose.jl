@@ -4,7 +4,7 @@ using Colors
 using Measures
 
 @testset "Issue 267" begin
-    c = compose(context(), fill(["red", "blue"]),
+    global c = compose(context(), fill(["red", "blue"]),
                 [context(), fill("green"), circle([0.25, 0.75], [0.5], [0.25])])
     img = SVG(8cm, 6cm, false)
     draw(img, c)

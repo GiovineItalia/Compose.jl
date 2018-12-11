@@ -2,7 +2,7 @@ using Base64
 using UUIDs
 using Random
 
-const snapsvgjs = joinpath(dirname(@__FILE__), "..", "data", "snap.svg-min.js")
+const snapsvgjs = joinpath(@__DIR__, "..", "deps", "snap.svg-min.js")
 
 # Packages can insert extra XML namespaces here to be defined in the output
 # SVG.
