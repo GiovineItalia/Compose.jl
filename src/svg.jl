@@ -87,22 +87,13 @@ svg_fmt_color(c::Color) = string("#", hex(c))
 svg_fmt_color(c::Nothing) = "none"
 
 # Replace newlines in a string with the appropriate SVG tspan tags.
-function svg_newlines(input::AbstractString, x::Float64)
-    xpos = svg_fmt_float(x)
-    newline_count = 0
+function svg_newlines(input::AbstractString)
     output = IOBuffer()
-    lastpos = 1
-    for mat in eachmatch(r"\n", input)
-        write(output, input[lastpos:mat.offset-1])
-        newline_count += 1
-        write(output, """<tspan x="$(xpos)" dy="1.2em">""")
-        lastpos = mat.offset + length(mat.match)
+    inputs = split(input,"\n")
+    write(output, inputs[1])
+    for mat in inputs[2:end]
+        write(output, """<tspan x="0" dy="1.2em">""", mat, "</tspan>")
     end
-    write(output, input[lastpos:end])
-    for _ in 1:newline_count
-        write(output, "</tspan>")
-    end
-
     return String(take!(output))
 end
 
@@ -958,12 +949,16 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
     # NOTE: "dominant-baseline" is the correct way to vertically center text
     # in SVG, but implementations are pretty inconsistent (chrome in particular
     # does a really bad job). We fake it by shifting by some reasonable amount.
+    nlines = length(split(prim.value,"\n"))-1
     if prim.valign === vcenter
-        print(img.out, " dy=\"0.35em\"")
+#        print(img.out, " dy=\"0.35em\"")
+        print(img.out, " dy=\"$(svg_fmt_float(0.35-0.6*nlines))em\"")
         #print(img.out, " style=\"dominant-baseline:central\"")
     elseif prim.valign === vtop
         print(img.out, " dy=\"0.6em\"")
         #print(img.out, " style=\"dominant-baseline:text-before-edge\"")
+    elseif prim.valign === vbottom
+        print(img.out, " dy=\"$(svg_fmt_float(-1.2*nlines))em\"")
     end
 
     if abs(prim.rot.theta) > 1e-4 || sum(abs.(prim.offset)) > 1e-4mm
@@ -988,7 +983,7 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
     end
 
     @printf(img.out, ">%s</text>\n",
-            svg_newlines(pango_to_svg(prim.value), prim.position[1].value))
+            svg_newlines(pango_to_svg(prim.value)))
 
     img.indentation -= 1
     indent(img)

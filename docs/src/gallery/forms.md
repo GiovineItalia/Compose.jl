@@ -181,6 +181,23 @@ img = compose(context(units=UnitBox(0,0,2,2)),
 )
 ```
 
+```@example
+using Compose
+set_default_graphic_size(10cm,8cm)
+
+# This graphic illustrates text alignment
+txt = [x*"\n"*y for  x in ["hleft", "hcenter","hright"], 
+        y in ["vtop","vcenter","vbottom"] ]
+x = repeat(0.1w.*[1,5,9], outer=3)
+y = repeat(0.1h.*[1,5,9], inner=3)
+xp = repeat([hleft,hcenter,hright], outer=3)
+yp = repeat([vtop,vcenter,vbottom], inner=3)
+
+img = compose(context(),
+        (context(), circle(x, y, [0.01]), fill("red")),
+        text(x, y, txt, xp, yp), fontsize(14pt)
+)
+```
 
 
 
