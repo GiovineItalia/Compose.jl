@@ -253,7 +253,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Forms",
     "title": "text",
     "category": "section",
-    "text": "using Colors, Compose\nset_default_graphic_size(10cm,10cm)\nlabels=rand(string.(names(Base)[280:end]), 30)\nθ = collect(range(0, stop=58π/30, length=30))\nX = 1 .+ 0.7*[cos.(θ) sin.(θ)]\ncolv = range(colorant\"blue\",stop=colorant\"orange\", length=30)\nrot = Rotation.(θ, X[:,1], X[:,2])\n\nimg = compose(context(units=UnitBox(0,0,2,2)),\n  (context(), text(1, 1, \"Julia\", hcenter, vcenter), stroke(\"red\"), fontsize(30pt)),\n  (context(), text(X[:,1], X[:,2], labels, [hcenter], [vcenter], rot), stroke(colv))\n)"
+    "text": "using Colors, Compose\nset_default_graphic_size(10cm,10cm)\nlabels=rand(string.(names(Base)[280:end]), 30)\nθ = collect(range(0, stop=58π/30, length=30))\nX = 1 .+ 0.7*[cos.(θ) sin.(θ)]\ncolv = range(colorant\"blue\",stop=colorant\"orange\", length=30)\nrot = Rotation.(θ, X[:,1], X[:,2])\n\nimg = compose(context(units=UnitBox(0,0,2,2)),\n  (context(), text(1, 1, \"Julia\", hcenter, vcenter), stroke(\"red\"), fontsize(30pt)),\n  (context(), text(X[:,1], X[:,2], labels, [hcenter], [vcenter], rot), stroke(colv))\n)using Compose\nset_default_graphic_size(10cm,8cm)\n\n# This graphic illustrates text alignment\ntxt = [x*\"\\n\"*y for  x in [\"hleft\", \"hcenter\",\"hright\"], \n        y in [\"vtop\",\"vcenter\",\"vbottom\"] ]\nx = repeat(0.1w.*[1,5,9], outer=3)\ny = repeat(0.1h.*[1,5,9], inner=3)\nxp = repeat([hleft,hcenter,hright], outer=3)\nyp = repeat([vtop,vcenter,vbottom], inner=3)\n\nimg = compose(context(),\n        (context(), circle(x, y, [0.01]), fill(\"red\")),\n        text(x, y, txt, xp, yp), fontsize(14pt)\n)"
 },
 
 {
@@ -477,7 +477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
+    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
 },
 
 {
@@ -485,7 +485,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Compose.curve",
     "category": "function",
-    "text": "curve(anchor0, ctrl0, ctrl1, anchor1)\n\nDefine a bezier curve between anchor0 and anchor1 with control points ctrl0 and ctrl1.\n\n\n\n\n\n"
+    "text": "curve(anchor0s::AbstractArray, ctrl0s::AbstractArray, ctrl1s::AbstractArray, anchor1s::AbstractArray)\n\nArguments can be passed in arrays in order to perform multiple drawing operations.\n\n\n\n\n\n"
 },
 
 {
