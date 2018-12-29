@@ -737,39 +737,6 @@ function draw(img::SVG, form::Form{T}) where T
     end
 end
 
-function draw(img::SVG, prim::RectanglePrimitive, idx::Int)
-    # SVG will hide rectangles with zero height or width. We'd prefer to have
-    # zero width/height rectangles stroked, so this is a work-around.
-    width = max(prim.width, 0.01mm)
-    height = max(prim.height, 0.01mm)
-
-    x0 = prim.corner[1] + width/2
-    y0 = prim.corner[2] + height/2
-    translated_path = [(-width/2,-height/2), ( width/2,-height/2),
-                       ( width/2, height/2), (-width/2, height/2)]
-
-    indent(img)
-
-    img.indentation += 1
-    print(img.out, "<g transform=\"translate(")
-    svg_print_float(img.out, x0.value)
-    print(img.out, ",")
-    svg_print_float(img.out, y0.value)
-    print(img.out, ")\"")
-    print_vector_properties(img, idx)
-    print(img.out, ">\n")
-    indent(img)
-
-    print(img.out, "<path d=\"")
-    print_svg_path(img.out, translated_path)
-    write(img.out, " z\"")
-    print(img.out, " class=\"primitive\"")
-    print(img.out, "/>\n")
-
-    img.indentation -= 1
-    indent(img)
-    print(img.out, "</g>\n")
-end
 
 function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
     n = length(prim.points)
