@@ -138,6 +138,18 @@ PNG(args...; kwargs...) = error(@missing_cairo_error "PNG")
 PS(args...; kwargs...) = error(@missing_cairo_error "PS")
 PDF(args...; kwargs...) = error(@missing_cairo_error "PDF")
 
+function missing_cairo_error(mime::MIME)
+    """
+    The Cairo and Fontconfig packages are necessary for displaying with MIME"$mime".
+    Add them with the package manager if necessary, then run:
+      import Cairo, Fontconfig
+    before invoking show(::IO, ::MIME"$mime", ::Context).   
+    """
+end
+show(io::IO, m::MIME"image/png", ctx::Context) = error(missing_cairo_error(m))
+show(io::IO, m::MIME"application/ps", ctx::Context) = error(missing_cairo_error(m))
+show(io::IO, m::MIME"application/pdf", ctx::Context) = error(missing_cairo_error(m))
+
 include("svg.jl")
 include("pgf_backend.jl")
 
