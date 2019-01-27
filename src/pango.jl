@@ -56,6 +56,7 @@ mutable struct PangoLayout
 end
 
 function PangoLayout()
+    global pango_cairo_ctx
     layout = ccall((:pango_layout_new, libpango),
                    Ptr{Cvoid}, (Ptr{Cvoid},), pango_cairo_ctx)
     # TODO: finalizer?
