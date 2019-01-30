@@ -122,6 +122,7 @@ default_line_width = 0.3mm
 default_stroke_color = nothing
 default_fill_color = colorant"black"
 
+# If Cairo is not available, throw an error when trying to save with a Cairo backend
 function missing_cairo_error(backend::String, invocation::String=backend)
     """
     The Cairo and Fontconfig packages are necessary for saving as $backend.
