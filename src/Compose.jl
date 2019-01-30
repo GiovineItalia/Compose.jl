@@ -122,21 +122,25 @@ default_line_width = 0.3mm
 default_stroke_color = nothing
 default_fill_color = colorant"black"
 
-# Use cairo for the PNG, PS, PDF if it's installed.
-macro missing_cairo_error(backend)
-    msg1 = """
-    The Cairo and Fontconfig packages are necessary for the $(backend) backend.
+# If Cairo is not available, throw an error when trying to save with a Cairo backend
+function missing_cairo_error(backend::String, invocation::String=backend)
+    """
+    The Cairo and Fontconfig packages are necessary for saving as $backend.
     Add them with the package manager if necessary, then run:
       import Cairo, Fontconfig
-    before invoking $(backend).
+    before invoking $invocation.
     """
-    string(msg1)
+end
+function missing_cairo_error(m::MIME)
+    missing_cairo_error(string(m), "show(::IO, ::MIME\"$m\", ::Context)")
 end
 
-#global PDF
-PNG(args...; kwargs...) = error(@missing_cairo_error "PNG")
-PS(args...; kwargs...) = error(@missing_cairo_error "PS")
-PDF(args...; kwargs...) = error(@missing_cairo_error "PDF")
+PNG(args...; kwargs...) = error(missing_cairo_error("PNG"))
+PS(args...; kwargs...) = error(missing_cairo_error("PS"))
+PDF(args...; kwargs...) = error(missing_cairo_error("PDF"))
+
+CairoMIME = Union{MIME"image/png", MIME"application/ps", MIME"application/pdf"}
+show(io::IO, m::CairoMIME, ctx::Context) = error(missing_cairo_error(m))
 
 include("svg.jl")
 include("pgf_backend.jl")

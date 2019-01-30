@@ -1,5 +1,19 @@
 using Test, Random
 using Colors
+
+# must be before importing cairo
+@testset "missing cairo errors" begin
+    ctx = compose(context(), circle(), fill("gold"))
+    @test_throws ErrorException ctx |> PNG("test.png")
+    @test_throws ErrorException ctx |> PDF("test.pdf")
+    @test_throws ErrorException ctx |> PS("test.ps")
+
+    io = IOBuffer()
+    @test_throws ErrorException show(io, MIME("image/png"), ctx)
+    @test_throws ErrorException show(io, MIME("application/pdf"), ctx)
+    @test_throws ErrorException show(io, MIME("application/ps"), ctx)
+end
+
 import Cairo
 
 # showcompact
