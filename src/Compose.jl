@@ -122,33 +122,24 @@ default_line_width = 0.3mm
 default_stroke_color = nothing
 default_fill_color = colorant"black"
 
-# Use cairo for the PNG, PS, PDF if it's installed.
-macro missing_cairo_error(backend)
-    msg1 = """
-    The Cairo and Fontconfig packages are necessary for the $(backend) backend.
+function missing_cairo_error(backend::String, invocation::String=backend*"(...)")
+    """
+    The Cairo and Fontconfig packages are necessary for displaying as $backend.
     Add them with the package manager if necessary, then run:
       import Cairo, Fontconfig
-    before invoking $(backend).
-    """
-    string(msg1)
-end
-
-#global PDF
-PNG(args...; kwargs...) = error(@missing_cairo_error "PNG")
-PS(args...; kwargs...) = error(@missing_cairo_error "PS")
-PDF(args...; kwargs...) = error(@missing_cairo_error "PDF")
-
-function missing_cairo_error(mime::MIME)
-    """
-    The Cairo and Fontconfig packages are necessary for displaying with MIME"$mime".
-    Add them with the package manager if necessary, then run:
-      import Cairo, Fontconfig
-    before invoking show(::IO, ::MIME"$mime", ::Context).   
+    before invoking $invocation.
     """
 end
-show(io::IO, m::MIME"image/png", ctx::Context) = error(missing_cairo_error(m))
-show(io::IO, m::MIME"application/ps", ctx::Context) = error(missing_cairo_error(m))
-show(io::IO, m::MIME"application/pdf", ctx::Context) = error(missing_cairo_error(m))
+function missing_cairo_error(m::MIME)
+    missing_cairo_error(string(m), "show(::IO, ::MIME\"$m\", ::Context)")
+end
+
+PNG(args...; kwargs...) = error(missing_cairo_error("PNG"))
+PS(args...; kwargs...) = error(missing_cairo_error("PS"))
+PDF(args...; kwargs...) = error(missing_cairo_error("PDF"))
+
+CairoMIME = Union{MIME"image/png", MIME"application/ps", MIME"application/pdf"}
+show(io::IO, m::CairoMIME, ctx::Context) = error(missing_cairo_error(m))
 
 include("svg.jl")
 include("pgf_backend.jl")
