@@ -150,19 +150,20 @@ include("pgf_backend.jl")
 
 include("fontfallback.jl")
 
+const pango_cairo_ctx = Ref(C_NULL)
+const pango_cairo_fm = Ref(C_NULL)
+const pangolayout = Ref{Any}(nothing)
+
 function link_fontconfig()
-    global pango_cairo_ctx
-    global pango_cairo_fm
-    global pangolayout
     @info "Loading Fontconfig backend into Compose.jl"
-    pango_cairo_ctx = C_NULL
+    pango_cairo_ctx[] = C_NULL
 
     ccall((:g_type_init, libgobject), Cvoid, ())
-    pango_cairo_fm  = ccall((:pango_cairo_font_map_new, libpangocairo),
-                             Ptr{Cvoid}, ())
-    pango_cairo_ctx = ccall((:pango_font_map_create_context, libpango),
-                             Ptr{Cvoid}, (Ptr{Cvoid},), pango_cairo_fm)
-    pangolayout = PangoLayout()
+    pango_cairo_fm[]  = ccall((:pango_cairo_font_map_new, libpangocairo),
+                               Ptr{Cvoid}, ())
+    pango_cairo_ctx[] = ccall((:pango_font_map_create_context, libpango),
+                               Ptr{Cvoid}, (Ptr{Cvoid},), pango_cairo_fm[])
+    pangolayout[] = PangoLayout()
 end
 
 function link_cairo()
