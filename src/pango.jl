@@ -57,15 +57,11 @@ end
 
 function PangoLayout()
     layout = ccall((:pango_layout_new, libpango),
-                   Ptr{Cvoid}, (Ptr{Cvoid},), pango_cairo_ctx)
+                   Ptr{Cvoid}, (Ptr{Cvoid},), pango_cairo_ctx[])
     # TODO: finalizer?
 
     PangoLayout(layout)
 end
-
-# TODO temporary fix for plotting in Julia 0.7 (5 Nov 2018)
-@warn "[TEMPORARY WORKAROUND, pangolayout] for plotting with Gadfly.jl, see https://github.com/GiovineItalia/Gadfly.jl/issues/1206"
-const pangolayout = PangoLayout()
 
 # Set the layout's font.
 function pango_set_font(pangolayout::PangoLayout, family::AbstractString, pts::Number)
@@ -110,11 +106,11 @@ end
 #   A (width, height) tuple in absolute units.
 #
 function max_text_extents(font_family::AbstractString, pts::Float64, texts::AbstractString...)
-    pango_set_font(pangolayout::PangoLayout, font_family, pts)
+    pango_set_font(pangolayout[]::PangoLayout, font_family, pts)
     max_width  = 0mm
     max_height = 0mm
     for text in texts
-        (width, height) = pango_text_extents(pangolayout::PangoLayout, text)
+        (width, height) = pango_text_extents(pangolayout[]::PangoLayout, text)
         max_width  = max_width.value  < width.value  ? width  : max_width
         max_height = max_height.value < height.value ? height : max_height
     end
@@ -130,8 +126,8 @@ end
 
 # Return an array with the extents of each element
 function text_extents(font_family::AbstractString, pts::Float64, texts::AbstractString...)
-    pango_set_font(pangolayout::PangoLayout, font_family, pts)
-    return [pango_text_extents(pangolayout::PangoLayout, text) for text in texts]
+    pango_set_font(pangolayout[]::PangoLayout, font_family, pts)
+    return [pango_text_extents(pangolayout[]::PangoLayout, text) for text in texts]
 end
 
 text_extents(font_family::AbstractString, size::Measure, texts::AbstractString...) =
