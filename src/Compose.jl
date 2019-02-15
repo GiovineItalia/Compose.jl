@@ -155,7 +155,7 @@ const pango_cairo_fm = Ref(C_NULL)
 const pangolayout = Ref{Any}(nothing)
 
 function link_fontconfig()
-    @info "Loading Fontconfig backend into Compose.jl"
+    @debug "Loading Fontconfig backend into Compose.jl"
     pango_cairo_ctx[] = C_NULL
 
     ccall((:g_type_init, libgobject), Cvoid, ())
@@ -167,7 +167,7 @@ function link_fontconfig()
 end
 
 function link_cairo()
-    @info "Loading Cairo backend into Compose.jl"
+    @debug "Loading Cairo backend into Compose.jl"
     include(joinpath(@__DIR__,"cairo_backends.jl"))
     include(joinpath(@__DIR__,"immerse_backend.jl"))
 end
