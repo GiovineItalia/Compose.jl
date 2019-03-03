@@ -187,6 +187,28 @@ PNG(args...; kwargs...) = Image{PNGBackend}(args...; kwargs...)
 PDF(args...; kwargs...) = Image{PDFBackend}(args...; kwargs...)
 PS(args...; kwargs...) = Image{PSBackend}(args...; kwargs...)
 
+
+
+docfunc(f) = """
+    $f(filename::AbstractString, width::MeasureOrNumber, height::MeasureOrNumber; dpi)
+
+Create a [`Compose.$(f)backend`](@ref) with an associated file and specified width, height (as positional arguments)
+and dpi (as a keyword argument). Normally passed to [`draw`](@ref).
+
+# Examples
+```jldoctest
+    using Gadfly, Cairo
+    p = plot(x = 1:10, y=rand(10), Geom.line)
+    draw($(f)("myplot.$(lowercase(f))",10cm, 5cm, dpi=250),p)
+```
+"""
+
+
+for backend in [:PNG, :PDF, :PS]
+    str = docfunc(String(backend))
+    @eval @doc $str $backend
+end
+
 const CAIROSURFACE = Image{CairoBackend}
 
 function (img::Image)(x)
