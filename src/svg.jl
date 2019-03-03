@@ -201,7 +201,7 @@ mutable struct SVG <: Backend
 
     # What to do with javascript. One of:
     #    none: generate a static SVG without any javascript
-    #    exclude: exclude external javascript libraries
+    #    exclude: exclude external javascript libraries           ### vestigial?
     #    embed: embed external libraries
     #    linkabs: link to external libraries (absolute path)
     #    linkrel: link to external libraries (relative path)
@@ -266,7 +266,21 @@ function SVG(out::IO,
     return img
 end
 
-# Write to a file.
+# Write to a file or IOBuffer.
+"""
+    SVG([output::Union{IO,AbstractString}], width=√200cm, height=10cm, jsmode=:none) -> Backend
+
+Create a Scalable Vector Graphic backend.  The output is normally passed to
+[`draw`](@ref).  Specify a filename using a string as the first argument.
+`jsmode` can be one of `:none`, `:embed`, `:linkabs`, or `:linkrel`.  See also
+[`SVGJS`](@ref).
+
+# Examples
+```
+c = compose(context(), line())
+draw(SVG("myplot.svg"), c)
+```
+"""
 SVG(filename::AbstractString, width=default_graphic_width, height=default_graphic_height,
         jsmode::Symbol=:none) =
         SVG(open(filename, "w"), width, height, true, jsmode; ownedfile=true, filename=filename)
@@ -290,6 +304,16 @@ function genid(img::SVG)
 end
 
 # Constructors that turn javascript extensions on
+"""
+    SVGJS([output::Union{IO,AbstractString}], width=√200cm, height=10cm, jsmode=:embed) -> Backend
+
+Create a Scalable Vector Graphic backend that enables Gadfly's interactivity
+(pan, zoom, etc.).  The default `jsmode` splices the requisite javascript
+directly into the output.  One can alternatively link to identical external
+javascript with `:linkabs` and `:linkrel`.  The output is normally passed to
+[`draw`](@ref).  Specify a filename using a string as the first argument.  See
+also [`SVG`](@ref).
+"""
 SVGJS(out::IO, width=default_graphic_width, height=default_graphic_height,
         emit_on_finish::Bool=true; jsmode::Symbol=:embed) =
         SVG(out, width, height, emit_on_finish, jsmode)
