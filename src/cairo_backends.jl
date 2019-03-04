@@ -183,9 +183,9 @@ Image{B}(width::MeasureOrNumber=default_graphic_width,
             dpi = (B==PNGBackend ? 96 : 72)) where {B<:ImageBackend} =
         Image{B}(IOBuffer(), width, height, emit_on_finish, dpi=dpi)
 
-PNG(args...; kwargs...) = Image{PNGBackend}(args...; kwargs...)
-PDF(args...; kwargs...) = Image{PDFBackend}(args...; kwargs...)
-PS(args...; kwargs...) = Image{PSBackend}(args...; kwargs...)
+#PNG(args...; kwargs...) = Image{PNGBackend}(args...; kwargs...)
+#PDF(args...; kwargs...) = Image{PDFBackend}(args...; kwargs...)
+#PS(args...; kwargs...) = Image{PSBackend}(args...; kwargs...)
 
 
 
@@ -199,15 +199,20 @@ and dpi (as a keyword argument). Normally passed to [`draw`](@ref).
 ```jldoctest
     using Gadfly, Cairo
     p = plot(x = 1:10, y=rand(10), Geom.line)
-    draw($(f)("myplot.$(lowercase(f))",10cm, 5cm, dpi=250),p)
+    draw($(f)("myplot.$(lowercase(String(f)))",10cm, 5cm, dpi=250),p)
 ```
 """
 
 
-for backend in [:PNG, :PDF, :PS]
-    str = docfunc(String(backend))
-    @eval @doc $str $backend
+for func in [:PNG, :PDF, :PS]
+    backend = Symbol(func, "Backend")
+    docstr = docfunc(func)
+    @eval $func(args...; kwargs...) = Image{$backend}(args...; kwargs...)
+    @eval @doc $docstr $func
+
 end
+
+
 
 const CAIROSURFACE = Image{CairoBackend}
 

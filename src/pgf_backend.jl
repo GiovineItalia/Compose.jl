@@ -119,6 +119,27 @@ function PGF(out::IO,
 end
 
 # Write to a file.
+"""
+    PGF(filename::AbstractString, width::MeasureOrNumber, height::MeasureOrNumber, only_tikz::Bool; texfonts::Bool)
+
+Create a [`Compose.PGF`](@ref) with an associated file and specified width, height and only_tikz 
+(as positional arguments) and texfonts (as a keyword argument)
+Normally passed to [`draw`](@ref). First argument can be an [`IOBuffer`](@ref)
+
+# Arguments
++ `filename`: A filename or an IOBuffer
++ `width=√200cm`: PGF width (~14cm)
++ `height=10cm`: PGF height
++ `only_tikz=false`: Controls whether the latex output generates a complete latex document with headers/footer or only "tikzpicture" header/footers 
++ `texfonts=false`: If false include "\\usepackage{fontspec}" in the headers.
+
+# Examples
+```jldoctest
+    using Gadfly, Cairo
+    p = plot(x = 1:10, y=rand(10), Geom.line)
+    draw(PGF("myplot.tex",10cm, 5cm),p)
+```
+"""
 PGF(filename::AbstractString, width=default_graphic_width, height=default_graphic_height,
             only_tikz=false; texfonts=false) =
         PGF(open(filename, "w"), width, height, true, only_tikz;

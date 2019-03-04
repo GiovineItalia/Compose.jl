@@ -267,6 +267,25 @@ function SVG(out::IO,
 end
 
 # Write to a file.
+"""
+    SVG(filename::AbstractString, width::MeasureOrNumber, height::MeasureOrNumber, jsmode)
+
+Create a [`Compose.SVG`](@ref) with an associated file and specified width, height and jsmode (as positional arguments). 
+Normally passed to [`draw`](@ref). First argument can be an [`IOBuffer`](@ref)
+
+# Arguments
++ `filename`: A filename or an IOBuffer
++ `width=√200cm`: Image width. 
++ `height=10cm`: Image height. 
++ `jsmode=:none`:  Can be one of :none, :exclude, :embed, :linkabs, :linkrel
+
+# Examples
+```jldoctest
+    using Gadfly, Cairo
+    p = plot(x = 1:10, y=rand(10), Geom.line)
+    draw(SVG("myplot.svg",10cm, 5cm),p)
+```
+"""
 SVG(filename::AbstractString, width=default_graphic_width, height=default_graphic_height,
         jsmode::Symbol=:none) =
         SVG(open(filename, "w"), width, height, true, jsmode; ownedfile=true, filename=filename)
