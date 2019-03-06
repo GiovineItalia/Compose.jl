@@ -130,6 +130,9 @@ twolines = text_extents(font_family, 8pt, "Peg\nPeg")[1]
 @test Compose.parse_colorant("red",colorant"blue") == [RGB(1.0,0.0,0.0), RGB(0.0,0.0,1.0)]
 
 # PR 263
+@test ~ @isdefined Fontconfig
+@test Compose.pango_to_svg("hello world") == "hello world"
+import Fontconfig
 @test Compose.pango_to_svg("hello world") == "hello world"
 
 @testset "pango" begin

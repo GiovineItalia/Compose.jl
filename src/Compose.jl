@@ -150,8 +150,8 @@ include("pgf_backend.jl")
 
 include("fontfallback.jl")
 
-const pango_cairo_ctx = Ref(C_NULL)
-const pango_cairo_fm = Ref(C_NULL)
+const pango_cairo_ctx = Ref{Ptr}(C_NULL)
+const pango_cairo_fm = Ref{Ptr}(C_NULL)
 const pangolayout = Ref{Any}(nothing)
 
 function link_fontconfig()
