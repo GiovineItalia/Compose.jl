@@ -268,16 +268,11 @@ end
 
 # Write to a file.
 """
-    SVG(filename::AbstractString, width::MeasureOrNumber, height::MeasureOrNumber, jsmode)
+    SVG([output::Union{IO,AbstractString}, width=√200cm, height=10cm, jsmode=:none])
 
-Create a [`Compose.SVG`](@ref) with an associated file and specified width, height and jsmode (as positional arguments). 
-Normally passed to [`draw`](@ref). First argument can be an [`IOBuffer`](@ref)
-
-# Arguments
-+ `filename`: A filename or an IOBuffer
-+ `width=√200cm`: Image width. 
-+ `height=10cm`: Image height. 
-+ `jsmode=:none`:  Can be one of :none, :exclude, :embed, :linkabs, :linkrel
+Create a [`Compose.SVG`](@ref) with an associated output and specified width, height and jsmode (as positional arguments). 
+Normally passed to [`draw`](@ref). First argument is optional and can be an [`IOBuffer`](@ref) or a filename 
+[`AbstractString`](@ref).  `jsmode` can be one of `[:none, :exclude, :embed, :linkabs, :linkrel]`.
 
 # Examples
 ```jldoctest
