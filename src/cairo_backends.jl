@@ -193,7 +193,7 @@ docfunc(f) = """
     $f(filename::AbstractString, width::MeasureOrNumber, height::MeasureOrNumber; dpi)
 
 Create a [`Compose.$(f)backend`](@ref) with an associated file and specified width, height (as positional arguments)
-and dpi (as a keyword argument). Normally passed to [`draw`](@ref).
+and dpi (as a keyword argument). For PNG, the default dpi is 96, otherwise 72. Normally passed to [`draw`](@ref). 
 
 # Examples
 ```jldoctest
