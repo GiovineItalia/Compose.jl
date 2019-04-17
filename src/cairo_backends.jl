@@ -183,17 +183,14 @@ Image{B}(width::MeasureOrNumber=default_graphic_width,
             dpi = (B==PNGBackend ? 96 : 72)) where {B<:ImageBackend} =
         Image{B}(IOBuffer(), width, height, emit_on_finish, dpi=dpi)
 
-#PNG(args...; kwargs...) = Image{PNGBackend}(args...; kwargs...)
-#PDF(args...; kwargs...) = Image{PDFBackend}(args...; kwargs...)
-#PS(args...; kwargs...) = Image{PSBackend}(args...; kwargs...)
-
 
 
 docfunc(f) = """
-    $f(filename::AbstractString, width::MeasureOrNumber, height::MeasureOrNumber; dpi)
+    $f([out::Union{AbstractString, IOBuffer}, width=√200cm, height=10cm; dpi=72])
 
 Create a [`Compose.$(f)backend`](@ref) with an associated file and specified width, height (as positional arguments)
-and dpi (as a keyword argument). For PNG, the default dpi is 96, otherwise 72. Normally passed to [`draw`](@ref). 
+and dpi (as a keyword argument). For PNG, the default dpi is 96, otherwise 72. The first argument is optional and can be an [`IOBuffer`](@ref). 
+Normally passed to [`draw`](@ref). 
 
 # Examples
 ```jldoctest
