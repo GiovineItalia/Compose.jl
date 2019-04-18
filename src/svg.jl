@@ -266,7 +266,7 @@ function SVG(out::IO,
     return img
 end
 
-# Write to a file or IOBugger.
+# Write to a file or IOBuffer.
 """
     SVG([output::Union{IO,AbstractString}], width=√200cm, height=10cm, jsmode=:none)
 
