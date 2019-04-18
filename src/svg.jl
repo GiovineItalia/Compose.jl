@@ -266,9 +266,9 @@ function SVG(out::IO,
     return img
 end
 
-# Write to a file.
+# Write to a file or IOBugger.
 """
-    SVG([output::Union{IO,AbstractString}, width=√200cm, height=10cm, jsmode=:none])
+    SVG([output::Union{IO,AbstractString}], width=√200cm, height=10cm, jsmode=:none)
 
 Create a [`Compose.SVG`](@ref) with an associated output and specified width, height and jsmode (as positional arguments). 
 Normally passed to [`draw`](@ref). First argument is optional and can be an [`IOBuffer`](@ref) or a filename 
@@ -276,7 +276,7 @@ Normally passed to [`draw`](@ref). First argument is optional and can be an [`IO
 
 # Examples
 ```jldoctest
-    using Gadfly, Cairo
+    using Gadfly
     p = plot(x = 1:10, y=rand(10), Geom.line)
     draw(SVG("myplot.svg",10cm, 5cm),p)
 ```
