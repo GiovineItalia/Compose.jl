@@ -186,10 +186,10 @@ Image{B}(width::MeasureOrNumber=default_graphic_width,
 
 
 docfunc(f) = """
-    $f([out::Union{AbstractString, IOBuffer}, width=√200cm, height=10cm; dpi=72])
+    $f([out::Union{AbstractString, IOBuffer}], width=√200cm, height=10cm; dpi=$(f==:PNG ? 96 : 72))
 
 Create a [`Compose.$(f)backend`](@ref) with an associated file and specified width, height (as positional arguments)
-and dpi (as a keyword argument). For PNG, the default dpi is 96, otherwise 72. The first argument is optional and can be an [`IOBuffer`](@ref). 
+and dpi (as a keyword argument). The first argument is optional and can be an [`IOBuffer`](@ref). 
 Normally passed to [`draw`](@ref). 
 
 # Examples
