@@ -125,7 +125,7 @@ end
 Create a [`Compose.PGF`](@ref) with an associated file and specified width, height and only_tikz 
 (as positional arguments) and texfonts (as a keyword argument)
 Normally passed to [`draw`](@ref). First argument can be an [`IOBuffer`](@ref). If `only_tikz=true` 
-then the output is a "tikzpicture" otherwise the output is a commplete latex document with headers/footer. 
+then the output is a "tikzpicture" otherwise the output is a complete latex document with headers/footer. 
 If `texfonts=false`, include "\\usepackage{fontspec}" in the headers, otherwise skip that include.
 
 # Examples
