@@ -130,7 +130,7 @@ If `texfonts=false`, include "\\usepackage{fontspec}" in the headers, otherwise 
 
 # Examples
 ```jldoctest
-    using Gadfly, Cairo
+    using Gadfly
     p = plot(x = 1:10, y=rand(10), Geom.line)
     draw(PGF("myplot.tex",10cm, 5cm),p)
 ```
