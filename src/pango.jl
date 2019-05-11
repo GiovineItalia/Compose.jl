@@ -224,7 +224,7 @@ end
 function unpack_pango_attr(ptr::Ptr{Cvoid}, t::Symbol)
     ptr += sizeof(Ptr{Cvoid}) # skip `klass` pointer
     ptr = convert(Ptr{UInt32}, ptr)
-    idx = unsafe_wrap(Array, ptr, (2,), false)
+    idx = unsafe_wrap(Array, ptr, (2,), own=false)
     ptr += 2 * sizeof(UInt32)
     ptr = convert(Ptr{Cvoid}, ptr)
 
@@ -246,8 +246,8 @@ end
 #
 # Returns:
 #   And int value.
-unpack_pango_int(ptr::Ptr{Cvoid}) = unsafe_wrap(Array, convert(Ptr{Int32}, ptr), (1,), false)[1]
-unpack_pango_float(ptr::Ptr{Cvoid}) = unsafe_wrap(Array, convert(Ptr{Float64}, ptr), (1,), false)[1]
+unpack_pango_int(ptr::Ptr{Cvoid}) = unsafe_wrap(Array, convert(Ptr{Int32}, ptr), (1,), own=false)[1]
+unpack_pango_float(ptr::Ptr{Cvoid}) = unsafe_wrap(Array, convert(Ptr{Float64}, ptr), (1,), own=false)[1]
 
 #function unpack_pango_size(ptr::Ptr{Cvoid})
     #ptr = convert(Ptr{Int32}, ptr)
