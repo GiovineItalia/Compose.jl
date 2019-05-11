@@ -25,6 +25,7 @@ hstack(img1, img2)
 
 ## [`bitmap`](@ref)
 ```@example
+using Main: SVGJSWritable #hide
 using Compose
 set_default_graphic_size(14cm,4cm)
 rawimg = read(joinpath(@__DIR__,"..","assets/smiley.png"));
@@ -34,6 +35,7 @@ img = compose(context(),
     (context(), rectangle(), fill("transparent"), stroke("orange")),
     (context(), bitmap(["image/png"], [rawimg], X[:,1], X[:,2], [0.1], [0.1]))
 )
+SVGJSWritable(ans) #hide
 ```
 
 ## [`circle`](@ref)
