@@ -1,9 +1,14 @@
 using Documenter, Compose
+import Cairo
+
+struct SVGJSWritable{T}
+    x :: T
+end
+Base.show(io::IO, m::MIME"text/html", x::SVGJSWritable) = show(io, m, x.x)
 
 makedocs(
     modules = [Compose],
-    clean = true,
-    format = :html,
+    clean = false,
     sitename = "Compose.jl",
     pages = Any[
         "Home" => "index.md",
@@ -19,5 +24,4 @@ makedocs(
 
 deploydocs(
     repo   = "github.com/GiovineItalia/Compose.jl.git",
-    target = "build"
 )
