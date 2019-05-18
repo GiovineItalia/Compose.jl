@@ -183,9 +183,34 @@ Image{B}(width::MeasureOrNumber=default_graphic_width,
             dpi = (B==PNGBackend ? 96 : 72)) where {B<:ImageBackend} =
         Image{B}(IOBuffer(), width, height, emit_on_finish, dpi=dpi)
 
-PNG(args...; kwargs...) = Image{PNGBackend}(args...; kwargs...)
-PDF(args...; kwargs...) = Image{PDFBackend}(args...; kwargs...)
-PS(args...; kwargs...) = Image{PSBackend}(args...; kwargs...)
+
+
+docfunc(func,abbr) = """
+    $func([output::Union{AbstractString, IO}], width=√200cm, height=10cm; dpi=$(func==:PNG ? 96 : 72)) -> Backend
+
+Create a $abbr backend. The output is normally passed to [`draw`](@ref).
+Specify a filename using a string as the first argument.  Depends on `Cairo.jl`.
+
+# Examples
+```
+using Cairo
+c = compose(context(), circle())
+draw($(func)("myplot.$(lowercase(String(func)))", 10cm, 5cm, dpi=250), c)
+```
+"""
+
+
+for (func,abbr) in [(:PNG,"Portable Network Graphics"),
+                    (:PDF,"Portable Document Format"),
+                    (:PS,"Postscript")]
+    backend = Symbol(func, "Backend")
+    docstr = docfunc(func,abbr)
+    @eval $func(args...; kwargs...) = Image{$backend}(args...; kwargs...)
+    @eval @doc $docstr $func
+
+end
+
+
 
 const CAIROSURFACE = Image{CairoBackend}
 

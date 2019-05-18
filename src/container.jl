@@ -8,16 +8,9 @@ mutable struct Context <: Container
     # Bounding box relative to the parent's coordinates
     box::BoundingBox
 
-    # Context coordinates used for children
     units::Union{UnitBox, Nothing}
-
-    # Rotation is degrees of
     rot::Union{Rotation, Nothing}
-
-    # Maybe mirror about a line, after rotation
     mir::Union{Mirror, Nothing}
-
-    # Shear
     shear::Union{Shear, Nothing}
 
     # Container children
@@ -25,31 +18,18 @@ mutable struct Context <: Container
     form_children::List{Form}
     property_children::List{Property}
 
-    # Z-order of this context relative to its siblings.
     order::Int
-
-    # True if children of the canvas should be clipped by its bounding box.
     clip::Bool
 
-    # Ignore this context and everything under it if we are
-    # not drawing to the SVGJS backend.
     withjs::Bool
-
-    # Ignore this context if we *are* drawing on the SVGJS backend.
     withoutjs::Bool
-
-    # If possible, render this subtree as a bitmap. This requires the Cairo. If
-    # Cairo isn't available, default rendering is used.
     raster::Bool
 
-    # Contexts may be annotated with the minimum size needed to be drawn
-    # correctly, information that can be used by layout containers. Sizes
-    # are absolute (i.e. millimeters).
     minwidth::Maybe(Float64)
     minheight::Maybe(Float64)
 
-    # A field that can be used by layouts to indicate that one configuration
-    # is preferable to another.
+    # A field that can be used by layouts to indicate that one configuration is
+    # preferable to another.
     penalty::Float64
 
     tag::Symbol
@@ -94,6 +74,26 @@ Context(ctx::Context) = Context(ctx.box, ctx.units, ctx.rot, ctx.mir, ctx.shear,
             ctx.order, ctx.clip, ctx.withjs, ctx.withoutjs, ctx.raster,
             ctx.minwidth, ctx.minheight, ctx.penalty, ctx.tag)
 
+"""
+    context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
+            units=nothing,
+            rotation=nothing, mirror=nothing, shear=nothing,
+            withjs=false, withoutjs=false,
+            minwidth=nothing, minheight=nothing,
+            order=0, clip=false, raster=false) -> Context
+
+Create a node in the tree structure that defines a graphic.  Use
+[`compose`](@ref) to connect child nodes to a parent node.  See also
+[`Rotation`](@ref), [`Mirror`](@ref), and [`Shear`](@ref).
+
+# Arguments
+- `order`: the Z-order of this context relative to its siblings.
+- `clip`:  clip children of the canvas by its bounding box if true.
+- `withjs`: ignore this context and everything under it if we are not drawing to the SVGJS backend.
+- `withoutjs`: ignore this context if we *are* drawing on the SVGJS backend.
+- `raster`: if possible, render this subtree as a bitmap. This requires the Cairo. If Cairo isn't available, the default rendering is used.
+- `minwidth` and `minheight`: the minimum size needed to be drawn correctly, in millimeters.
+"""
 context(x0=0.0w, y0=0.0h, width=1.0w, height=1.0h;
             units=nothing,
             rotation=nothing,
@@ -302,10 +302,21 @@ function compose(a::Context, b::ComposeNode)
 end
 
 # higher-order compositions
+"""
+    compose!(a::Context, b, c, ds...) -> a
+
+Add `b`, `c`, and `ds` to the graphic as children of `a`.
+"""
 compose!(a::Context, b, c, ds...) = compose!(compose!(a, b), c, ds...)
 compose!(a::Context, bs::AbstractArray) = compose!(a, compose!(bs...))
 compose!(a::Context, bs::Tuple) = compose!(a, compose!(bs...))
 compose!(a::Context) = a
+
+"""
+    compose(a::Context, b, c, ds...) -> Context
+
+Add `b`, `c`, and `ds` to the graphic as children of a copy of `a`.
+"""
 compose(a::Context, b, c, ds...) = compose(compose(a, b), c, ds...)
 compose(a::Context, bs::AbstractArray) = compose(a, compose(bs...))
 compose(a::Context, bs::Tuple) = compose(a, compose(bs...))
@@ -328,6 +339,16 @@ for (f, S, T) in [(:compose!, Property, Nothing),
         end)
 end
 
+"""
+    draw(b::Backend, c::Context)
+
+Output the tree-structured graphic in `c` to the given backend.
+
+# Examples
+```
+draw(SVGJS("foo.svg"), compose(context(), text(0,0,"foo")))
+```
+"""
 function draw(backend::Backend, root_container::Container)
     isfinished(backend) && error("The backend has already been drawn upon.")
 
