@@ -392,15 +392,6 @@ The default alignment of the text is `hleft` `vbottom`. The vertical and horizon
 alignment is specified by passing `hleft`, `hcenter` or `hright` and `vtop`,
 `vcenter` or `vbottom` as values for `halgin` and `valgin` respectively.
 """
-function text(x, y, value::AbstractString,
-              halign::HAlignment=hleft, valign::VAlignment=vbottom,
-              rot=Rotation(), offset::Vec2=(0mm,0mm);
-              tag::Symbol=empty_tag)
-    moffset = (x_measure(offset[1]), y_measure(offset[2]))
-    prim = TextPrimitive((x_measure(x), y_measure(y)), value, halign, valign, rot, moffset)
-    Text{typeof(prim)}([prim], tag)
-end
-
 function text(x, y, value,
               halign::HAlignment=hleft, valign::VAlignment=vbottom,
               rot=Rotation(), offset::Vec2=(0mm,0mm);
