@@ -19,20 +19,20 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 [compat]
 Cairo = "0.5, 0.6"
 Colors = "0.9"
-DataStructures = "0.11, 0.12, 0.13, 0.14, 0.15"
+DataStructures = "0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17"
 EzXML = "0.8, 0.9"
 Fontconfig = "0.2"
 IterTools = "1"
-JSON = "0.18, 0.19, 0.20"
+JSON = "0.18, 0.19, 0.20, 0.21"
 Measures = "0.3"
 Requires = "0.5"
 julia = "0.7, 1"
 
 [extras]
 Cairo = "159f3aea-2a34-519c-b102-8c37f9878175"
+EzXML = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
 Fontconfig = "186bb1d3-e1f7-5a2c-a377-96d770f13627"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-EzXML = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
 
 [targets]
 test = ["Test", "Cairo", "Fontconfig", "EzXML"]
