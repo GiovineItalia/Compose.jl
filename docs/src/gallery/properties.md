@@ -21,6 +21,24 @@ img = compose(context(), arrow(), stroke("black"), fill(nothing),
 )
 ```
 
+## [`clip`](@ref)
+
+```@example
+using Colors, Compose
+set_default_graphic_size(14cm,7cm)
+X = rand(10,2)
+colv = HSVA.(range(0,stop=180,length=10), 1, 1, 0.5)
+img = compose(context(units=UnitBox(0,0,2,1)), stroke("black"),
+    (context(), rectangle(), fill(nothing)),
+  (context(), ngon([0.5,1.5],[0.5], [0.4], [10]), fill(nothing), stroke("lightgray")),
+    (context(), xgon(X[:,1],X[:,2],[0.2],[4]), fill(colv)),
+    (context(), xgon(X[:,1].+1,X[:,2],[0.2],[4]), fill(colv),
+        clip(points(ngon(1.5,0.5, 0.4, 10))) )
+)
+```
+
+
+
 ## [`fill`](@ref), [`fillopacity`](@ref)
  
 ```@example

@@ -259,6 +259,12 @@ const Clip = Property{ClipPrimitive}
 
 clip() = Clip([ClipPrimitive(Array{Vec}(undef, 0))])
 
+
+"""
+    clip(points::AbstractArray)
+
+`clip()` is a property.  Only forms inside the clip shape will be visible.
+"""
 function clip(points::AbstractArray{T}) where T <: XYTupleOrVec
     XM, YM = narrow_polygon_point_types(Vector[points])
     if XM == Any
@@ -273,6 +279,12 @@ function clip(points::AbstractArray{T}) where T <: XYTupleOrVec
     return Clip(typeof(prim)[prim])
 end
 
+
+"""
+    clip(point_arrays::AbstractArray...)
+
+Arguments can be passed in arrays in order to perform multiple clipping operations at once.
+"""
 function clip(point_arrays::AbstractArray...)
     XM, YM = narrow_polygon_point_types(point_arrays)
     VecType = XM == YM == Any ? Vec : Vec{XM, YM}
