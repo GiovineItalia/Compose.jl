@@ -1,8 +1,8 @@
 # Estimation of text extents using pango.
 
-const libpangocairo = Cairo._jl_libpangocairo
-const libpango = Cairo._jl_libpango
-const libgobject = Cairo._jl_libgobject
+const libpangocairo = Cairo.libpangocairo
+const libpango = Cairo.libpango
+const libgobject = Cairo.libgobject
 
 # Cairo text backend
 const CAIRO_FONT_TYPE_TOY = 0
