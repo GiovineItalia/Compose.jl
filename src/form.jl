@@ -790,6 +790,12 @@ function xgon(xs::AbstractVector, ys::AbstractVector, rs::AbstractVector, ns::Ab
     return Form{PrimType}(polyprims, tag)
 end
 
+"""
+    points(x::Compose.Form)
+
+Extract points from a Compose.Form
+"""
+points(x::Compose.Form) = x.primitives[1].points
 
 
 
