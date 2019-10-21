@@ -2,6 +2,7 @@ language: julia
 os:
     - linux
     - osx
+    - windows
 sudo: required
 dist: trusty
 julia:
