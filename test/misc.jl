@@ -174,6 +174,8 @@ end
     properties = [fill(["red","blue"]), fillopacity(0.3), stroke("black")]
     img1 = PNG(); Compose.push_property_frame(img1, properties)
     img2 = SVG(); Compose.push_property_frame(img2, properties)
+    img3 = PGF(); Compose.push_property_frame(img3, properties)
     @test getfield.(img1.vector_properties[Compose.Property{Compose.FillOpacityPrimitive}].primitives, :value) == [0.3, 0.3]
     @test occursin("fill-opacity=\"0.3\"", String(img2.out.data))
+    @test img3.fill_opacity == 0.3
 end

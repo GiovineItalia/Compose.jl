@@ -288,7 +288,7 @@ end
 function push_property!(props_str, img::PGF, property::FillPrimitive)
     if isa(property.color, TransparentColor)
         img.fill = color(property.color)
-        img.fill_opacity = property.color.alpha
+        property.color.alpha<1.0 && (img.fill_opacity = property.color.alpha)
     else
         img.fill = property.color
     end
@@ -374,7 +374,7 @@ end
 
 function draw(img::PGF, prim::PolygonPrimitive, idx::Int)
     n = length(prim.points)
-    n <= 1 || return
+    n <= 1 && return
 
     modifiers, props = get_vector_properties(img, idx)
     img.visible || return
