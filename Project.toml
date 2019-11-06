@@ -24,7 +24,7 @@ EzXML = "^0.8"
 Fontconfig = "^0.3"
 IterTools = "1"
 JSON = "^0.18"
-Measures = "0.3"
+Measures = "^0.3"
 Requires = "0.5"
 julia = "1"
 
