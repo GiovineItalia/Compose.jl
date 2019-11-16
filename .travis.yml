@@ -1,21 +1,24 @@
 language: julia
+
 os:
     - linux
     - osx
     - windows
-sudo: required
-dist: trusty
+
 julia:
     - 1.0
     - 1.2
     - nightly
+
 matrix:
+  fast_finish: true
   allow_failures:
   - julia: nightly
+
 notifications:
     email: false
-after_success:
-   - julia -e 'using Pkg; cd(Pkg.dir("Compose")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())';
+
+codecov: true
 
 jobs:
   include:
@@ -23,7 +26,6 @@ jobs:
       julia: 1.2
       os: linux
       script:
-        - julia --project=docs/ -e 'using Pkg; Pkg.instantiate();
-                                    Pkg.develop(PackageSpec(path=pwd()))'
-        - julia --project=docs/ docs/make.jl
+        - julia --color=yes --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        - julia --color=yes --project=docs docs/make.jl
       after_success: skip
