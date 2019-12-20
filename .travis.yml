@@ -7,7 +7,7 @@ os:
 
 julia:
     - 1.0
-    - 1.2
+    - 1
     - nightly
 
 matrix:
@@ -23,7 +23,7 @@ codecov: true
 jobs:
   include:
     - stage: "Documentation"
-      julia: 1.2
+      julia: 1
       os: linux
       script:
         - julia --color=yes --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
