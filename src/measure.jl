@@ -120,15 +120,28 @@ struct UnitBox{S,T,U,V}
     bottompad::AbsoluteLength
 end
 
+"""
+    UnitBox(x0, y0, width, height; leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
+
+Specifies the coordinate system for a [`context`](@ref), with origin `x0`, `y0`, plus `width`, `height`.
+"""
 UnitBox(x0, y0, width, height; leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm) =
         UnitBox{typeof(x0), typeof(y0), typeof(width), typeof(height)}(
             x0, y0, width, height, leftpad, rightpad, toppad, bottompad)
 
+"""
+    UnitBox(width, height; leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
+
+Specifies the coordinate system for a [`context`](@ref), with origin `0, 0` plus `width`, `height`.
+"""
 function UnitBox(width, height; leftpad=0mm, rightpad=0mm, toppad=0mm, bottompad=0mm)
     S, T = typeof(width), typeof(height)
     UnitBox{S,T,S,T}(zero(S), zero(T), width, height, leftpad, rightpad, toppad, bottompad)
 end
 
+"""
+    UnitBox() = UnitBox(0.0, 0.0, 1.0, 1.0)
+"""
 UnitBox() = UnitBox(0.0, 0.0, 1.0, 1.0)
 
 # copy with substitution

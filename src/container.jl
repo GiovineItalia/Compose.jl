@@ -87,6 +87,7 @@ Create a node in the tree structure that defines a graphic.  Use
 [`Rotation`](@ref), [`Mirror`](@ref), and [`Shear`](@ref).
 
 # Arguments
+- `units`: the coordinate system for the context, defined by a [`UnitBox`](@ref).
 - `order`: the Z-order of this context relative to its siblings.
 - `clip`:  clip children of the canvas by its bounding box if true.
 - `withjs`: ignore this context and everything under it if we are not drawing to the SVGJS backend.
