@@ -212,3 +212,4 @@ end
 *(a::Dates.Day, b::AbstractFloat) = b * a
 *(a::AbstractFloat, b::Dates.Millisecond) = Dates.Millisecond(round(Int64, (a * b.value)))
 *(a::Dates.Millisecond, b::AbstractFloat) = b * a
+
