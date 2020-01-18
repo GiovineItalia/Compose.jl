@@ -18,7 +18,7 @@ import Measures: resolve, w, h
 export compose, compose!, Context, UnitBox, AbsoluteBoundingBox,
         Rotation, Mirror, Shear,
        ParentDrawContext, context, ctxpromise, table, set_units!, minwidth, minheight,
-       text_extents, max_text_extents, polygon, ngon, star, xgon,
+       text_extents, max_text_extents, polygon, ngon, star, xgon, bezigon,
        line, rectangle, circle, arc, sector, ellipse, text, curve, bitmap, 
        stroke, fill, strokedash, strokelinecap, arrow, strokelinejoin,
        linewidth, visible, fillopacity, strokeopacity, clip, points,

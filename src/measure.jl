@@ -396,3 +396,7 @@ end
 
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Shear) =
             Shear(a.shear, a.theta, resolve(box, units, t, a.point))
+
+
+# for transforming quadratic to cubic  
+controlpnt(anchor::XYTupleOrVec, control::XYTupleOrVec) = 0.333*anchor + 0.667*control

@@ -853,5 +853,29 @@ function arrowhead(img::Image, point::Vec, vl::Float64, θ::Float64)
 end
 
 
+# Bezigon
+
+
+
+function draw(img::Image, prim::BezierPolygonPrimitive)
+    move_to(img, prim.anchor)
+    currentpoint = prim.anchor
+    for side in prim.sides
+        if length(side)==1
+            line_to(img, side[1])
+        elseif length(side)==2
+            cp1 = controlpnt(currentpoint, side[1])
+            cp2 = controlpnt(side[2], side[1])
+            curve_to(img, cp1, cp2, side[2])
+        elseif length(side)==3
+            curve_to(img, side[1], side[2], side[3])
+        end
+        currentpoint = side[end]
+    end
+    close_path(img)
+    fillstroke(img)
+end
+
+
 
 

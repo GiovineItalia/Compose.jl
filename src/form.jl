@@ -798,6 +798,77 @@ Extract points from a Compose.Form
 points(x::Compose.Form) = x.primitives[1].points
 
 
+# Bezigon
+# -------
+
+struct BezierPolygonPrimitive{P<:Vec} <: FormPrimitive
+    anchor::P
+    sides::Vector{Vector{P}}
+end
+
+Bezigon{P<:BezierPolygonPrimitive} = Form{P}
+
+
+"""
+     bezigon(anchor0::Tuple, sides::Vector{<:Vector{<:Tuple}})
+ 
+ Define a bezier polygon. `anchor0` is the starting point as an `(x,y)` tuple.
+ `sides` contains Vectors of side points (tuples): each vector has the control point(s) and end point for each side 
+ (the end point forms the next starting point).
+ The sides can be linear (1 point), quadratic (2 points) or cubic (3 points).
+ """
+function bezigon(anchor0::XYTupleOrVec, sides::Vector{T}, tag=empty_tag) where T<:Vector{<:XYTupleOrVec}
+    anchor = (x_measure(anchor0[1]), y_measure(anchor0[2]))
+    sv = Vector{Vec2}[]
+    for side in sides
+        s = collect(Vec2, zip(x_measure.(first.(side)), y_measure.(last.(side))))
+        push!(sv, s)
+    end
+    Form([BezierPolygonPrimitive(anchor, sv)], tag)
+end
+
+ 
+"""
+    bezigon(anchors::Vector{Tuple}, polysides=Vector{<:Vector{<:Vector{<:Tuple}}})
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
+function bezigon(anchors::Vector, polysides::Vector{T}, tag=empty_tag) where T<:Vector{<:Vector}
+    polyprims = BezierPolygonPrimitive[]
+    for (anchor0, sides) in cyclezip(anchors, polysides)
+        anchor = (x_measure(anchor0[1]), y_measure(anchor0[2]))
+        sv = Vector{Vec2}[]
+        for side in sides
+            s = collect(Vec2, zip(x_measure.(first.(side)), y_measure.(last.(side))))
+            push!(sv, s)
+        end
+        push!(polyprims, BezierPolygonPrimitive(anchor, sv))
+    end
+    Form(polyprims, tag)
+end
+
+
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::BezierPolygonPrimitive)
+    anchor = resolve(box, units, t, p.anchor)
+    sv = Vector{Vec}[]
+    for side in p.sides
+        push!(sv, [resolve(box, units, t, point) for point in side])
+    end
+    return BezierPolygonPrimitive(anchor, sv)
+end
+
+
+function boundingbox(prim::BezierPolygonPrimitive, linewidth::Measure,
+                      font::AbstractString, fontsize::Measure)
+    points = [prim.anchor; reduce(vcat, prim.sides)]
+    x, y = first.(points), last.(points)
+    x0, x1 = extrema(x)
+    y0, y1 = extrema(y)
+    return BoundingBox(x0-linewidth, y0-linewidth, x1-x0+linewidth, y1-y0+linewidth)
+end
+ 
+ 
+form_string(::Bezigon) = "BP"
 
 
 

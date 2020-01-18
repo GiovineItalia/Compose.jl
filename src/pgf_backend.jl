@@ -632,3 +632,34 @@ function draw(img::PGF, prim::ArcPrimitive, idx::Int)
     write(img.buf, ";\n")
 end
 
+
+function draw(img::PGF, prim::BezierPolygonPrimitive, idx::Int)
+    modifiers, props = get_vector_properties(img, idx)
+    img.visible || return
+    write(img.buf, join(modifiers))
+    @printf(img.buf, "\\path [%s] ", join(props, ","))
+    @printf(img.buf, "(%s,%s)", svg_fmt_float(prim.anchor[1].value),
+        svg_fmt_float(prim.anchor[2].value))
+    currentpoint = prim.anchor
+    for side in prim.sides
+        if length(side)==1
+            point = side[1]
+            @printf(img.buf, " -- (%s,%s)", svg_fmt_float(point[1].value),
+                svg_fmt_float(point[2].value))
+        else
+        cp1, cp2, ep = if length(side)==2
+                controlpnt(currentpoint, side[1]),
+                controlpnt(side[2], side[1]), side[2]
+            elseif length(side)==3
+                side[1], side[2], side[3]
+            end
+            @printf(img.buf, " .. controls (%s,%s) and (%s,%s) .. (%s,%s)",
+            svg_fmt_float(cp1[1].value), svg_fmt_float(cp1[2].value),
+            svg_fmt_float(cp2[1].value), svg_fmt_float(cp2[2].value),
+            svg_fmt_float(ep[1].value), svg_fmt_float(ep[2].value))
+        end
+        currentpoint = side[end]
+    end
+    write(img.buf, " -- cycle;\n")
+end
+

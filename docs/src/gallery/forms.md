@@ -23,6 +23,20 @@ img2 = compose(context(),
 hstack(img1, img2)
 ```
 
+## [`bezigon`](@ref)
+ 
+```@example
+using Colors, Compose
+set_default_graphic_size(14cm,10cm)
+
+petal = [[(0.4, 0.4), (0.4, 0.2), (0.5, 0.0)],  [(0.6, 0.2), (0.6, 0.4), (0.5, 0.5)]]
+petalf(θ::Float64) = (context(rotation=Rotation(θ, 0.5,0.5)),
+    bezigon((0.5, 0.5), petal), fill(LCHuvA(70.,50., 360*θ/2π, 0.4)))
+
+theta = range(π/20, 2π, step=2π/10).-π
+img = compose(context(), petalf.(theta)...)
+```
+
 ## [`bitmap`](@ref)
 ```@example
 using Main: SVGJSWritable #hide

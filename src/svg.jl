@@ -1291,3 +1291,52 @@ function svgalphatest(properties::Vector{Property})
 end
 
 
+function draw(img::SVG, prim::BezierPolygonPrimitive, idx::Int)
+
+    points = [prim.anchor; reduce(vcat, prim.sides)]
+    x0 = sum(first.(points))/length(points)
+    y0 = sum(last.(points))/length(points)
+
+    sv = Vector{Vec}[]
+    for side in prim.sides
+        s = collect(Tuple{Measure, Measure}, zip(first.(side).-x0, last.(side).-y0))
+        push!(sv, s)
+    end
+    anchor0 = (prim.anchor[1]-x0, prim.anchor[2]-y0)
+
+    P = Dict(1=>" L", 2=>" Q", 3=>" C")
+    indent(img)
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
+    svg_print_float(img.out, x0.value)
+    print(img.out, ",")
+    svg_print_float(img.out, y0.value)
+    print(img.out, ")\"")
+    print_vector_properties(img, idx, true)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<path d=\"M")
+    svg_print_float(img.out, anchor0[1].value)
+    print(img.out, ",")
+    svg_print_float(img.out, anchor0[2].value)
+
+    for side in sv
+        print(img.out, P[length(side)])
+            for point in side
+                svg_print_float(img.out, point[1].value)
+                print(img.out, ',')
+                svg_print_float(img.out, point[2].value)
+                print(img.out, ' ')
+            end
+    end
+
+    print(img.out, "z\"")
+    print(img.out, " class=\"primitive\"")
+    print(img.out, "/>\n")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
+end
