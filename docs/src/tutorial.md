@@ -330,6 +330,14 @@ These are basic constructors for the in-built forms - see the [Forms gallery](@r
 * `bitmap(mime, data, x0, y0, width, height)`
 * `arc(x, y, r, angle1, angle2, sector)`
 * `sector(x, y, r, angle1, angle2)`
+* `bezigon(anchor0, sides)`
+
+## [Properties](@ref properties_gallery)
+
+Properties include `arrow`, `fill`, `fillopacity`, etc. See the [Properties gallery](@ref properties_gallery) for examples.
+For colors, Compose supports the colors available in [Colors.jl](https://github.com/JuliaGraphics/Colors.jl), which includes many [color spaces](http://juliagraphics.github.io/Colors.jl/stable/), hex strings, and [named colors](http://juliagraphics.github.io/Colors.jl/stable/namedcolors/).
+
+
 
 ## Coordinates
 
