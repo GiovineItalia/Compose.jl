@@ -13,28 +13,28 @@
     <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
   </marker>
 </defs>
-<g font-family="Helvetica-Oblique" id="img-d3a3c49c-1">
+<g font-family="Helvetica-Oblique" id="img-1bcfeeae-1">
   <g transform="translate(120,5)">
     <g class="primitive">
       <text dy="-0em">oblique</text>
     </g>
   </g>
 </g>
-<g font-family="Helvetica-Bold" id="img-d3a3c49c-2">
+<g font-family="Helvetica-Bold" id="img-1bcfeeae-2">
   <g transform="translate(90,5)">
     <g class="primitive">
       <text dy="-0em">bold</text>
     </g>
   </g>
 </g>
-<g font-size="2.12" id="img-d3a3c49c-3">
+<g font-size="2.12" id="img-1bcfeeae-3">
   <g transform="translate(60,5)">
     <g class="primitive">
       <text dy="-0em">small</text>
     </g>
   </g>
 </g>
-<g font-size="6.35" id="img-d3a3c49c-4">
+<g font-size="6.35" id="img-1bcfeeae-4">
   <g transform="translate(30,5)">
     <g class="primitive">
       <text dy="-0em">big</text>
