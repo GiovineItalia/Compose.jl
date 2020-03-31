@@ -333,7 +333,7 @@ function pango_to_svg(text::AbstractString)
 
     # TODO: do c_stripped_text and c_attr_list need to be freed?
 
-    text = unsafe_string(c_stripped_text[])
+    text = codeunits(unsafe_string(c_stripped_text[]))
 
     last_idx = 1
     open_tag = false
