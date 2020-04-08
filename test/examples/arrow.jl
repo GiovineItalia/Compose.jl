@@ -1,8 +1,8 @@
-
 using Compose
+import Cairo, Fontconfig
 
 imgs = [SVG("arrow.svg", 5cm, 5cm),
-PDF("arrow.pdf", 5cm, 5cm)]
+        PDF("arrow.pdf", 5cm, 5cm)]
 
 X =  [0.047 0.87 0.95 0.93;
 0.22 0.01 0.21 0.7;

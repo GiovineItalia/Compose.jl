@@ -1,6 +1,6 @@
-
-import Cairo
 using Compose
+import Cairo, Fontconfig
+
 set_default_graphic_size(6.6inch, 3.3inch)
 
 # See Picasso's "dog" sketch
@@ -14,7 +14,6 @@ p = compose(context(), stroke("black"), fillopacity(0.1),
     (context(0,0, 0.5,1, units=ub,  rotation=Rotation(-π/8)), bezigon((180, 280), dog)),
     (context(0.5,0, 0.5,1, units=ub, rotation=Rotation(π/8)),  bezigon([(180, 280)], [dog]))
 )
-
 
 imgs = [SVG("bezigon.svg"), PNG("bezigon.png")]
 
