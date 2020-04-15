@@ -140,6 +140,13 @@ import Fontconfig
     @test Compose.pango_to_pgf("hello\\") == "\\text{hello\\textbackslash{}}"
 end
 
+@testset "pango utf-8 text_extents" begin
+    @test @isdefined Fontconfig
+    w1 = Compose.text_extents("", 8pt, "α")[1]
+    w2 = Compose.text_extents("", 8pt, "αα")[1]
+    @test w1 < w2
+end
+
 @testset "table" begin
     @testset "force aspect ratio" begin
         tbl = Compose.Table(1, 1, UnitRange(1,1), UnitRange(3:3), aspect_ratio=1.6);
