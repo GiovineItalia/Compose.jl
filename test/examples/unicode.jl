@@ -1,5 +1,3 @@
-#!/usr/bin/env julia
-
 # Draw some unicodes to an image.
 # https://github.com/GiovineItalia/Compose.jl/pull/360#issuecomment-539283765
 

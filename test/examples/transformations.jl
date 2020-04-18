@@ -1,8 +1,8 @@
-
 using Compose
+import Cairo, Fontconfig
 
 imgs = [SVG("transformations.svg", 7cm, 7cm),
-PDF("transformations.pdf", 7cm, 7cm)]
+        PDF("transformations.pdf", 7cm, 7cm)]
 
 
 img = compose(context(),

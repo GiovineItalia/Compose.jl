@@ -14,8 +14,6 @@ const CAIRO_FONT_TYPE_USER = 4
 # Mirroring a #define in the pango header.
 const PANGO_SCALE = 1024.0
 
-pango_fmt_float(x::Float64) = @sprintf("%0.4f", x)
-
 # Use the freetype/fontconfig backend to find the best match to a font
 # description.
 #
@@ -318,83 +316,98 @@ function unpack_pango_attr_list(ptr::Ptr{Cvoid})
   attrs
 end
 
-
 function pango_to_svg(text::AbstractString)
+    # TODO: do c_stripped_text and c_attr_list need to be freed?
     c_stripped_text = Ref{Ptr{UInt8}}()
     c_attr_list = Ref{Ptr{Cvoid}}()
 
-    ret = ccall((:pango_parse_markup, libpango),
-                Int32, (Cstring, Int32, UInt32, Ptr{Ptr{Cvoid}},
-                        Ptr{Ptr{UInt8}}, Ptr{UInt32}, Ptr{Cvoid}),
-                text, -1, 0, c_attr_list, c_stripped_text,
-                C_NULL, C_NULL)
+    output = IOBuffer()
+    output_line = IOBuffer()
 
-    ret == 0 && error("Could not parse pango markup.")
+    textlines = split(text, "\n")
+    carriage_shift = carriage_shift0 
+    for (itextline,textline) in enumerate(textlines)
+        ret = ccall((:pango_parse_markup, libpango),
+                    Int32, (Cstring, Int32, UInt32, Ptr{Ptr{Cvoid}},
+                            Ptr{Ptr{UInt8}}, Ptr{UInt32}, Ptr{Cvoid}),
+                    textline, -1, 0, c_attr_list, c_stripped_text,
+                    C_NULL, C_NULL)
+        ret == 0 && error("Could not parse pango markup.")
 
-    # TODO: do c_stripped_text and c_attr_list need to be freed?
+        input = codeunits(unsafe_string(c_stripped_text[]))
 
-    text = codeunits(unsafe_string(c_stripped_text[]))
+        lastpos = 1
+        baseline_shift = 0.0
+        sup = sub = false
+        open_tag = false
 
-    last_idx = 1
-    open_tag = false
-    baseline_shift = 0.0
-
-    tagged_text = sprint() do io
         for (idx, attr) in unpack_pango_attr_list(c_attr_list[])
-            write(io, text[last_idx:idx])
-            last_idx = idx + 1
+            write(output_line, input[lastpos:idx])
+            lastpos = idx + 1
 
-            open_tag && write(io, "</tspan>")
+            closing_tag = isempty(attr)
 
-            if isempty(attr) && baseline_shift == 0.0
-                open_tag = false
-                continue
-            end
+            open_tag && !closing_tag && write(output_line, "</tspan>")
+ 
+            if closing_tag
+                write(output_line, "</tspan>")
+            else
+                write(output_line, "<tspan")
 
-            open_tag = true
-
-            write(io, "<tspan style=\"dominant-baseline:inherit\"")
-
-            # "baseline-shift" is not currently supported Firefox or IE.
-            # if !(attr.rise === nothing)
-            #     @printf(io, " baseline-shift=\"%s\"",
-            #             fmt_float(((attr.rise / PANGO_SCALE)pt).abs))
-            # end
-
-            if !(attr.rise === nothing)
-                bs = -((attr.rise / PANGO_SCALE)pt).value
-                @printf(io, " dy=\"%s\"", pango_fmt_float(bs))
-                baseline_shift = bs
-            elseif baseline_shift != 0.0
-                @printf(io, " dy=\"%s\"", pango_fmt_float(-baseline_shift))
-                baseline_shift = 0.0
-            end
-
-            if !(attr.scale === nothing)
-                @printf(io, " font-size=\"%s%%\"",
-                        pango_fmt_float(100.0 * attr.scale))
-                baseline_shift *= attr.scale
-            end
-
-            if !(attr.style === nothing)
-                if attr.style == PANGO_STYLE_NORMAL
-                    @printf(io, " font-style=\"%s\"", "normal")
-                elseif attr.style == PANGO_STYLE_OBLIQUE
-                    @printf(io, " font-style=\"%s\"", "oblique")
-                elseif attr.style == PANGO_STYLE_ITALIC
-                    @printf(io, " font-style=\"%s\"", "italic")
+                # pango doesn't know the real font size here it seems,
+                # so ignore it's absolute rise and use a relative shift
+                # that matches fontfallback's behavior
+                if attr.rise !== nothing
+                    if attr.rise<0
+                        baseline_shift = +supsub_shift
+                        sub = true
+                    else
+                        baseline_shift = -supsub_shift
+                        sup = true
+                    end
+                    @printf(output_line, " dy=\"%0.1fem\"", baseline_shift)
                 end
+
+                if attr.scale !== nothing
+                    @printf(output_line, " font-size=\"%0.4f%%\"", 100.0 * attr.scale)
+                    baseline_shift *= attr.scale
+                end
+
+                if attr.style !== nothing
+                    if attr.style == PANGO_STYLE_NORMAL
+                        @printf(output_line, " font-style=\"%s\"", "normal")
+                    elseif attr.style == PANGO_STYLE_OBLIQUE
+                        @printf(output_line, " font-style=\"%s\"", "oblique")
+                    elseif attr.style == PANGO_STYLE_ITALIC
+                        @printf(output_line, " font-style=\"%s\"", "italic")
+                    end
+                end
+
+                attr.weight === nothing || @printf(output_line,
+                                                   " font-weight=\"%d\"",
+                                                   attr.weight)
+
+                write(output_line, ">")
             end
 
-            attr.weight === nothing || @printf(io, " font-weight=\"%d\"", attr.weight)
-
-            write(io, ">")
+            if closing_tag && baseline_shift != 0.0
+                if lastpos < length(input)
+                    @printf(output_line, "<tspan dy=\"%0.4fem\">", -baseline_shift)
+                    baseline_shift = 0.0
+                    open_tag = true
+                else
+                    open_tag = false
+                end 
+            end     
         end
-
-        write(io, text[last_idx:end])
-
-        open_tag && write(io, "</tspan>")
+        write(output_line, input[lastpos:end])
+        open_tag && write(output_line, "</tspan>")
+        itextline>1 && @printf(output,
+                               "<tspan x=\"0\" dy=\"%0.4fem\">",
+                               carriage_shift + sup*carriage_shift_supsub)
+        write(output, String(take!(output_line)))
+        itextline>1 && write(output, "</tspan>")
+        carriage_shift = carriage_shift0 - baseline_shift + sub*carriage_shift_supsub
     end
-
-    tagged_text
+    String(take!(output))
 end

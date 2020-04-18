@@ -1,7 +1,4 @@
-#!/usr/bin/env julia
-
-using Colors
-using Compose
+using Compose, Colors
 using Base.MathConstants
 
 function golden_rect(n::Int)
@@ -12,4 +9,4 @@ function golden_rect(n::Int)
 end
 
 draw(SVG("golden_rect.svg", φ*3inch, 3inch),
-    compose(golden_rect(8), linewidth(0.2mm)))
+     compose(golden_rect(8), linewidth(0.2mm)))

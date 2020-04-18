@@ -1,5 +1,3 @@
-#!/usr/bin/env julia
-
 using Compose
 
 rawimg = read(joinpath(@__DIR__,"smiley.png"));

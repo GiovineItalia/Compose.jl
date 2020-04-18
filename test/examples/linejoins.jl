@@ -1,9 +1,7 @@
-#!/usr/bin/env julia
-
 # Draw lines with various dash styles.
 
-using Compose
-using Colors
+using Compose, Colors
+import Cairo, Fontconfig
 
 function draw_lines(joins)
     if length(joins) == 0

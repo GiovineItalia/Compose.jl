@@ -86,17 +86,6 @@ end
 svg_fmt_color(c::Color) = string("#", hex(c))
 svg_fmt_color(c::Nothing) = "none"
 
-# Replace newlines in a string with the appropriate SVG tspan tags.
-function svg_newlines(input::AbstractString)
-    output = IOBuffer()
-    inputs = split(input,"\n")
-    write(output, inputs[1])
-    for mat in inputs[2:end]
-        write(output, """<tspan x="0" dy="1.2em">""", mat, "</tspan>")
-    end
-    return String(take!(output))
-end
-
 # Javascript in a <script> tag in SVG needs to escape '"' and '<'.
 #=function escape_script(js::AbstractString)=#
     #=return replace(replace(js, "&", "&amp;"), "<", "&lt;")=#
@@ -1006,8 +995,7 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
         print(img.out, "\"")
     end
 
-    @printf(img.out, ">%s</text>\n",
-            svg_newlines(pango_to_svg(prim.value)))
+    @printf(img.out, ">%s</text>\n", pango_to_svg(prim.value))
 
     img.indentation -= 1
     indent(img)

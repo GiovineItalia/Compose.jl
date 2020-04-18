@@ -1,9 +1,8 @@
-
 using Compose
-
+import Cairo, Fontconfig
 
 imgs = [SVG("arc_sector.svg", 7cm, 7cm),
-    PDF("arc_sector.pdf", 7cm, 7cm)]
+        PDF("arc_sector.pdf", 7cm, 7cm)]
 
 a = range(-0.5π, stop=1.5π, length=13)
     colv = repeat(["white","black"], outer=6)

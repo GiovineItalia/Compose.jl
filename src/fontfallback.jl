@@ -139,62 +139,68 @@ function text_extents(font_family::AbstractString, size::Measure, texts::Abstrac
     return extents
 end
 
+const carriage_shift0 = 1.1
+const carriage_shift_supsub = 0.1
+const supsub_shift = 0.4
+
 # Amazingly crude fallback to parse pango markup into svg.
 function pango_to_svg(text::AbstractString)
     pat = r"<(/?)\s*([^>]*)\s*>"
-    input = codeunits(text)
     output = IOBuffer()
-    lastpos = 1
+    output_line = IOBuffer()
+    textlines = split(text, "\n")
+    carriage_shift = carriage_shift0
+    for (itextline,textline) in enumerate(textlines)
+        input = codeunits(textline)
+        lastpos = 1
+        baseline_shift = 0.0
+        sup = sub = false
+        open_tag = false
 
-    baseline_shift = 0.0
-    open_tag = false
+        for mat in eachmatch(pat, textline)
+            write(output_line, input[lastpos:mat.offset-1])
+            lastpos = mat.offset + length(mat.match)
 
-    for mat in eachmatch(pat, text)
-        write(output, input[lastpos:mat.offset-1])
+            closing_tag = mat.captures[1] == "/"
 
-        closing_tag = mat.captures[1] == "/"
+            open_tag && !closing_tag && write(output_line, "</tspan>")
 
-        open_tag && !closing_tag && write(output, "</tspan>")
-
-        if mat.captures[2] == "sup"
-            if mat.captures[1] == "/"
-                write(output, "</tspan>")
+            if closing_tag
+                write(output_line, "</tspan>")
             else
-                # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"super\">")
-                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"-0.6em\" font-size=\"83%\">")
-                baseline_shift = -0.6 * 0.83
+                if mat.captures[2] == "sup"
+                    write(output_line, "<tspan dy=\"-$(supsub_shift)em\" font-size=\"83%\">")
+                    baseline_shift = -supsub_shift * 0.83
+                    sup = true
+                elseif mat.captures[2] == "sub"
+                    write(output_line, "<tspan dy=\"$(supsub_shift)em\" font-size=\"83%\">")
+                    baseline_shift = supsub_shift * 0.83
+                    sub = true
+                elseif mat.captures[2] == "i"
+                    write(output_line, "<tspan font-style=\"italic\">")
+                elseif mat.captures[2] == "b"
+                    write(output_line, "<tspan font-weight=\"bold\">")
+                end
             end
-        elseif mat.captures[2] == "sub"
-            if mat.captures[1] == "/"
-                write(output, "</tspan>")
-            else
-                # write(output, "<tspan style=\"dominant-baseline:inherit\" baseline-shift=\"sub\">")
-                write(output, "<tspan style=\"dominant-baseline:inherit\" dy=\"0.6em\" font-size=\"83%\">")
-                baseline_shift = 0.6 * 0.83
-            end
-        elseif mat.captures[2] == "i"
-            if mat.captures[1] == "/"
-                write(output, "</tspan>")
-            else
-                write(output, "<tspan style=\"dominant-baseline:inherit\" font-style=\"italic\">")
-            end
-        elseif mat.captures[2] == "b"
-            if mat.captures[1] == "/"
-                write(output, "</tspan>")
-            else
-                write(output, "<tspan style=\"dominant-baseline:inherit\" font-weight=\"bold\">")
+
+            if closing_tag && baseline_shift != 0.0
+                if lastpos < length(input)
+                    @printf(output_line, "<tspan dy=\"%0.4fem\">", -baseline_shift)
+                    baseline_shift = 0.0
+                    open_tag = true
+                else
+                    open_tag = false
+                end
             end
         end
-
-        if closing_tag && baseline_shift != 0.0
-            @printf(output, "<tspan dy=\"%fem\">", -baseline_shift)
-            baseline_shift = 0.0
-            open_tag = true
-        end
-
-        lastpos = mat.offset + length(mat.match)
+        write(output_line, input[lastpos:end])
+        open_tag && write(output_line, "</tspan>")
+        itextline>1 && @printf(output,
+                               "<tspan x=\"0\" dy=\"%0.4fem\">",
+                               carriage_shift + sup*carriage_shift_supsub)
+        write(output, String(take!(output_line)))
+        itextline>1 && write(output, "</tspan>")
+        carriage_shift = carriage_shift0 - baseline_shift + sub*carriage_shift_supsub
     end
-    write(output, input[lastpos:end])
-    open_tag && write(output, "</tspan>")
     String(take!(output))
 end

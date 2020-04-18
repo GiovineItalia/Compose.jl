@@ -1,5 +1,4 @@
-using Test, Random
-using Colors
+using Compose, Test, Random, Colors
 
 # must be before importing cairo
 @testset "missing cairo errors" begin
