@@ -184,3 +184,8 @@ end
     @test occursin("fill-opacity=\"0.3\"", String(img2.out.data))
     @test img3.fill_opacity == 0.3
 end
+
+@testset "Missing" begin
+    @test Compose.x_measure(missing)===NaN*cx
+    @test Compose.y_measure(missing)===NaN*cy
+end

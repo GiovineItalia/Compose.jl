@@ -8,6 +8,7 @@ using Requires
 using Dates
 using Printf
 using Base.Iterators
+using Statistics
 import JSON
 
 import Base: length, isempty, getindex, setindex!,
