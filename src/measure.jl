@@ -55,6 +55,8 @@ y_measure(a::Vector) = Measure[y_measure(y) for y in a]
 size_measure(a::Measure) = a
 size_measure(a) = a * mm
 
+x_measure(a::Missing) = x_measure(NaN)
+y_measure(a::Missing) = y_measure(NaN)
 
 # Higher-order measures
 # ---------------------

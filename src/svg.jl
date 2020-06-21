@@ -537,58 +537,41 @@ end
 #   out: Output stream.
 #   points: points on the path
 #   bridge_gaps: when true, remove non-finite values, rather than forming
-#                separate lines.
+#                separate lines. (this arg is never used)
 #
 # Returns:
 #   A string containing SVG path data.
 #
-function print_svg_path(out, points::Vector{AbsoluteVec2},
-                        bridge_gaps::Bool=false)
+function print_svg_path(out, points::Vector{AbsoluteVec2})
     isfirst = true
-    for point in points
-        x, y = point[1].value, point[2].value
-        if !(isfinite(x) && isfinite(y))
-            isfirst = true
-            continue
-        end
-
-        if isfirst
-            isfirst = false
+    endp = points[end]
+    for (currp, nxtp) in zip(points[1:end-1], points[2:end])
+        x1, y1 = currp[1].value, currp[2].value
+        x2, y2 = nxtp[1].value, nxtp[2].value
+        currentp = isfinite(x1) && isfinite(y1)
+        nextp = isfinite(x2) && isfinite(y2)
+    
+        if  (isfirst && currentp && nextp)
             write(out, 'M')
-            svg_print_float(out, x)
+            svg_print_float(out, x1)
             write(out, ',')
-            svg_print_float(out, y)
+            svg_print_float(out, y1)
             write(out, " L")
-        else
+            isfirst = false
+        elseif (!isfirst && currentp)
+            svg_print_float(out, x1)
+            write(out, ',')
+            svg_print_float(out, y1)
             write(out, ' ')
-            svg_print_float(out, x)
-            write(out, ' ')
-            svg_print_float(out, y)
         end
+        !nextp && (isfirst = true)
     end
+    svg_print_float(out, endp[1].value)
+    write(out, ',')
+    svg_print_float(out, endp[2].value)
+    write(out, ' ')
 end
 
-# TODO: This logic should be moved to Gadfly
-# Return array of paths to draw with printpath
-# array is formed by splitting by NaN values
-#function make_paths(points::Vector{AbsoluteVec})
-    #paths = Vector{AbsoluteVec}[]
-    #nans = find(xy -> isnan(xy[1]) || isnan(xy[2]),
-                #[(point[1].value, point[2].value) for point in points])
-    #if length(nans) == 0
-        #push!(paths, points)
-    #else
-        #nans = [0, nans..., length(points) + 1]
-        #i, n = 1, length(nans)
-        #while i <= n-1
-            #if nans[i] + 1 < nans[i + 1]
-                #push!(paths, points[(nans[i]+1):(nans[i+1] - 1)])
-            #end
-            #i += 1
-        #end
-    #end
-    #paths
-#end
 
 
 # Property Printing
@@ -809,7 +792,7 @@ function draw(img::SVG, prim::PolygonPrimitive, idx::Int)
     indent(img)
 
     write(img.out, "<path d=\"")
-    print_svg_path(img.out, translated_path, true)
+    print_svg_path(img.out, translated_path)
     write(img.out, " z\"")
     print(img.out, " class=\"primitive\"")
     write(img.out, "/>\n")
@@ -823,7 +806,7 @@ function draw(img::SVG, prim::ComplexPolygonPrimitive, idx::Int)
     Compose.write(img.out, "<path d=\"")
     for ring in prim.rings
         indent(img)
-        print_svg_path(img.out, ring, true)
+        print_svg_path(img.out, ring)
         write(img.out, " ")
     end
     write(img.out, " z\"")
@@ -901,16 +884,10 @@ end
 function draw(img::SVG, prim::LinePrimitive, idx::Int)
     length(prim.points)<=1 && return
 
-    x0, y0, n = prim.points[1][1], prim.points[1][2], 1
-    for p in prim.points[2:end]
-        if isfinite(p[1].value) && isfinite(p[2].value)
-            x0 += p[1]
-            y0 += p[2]
-            n +=1
-        end
-    end
-    x0, y0 = x0/n, y0/n
-    translated_path = [(p[1]-x0,p[2]-y0) for p in prim.points]
+    i = [isfinite(p[1].value) && isfinite(p[2].value) for p in prim.points]
+    any(i) || return
+    x0, y0 = mean(prim.points[i])
+    translated_path = prim.points .- [(x0, y0)]
 
     indent(img)
 
@@ -925,7 +902,7 @@ function draw(img::SVG, prim::LinePrimitive, idx::Int)
     indent(img)
 
     print(img.out, "<path fill=\"none\" d=\"")
-    print_svg_path(img.out, translated_path, true)
+    print_svg_path(img.out, translated_path)
     print(img.out, "\"")
     print(img.out, " class=\"primitive\"")
     print(img.out, "/>\n")
