@@ -13,12 +13,12 @@
     <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
   </marker>
 </defs>
-<g fill="#FFE4C4" id="img-765bb114-1">
+<g fill="#FFE4C4" id="img-c89951c6-1">
   <g transform="translate(26.67,26.67)">
     <path d="M13.33,13.33 L-6.67,13.33 -6.67,-26.67  z" class="primitive"/>
   </g>
 </g>
-<g fill="#FF6347" id="img-765bb114-2">
+<g fill="#FF6347" id="img-c89951c6-2">
   <g transform="translate(13.33,26.67)">
     <path d="M-13.33,13.33 L6.67,13.33 6.67,-26.67  z" class="primitive"/>
   </g>
