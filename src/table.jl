@@ -320,7 +320,6 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
 
     root = context(units=tbl.units, order=tbl.order)
 
-    feasible = true
     for i in 1:m, j in 1:n
         if isempty(tbl.children[i, j])
             continue
@@ -330,14 +329,11 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
             idx = optimal_choice[(j-1)*m + i]
             ctx = copy(tbl.children[i, j][idx])
         end
-        feasible == feasible && issatisfied(ctx, w_solution[j], h_solution[i])
         ctx.box = BoundingBox(
             x_solution[j]*mm, y_solution[i]*mm,
             w_solution[j]*mm, h_solution[i]*mm)
         compose!(root, ctx)
     end
-
-    feasible || warn("Graphic may not be drawn correctly at the given size.")
 
     return root
 end
