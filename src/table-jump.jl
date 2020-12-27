@@ -145,9 +145,12 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
             force_aspect_ratio!(tbl, x_solution, y_solution, w_solution, h_solution)
 
     # set child positions according to layout solution
+    feasible_eps = 1e-4
+    feasible = true
     for i in 1:m, j in 1:n
         if length(tbl.children[i, j]) == 1
             ctx = copy(tbl.children[i, j][1])
+            feasible = feasible && issatisfied(ctx, w_solution[j], h_solution[i])
             ctx.box = BoundingBox(
                 x_solution[j]*mm, y_solution[i]*mm,
                 w_solution[j]*mm, h_solution[i]*mm)
@@ -166,7 +169,7 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
         end
     end
 
-    feasible || warn("Graphics may not be drawn correctly at the given size.")
+    feasible || warn("Graphic may not be drawn correctly at the given size.")
 
     return root
 end

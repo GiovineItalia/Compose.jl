@@ -337,7 +337,7 @@ function realize_brute_force(tbl::Table, drawctx::ParentDrawContext)
         compose!(root, ctx)
     end
 
-    feasible || warn("Graphics may not be drawn correctly at the given size.")
+    feasible || warn("Graphic may not be drawn correctly at the given size.")
 
     return root
 end
