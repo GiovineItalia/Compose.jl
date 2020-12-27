@@ -106,8 +106,6 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     end
 
     # minimum cell size constraint for fixed cells
-    feasible_eps = 1e-4
-    feasible = true
     for i in 1:m, j in 1:n
         if length(tbl.children[i, j]) == 1
             minw = minwidth(tbl.children[i, j][1])
