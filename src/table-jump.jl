@@ -106,6 +106,8 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     end
 
     # minimum cell size constraint for fixed cells
+    feasible_eps = 1e-4
+    feasible = true
     for i in 1:m, j in 1:n
         if length(tbl.children[i, j]) == 1
             minw = minwidth(tbl.children[i, j][1])
@@ -156,12 +158,15 @@ function realize(tbl::Table, drawctx::ParentDrawContext)
     for (l, (i, j, k)) in enumerate(c_indexes)
         if round(c_solution[l]) == 1
             ctx = copy(tbl.children[i, j][k])
+            feasible = feasible && issatisfied(ctx, w_solution[j], h_solution[i])
             ctx.box = BoundingBox(
                 x_solution[j]*mm, y_solution[i]*mm,
                 w_solution[j]*mm, h_solution[i]*mm)
             compose!(root, ctx)
         end
     end
+
+    feasible || warn("Graphics may not be drawn correctly at the given size.")
 
     return root
 end
