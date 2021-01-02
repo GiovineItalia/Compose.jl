@@ -175,21 +175,24 @@ nothing # hide
 ## Measures can be a combination of absolute and relative units
 
 Complex visualizations often are defined using a combination of relative and
-absolute units. Compose makes these easy. In fact there are three sorts of units
+absolute units. Compose makes these easy. In fact there are four sorts of units
 used in Compose:
 
-* **Context units**: If no unit is explicitly attached to a number, it is
+* **Context (position) units**: If no unit is explicitly attached to a position, it is
   assumed to be in “context units”, which are relative to the parent Context's
   box and coordinate system. (Constants: `cx`, `cy`)
+* **Context (relative position) units**: The radius of a form can be expressed in size units 
+  with respect to the context units (Constants: `sx`, `sy`). If no unit is explicitly attached to
+  a size (e.g. radius) unit, it is assumed to be wrt the context `x` units. More info below.  
 * **Width/Height units**: Sometimes you'll want place geometry in relative
   coordinates, but bypassing the parent context's coordinate system.
   Width/height work so that `(0w, 0h)` is always the top-left corner of the
-  contxt, and `(1w, 1h)` is always the bottom-right. (Constants: `w`, `h`)
+  context, and `(1w, 1h)` is always the bottom-right. (Constants: `w`, `h`)
 * **Absolute units**: Absolute units are inches, centimeters, points, etc.
   (Constants: `inch`, `cm`, `mm`, `pt`)
 
-Any linear combination of these types of units is allowed. For example: `0.5w +
-2cm - 5cx` is a valid measure that can be used anywhere.
+Any linear combination of these types of units is allowed. For example, `1w - 10mm` is a well formed expression, giving the width of the parent canvas minus ten millimeters. An example of the difference between
+context position units (`cx`, `cy`) and size units (`sx`, `sy`), is when the coordinate system (defined by `UnitBox`) does not start at `(0,0)`, than the size `0sx` (or `0sy`) will always equal `0mm`, but the position `(0cx, 0cy)` will be dependent on the coordinates (and may refer to a point outside the context's `UnitBox`).
 
 
 ## Forms and Properties can be vectorized
@@ -337,13 +340,6 @@ These are basic constructors for the in-built forms - see the [Forms gallery](@r
 Properties include `arrow`, `fill`, `fillopacity`, etc. See the [Properties gallery](@ref properties_gallery) for examples.
 For colors, Compose supports the colors available in [Colors.jl](https://github.com/JuliaGraphics/Colors.jl), which includes many [color spaces](http://juliagraphics.github.io/Colors.jl/stable/), hex strings, and [named colors](http://juliagraphics.github.io/Colors.jl/stable/namedcolors/).
 
-
-
-## Coordinates
-
-Besides coordinate transformations, Compose also handles mixtures of relative
-and absolute coordinates. For example, `1w - 10mm` is a well formed expression,
-giving the width of the parent canvas minus ten millimeters.
 
 ## Text
 

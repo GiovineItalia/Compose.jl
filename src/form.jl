@@ -700,8 +700,8 @@ Define a `n`-sided polygon with its center at (`x`,`y`), and radius of `r`.  For
 """
 function ngon(x, y, r, n::Int, tag=empty_tag)
     θ = range(-π/2, stop=1.5π, length=n+1)
-    x1 = x_measure(x) .+ x_measure(r).*cos.(θ)
-    y1 = y_measure(y) .+ x_measure(r).*sin.(θ)
+    x1 = x_measure(x) .+ size_x_measure(r).*cos.(θ)
+    y1 = y_measure(y) .+ size_x_measure(r).*sin.(θ)
     points = collect(Tuple{Measure, Measure}, zip(x1, y1))
     return Form([PolygonPrimitive(points)], tag)
 end
@@ -732,8 +732,8 @@ Define a `n`-pointed star with its center at (`x`,`y`), outer radius of `r`, and
 function star(x, y, r, n::Int, ratio::Float64=0.3, tag=empty_tag)
     θ = range(-π/2, stop=1.5π, length=2*n+1)[1:end-1]
     r1 = repeat([r, r*ratio], outer=n)
-    x1 = x_measure(x) .+ x_measure(r1).*cos.(θ)
-    y1 = y_measure(y) .+ x_measure(r1).*sin.(θ)
+    x1 = x_measure(x) .+ size_x_measure(r1).*cos.(θ)
+    y1 = y_measure(y) .+ size_x_measure(r1).*sin.(θ)
     points = collect(Tuple{Measure, Measure}, zip(x1, y1))
     return Form([PolygonPrimitive(points)], tag)
 end
@@ -768,8 +768,8 @@ function xgon(x, y, r, n::Int, ratio::Float64=0.1, tag=empty_tag)
     dᵢ = abs(asin(0.5*w/(r*ratio)))   
     r₂ = repeat([r*ratio,r,r], outer=n)
     θ₂ = vec([θ+x  for x in [-dᵢ, -dₒ, dₒ], θ in θ₁])
-    x1 = x_measure(x) .+ x_measure(r₂).*cos.(θ₂)
-    y1 = y_measure(y) .+ x_measure(r₂).*sin.(θ₂)
+    x1 = x_measure(x) .+ size_x_measure(r₂).*cos.(θ₂)
+    y1 = y_measure(y) .+ size_x_measure(r₂).*sin.(θ₂)
     points = collect(Tuple{Measure, Measure}, zip(x1, y1))
     return Form([PolygonPrimitive(points)], tag)
 end

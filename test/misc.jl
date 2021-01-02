@@ -188,4 +188,17 @@ end
 @testset "Missing" begin
     @test Compose.x_measure(missing)===NaN*cx
     @test Compose.y_measure(missing)===NaN*cy
+    @test Compose.size_x_measure(missing)===NaN*sx
+    @test Compose.size_y_measure(missing)===NaN*sy
+end
+
+@testset "cx, sx and cy, sy units" begin
+    ub, bb = UnitBox(-0.3, 0., 1.2, 1.), Compose.BoundingBox((50mm, 50mm), (40mm, 40mm))
+    tr = Compose.IdentityTransform()
+    xpos = (Compose.resolve_position(bb, ub, tr, 0sx), 
+                Compose.resolve_position(bb, ub, tr, 0cx))
+    ub, bb = UnitBox(0., -0.3, 1., 1.2), Compose.BoundingBox((10mm, 10mm), (40mm, 40mm))
+    ypos = (Compose.resolve_position(bb, ub, tr, 0sy),
+                Compose.resolve_position(bb, ub, tr, 0cy))
+    @test ypos == xpos == (0.0mm, 10.0mm)
 end

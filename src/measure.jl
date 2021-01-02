@@ -6,9 +6,13 @@ using LinearAlgebra
 
 const cx = Length{:cx}
 const cy = Length{:cy}
+const sx = Length{:sx}
+const sy = Length{:sy}
 
 *(a::T, b::Type{cx}) where T = x_measure(a)
 *(a::T, b::Type{cy}) where T = y_measure(a)
+*(a::T, b::Type{sx}) where T = size_x_measure(a)
+*(a::T, b::Type{sy}) where T = size_y_measure(a)
 
 # Pixels are not typically used in Compose in preference of absolute
 # measurements or measurements relative to parent canvases. So for the
@@ -46,17 +50,30 @@ x_measure(a::T) where T = Length{:cx, T}(a)
 y_measure(a::Measure) = a
 y_measure(a::T) where T = Length{:cy, T}(a)
 
+size_x_measure(a::Measure) = a
+size_x_measure(a::T) where T = Length{:sx, T}(a)
+size_y_measure(a::Measure) = a
+size_y_measure(a::T) where T = Length{:sy, T}(a)
+
 x_measure(a::Vector{T}) where T <: Measure = a
 x_measure(a::Vector) = Measure[x_measure(x) for x in a]
 
 y_measure(a::Vector{T}) where T <: Measure = a
 y_measure(a::Vector) = Measure[y_measure(y) for y in a]
 
+size_x_measure(a::Vector{T}) where T <: Measure = a
+size_x_measure(a::Vector) = Measure[size_x_measure(x) for x in a]
+size_y_measure(a::Vector{T}) where T <: Measure = a
+size_y_measure(a::Vector) = Measure[size_y_measure(y) for y in a]
+
 size_measure(a::Measure) = a
 size_measure(a) = a * mm
 
 x_measure(a::Missing) = x_measure(NaN)
 y_measure(a::Missing) = y_measure(NaN)
+
+size_x_measure(a::Missing) = size_x_measure(NaN)
+size_y_measure(a::Missing) = size_y_measure(NaN)
 
 # Higher-order measures
 # ---------------------
@@ -291,6 +308,13 @@ resolve_position(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy})
         ((a.value - units.y0) / height(units)) * box.a[2]
 resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:cy}) =
         abs(a.value / height(units)) * box.a[2]
+
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:sx}) =
+        a.value / width(units) * box.a[1]
+    
+resolve(box::AbsoluteBox, units::UnitBox, t::Transform, a::Length{:sy}) =
+        a.value / height(units) * box.a[2]
+    
 
 function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::Vec2)
     xy = (resolve_position(box, units, t, p[1]) + box.x0[1],
