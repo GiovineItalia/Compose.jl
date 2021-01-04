@@ -192,7 +192,7 @@ used in Compose:
   (Constants: `inch`, `cm`, `mm`, `pt`)
 
 Any linear combination of these types of units is allowed. For example, `1w - 10mm` is a well formed expression, giving the width of the parent canvas minus ten millimeters. An example of the difference between
-context position units (`cx`, `cy`) and size units (`sx`, `sy`), is when the coordinate system (defined by `UnitBox`) does not start at `(0,0)`, than the size `0sx` (or `0sy`) will always equal `0mm`, but the position `(0cx, 0cy)` will be dependent on the coordinates (and may refer to a point outside the context's `UnitBox`).
+context position units (`cx`, `cy`) and size units (`sx`, `sy`), is when the coordinate system (defined by `UnitBox`) does not start at `(0,0)`, then the size `0sx` (or `0sy`) will always equal `0mm`, but the position `(0cx, 0cy)` will be dependent on the coordinates (and may refer to a point outside the context's `UnitBox`).
 
 
 ## Forms and Properties can be vectorized
