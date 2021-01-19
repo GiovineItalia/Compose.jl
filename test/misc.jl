@@ -31,7 +31,7 @@ import Cairo
         # full printing
         show(io, context())
         str = String(take!(io))
-        @test str == "Context(Measures.BoundingBox{Tuple{Measures.Length{:w,Float64},Measures.Length{:h,Float64}},Tuple{Measures.Length{:w,Float64},Measures.Length{:h,Float64}}}((0.0w, 0.0h), (1.0w, 1.0h)), nothing, nothing, nothing, nothing, List([]), List([]), List([]), 0, false, false, false, false, nothing, nothing, 0.0, Symbol(\"\"))"
+        @test replace(str, " "=>"") == "Context(Measures.BoundingBox{Tuple{Measures.Length{:w,Float64},Measures.Length{:h,Float64}},Tuple{Measures.Length{:w,Float64},Measures.Length{:h,Float64}}}((0.0w,0.0h),(1.0w,1.0h)),nothing,nothing,nothing,nothing,List([]),List([]),List([]),0,false,false,false,false,nothing,nothing,0.0,Symbol(\"\"))"
     end
     @testset "table" begin
         t = Compose.Table(1, 1, UnitRange(1,1), UnitRange(3:3), aspect_ratio=1.6)
@@ -45,7 +45,7 @@ import Cairo
         # full printing
         show(io, t)
         str = String(take!(io))
-        @test str == "Compose.Table(Array{Context,1}[[]], 3:3, 1:1, nothing, nothing, 1.6, Any[], nothing, 0, false, false)"
+        @test replace(str, " "=>"") == "Compose.Table($(Vector{Context})[[]],3:3,1:1,nothing,nothing,1.6,Any[],nothing,0,false,false)"
     end
 end
 
