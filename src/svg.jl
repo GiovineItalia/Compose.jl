@@ -982,6 +982,13 @@ function draw(img::SVG, prim::TextPrimitive, idx::Int)
     print(img.out, "</g>\n")
 end
 
+function draw(img::SVG, prim::RawSVGPrimitive, idx::Int)
+    indent(img)
+    img.indentation += 1
+    print(img.out, prim.value)
+    img.indentation -= 1
+end
+
 function draw(img::SVG, prim::CurvePrimitive, idx::Int)
     x0, y0 = prim.anchor0[1], prim.anchor0[2]
     x0, y0 += prim.ctrl0[1], prim.ctrl0[2]
@@ -1305,3 +1312,58 @@ function draw(img::SVG, prim::BezierPolygonPrimitive, idx::Int)
     indent(img)
     print(img.out, "</g>\n")
 end
+
+function draw(img::SVG, prim::MathJaxPrimitive, idx::Int)
+    indent(img)
+
+    img.indentation += 1
+    print(img.out, "<g transform=\"translate(")
+    svg_print_float(img.out, prim.position[1].value)
+    print(img.out, ",")
+    svg_print_float(img.out, prim.position[2].value)
+    print(img.out, ")\"")
+    print_vector_properties(img, idx, true)
+    print(img.out, ">\n")
+    indent(img)
+
+    print(img.out, "<g class=\"primitive\">\n")
+    img.indentation += 1
+    indent(img)
+    print(img.out, """<foreignObject x="0" y="0" """)
+
+    if abs(prim.rot.theta) > 1e-4 || sum(abs.(prim.offset)) > 1e-4mm
+        print(img.out, " transform=\"")
+        if abs(prim.rot.theta) > 1e-4
+            print(img.out, "rotate(")
+            svg_print_float(img.out, rad2deg(prim.rot.theta))
+            print(img.out, ",")
+            svg_print_float(img.out, prim.rot.offset[1].value-prim.position[1].value)
+            print(img.out, ", ")
+            svg_print_float(img.out, prim.rot.offset[2].value-prim.position[2].value)
+            print(img.out, ")")
+        end
+        if sum(abs.(prim.offset)) > 1e-4mm
+            print(img.out, "translate(")
+            svg_print_float(img.out, prim.offset[1].value)
+            print(img.out, ",")
+            svg_print_float(img.out, prim.offset[2].value)
+            print(img.out, ")")
+        end
+        print(img.out, "\"")
+    end
+
+    print(img.out, """ width="$(prim.size[1])" height="$(prim.size[2])">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+    \\(\\displaystyle{$(prim.value)}\\)
+    </div>
+</foreignObject>""")
+
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
+    img.indentation -= 1
+    indent(img)
+    print(img.out, "</g>\n")
+end
+
+

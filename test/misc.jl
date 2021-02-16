@@ -106,6 +106,15 @@ bm = bitmap("fake", rand(UInt8,10), 0, 1, 0.8, 0.7, :image)
 @test isa(Compose.text(0.5,0.4,"hello"), Compose.Text)
 @test isa(Compose.text(rand(5),rand(5),["hello","there"]), Compose.Text)
 
+@test isa(Compose.mathjax(0.5,0.4,0.1,0.2,raw"\frac{x}{2}"), Compose.MathJax)
+@test isa(Compose.mathjax(rand(2),rand(2),rand(2),rand(2),[raw"\frac{x}{2}",raw"\frac{x}{3}"]), Compose.MathJax)
+
+@test isa(Compose.rawsvg(raw"""<foreignObject x="50" y="50" width="100" height="100">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Times; font-size:15px">
+		\(\displaystyle{x+1\over y-1}\)
+    </div>
+  </foreignObject>"""), Compose.RawSVG)
+
 @test isa(Compose.line(), Compose.Line)
 @test isa(Compose.line([(1,2),(3,5),(4,2)]), Compose.Line)
 

@@ -870,5 +870,87 @@ end
  
 form_string(::Bezigon) = "BP"
 
+# RawSVGPrimitive form
+struct RawSVGPrimitive{VT<:AbstractString} <: FormPrimitive
+    value::VT
+end
+
+
+const RawSVG{P<:RawSVGPrimitive} = Form{P}
+
+"""
+    rawsvg(str::AbstractString)
+
+Print a raw string into the SVG image.
+"""
+function rawsvg(str::AbstractString)
+    Form([RawSVGPrimitive(str)])
+end
+
+form_string(::RawSVG) = "RAW"
+
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::RawSVGPrimitive{VT}) where {VT}
+    return p
+end
+
+# MathJaxPrimitive form
+struct MathJaxPrimitive{P<:Vec, S<:Vec, R<:Rotation, O<:Vec} <: FormPrimitive
+    position::P
+    size::S
+    value::AbstractString
+
+    rot::R
+
+    offset::O
+end
+
+const MathJax{P<:MathJaxPrimitive} = Form{P}
+form_string(::MathJax) = "MATH"
+
+"""
+    mathjax(x, y, width, heigh, value [,rot::Rotation])
+
+Draw the text `value` at the position (`x`,`y`) relative to the current context.
+Parameters `width` and `height` specify the bounding box size.
+"""
+function mathjax(x, y, width, height, value::AbstractString,
+              rot=Rotation(), offset::Vec2=(0mm,0mm);
+              tag::Symbol=empty_tag)
+    moffset = (x_measure(offset[1]), y_measure(offset[2]))
+    prim = MathJaxPrimitive((x_measure(x), y_measure(y)), (x_measure(width), y_measure(height)), string(value), rot, moffset)
+    MathJax{typeof(prim)}([prim], tag)
+end
+
+"""
+    mathjax(xs::AbstractArray, ys::AbstractArray, ws::AbstractArray, hs::AbstractArray, values::AbstractArray [,rots::Rotation])
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
+mathjax(xs::AbstractArray, ys::AbstractArray, ws::AbstractArray, hs::AbstractArray, values::AbstractArray{AbstractString},
+              rots::AbstractArray=[Rotation()], offsets::AbstractArray=[(0mm,0mm)];
+              tag::Symbol=empty_tag) =
+    @makeform (x in xs, y in ys, w in ws, h in hs, value in values, rot in rots, offset in offsets),
+    MathJaxPrimitive((x_measure(x), y_measure(y)), (x_measure(w), y_measure(h)), value, rot, (x_measure(offset[1]), y_measure(offset[2]))) tag
+
+function resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::MathJaxPrimitive)
+    rot = resolve(box, units, t, p.rot)
+    return MathJaxPrimitive(
+                resolve(box, units, t, p.position),
+                resolve(box, units, t, p.size),
+                p.value, rot, p.offset)
+end
+
+function boundingbox(form::MathJaxPrimitive, linewidth::Measure,
+                     font::AbstractString, fontsize::Measure)
+
+    width, height = form.size
+    x0 = form.position.x
+    y0 = form.position.y
+
+    return BoundingBox(x0 - linewidth + form.offset[1],
+                       y0 - linewidth + form.offset[2],
+                       width + linewidth,
+                       height + linewidth)
+end
 
 
