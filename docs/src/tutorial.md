@@ -105,7 +105,7 @@ introspect(tomato_bisque)
 
 This is a little cryptic, but you can use this limited edition decoder ring:
 
-```julia
+```@example 2
 using Compose, Colors, Measures
 set_default_graphic_size(6cm, 4cm)
 
