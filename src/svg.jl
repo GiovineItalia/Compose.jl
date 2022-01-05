@@ -511,12 +511,7 @@ function show(io::IO, ::MIME"text/html", img::SVG)
     if img.cached_out === nothing
         img.cached_out = String(take!(img.out))
     end
-    write(io, 
-        """
-        <html>
-        $(img.cached_out)
-        </html>
-        """)
+    write(io, img.cached_out)
 end
 
 function show(io::IO, ::MIME"image/svg+xml", img::SVG)
