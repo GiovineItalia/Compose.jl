@@ -131,7 +131,7 @@ include "\\usepackage{fontspec}" in the headers.
 # Examples
 ```
 c = compose(context(), rectangle())
-draw(PGF("myplot.tex", 10cm, 5cm, only_tikz=true, texfonts=true), c)
+draw(PGF("myplot.tex", 10cm, 5cm, true, texfonts=true), c)
 ```
 """
 PGF(filename::AbstractString, width=default_graphic_width, height=default_graphic_height,
