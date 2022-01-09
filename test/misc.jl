@@ -45,7 +45,7 @@ import Cairo
         # full printing
         show(io, t)
         str = String(take!(io))
-        @test replace(str, " "=>"") == "Compose.Table($(Vector{Context})[[]],3:3,1:1,nothing,nothing,1.6,Any[],nothing,0,false,false)"
+        @test replace(str, " "=>"") == "Compose.Table($(Vector{Context})[[]" * (VERSION>=v"1.7" ? ";;" : "") * "],3:3,1:1,nothing,nothing,1.6,Any[],nothing,0,false,false)"
     end
 end
 
