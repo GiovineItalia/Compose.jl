@@ -640,10 +640,6 @@ function draw(img::Image, form::Form)
     end
 end
 
-function draw(img::Image, prim::RectanglePrimitive)
-    rectangle(img, prim.corner, prim.width, prim.height)
-    fillstroke(img)
-end
 
 function draw(img::Image, prim::PolygonPrimitive)
     length(prim.points) <= 1 && return

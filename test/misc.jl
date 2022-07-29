@@ -26,7 +26,7 @@ import Cairo
         # compact printing
         show(IOContext(io, :compact=>true), tomato_bisque)
         str = String(take!(io))
-        @test str == "Context(Context(R,f),Context(C,f))"
+        @test str == "Context(Context(SP,f),Context(C,f))"
 
         # full printing
         show(io, context())
@@ -91,9 +91,9 @@ bm = bitmap("fake", rand(UInt8,10), 0, 1, 0.8, 0.7, :image)
 @test isa(Compose.polygon(), Compose.Polygon)
 @test isa(Compose.polygon([(1,2),(3,5),(4,2)]), Compose.Polygon)
 
-@test isa(Compose.rectangle(), Compose.Rectangle)
-@test isa(Compose.rectangle(0,1,0.3,0.8), Compose.Rectangle)
-@test isa(Compose.rectangle(rand(5),rand(5),rand(5),rand(5)), Compose.Rectangle)
+@test isa(Compose.rectangle(), Compose.Polygon)
+@test isa(Compose.rectangle(0,1,0.3,0.8), Compose.Polygon)
+@test isa(Compose.rectangle(rand(5),rand(5),rand(5),rand(5)), Compose.Polygon)
 
 @test isa(Compose.circle(), Compose.Circle)
 @test isa(Compose.circle(3.2,1.4,0.8), Compose.Circle)

@@ -135,84 +135,6 @@ resolve(box::AbsoluteBox, units::UnitBox, t::Transform, p::ComplexPolygonPrimiti
 form_string(::ComplexPolygon) = "CP"
 
 
-# Rectangle
-# ---------
-
-struct RectanglePrimitive{P <: Vec, M1 <: Measure, M2 <: Measure} <: FormPrimitive
-    corner::P
-    width::M1
-    height::M2
-end
-
-const Rectangle{P<:RectanglePrimitive} = Form{P}
-
-"""
-    rectangle()
-
-Define a rectangle that fills the current context completely.
-"""
-function rectangle()
-    prim = RectanglePrimitive((0.0w, 0.0h), 1.0w, 1.0h)
-    return Rectangle{typeof(prim)}([prim])
-end
-
-"""
-    rectangle(x0, y0, width, height)
-
-Define a rectangle of size `width`x`height` with its top left corner at the point (`x`, `y`).
-"""
-function rectangle(x0, y0, width, height, tag=empty_tag)
-    corner = (x_measure(x0), y_measure(y0))
-    width = x_measure(width)
-    height = y_measure(height)
-    prim = RectanglePrimitive(corner, width, height)
-    return Rectangle{typeof(prim)}([prim], tag)
-end
-
-"""
-    rectangle(x0s::AbstractArray, y0s::AbstractArray, widths::AbstractArray, heights::AbstractArray)
-
-Arguments can be passed in arrays in order to perform multiple drawing operations at once.
-"""
-rectangle(x0s::AbstractArray, y0s::AbstractArray,
-                   widths::AbstractArray, heights::AbstractArray, tag=empty_tag) =
-        @makeform (x0 in x0s, y0 in y0s, width in widths, height in heights),
-            RectanglePrimitive{Vec2, Measure, Measure}((x_measure(x0), y_measure(y0)),
-                                                    x_measure(width), y_measure(height)) tag
-
-
-function resolve(box::AbsoluteBox, units::UnitBox, t::Transform,
-                 p::RectanglePrimitive)
-    corner = resolve(box, units, t, p.corner)
-    width = resolve(box, units, t, p.width)
-    height = resolve(box, units, t, p.height)
-
-    if isxflipped(units) && hasunits(Length{:cx}, p.corner[1])
-        # if coordinates are flipped we end up with the corner on the other end
-        # of the rectangle, which is fix here
-        x = corner[1] - width
-    else
-        x = corner[1]
-    end
-
-    if isyflipped(units) && hasunits(Length{:cy}, p.corner[2])
-        y = corner[2] - height
-    else
-        y = corner[2]
-    end
-
-    return RectanglePrimitive{AbsoluteVec2, AbsoluteLength, AbsoluteLength}(
-        (x, y), width, height)
-end
-
-boundingbox(form::RectanglePrimitive, linewidth::Measure,
-                     font::AbstractString, fontsize::Measure) =
-        BoundingBox(form.corner.x - linewidth,
-                    form.corner.y - linewidth,
-                    form.width + 2*linewidth,
-                    form.height + 2*linewidth)
-
-form_string(::Rectangle) = "R"
 
 # Circle
 # ------
@@ -796,6 +718,45 @@ end
 Extract points from a Compose.Form
 """
 points(x::Compose.Form) = x.primitives[1].points
+
+"""
+    rectangle()
+
+Define a rectangle that fills the current context completely.
+"""
+rectangle() = rectangle(0.0w, 0.0h, 1.0w, 1.0h)
+
+
+"""
+    rectangle(x0, y0, width, height)
+
+Define a rectangle of size `width`x`height` with a corner at the point (`x`, `y`).
+`width` and `height` (from the corner point) can be positive or negative.
+"""
+function rectangle(x0, y0, width, height, tag=empty_tag)
+    x, y = x_measure(x0), y_measure(y0)
+    w, h = x_measure(width), y_measure(height)
+    points = Tuple{Measure, Measure}[(x,y), (x+w,y), (x+w,y+h), (x,y+h)]
+    return Form([PolygonPrimitive(points)], tag)
+end
+
+
+"""
+    rectangle(x0s::AbstractArray, y0s::AbstractArray, widths::AbstractArray, heights::AbstractArray)
+
+Arguments can be passed in arrays in order to perform multiple drawing operations at once.
+"""
+function rectangle(x0s::AbstractArray, y0s::AbstractArray, widths::AbstractArray, heights::AbstractArray, tag=empty_tag)
+    VecType = Tuple{Measure, Measure}
+    PrimType = PolygonPrimitive{VecType}
+    polyprims = PrimType[]
+    for (x0,y0,width,height) in cyclezip(x0s, y0s, widths, heights)
+        p = rectangle(x0, y0, width, height)
+        push!(polyprims, PrimType(p.primitives[1].points))
+    end
+     return Form{PrimType}(polyprims, tag)
+end
+
 
 
 # Bezigon

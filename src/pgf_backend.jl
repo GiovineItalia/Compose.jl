@@ -356,21 +356,6 @@ function draw(img::PGF, prim::LinePrimitive, idx::Int)
     write(img.buf, ";\n")
 end
 
-function draw(img::PGF, prim::RectanglePrimitive, idx::Int)
-    width = max(prim.width.value, 0.01)
-    height = max(prim.height.value, 0.01)
-
-    modifiers, props = get_vector_properties(img, idx)
-    img.visible || return
-
-    write(img.buf, join(modifiers))
-    @printf(img.buf, "\\path [%s] ", join(props, ","));
-    @printf(img.buf, "(%s,%s) rectangle +(%s,%s);\n",
-            svg_fmt_float(prim.corner[1].value),
-            svg_fmt_float(prim.corner[2].value),
-            svg_fmt_float(width),
-            svg_fmt_float(height))
-end
 
 function draw(img::PGF, prim::PolygonPrimitive, idx::Int)
     n = length(prim.points)
