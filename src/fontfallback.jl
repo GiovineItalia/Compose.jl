@@ -96,7 +96,7 @@ function max_text_extents(font_family::AbstractString, size::Measure,
         textheight = 0.0
         for chunk in split(text, '\n')
             chunkheight = glyphheight
-            if match(r"<su(p|b)>", chunk) != nothing
+            if match(r"<su(p|b)>", String(chunk)) != nothing
                 chunkheight *= 1.5
             end
             textheight += chunkheight
@@ -124,7 +124,7 @@ function text_extents(font_family::AbstractString, size::Measure, texts::Abstrac
         textheight = 0.0
         for chunk in split(text, "\n")
             chunkheight = glyphheight
-            if match(r"<su(p|b)>", text) != nothing
+            if match(r"<su(p|b)>", String(chunk)) != nothing
                 chunkheight *= 1.5
             end
             textheight += chunkheight
@@ -157,7 +157,7 @@ function pango_to_svg(text::AbstractString)
         sup = sub = false
         open_tag = false
 
-        for mat in eachmatch(pat, textline)
+        for mat in eachmatch(pat, String(textline))
             write(output_line, input[lastpos:mat.offset-1])
             lastpos = mat.offset + length(mat.match)
 
