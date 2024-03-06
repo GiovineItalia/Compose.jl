@@ -9,7 +9,7 @@ using Measures
                 [context(), fill("green"), circle([0.25, 0.75], [0.5], [0.25])])
     img = SVG(8cm, 6cm, false)
     draw(img, c)
-    svgxml = root(parsexml(String(take!(img.out)))
+    svgxml = root(parsexml(String(take!(img.out))))
     # get all grouped values that have the fill attribute
     fillcolors = nodecontent.(findall("//ns:g[@fill]/@fill", svgxml, ["ns"=>namespace(svgxml)]))
     # there should only be a single color (because green should clobber the red
