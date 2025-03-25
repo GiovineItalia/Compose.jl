@@ -701,7 +701,7 @@ Define a `n`-sided polygon with its center at (`x`,`y`), and radius of `r`.  For
 function ngon(x, y, r, n::Int, tag=empty_tag)
     θ = range(-π/2, stop=1.5π, length=n+1)
     x1 = x_measure(x) .+ size_x_measure(r).*cos.(θ)
-    y1 = y_measure(y) .+ size_x_measure(r).*sin.(θ)
+    y1 = y_measure(y) .+ size_y_measure(r).*sin.(θ)
     points = collect(Tuple{Measure, Measure}, zip(x1, y1))
     return Form([PolygonPrimitive(points)], tag)
 end
