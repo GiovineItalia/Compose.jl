@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Properties · Compose.jl</title><meta name="title" content="Properties · Compose.jl"/><meta property="og:title" content="Properties · Compose.jl"/><meta property="twitter:title" content="Properties · Compose.jl"/><meta name="description" content="Documentation for Compose.jl."/><meta property="og:description" content="Documentation for Compose.jl."/><meta property="twitter:description" content="Documentation for Compose.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Compose.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Compose.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../tutorial/">Tutorial</a></li><li><span class="tocitem">Gallery</span><ul><li><a class="tocitem" href="../forms/">Forms</a></li><li class="is-active"><a class="tocitem" href>Properties</a><ul class="internal"><li><a class="tocitem" href="#[arrow](@ref)"><span><code>arrow</code></span></a></li><li><a class="tocitem" href="#[clip](@ref)"><span><code>clip</code></span></a></li><li><a class="tocitem" href="#[fill](@ref),-[fillopacity](@ref)"><span><code>fill</code>, <code>fillopacity</code></span></a></li></ul></li><li><a class="tocitem" href="../transforms/">Transformations</a></li></ul></li><li><a class="tocitem" href="../../library/">Library</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Gallery</a></li><li class="is-active"><a href>Properties</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Properties</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/GiovineItalia/Compose.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/GiovineItalia/Compose.jl/blob/master/docs/src/gallery/properties.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="properties_gallery"><a class="docs-heading-anchor" href="#properties_gallery">Properties</a><a id="properties_gallery-1"></a><a class="docs-heading-anchor-permalink" href="#properties_gallery" title="Permalink"></a></h1><h2 id="[arrow](@ref)"><a class="docs-heading-anchor" href="#[arrow](@ref)"><a href="../../library/#Compose.arrow-Tuple{AbstractArray}"><code>arrow</code></a></a><a id="[arrow](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[arrow](@ref)" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Compose
+set_default_graphic_size(14cm,5cm)
+θ, r = 2π*rand(3),  0.1.+0.08*rand(3)
+c, s = r.*cos.(θ), r.*sin.(θ)
+point_array = [[(0.5,0.5), 0.5.+(x,y)] for (x,y) in zip(c,s) ]
+img = compose(context(), arrow(), stroke(&quot;black&quot;), fill(nothing),
+        (context(), arc(0.18, 0.5, 0.08, -π/4, 1π)),
+        (context(), line(point_array), stroke([&quot;red&quot;,&quot;green&quot;,&quot;deepskyblue&quot;])),
+        (context(), curve((0.7,0.5), (0.8,-0.5), (0.8,1.5), (0.9,0.5)))
+)</code></pre><img src='data:image/svg+xml;utf-8,<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     version="1.2"
+     width="140mm" height="50mm" viewBox="0 0 140 50"
+     stroke="none"
+     fill="%23000000"
+     stroke-width="0.3"
+     font-size="3.88"
+>
+<defs>
+  <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
+  </marker>
+</defs>
+<g fill="%23000000" fill-opacity="0.000" stroke="%23000000" marker-end="url(%23arrow)" id="img-8979561c-1">
+  <g transform="translate(112,25)">
+    <path fill="none" d="M-14,0 C0,-50 0,50 14,0" class="primitive"/>
+  </g>
+  <g transform="translate(62.39,25.98)" stroke="%23FF0000">
+    <path fill="none" d="M7.61,-0.98 L-7.61,0.98 " class="primitive"/>
+  </g>
+  <g transform="translate(62.57,24.7)" stroke="%23008000">
+    <path fill="none" d="M7.43,0.3 L-7.43,-0.3 " class="primitive"/>
+  </g>
+  <g transform="translate(59.24,24.09)" stroke="%2300BFFF">
+    <path fill="none" d="M10.76,0.91 L-10.76,-0.91 " class="primitive"/>
+  </g>
+  <g transform="translate(25.2,25)">
+    <path d="M7.92,-7.92 A11.2,11.2 0 1 1 -11.2,0" class="primitive"/>
+  </g>
+</g>
+</svg>
+'/><h2 id="[clip](@ref)"><a class="docs-heading-anchor" href="#[clip](@ref)"><a href="../../library/#Compose.clip-Tuple{Vararg{AbstractArray}}"><code>clip</code></a></a><a id="[clip](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[clip](@ref)" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Colors, Compose
+set_default_graphic_size(14cm,7cm)
+X = rand(10,2)
+colv = HSVA.(range(0,stop=180,length=10), 1, 1, 0.5)
+img = compose(context(units=UnitBox(0,0,2,1)), stroke(&quot;black&quot;),
+    (context(), rectangle(), fill(nothing)),
+  (context(), ngon([0.5,1.5],[0.5], [0.4], [10]), fill(nothing), stroke(&quot;lightgray&quot;)),
+    (context(), xgon(X[:,1],X[:,2],[0.2],[4]), fill(colv)),
+    (context(), xgon(X[:,1].+1,X[:,2],[0.2],[4]), fill(colv),
+        clip(points(ngon(1.5,0.5, 0.4, 10))) )
+)</code></pre><img src='data:image/svg+xml;utf-8,<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     version="1.2"
+     width="140mm" height="70mm" viewBox="0 0 140 70"
+     stroke="none"
+     fill="%23000000"
+     stroke-width="0.3"
+     font-size="3.88"
+>
+<defs>
+  <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
+  </marker>
+</defs>
+<g stroke="%23000000" id="img-1bbb1996-1">
+  <g clip-path="url(%23img-1bbb1996-2)">
+    <g transform="translate(98.47,23.2)" fill="%23FF0000" fill-opacity="0.500">
+      <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+    <g transform="translate(86.34,64.92)" fill="%23FF5500" fill-opacity="0.500">
+      <path d="M-4.2,-0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,-0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+    <g transform="translate(102.95,13.83)" fill="%23FFAA00" fill-opacity="0.500">
+      <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+    <g transform="translate(108.06,19.75)" fill="%23FFFF00" fill-opacity="0.500">
+      <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+    <g transform="translate(82.17,61.68)" fill="%23AAFF00" fill-opacity="0.500">
+      <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+    <g transform="translate(98.99,4.31)" fill="%2355FF00" fill-opacity="0.500">
+      <path d="M-4.2,-0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+    <g transform="translate(80.52,48.26)" fill="%2300FF00" fill-opacity="0.500">
+      <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+    <g transform="translate(90.17,12.23)" fill="%2300FF55" fill-opacity="0.500">
+      <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+    <g transform="translate(139.5,65.81)" fill="%2300FFAA" fill-opacity="0.500">
+      <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+    <g transform="translate(76.64,40.22)" fill="%2300FFFF" fill-opacity="0.500">
+      <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+    </g>
+  </g>
+  <g transform="translate(28.47,23.2)" fill="%23FF0000" fill-opacity="0.500">
+    <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g transform="translate(16.34,64.92)" fill="%23FF5500" fill-opacity="0.500">
+    <path d="M-4.2,-0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,-0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g transform="translate(32.95,13.83)" fill="%23FFAA00" fill-opacity="0.500">
+    <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g transform="translate(38.06,19.75)" fill="%23FFFF00" fill-opacity="0.500">
+    <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g transform="translate(12.17,61.68)" fill="%23AAFF00" fill-opacity="0.500">
+    <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 -0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 -0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g transform="translate(28.99,4.31)" fill="%2355FF00" fill-opacity="0.500">
+    <path d="M-4.2,-0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g transform="translate(10.52,48.26)" fill="%2300FF00" fill-opacity="0.500">
+    <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g transform="translate(20.17,12.23)" fill="%2300FF55" fill-opacity="0.500">
+    <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g transform="translate(69.5,65.81)" fill="%2300FFAA" fill-opacity="0.500">
+    <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g transform="translate(6.64,40.22)" fill="%2300FFFF" fill-opacity="0.500">
+    <path d="M-4.2,0 L-11.77,-7.57 -7.57,-11.77 -0,-4.2 7.57,-11.77 11.77,-7.57 4.2,0 11.77,7.57 7.57,11.77 -0,4.2 -7.57,11.77 -11.77,7.57  z" class="primitive"/>
+  </g>
+  <g stroke="%23D3D3D3" fill="%23000000" fill-opacity="0.000" id="img-1bbb1996-3">
+    <g transform="translate(35,32.45)">
+      <path d="M0,-25.45 L16.46,-20.11 26.63,-6.11 26.63,11.2 16.46,25.2 0,30.55 -16.46,25.2 -26.63,11.2 -26.63,-6.11 -16.46,-20.11 -0,-25.45  z" class="primitive"/>
+    </g>
+    <g transform="translate(105,32.45)">
+      <path d="M0,-25.45 L16.46,-20.11 26.63,-6.11 26.63,11.2 16.46,25.2 0,30.55 -16.46,25.2 -26.63,11.2 -26.63,-6.11 -16.46,-20.11 0,-25.45  z" class="primitive"/>
+    </g>
+  </g>
+  <g fill="%23000000" fill-opacity="0.000" id="img-1bbb1996-4">
+    <g transform="translate(70,35)">
+      <path d="M-70,-35 L70,-35 70,35 -70,35  z" class="primitive"/>
+    </g>
+  </g>
+</g>
+<defs>
+  <clipPath id="img-1bbb1996-2">
+    <path d="M105,7 L121.46,12.35 131.63,26.35 131.63,43.65 121.46,57.65 105,63 88.54,57.65 78.37,43.65 78.37,26.35 88.54,12.35 105,7 " />
+  </clipPath>
+</defs>
+</svg>
+'/><h2 id="[fill](@ref),-[fillopacity](@ref)"><a class="docs-heading-anchor" href="#[fill](@ref),-[fillopacity](@ref)"><a href="../../library/#Base.fill-Tuple{AbstractArray}"><code>fill</code></a>, <a href="../../library/#Compose.fillopacity-Tuple{AbstractArray}"><code>fillopacity</code></a></a><a id="[fill](@ref),-[fillopacity](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[fill](@ref),-[fillopacity](@ref)" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Compose
+set_default_graphic_size(14cm,4cm)
+img = compose(context(),
+  (context(), circle(0.5, 0.5, 0.08), fillopacity(0.3), fill(&quot;orange&quot;)),
+  (context(), circle([0.1, 0.26], [0.5], [0.1]), fillopacity(0.3), fill(&quot;blue&quot;)),
+  (context(), circle([0.42, 0.58], [0.5], [0.1]), fillopacity(0.3), fill([&quot;yellow&quot;,&quot;green&quot;])),
+  (context(), circle([0.74, 0.90], [0.5], [0.1]), fillopacity([0.5,0.3]), fill([&quot;yellow&quot;,&quot;red&quot;]) )
+)</code></pre><img src='data:image/svg+xml;utf-8,<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     version="1.2"
+     width="140mm" height="40mm" viewBox="0 0 140 40"
+     stroke="none"
+     fill="%23000000"
+     stroke-width="0.3"
+     font-size="3.88"
+>
+<defs>
+  <marker id="arrow" markerWidth="15" markerHeight="7" refX="5" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
+  </marker>
+</defs>
+<g transform="translate(103.6,20)" fill-opacity="0.5" fill="%23FFFF00">
+  <circle cx="0" cy="0" r="14" class="primitive"/>
+</g>
+<g transform="translate(126,20)" fill-opacity="0.3" fill="%23FF0000">
+  <circle cx="0" cy="0" r="14" class="primitive"/>
+</g>
+<g fill-opacity="0.3" id="img-c76fb84b-1">
+  <g transform="translate(58.8,20)" fill="%23FFFF00">
+    <circle cx="0" cy="0" r="14" class="primitive"/>
+  </g>
+  <g transform="translate(81.2,20)" fill="%23008000">
+    <circle cx="0" cy="0" r="14" class="primitive"/>
+  </g>
+</g>
+<g fill="%230000FF" fill-opacity="0.3" id="img-c76fb84b-2">
+  <g transform="translate(14,20)">
+    <circle cx="0" cy="0" r="14" class="primitive"/>
+  </g>
+  <g transform="translate(36.4,20)">
+    <circle cx="0" cy="0" r="14" class="primitive"/>
+  </g>
+</g>
+<g fill="%23FFA500" fill-opacity="0.3" id="img-c76fb84b-3">
+  <g transform="translate(70,20)">
+    <circle cx="0" cy="0" r="11.2" class="primitive"/>
+  </g>
+</g>
+</svg>
+'/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../forms/">« Forms</a><a class="docs-footer-nextpage" href="../transforms/">Transformations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 27 May 2026 14:32">Wednesday 27 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
