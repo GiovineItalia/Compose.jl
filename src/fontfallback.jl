@@ -71,7 +71,7 @@ end
 # Returns:
 #   Approximate text width in millimeters.
 #
-function text_width(widths::Dict, text::AbstractString, size::Float64)
+function text_width(widths::AbstractDict, text::AbstractString, size::Float64)
     stripped_text = replace(text, r"<[^>]*>"=>"")
     width = 0
     for c in stripped_text
